@@ -1,0 +1,52 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morador - Control Door</title>
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        .box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn-abrir { background: #28a745; color: white; padding: 20px; font-size: 20px; width: 100%; border: none; border-radius: 10px; cursor: pointer; display: none; }
+        .alerta { background: #ffc107; padding: 15px; border-radius: 5px; display: none; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div id="registro" class="box">
+        <h2>Vincular Celular</h2>
+        <select id="casaSel" style="padding:10px">
+            <script>for(let i=1;i<=25;i++) document.write(`<option value="${i}">Casa ${i}</option>`);</script>
+        </select>
+        <button onclick="registrarNoSistema(document.getElementById('casaSel').value)">Registrar</button>
+    </div>
+    <div class="box">
+        <h2 id="info">Seu Painel</h2>
+        <div id="alerta" class="alerta">🔔 ALGUÉM NO PORTÃO!</div>
+        <button id="btnAbrir" class="btn-abrir" onclick="abrir()">🔓 ABRIR PORTÃO</button>
+    </div>
+    <script>
+        const minhaCasa = localStorage.getItem('minha_casa');
+        if(minhaCasa) {
+            document.getElementById('registro').style.display = 'none';
+            document.getElementById('info').innerText = "Casa " + minhaCasa;
+            document.getElementById('btnAbrir').style.display = 'block';
+            
+            db.ref('chamadas/casa_' + minhaCasa).on('value', (snap) => {
+                if(snap.val()?.status === "chamando") document.getElementById('alerta').style.display = 'block';
+            });
+        }
+        function abrir() {
+            db.ref('comando_portao').set({ acao: "abrir", timestamp: firebase.database.ServerValue.TIMESTAMP });
+            db.ref('logs_abertura').push({ casa: minhaCasa, dispositivo: obterIdentidadeAparelho(), data: firebase.database.ServerValue.TIMESTAMP });
+            db.ref('chamadas/casa_' + minhaCasa).remove();
+            alert("Portão acionado!");
+            document.getElementById('alerta').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
