@@ -3,55 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Morador</title>
+    <title>Painel do Morador</title>
+    
+    <!-- Bibliotecas do Firebase -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
+    
+    <!-- Seus scripts na raiz -->
     <script src="config.js"></script>
     <script src="auth.js"></script>
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
-        body { background: #f4f7f9; padding: 20px; color: #333; }
-        .box { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: center; }
-        h2 { font-size: 20px; margin-bottom: 15px; color: #2c5364; }
-        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 20px; font-size: 16px; }
-        .btn-reg { background: #3498db; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; }
-        .btn-abrir { background: #2ecc71; color: white; border: none; padding: 25px; font-size: 22px; width: 100%; border-radius: 15px; font-weight: bold; display: none; box-shadow: 0 8px 20px rgba(46,204,113,0.3); }
-        .alerta { background: #f1c40f; color: #000; padding: 20px; border-radius: 12px; margin-bottom: 15px; font-weight: bold; display: none; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #e9ecef; }
+        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn-abrir { background: #28a745; color: white; border: none; padding: 20px; border-radius: 10px; font-size: 20px; font-weight: bold; width: 100%; display: none; }
+        .btn-ativar { background: #007bff; color: white; border: none; padding: 10px; border-radius: 5px; width: 100%; }
+        .alerta { background: #ffc107; padding: 15px; border-radius: 8px; font-weight: bold; display: none; margin-bottom: 15px; border: 2px solid #e0a800; }
     </style>
 </head>
 <body>
-    <div id="regSec" class="box">
-        <h2>Ativação de Morador</h2>
-        <select id="casaNum"><script>for(let i=1;i<=25;i++) document.write(`<option value="${i}">Casa ${i}</option>`);</script></select>
-        <button class="btn-reg" onclick="registrarNoSistema(document.getElementById('casaNum').value)">ATIVAR ESTE CELULAR</button>
+
+    <div class="box" id="blocoRegistro">
+        <h2>Ativação de Casa</h2>
+        <select id="selectCasa" style="padding: 10px; width: 100%; margin-bottom: 15px;">
+            <script>for(let i=1; i<=25; i++) document.write(`<option value="${i}">Casa ${i}</option>`);</script>
+        </select>
+        <button class="btn-ativar" onclick="registrarNoSistema(document.getElementById('selectCasa').value)">ATIVAR ESTE CELULAR</button>
     </div>
 
     <div class="box">
-        <h2 id="tituloPainel">Painel de Controle</h2>
-        <div id="alerta" class="alerta">🔔 VISITANTE NO PORTÃO!</div>
-        <button id="btnAbrir" class="btn-abrir" onclick="abrir()">🔓 ABRIR PORTÃO</button>
+        <h2 id="tituloPainel">Painel de Acesso</h2>
+        <div id="alertaBox" class="alerta">🔔 TEM ALGUÉM NO PORTÃO!</div>
+        <button id="btnAbrirPortao" class="btn-abrir" onclick="acionarPortao()">🔓 ABRIR PORTÃO</button>
     </div>
 
     <script>
         const casaAtiva = localStorage.getItem('minha_casa');
-        if(casaAtiva) {
-            document.getElementById('regSec').style.display = 'none';
-            document.getElementById('tituloPainel').innerText = "Controle - Casa " + casaAtiva;
-            document.getElementById('btnAbrir').style.display = 'block';
+
+        if (casaAtiva) {
+            document.getElementById('blocoRegistro').style.display = 'none';
+            document.getElementById('tituloPainel').innerText = "Casa " + casaAtiva;
+            document.getElementById('btnAbrirPortao').style.display = 'block';
             
-            db.ref('chamadas/casa_' + casaAtiva).on('value', (s) => {
-                if(s.val()?.status === "chamando") document.getElementById('alerta').style.display = 'block';
+            // Monitora chamadas para esta casa
+            db.ref('chamadas/casa_' + casaAtiva).on('value', (snapshot) => {
+                const dados = snapshot.val();
+                document.getElementById('alertaBox').style.display = (dados && dados.status === "chamando") ? 'block' : 'none';
             });
         }
 
-        function abrir() {
-            const id = obterIdentidadeAparelho();
+        function acionarPortao() {
+            const idDisp = obterIdentidadeAparelho();
+            
+            // Grava comando e log simultaneamente
             db.ref('comando_portao').set({ acao: "abrir", timestamp: firebase.database.ServerValue.TIMESTAMP });
-            db.ref('logs_abertura').push({ casa: casaAtiva, dispositivo: id, data: firebase.database.ServerValue.TIMESTAMP });
+            db.ref('logs_abertura').push({ casa: casaAtiva, dispositivo: idDisp, data: firebase.database.ServerValue.TIMESTAMP });
+            
+            // Limpa a chamada
             db.ref('chamadas/casa_' + casaAtiva).remove();
-            alert("Portão acionado com sucesso!");
-            document.getElementById('alerta').style.display = 'none';
+            alert("Sinal enviado ao portão!");
         }
     </script>
 </body>
