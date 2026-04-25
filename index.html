@@ -3,43 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interfone Digital</title>
+    <title>Interfone Digital - Visitante</title>
+    
+    <!-- Bibliotecas do Firebase -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
+    
+    <!-- Seus scripts na raiz -->
     <script src="config.js"></script>
+    <script src="auth.js"></script>
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
-        body { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); height: 100vh; display: flex; align-items: center; justify-content: center; color: white; }
-        .card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); padding: 40px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 15px 35px rgba(0,0,0,0.5); text-align: center; width: 85%; max-width: 380px; }
-        h1 { font-size: 26px; margin-bottom: 5px; color: #00d2ff; }
-        p { font-size: 14px; opacity: 0.7; margin-bottom: 30px; }
-        button { background: linear-gradient(45deg, #00d2ff, #3a7bd5); color: white; border: none; padding: 20px; width: 100%; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(0,210,255,0.4); transition: 0.3s; }
-        button:active { transform: scale(0.96); }
-        #status { margin-top: 20px; font-size: 15px; font-weight: 500; height: 20px; }
+        body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f0f2f5; }
+        .card { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; max-width: 90%; }
+        button { background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; }
+        #status { margin-top: 15px; font-weight: bold; color: #555; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1 id="txtCasa">Acessando...</h1>
-        <p>Toque abaixo para notificar o morador</p>
-        <button onclick="chamar()">🔔 CHAMAR AGORA</button>
-        <div id="status"></div>
+        <h1 id="casaNome">Chamando...</h1>
+        <button onclick="enviarChamada()">🔔 CHAMAR MORADOR</button>
+        <div id="status">Aguardando...</div>
     </div>
+
     <script>
         const params = new URLSearchParams(window.location.search);
-        const casa = params.get('casa') || "Portaria";
-        document.getElementById('txtCasa').innerText = "Casa " + casa;
+        const casa = params.get('casa') || "Principal";
+        document.getElementById('casaNome').innerText = "Casa " + casa;
 
-        function chamar() {
-            const st = document.getElementById('status');
-            st.innerText = "Enviando sinal...";
+        function enviarChamada() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerText = "Enviando alerta...";
+            
             db.ref('chamadas/casa_' + casa).set({
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
                 status: "chamando"
             }).then(() => {
-                st.innerText = "🔔 O morador foi avisado!";
-                st.style.color = "#00ff88";
-            }).catch(e => { st.innerText = "Erro de conexão"; });
+                statusDiv.innerText = "🔔 Morador avisado!";
+                statusDiv.style.color = "green";
+            }).catch(e => alert("Erro: " + e.message));
         }
     </script>
 </body>
