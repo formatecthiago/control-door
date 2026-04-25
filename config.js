@@ -1,4 +1,3 @@
-
 // config.js
 const firebaseConfig = {
   apiKey: "AIzaSyDnHzXTN8YgHsJYivJv9yTkc_pnU5E2fME",
@@ -9,6 +8,9 @@ const firebaseConfig = {
   appId: "1:590100166898:web:b234ee092ec3be2fb2786b",
   databaseURL: "https://firebaseio.com"
 };
-// Inicializa o Firebase (Versão Compat)
-firebase.initializeApp(firebaseConfig);
+
+// Inicializa o Firebase apenas se ainda não foi inicializado
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.database();
