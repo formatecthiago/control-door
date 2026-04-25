@@ -1,4 +1,4 @@
-// config.js
+// config.js - Arquivo de Configuração Central
 const firebaseConfig = {
   apiKey: "AIzaSyDnHzXTN8YgHsJYivJv9yTkc_pnU5E2fME",
   authDomain: "://firebaseapp.com",
@@ -9,8 +9,8 @@ const firebaseConfig = {
   databaseURL: "https://firebaseio.com"
 };
 
-// Inicializa o Firebase apenas se ainda não foi inicializado
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+// Inicializa o Firebase (usando a versão compat que colocamos no HTML)
+firebase.initializeApp(firebaseConfig);
+
+// Cria a conexão com o banco de dados em tempo real
 const db = firebase.database();
