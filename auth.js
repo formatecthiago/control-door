@@ -1,8 +1,8 @@
-
 // auth.js
 function gerarIDUnico() {
-    return 'dev-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+    return 'device-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
 }
+
 function obterIdentidadeAparelho() {
     let dispositivoID = localStorage.getItem('control_door_token');
     if (!dispositivoID) {
@@ -11,6 +11,7 @@ function obterIdentidadeAparelho() {
     }
     return dispositivoID;
 }
+
 function registrarNoSistema(casaNumero) {
     const meuID = obterIdentidadeAparelho();
     
@@ -19,11 +20,11 @@ function registrarNoSistema(casaNumero) {
         ativo: true
     })
     .then(() => {
-        alert("Sucesso! Celular vinculado à Casa " + casaNumero);
         localStorage.setItem('minha_casa', casaNumero);
-        location.reload(); // Recarrega para mostrar o painel de abertura
+        alert("✅ Sucesso! Este celular agora é a chave da Casa " + casaNumero);
+        location.reload(); 
     })
     .catch((error) => {
-        alert("Erro ao salvar: " + error.message);
+        alert("Erro ao registrar: " + error.message);
     });
 }
