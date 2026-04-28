@@ -27,7 +27,7 @@
         </div>
     </div>
 
-    <!-- SCRIPTS NO FINAL PARA EVITAR ERROS DE CARREGAMENTO -->
+    <!-- Scripts do Firebase v10 Compat -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
     <script src="config.js"></script>
@@ -35,7 +35,7 @@
     <script>
         const params = new URLSearchParams(window.location.search);
         const casa = params.get('casa') || "1";
-        document.getElementById('txtCasa').innerText = "Unidade Casa " + casa;
+        document.getElementById('txtCasa').innerText = "Casa " + casa;
         let fotoBase64 = "";
 
         document.getElementById('fotoInput').onchange = e => {
@@ -45,43 +45,23 @@
                 document.getElementById('preview').src = fotoBase64;
                 document.getElementById('preview').style.display = 'block';
                 document.getElementById('btnChamar').style.display = 'block';
-                document.getElementById('btnFoto').innerText = "🔄 TROCAR FOTO";
             };
             reader.readAsDataURL(e.target.files);
         };
 
         function iniciarChamada() {
-            if(typeof db === 'undefined') { alert("Conectando ao sistema... tente em instantes."); return; }
-            const refPath = db.ref('chamadas/casa_' + casa);
-            refPath.set({ status: "chamando", foto: fotoBase64, timestamp: Date.now() });
+            if(typeof db === 'undefined') { alert("Conectando..."); return; }
+            const ref = db.ref('chamadas/casa_' + casa);
+            ref.set({ status: "chamando", foto: fotoBase64, timestamp: Date.now() });
 
             document.getElementById('btnChamar').style.display = 'none';
             document.getElementById('btnFoto').style.display = 'none';
             document.getElementById('statusArea').style.display = 'block';
             
-            let tempo = 120;
-            const intv = setInterval(() => {
-                tempo--;
-                let m = Math.floor(tempo/60), s = tempo%60;
-                document.getElementById('timer').innerText = `${m}:${s<10?'0'+s:s}`;
-                if(tempo <= 0) { 
-                    clearInterval(intv); 
-                    refPath.remove();
-                    location.href='painel.html';
-                }
-            }, 1000);
-
-            refPath.on('value', snap => {
-                const data = snap.val();
-                if(!data) return;
-                if(data.status === "aberto") {
-                    alert("✅ ACESSO LIBERADO!");
-                    refPath.remove();
-                    location.href='painel.html';
-                }
-                if(data.status === "estou_indo") {
-                    document.getElementById('msgStatus').innerText = "⏳ MORADOR A CAMINHO!";
-                }
+            ref.on('value', snap => {
+                const d = snap.val();
+                if(d?.status === "aberto") { alert("✅ ACESSO LIBERADO!"); ref.remove(); location.reload(); }
+                if(d?.status === "estou_indo") document.getElementById('msgStatus').innerText = "⏳ MORADOR A CAMINHO!";
             });
         }
     </script>
