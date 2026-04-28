@@ -1,8 +1,9 @@
-// auth.js
+// auth.js - Identidade Digital do Aparelho
 function obterIdentidadeAparelho() {
     let id = localStorage.getItem('control_door_token');
     if (!id) {
-        id = 'dev-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+        // Gera um ID único baseado em texto aleatório e tempo
+        id = 'token-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
         localStorage.setItem('control_door_token', id);
     }
     return id;
@@ -10,7 +11,10 @@ function obterIdentidadeAparelho() {
 
 function registrarNoSistema(casaNumero) {
     const meuID = obterIdentidadeAparelho();
-    if (!db) { alert("Erro: Banco de dados não conectado."); return; }
+    if (typeof db === 'undefined') { 
+        alert("Erro: O banco de dados não respondeu. Verifique sua conexão."); 
+        return; 
+    }
 
     db.ref('moradores/casa_' + casaNumero + '/' + meuID).set({
         registradoEm: firebase.database.ServerValue.TIMESTAMP,
@@ -22,6 +26,6 @@ function registrarNoSistema(casaNumero) {
         location.reload();
     })
     .catch((error) => {
-        alert("Erro ao salvar: " + error.message);
+        alert("Erro ao salvar no Firebase: " + error.message);
     });
 }
