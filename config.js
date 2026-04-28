@@ -1,4 +1,4 @@
-// config.js - CÓDIGO FINAL CORRIGIDO
+// config.js - Configuração Central do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDnHzXTN8YgHsJYivJv9yTkc_pnU5E2fME",
   authDomain: "://firebaseapp.com",
@@ -9,10 +9,9 @@ const firebaseConfig = {
   databaseURL: "https://firebaseio.com"
 };
 
-// Inicializa o Firebase globalmente
+// Inicializa o Firebase apenas uma vez
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// Define a variável db para ser usada em todos os arquivos
 const db = firebase.database();
