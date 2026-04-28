@@ -5,20 +5,15 @@
     <title>Portaria - Control Door</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; text-align: center; padding: 20px; }
-        h1 { color: #2d3436; }
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 20px auto; }
-        .btn { background: white; border: none; padding: 20px 5px; border-radius: 12px; font-weight: bold; color: #007bff; text-decoration: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
-        .btn:active { background: #007bff; color: white; transform: scale(0.9); }
+        .btn { background: white; border: none; padding: 20px 5px; border-radius: 12px; font-weight: bold; color: #007bff; text-decoration: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
     <h1>🏢 Control Door</h1>
-    <p>Escolha a unidade que deseja visitar:</p>
     <div class="grid">
         <script>
-            for(let i=1; i<=25; i++) {
-                document.write(`<a href="index.html?casa=${i}" class="btn">CASA ${i}</a>`);
-            }
+            for(let i=1; i<=25; i++) document.write(`<a href="index.html?casa=${i}" class="btn">CASA ${i}</a>`);
         </script>
     </div>
 </body>
