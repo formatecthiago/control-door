@@ -1,15 +1,16 @@
+// auth.js
 function obterIdentidadeAparelho() {
     let id = localStorage.getItem('control_door_token');
     if (!id) {
-        id = 'dev-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+        id = 'token-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
         localStorage.setItem('control_door_token', id);
     }
     return id;
 }
 
 function registrarNoSistema(casaNumero) {
-    if (typeof firebase === 'undefined' || typeof db === 'undefined') {
-        alert("ERRO: Sistema Firebase ainda não carregou. Tente novamente em 2 segundos.");
+    if (typeof db === 'undefined') {
+        alert("Erro: O Firebase ainda não carregou. Aguarde 2 segundos.");
         return;
     }
 
@@ -20,8 +21,10 @@ function registrarNoSistema(casaNumero) {
     })
     .then(() => {
         localStorage.setItem('minha_casa', casaNumero);
-        alert("CONECTADO COM SUCESSO!");
+        alert("CONECTADO COM SUCESSO! Este celular agora é a chave da Casa " + casaNumero);
         location.reload();
     })
-    .catch((error) => alert("Erro ao salvar: " + error.message));
+    .catch((error) => {
+        alert("Erro no Firebase: " + error.message);
+    });
 }
