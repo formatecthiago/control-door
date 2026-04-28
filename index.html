@@ -1,48 +1,97 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interfone Digital - Visitante</title>
-    
-    <!-- Bibliotecas do Firebase -->
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chamada - Visitante</title>
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
-    
-    <!-- Seus scripts na raiz -->
     <script src="config.js"></script>
-    <script src="auth.js"></script>
-
     <style>
-        body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f0f2f5; }
-        .card { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; max-width: 90%; }
-        button { background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; }
-        #status { margin-top: 15px; font-weight: bold; color: #555; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f7f6; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        .btn { padding: 15px; border-radius: 10px; border: none; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-call { background: #007bff; color: white; display: none; }
+        .btn-cancel { background: #dc3545; color: white; margin-top: 20px; }
+        #preview { width: 100%; border-radius: 10px; margin-bottom: 10px; display: none; }
+        #timer { font-size: 24px; font-weight: bold; color: #ff4757; margin: 15px 0; display: none; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1 id="casaNome">Chamando...</h1>
-        <button onclick="enviarChamada()">🔔 CHAMAR MORADOR</button>
-        <div id="status">Aguardando...</div>
+        <h2 id="infoCasa">Casa</h2>
+        <img id="preview" src="">
+        <input type="file" id="fotoInput" accept="image/*" capture="user" style="display:none">
+        <button id="btnFoto" class="btn" style="background:#6c757d; color:white" onclick="document.getElementById('fotoInput').click()">📸 TIRAR SELFIE OBRIGATÓRIA</button>
+        
+        <button id="btnChamar" class="btn btn-call" onclick="iniciarChamada()">🔔 CHAMAR MORADOR</button>
+        
+        <div id="timer">02:00</div>
+        <div id="msgStatus">Identifique-se para chamar</div>
+        
+        <button id="btnCancelar" class="btn btn-cancel" onclick="cancelar()" style="display:none">CANCELAR CHAMADA</button>
     </div>
 
     <script>
         const params = new URLSearchParams(window.location.search);
-        const casa = params.get('casa') || "Principal";
-        document.getElementById('casaNome').innerText = "Casa " + casa;
+        const casa = params.get('casa');
+        let tempoRestante = 120;
+        let intervalo;
+        let fotoBase64 = "";
 
-        function enviarChamada() {
-            const statusDiv = document.getElementById('status');
-            statusDiv.innerText = "Enviando alerta...";
-            
-            db.ref('chamadas/casa_' + casa).set({
-                timestamp: firebase.database.ServerValue.TIMESTAMP,
-                status: "chamando"
-            }).then(() => {
-                statusDiv.innerText = "🔔 Morador avisado!";
-                statusDiv.style.color = "green";
-            }).catch(e => alert("Erro: " + e.message));
+        document.getElementById('infoCasa').innerText = "Casa " + casa;
+
+        document.getElementById('fotoInput').onchange = e => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                fotoBase64 = reader.result;
+                document.getElementById('preview').src = fotoBase64;
+                document.getElementById('preview').style.display = 'block';
+                document.getElementById('btnFoto').innerText = "🔄 TROCAR FOTO";
+                document.getElementById('btnChamar').style.display = 'block';
+                document.getElementById('msgStatus').innerText = "Foto pronta! Pode chamar.";
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+
+        function iniciarChamada() {
+            db.ref('chamadas/casa_' + casa).set({ status: "chamando", foto: fotoBase64, timestamp: Date.now() });
+            document.getElementById('btnChamar').style.display = 'none';
+            document.getElementById('btnFoto').style.display = 'none';
+            document.getElementById('btnCancelar').style.display = 'block';
+            document.getElementById('timer').style.display = 'block';
+            iniciarTimer();
+            ouvirResposta();
+        }
+
+        function iniciarTimer() {
+            intervalo = setInterval(() => {
+                tempoRestante--;
+                let min = Math.floor(tempoRestante / 60);
+                let seg = tempoRestante % 60;
+                document.getElementById('timer').innerText = `${min}:${seg < 10 ? '0' + seg : seg}`;
+                
+                if (tempoRestante <= 0) {
+                    clearInterval(intervalo);
+                    if(confirm("Casa sem resposta. Tentar novamente?")) {
+                        location.reload();
+                    } else {
+                        window.location.href = "painel.html";
+                    }
+                }
+            }, 1000);
+        }
+
+        function ouvirResposta() {
+            db.ref('chamadas/casa_' + casa).on('value', snap => {
+                const dados = snap.val();
+                if (dados?.status === "estou_indo") document.getElementById('msgStatus').innerText = "⏳ O morador avisou que ESTÁ INDO!";
+                if (!dados) { alert("ACESSO LIBERADO!"); window.location.href = "painel.html"; }
+            });
+        }
+
+        function cancelar() {
+            db.ref('chamadas/casa_' + casa).remove();
+            window.location.href = "painel.html";
         }
     </script>
 </body>
