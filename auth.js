@@ -1,31 +1,44 @@
-// auth.js - Identidade Digital do Aparelho
+// auth.js - VERSÃO DE DIAGNÓSTICO
 function obterIdentidadeAparelho() {
     let id = localStorage.getItem('control_door_token');
     if (!id) {
-        // Gera um ID único baseado em texto aleatório e tempo
-        id = 'token-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+        id = 'dev-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
         localStorage.setItem('control_door_token', id);
     }
     return id;
 }
 
 function registrarNoSistema(casaNumero) {
+    console.log("Botão clicado! Tentando registrar casa:", casaNumero);
+    
     const meuID = obterIdentidadeAparelho();
+    console.log("ID do aparelho gerado:", meuID);
+
+    // Verifica se o Firebase/Banco de dados foi carregado pelo config.js
+    if (typeof firebase === 'undefined') {
+        alert("ERRO: O script do Firebase não foi carregado no HTML!");
+        return;
+    }
+    
     if (typeof db === 'undefined') { 
-        alert("Erro: O banco de dados não respondeu. Verifique sua conexão."); 
+        alert("ERRO: O arquivo config.js não inicializou o banco de dados 'db'!"); 
         return; 
     }
+
+    console.log("Enviando dados para o Firebase...");
 
     db.ref('moradores/casa_' + casaNumero + '/' + meuID).set({
         registradoEm: firebase.database.ServerValue.TIMESTAMP,
         ativo: true
     })
     .then(() => {
+        console.log("Sucesso no Firebase!");
         localStorage.setItem('minha_casa', casaNumero);
-        alert("Sucesso! Este celular agora é a chave da Casa " + casaNumero);
+        alert("CONECTADO COM SUCESSO!");
         location.reload();
     })
     .catch((error) => {
-        alert("Erro ao salvar no Firebase: " + error.message);
+        console.error("Erro detalhado do Firebase:", error);
+        alert("O FIREBASE REJEITOU: " + error.message);
     });
 }
