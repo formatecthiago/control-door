@@ -27,7 +27,7 @@
         </div>
     </div>
 
-    <!-- LINKS DO FIREBASE CORRIGIDOS E COMPLETOS -->
+    <!-- SCRIPTS NO FINAL PARA EVITAR ERROS DE CARREGAMENTO -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
     <script src="config.js"></script>
@@ -51,7 +51,7 @@
         };
 
         function iniciarChamada() {
-            if(typeof db === 'undefined') { alert("Aguarde o carregamento..."); return; }
+            if(typeof db === 'undefined') { alert("Conectando ao sistema... tente em instantes."); return; }
             const refPath = db.ref('chamadas/casa_' + casa);
             refPath.set({ status: "chamando", foto: fotoBase64, timestamp: Date.now() });
 
