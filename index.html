@@ -3,9 +3,6 @@
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visitante - Control Door</title>
-    <script src="https://gstatic.com"></script>
-    <script src="https://gstatic.com"></script>
-    <script src="config.js"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
         .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
@@ -19,19 +16,28 @@
         <h2 id="txtCasa">Carregando...</h2>
         <img id="preview">
         <input type="file" id="fotoInput" accept="image/*" capture="user" style="display:none">
+        
         <button id="btnFoto" class="btn" style="background:#6c757d; color:white" onclick="document.getElementById('fotoInput').click()">📸 TIRAR SELFIE OBRIGATÓRIA</button>
         <button id="btnChamar" class="btn" style="background:#007bff; color:white; display:none" onclick="iniciarChamada()">🔔 CHAMAR MORADOR</button>
+        
         <div id="statusArea" style="display:none">
             <div id="timer">02:00</div>
             <p id="msgStatus">Chamada em andamento...</p>
             <button class="btn" style="background:#dc3545; color:white" onclick="location.href='painel.html'">CANCELAR</button>
         </div>
     </div>
+
+    <!-- LINKS DO FIREBASE CORRIGIDOS E COMPLETOS -->
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
+    <script src="config.js"></script>
+
     <script>
         const params = new URLSearchParams(window.location.search);
         const casa = params.get('casa') || "1";
         document.getElementById('txtCasa').innerText = "Unidade Casa " + casa;
         let fotoBase64 = "";
+
         document.getElementById('fotoInput').onchange = e => {
             const reader = new FileReader();
             reader.onload = () => {
@@ -43,24 +49,39 @@
             };
             reader.readAsDataURL(e.target.files);
         };
+
         function iniciarChamada() {
+            if(typeof db === 'undefined') { alert("Aguarde o carregamento..."); return; }
             const refPath = db.ref('chamadas/casa_' + casa);
             refPath.set({ status: "chamando", foto: fotoBase64, timestamp: Date.now() });
+
             document.getElementById('btnChamar').style.display = 'none';
             document.getElementById('btnFoto').style.display = 'none';
             document.getElementById('statusArea').style.display = 'block';
+            
             let tempo = 120;
             const intv = setInterval(() => {
                 tempo--;
                 let m = Math.floor(tempo/60), s = tempo%60;
                 document.getElementById('timer').innerText = `${m}:${s<10?'0'+s:s}`;
-                if(tempo <= 0) { clearInterval(intv); refPath.remove(); location.href='painel.html'; }
+                if(tempo <= 0) { 
+                    clearInterval(intv); 
+                    refPath.remove();
+                    location.href='painel.html';
+                }
             }, 1000);
+
             refPath.on('value', snap => {
                 const data = snap.val();
                 if(!data) return;
-                if(data.status === "aberto") { alert("✅ ACESSO LIBERADO!"); refPath.remove(); location.href='painel.html'; }
-                if(data.status === "estou_indo") document.getElementById('msgStatus').innerText = "⏳ MORADOR A CAMINHO!";
+                if(data.status === "aberto") {
+                    alert("✅ ACESSO LIBERADO!");
+                    refPath.remove();
+                    location.href='painel.html';
+                }
+                if(data.status === "estou_indo") {
+                    document.getElementById('msgStatus').innerText = "⏳ MORADOR A CAMINHO!";
+                }
             });
         }
     </script>
