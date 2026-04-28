@@ -29,18 +29,16 @@
         <button class="btn" style="background:#2ecc71; color:white; font-size:20px" onclick="atender('aberto')">🔓 ABRIR PORTÃO</button>
     </div>
 
-    <!-- SCRIPTS NO FINAL PARA FUNCIONAMENTO GARANTIDO -->
+    <!-- CARREGAMENTO SEGURO DOS SCRIPTS NO FINAL -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
     <script src="config.js"></script>
     <script src="auth.js"></script>
 
     <script>
-        // Lógica de interface
         const minhaCasa = localStorage.getItem('minha_casa');
         
-        // Função para rodar após o Firebase carregar
-        function inicializarApp() {
+        function iniciarEscuta() {
             if(minhaCasa && typeof db !== 'undefined') {
                 document.getElementById('blocoRegistro').style.display = 'none';
                 document.getElementById('painel').style.display = 'block';
@@ -62,12 +60,12 @@
             }
         }
 
-        // Aguarda um pouco para o config.js criar o 'db'
-        setTimeout(inicializarApp, 1500);
+        // Aguarda 1 segundo para garantir que o Firebase inicializou
+        setTimeout(iniciarEscuta, 1000);
 
         function atender(novoStatus) {
             db.ref('chamadas/casa_' + minhaCasa).update({ status: novoStatus });
-            if(novoStatus === 'aberto') alert("Portão aberto com sucesso!");
+            if(novoStatus === 'aberto') alert("Portão aberto!");
         }
     </script>
 </body>
