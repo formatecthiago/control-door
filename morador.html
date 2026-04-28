@@ -2,61 +2,61 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Morador</title>
+    <title>Morador - Control Door</title>
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
     <script src="config.js"></script>
     <script src="auth.js"></script>
     <style>
-        body { font-family: sans-serif; background: #2c3e50; color: white; text-align: center; padding: 20px; }
-        .box { background: #34495e; padding: 20px; border-radius: 15px; margin-top: 20px; }
-        .visitante-foto { width: 100%; max-width: 250px; border-radius: 10px; border: 3px solid #ff4757; display: none; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #2c3e50; color: white; }
+        .box { background: #34495e; padding: 20px; border-radius: 15px; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .btn { padding: 15px; width: 100%; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        #fotoVis { width: 100%; max-width: 250px; border-radius: 10px; display: none; margin: 15px auto; border: 3px solid #2ecc71; }
     </style>
 </head>
 <body>
-    <div id="blocoAtivar">
-        <h3>Ativar Casa</h3>
-        <select id="selCasa" style="padding:10px">
+    <div id="blocoRegistro" class="box">
+        <h3>Ativar Este Celular</h3>
+        <select id="selCasa" style="padding:12px; width:80%; border-radius:5px">
             <script>for(let i=1;i<=25;i++) document.write(`<option value="${i}">CASA ${i}</option>`);</script>
         </select>
-        <button class="btn" style="background:#3498db; color:white" onclick="registrarNoSistema(document.getElementById('selCasa').value)">ATIVAR CELULAR</button>
+        <button class="btn" style="background:#3498db; color:white" onclick="registrarNoSistema(document.getElementById('selCasa').value)">ATIVAR AGORA</button>
     </div>
 
-    <div id="painel" style="display:none">
-        <h2 id="casaTxt">Casa</h2>
-        <div id="alerta" style="background:#e67e22; padding:10px; border-radius:10px; display:none">🔔 VISITANTE CHAMANDO!</div>
-        <img id="fotoVis" class="visitante-foto">
-        <button class="btn" style="background:#f1c40f; color:#000" onclick="estouIndo()">🏃 ESTOU INDO</button>
-        <button class="btn" style="background:#2ecc71; color:white; font-size:20px" onclick="abrir()">🔓 ABRIR PORTÃO</button>
+    <div id="painel" class="box" style="display:none">
+        <h2 id="casaTxt">Painel</h2>
+        <div id="alerta" style="background:#e67e22; padding:10px; border-radius:10px; display:none; margin-bottom:10px">🔔 VISITANTE CHAMANDO!</div>
+        <img id="fotoVis">
+        <button class="btn" style="background:#f1c40f; color:black" onclick="db.ref('chamadas/casa_'+localStorage.getItem('minha_casa')).update({status:'estou_indo'})">🏃 ESTOU INDO</button>
+        <button class="btn" style="background:#2ecc71; color:white; font-size:20px" onclick="abrirPortao()">🔓 ABRIR PORTÃO</button>
     </div>
 
     <script>
         const minhaCasa = localStorage.getItem('minha_casa');
         if(minhaCasa) {
-            document.getElementById('blocoAtivar').style.display = 'none';
+            document.getElementById('blocoRegistro').style.display = 'none';
             document.getElementById('painel').style.display = 'block';
             document.getElementById('casaTxt').innerText = "Casa " + minhaCasa;
             
             db.ref('chamadas/casa_' + minhaCasa).on('value', snap => {
-                const dados = snap.val();
-                if(dados?.status === "chamando") {
+                const d = snap.val();
+                if(d?.status === "chamando" || d?.status === "estou_indo") {
                     document.getElementById('alerta').style.display = 'block';
-                    document.getElementById('fotoVis').src = dados.foto;
-                    document.getElementById('fotoVis').style.display = 'block';
+                    if(d.foto) {
+                        document.getElementById('fotoVis').src = d.foto;
+                        document.getElementById('fotoVis').style.display = 'block';
+                    }
+                } else {
+                    document.getElementById('alerta').style.display = 'none';
+                    document.getElementById('fotoVis').style.display = 'none';
                 }
             });
         }
 
-        function estouIndo() {
-            db.ref('chamadas/casa_' + minhaCasa).update({ status: "estou_indo" });
-        }
-
-        function abrir() {
+        function abrirPortao() {
             db.ref('comando_portao').set({ acao: "abrir", timestamp: Date.now() });
             db.ref('chamadas/casa_' + minhaCasa).remove();
-            alert("Portão aberto!");
-            location.reload();
+            alert("Portão acionado com sucesso!");
         }
     </script>
 </body>
