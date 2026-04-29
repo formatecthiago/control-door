@@ -9,8 +9,8 @@ const firebaseConfig = {
   appId: "1:590100166898:web:b234ee092ec3be2fb2786b"
 };
 
-// Inicialização segura para o formato Script
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.database();
+console.log("Firebase Inicializado");
