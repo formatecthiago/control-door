@@ -1,0 +1,37 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitante - Control Door</title>
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
+    <script src="config.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f0f2f5; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        button { background: #007bff; color: white; border: none; padding: 20px; font-size: 18px; border-radius: 10px; width: 100%; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 id="titulo">Chamando...</h1>
+        <button onclick="chamar()">🔔 CHAMAR MORADOR</button>
+        <p id="status"></p>
+    </div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const casa = params.get('casa') || "Principal";
+        document.getElementById('titulo').innerText = "Casa " + casa;
+        function chamar() {
+            db.ref('chamadas/casa_' + casa).set({
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                status: "chamando"
+            }).then(() => {
+                document.getElementById('status').innerText = "Morador avisado! Aguarde.";
+            });
+        }
+    </script>
+</body>
+</html>
