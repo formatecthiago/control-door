@@ -2,29 +2,34 @@
 function obterIdentidadeAparelho() {
     let id = localStorage.getItem('control_door_token');
     if (!id) {
-        id = 'token-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+        id = 'tk-' + Math.random().toString(36).substr(2, 5) + '-' + Date.now();
         localStorage.setItem('control_door_token', id);
     }
     return id;
 }
 
 function registrarNoSistema(casaNumero) {
+    console.log("Botão acionado para casa:", casaNumero);
+    
     if (typeof db === 'undefined') {
-        alert("Erro: O Firebase ainda não carregou. Aguarde 2 segundos.");
+        alert("Erro: Banco de dados não definido no config.js");
         return;
     }
 
     const meuID = obterIdentidadeAparelho();
+    
+    // Tentativa de escrita direta
     db.ref('moradores/casa_' + casaNumero + '/' + meuID).set({
         registradoEm: firebase.database.ServerValue.TIMESTAMP,
         ativo: true
     })
     .then(() => {
         localStorage.setItem('minha_casa', casaNumero);
-        alert("CONECTADO COM SUCESSO! Este celular agora é a chave da Casa " + casaNumero);
-        location.reload();
+        alert("SUCESSO! Casa " + casaNumero + " conectada.");
+        window.location.reload();
     })
     .catch((error) => {
+        console.error(error);
         alert("Erro no Firebase: " + error.message);
     });
 }
