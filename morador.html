@@ -2,11 +2,11 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Morador - Control Door</title>
+    <title>Morador - Control Door</title>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background: #2c3e50; color: white; }
-        .box { background: #34495e; padding: 20px; border-radius: 15px; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .btn { padding: 15px; width: 100%; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .box { background: #34495e; padding: 20px; border-radius: 15px; margin-top: 20px; }
+        .btn { padding: 15px; width: 100%; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; background:#3498db; color:white; }
         #fotoVis { width: 100%; max-width: 250px; border-radius: 10px; display: none; margin: 15px auto; border: 3px solid #2ecc71; }
     </style>
 </head>
@@ -16,18 +16,17 @@
         <select id="selCasa" style="padding:12px; width:80%; border-radius:5px">
             <script>for(let i=1;i<=25;i++) document.write(`<option value="${i}">CASA ${i}</option>`);</script>
         </select>
-        <button class="btn" style="background:#3498db; color:white" onclick="registrarNoSistema(document.getElementById('selCasa').value)">ATIVAR AGORA</button>
+        <button class="btn" onclick="console.log('Clique detectado'); registrarNoSistema(document.getElementById('selCasa').value)">ATIVAR AGORA</button>
     </div>
 
     <div id="painel" class="box" style="display:none">
         <h2 id="casaTxt">Painel</h2>
         <div id="alerta" style="background:#e67e22; padding:10px; border-radius:10px; display:none; margin-bottom:10px">🔔 VISITANTE CHAMANDO!</div>
         <img id="fotoVis">
-        <button class="btn" style="background:#f1c40f; color:black" onclick="atender('estou_indo')">🏃 ESTOU INDO</button>
-        <button class="btn" style="background:#2ecc71; color:white; font-size:20px" onclick="atender('aberto')">🔓 ABRIR PORTÃO</button>
+        <button class="btn" style="background:#2ecc71;" onclick="db.ref('chamadas/casa_'+localStorage.getItem('minha_casa')).update({status:'aberto'})">🔓 ABRIR PORTÃO</button>
     </div>
 
-    <!-- Scripts do Firebase v10 Compat -->
+    <!-- SCRIPTS OBRIGATÓRIOS -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
     <script src="config.js"></script>
@@ -38,27 +37,7 @@
         if(minhaCasa) {
             document.getElementById('blocoRegistro').style.display = 'none';
             document.getElementById('painel').style.display = 'block';
-            document.getElementById('casaTxt').innerText = "Painel da Casa " + minhaCasa;
-            
-            // Aguarda o db carregar antes de escutar
-            setTimeout(() => {
-                if(typeof db !== 'undefined') {
-                    db.ref('chamadas/casa_' + minhaCasa).on('value', snap => {
-                        const d = snap.val();
-                        if(d && (d.status === "chamando" || d.status === "estou_indo")) {
-                            document.getElementById('alerta').style.display = 'block';
-                            if(d.foto) { document.getElementById('fotoVis').src = d.foto; document.getElementById('fotoVis').style.display = 'block'; }
-                        } else {
-                            document.getElementById('alerta').style.display = 'none';
-                            document.getElementById('fotoVis').style.display = 'none';
-                        }
-                    });
-                }
-            }, 1000);
-        }
-
-        function atender(status) {
-            db.ref('chamadas/casa_' + minhaCasa).update({ status: status });
+            document.getElementById('casaTxt').innerText = "Painel Casa " + minhaCasa;
         }
     </script>
 </body>
