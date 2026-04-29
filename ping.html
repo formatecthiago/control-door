@@ -2,64 +2,45 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Ping Final</title>
-    <!-- Scripts universais estáveis -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
 </head>
-<body style="text-align:center; padding:50px; font-family:sans-serif;">
-    <h2>TESTE DE CONEXÃO DIRETA</h2>
-    <button id="btn" style="padding:40px; width:100%; background:#2980b9; color:white; font-size:22px; border:none; border-radius:15px;">
-        ENVIAR SINAL AGORA
-    </button>
-    <p id="msg" style="font-size:20px; margin-top:20px; color:#7f8c8d;">Status: Aguardando...</p>
+<body style="text-align:center; padding:50px;">
+    <h2>DIAGNÓSTICO DE URL</h2>
+    <button id="btn1" style="padding:20px; width:100%; background:blue; color:white; margin-bottom:10px;">TESTAR URL 1</button>
+    <button id="btn2" style="padding:20px; width:100%; background:green; color:white;">TESTAR URL 2</button>
+    <p id="msg" style="margin-top:20px; font-weight:bold;">Aguardando teste...</p>
 
     <script>
-        // Configuração baseada no seu print oficial
-        var config = {
+        const baseConfig = {
             apiKey: "AIzaSyDnHzXTN8YgHsJYivJv9yTkc_pnU5E2fME",
-            authDomain: "://firebaseapp.com",
-            // Forçamos a URL padrão do Firebase para projetos criados nos EUA
-            databaseURL: "https://firebaseio.com",
             projectId: "control-door-f501d"
         };
 
-        // Inicializa
-        try {
-            firebase.initializeApp(config);
-            var db = firebase.database();
-            document.getElementById('msg').innerText = "Firebase Pronto!";
-        } catch (e) {
-            document.getElementById('msg').innerText = "Erro ao iniciar: " + e.message;
+        function testar(url, num) {
+            document.getElementById('msg').innerText = "Testando URL " + num + "...";
+            // Reinicializa o app para trocar a URL
+            if (firebase.apps.length) { firebase.app().delete(); }
+            firebase.initializeApp({...baseConfig, databaseURL: url});
+            
+            const db = firebase.database();
+            const timeout = setTimeout(() => {
+                alert("URL " + num + " FALHOU (Timeout)");
+                document.getElementById('msg').innerText = "URL " + num + " falhou.";
+            }, 5000);
+
+            db.ref('TESTE_FINAL').set({ ok: true, data: new Date().toLocaleTimeString() })
+            .then(() => {
+                clearTimeout(timeout);
+                alert("✅ SUCESSO NA URL " + num + "! USE ESTA!");
+                document.getElementById('msg').innerText = "URL " + num + " É A CORRETA!";
+                console.log("A URL correta é: " + url);
+            })
+            .catch(e => alert("ERRO: " + e.message));
         }
 
-        document.getElementById('btn').onclick = function() {
-            var label = document.getElementById('msg');
-            label.innerText = "🚀 ENVIANDO...";
-            label.style.color = "orange";
-
-            // Tentativa de escrita com timeout de 8 segundos
-            var timeout = setTimeout(function() {
-                alert("TIMEOUT: O sinal não chegou ao banco. Verifique a URL no seu Console do Firebase.");
-                label.innerText = "Falha por tempo esgotado.";
-            }, 8000);
-
-            db.ref('TESTE_FINAL').set({
-                status: "Conectado com Sucesso!",
-                data: new Date().toLocaleString()
-            })
-            .then(function() {
-                clearTimeout(timeout);
-                alert("✅ SUCESSO! O BANCO RECEBEU O SINAL!");
-                label.innerText = "SINAL RECEBIDO!";
-                label.style.color = "green";
-            })
-            .catch(function(err) {
-                clearTimeout(timeout);
-                alert("❌ ERRO: " + err.message);
-                label.innerText = "Erro: " + err.message;
-            });
-        };
+        document.getElementById('btn1').onclick = () => testar("https://firebaseio.com", 1);
+        document.getElementById('btn2').onclick = () => testar("https://firebaseio.com", 2);
     </script>
 </body>
 </html>
