@@ -2,49 +2,50 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Ping Ultra Rápido</title>
-    <!-- Script direto e leve -->
+    <title>Ping Direto</title>
+    <!-- Links simplificados -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
 </head>
 <body>
-    <h2 style="text-align:center">TESTE DE RESPOSTA</h2>
-    <button id="btnPing" style="width:100%; height:200px; font-size:30px; background:green; color:white; border-radius:20px">
-        CLIQUE PARA PING
-    </button>
-    <div id="status" style="font-size:25px; margin-top:20px; text-align:center">Aguardando...</div>
+    <div style="text-align:center; padding:20px;">
+        <h2>TESTE DE CONEXÃO DIRETA</h2>
+        <button id="btn" style="width:100%; padding:50px; font-size:25px; background:blue; color:white;">ENVIAR SINAL AGORA</button>
+        <p id="msg" style="font-size:20px; margin-top:20px;">Status: Aguardando...</p>
+    </div>
 
     <script>
-        // Configuração direta
+        // Suas chaves que já sabemos que estão certas
         var config = {
             apiKey: "AIzaSyDnHzXTN8YgHsJYivJv9yTkc_pnU5E2fME",
-            databaseURL: "https://firebaseio.com",
+            databaseURL: "https://control-door-f501d-default-rtdb.firebaseio.com",
             projectId: "control-door-f501d"
         };
-        
-        // Inicializa
-        firebase.initializeApp(config);
-        var db = firebase.database();
 
-        document.getElementById('btnPing').onclick = function() {
-            var msg = document.getElementById('status');
-            msg.innerText = "TENTANDO ENVIAR...";
-            msg.style.color = "orange";
+        // Tenta inicializar e captura erro se falhar
+        try {
+            firebase.initializeApp(config);
+            var db = firebase.database();
+            document.getElementById('msg').innerText = "Sistema pronto!";
+        } catch (e) {
+            document.getElementById('msg').innerText = "Erro ao iniciar: " + e.message;
+        }
 
-            // Envia um dado muito pequeno
-            db.ref('PING_FINAL').set({
-                ok: true,
-                hora: new Date().getTime()
+        document.getElementById('btn').onclick = function() {
+            var display = document.getElementById('msg');
+            display.innerText = "Tentando...";
+            
+            db.ref('TESTE_FINAL').set({
+                timestamp: Date.now(),
+                origem: "Celular"
             })
             .then(function() {
-                alert("CONECTOU! O Banco recebeu!");
-                msg.innerText = "FOI! SUCESSO!";
-                msg.style.color = "green";
+                alert("SUCESSO! O Firebase respondeu!");
+                display.innerText = "ENVIADO COM SUCESSO!";
             })
-            .catch(function(error) {
-                alert("ERRO: " + error.message);
-                msg.innerText = "ERRO: " + error.message;
-                msg.style.color = "red";
+            .catch(function(err) {
+                alert("FALHA: " + err.message);
+                display.innerText = "Erro: " + err.message;
             });
         };
     </script>
