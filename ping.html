@@ -1,40 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Teste de Ping Firebase</title>
-    <script src="https://gstatic.com"></script>
-    <script src="https://gstatic.com"></script>
+    <meta charset="UTF-8">
+    <title>Teste de Ping Final</title>
+    <!-- Usando links alternativos mais estáveis para celular -->
+    <script src="https://jsdelivr.net"></script>
+    <script src="https://jsdelivr.net"></script>
 </head>
 <body>
-    <h2>TESTE DE PING</h2>
-    <button id="btn" style="padding: 50px; font-size: 20px;">DAR PING NO BANCO</button>
-    <p id="log">Aguardando clique...</p>
+    <h2>TESTE DE PING (RESPOSTA RÁPIDA)</h2>
+    <button id="btn" style="padding: 60px; font-size: 22px; width: 100%; background: #27ae60; color: white; border: none; border-radius: 15px;">
+        CLIQUE PARA ENVIAR SINAL
+    </button>
+    <p id="log" style="font-size: 20px; font-weight: bold; margin-top: 20px;">Aguardando clique...</p>
 
     <script>
-        const firebaseConfig = {
+        const config = {
             apiKey: "AIzaSyDnHzXTN8YgHsJYivJv9yTkc_pnU5E2fME",
-            authDomain: "://firebaseapp.com",
-            databaseURL: "https://control-door-f501d-default-rtdb.firebaseio.com",
+            databaseURL: "https://firebaseio.com",
             projectId: "control-door-f501d"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        // Inicializa
+        firebase.initializeApp(config);
+        const db = firebase.database();
 
         document.getElementById('btn').onclick = function() {
-            document.getElementById('log').innerText = "Enviando...";
+            document.getElementById('log').innerText = "Processando...";
+            document.getElementById('log').style.color = "blue";
             
-            database.ref('PING_TESTE').set({
-                mensagem: "Opa, o celular conectou!",
+            console.log("Tentando enviar...");
+
+            db.ref('TESTE_FINAL').set({
+                conexao: "OK",
+                aparelho: navigator.userAgent,
                 hora: new Date().toLocaleTimeString()
             })
             .then(() => {
-                alert("PING RECEBIDO PELO FIREBASE!");
-                document.getElementById('log').innerText = "Sucesso!";
+                alert("✅ SUCESSO! O FIREBASE RECEBEU!");
+                document.getElementById('log').innerText = "SINAL RECEBIDO!";
+                document.getElementById('log').style.color = "green";
             })
             .catch((err) => {
-                alert("ERRO NO PING: " + err.message);
+                alert("❌ ERRO: " + err.message);
                 document.getElementById('log').innerText = "Erro: " + err.message;
+                document.getElementById('log').style.color = "red";
             });
         };
     </script>
