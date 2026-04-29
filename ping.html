@@ -2,49 +2,49 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Teste de Ping Final</title>
-    <!-- Usando links alternativos mais estáveis para celular -->
-    <script src="https://jsdelivr.net"></script>
-    <script src="https://jsdelivr.net"></script>
+    <title>Ping Ultra Rápido</title>
+    <!-- Script direto e leve -->
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
 </head>
 <body>
-    <h2>TESTE DE PING (RESPOSTA RÁPIDA)</h2>
-    <button id="btn" style="padding: 60px; font-size: 22px; width: 100%; background: #27ae60; color: white; border: none; border-radius: 15px;">
-        CLIQUE PARA ENVIAR SINAL
+    <h2 style="text-align:center">TESTE DE RESPOSTA</h2>
+    <button id="btnPing" style="width:100%; height:200px; font-size:30px; background:green; color:white; border-radius:20px">
+        CLIQUE PARA PING
     </button>
-    <p id="log" style="font-size: 20px; font-weight: bold; margin-top: 20px;">Aguardando clique...</p>
+    <div id="status" style="font-size:25px; margin-top:20px; text-align:center">Aguardando...</div>
 
     <script>
-        const config = {
+        // Configuração direta
+        var config = {
             apiKey: "AIzaSyDnHzXTN8YgHsJYivJv9yTkc_pnU5E2fME",
             databaseURL: "https://firebaseio.com",
             projectId: "control-door-f501d"
         };
-
+        
         // Inicializa
         firebase.initializeApp(config);
-        const db = firebase.database();
+        var db = firebase.database();
 
-        document.getElementById('btn').onclick = function() {
-            document.getElementById('log').innerText = "Processando...";
-            document.getElementById('log').style.color = "blue";
-            
-            console.log("Tentando enviar...");
+        document.getElementById('btnPing').onclick = function() {
+            var msg = document.getElementById('status');
+            msg.innerText = "TENTANDO ENVIAR...";
+            msg.style.color = "orange";
 
-            db.ref('TESTE_FINAL').set({
-                conexao: "OK",
-                aparelho: navigator.userAgent,
-                hora: new Date().toLocaleTimeString()
+            // Envia um dado muito pequeno
+            db.ref('PING_FINAL').set({
+                ok: true,
+                hora: new Date().getTime()
             })
-            .then(() => {
-                alert("✅ SUCESSO! O FIREBASE RECEBEU!");
-                document.getElementById('log').innerText = "SINAL RECEBIDO!";
-                document.getElementById('log').style.color = "green";
+            .then(function() {
+                alert("CONECTOU! O Banco recebeu!");
+                msg.innerText = "FOI! SUCESSO!";
+                msg.style.color = "green";
             })
-            .catch((err) => {
-                alert("❌ ERRO: " + err.message);
-                document.getElementById('log').innerText = "Erro: " + err.message;
-                document.getElementById('log').style.color = "red";
+            .catch(function(error) {
+                alert("ERRO: " + error.message);
+                msg.innerText = "ERRO: " + error.message;
+                msg.style.color = "red";
             });
         };
     </script>
