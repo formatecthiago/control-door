@@ -2,52 +2,70 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Ping Direto</title>
-    <!-- Links simplificados -->
+    <title>Ping Final Control Door</title>
+    <!-- Versão estável 8.10.1 -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
 </head>
-<body>
-    <div style="text-align:center; padding:20px;">
-        <h2>TESTE DE CONEXÃO DIRETA</h2>
-        <button id="btn" style="width:100%; padding:50px; font-size:25px; background:blue; color:white;">ENVIAR SINAL AGORA</button>
-        <p id="msg" style="font-size:20px; margin-top:20px;">Status: Aguardando...</p>
+<body style="font-family: sans-serif; text-align: center; padding: 20px;">
+
+    <h2>TESTE DE PING DEFINITIVO</h2>
+    
+    <button id="btnPing" style="width: 100%; padding: 50px; font-size: 22px; background: #2980b9; color: white; border: none; border-radius: 15px; font-weight: bold;">
+        ENVIAR SINAL AGORA
+    </button>
+
+    <div id="caixaStatus" style="margin-top: 30px; padding: 20px; border: 2px solid #ccc; border-radius: 10px;">
+        <p id="txtStatus" style="font-size: 20px; color: #7f8c8d;">Status: Aguardando clique...</p>
     </div>
 
     <script>
-        // Suas chaves que já sabemos que estão certas
-        var config = {
+        // Configuração exata extraída do seu console
+        var firebaseConfig = {
             apiKey: "AIzaSyDnHzXTN8YgHsJYivJv9yTkc_pnU5E2fME",
-            databaseURL: "https://control-door-f501d-default-rtdb.firebaseio.com",
-            projectId: "control-door-f501d"
+            authDomain: "://firebaseapp.com",
+            databaseURL: "https://firebaseio.com",
+            projectId: "control-door-f501d",
+            storageBucket: "://appspot.com",
+            messagingSenderId: "590100166898",
+            appId: "1:590100166898:web:b234ee092ec3be2fb2786b"
         };
 
-        // Tenta inicializar e captura erro se falhar
+        // Inicializa o Firebase
         try {
-            firebase.initializeApp(config);
+            firebase.initializeApp(firebaseConfig);
             var db = firebase.database();
-            document.getElementById('msg').innerText = "Sistema pronto!";
+            document.getElementById('txtStatus').innerText = "Sistema pronto para enviar!";
         } catch (e) {
-            document.getElementById('msg').innerText = "Erro ao iniciar: " + e.message;
+            document.getElementById('txtStatus').innerText = "Erro na inicialização: " + e.message;
         }
 
-        document.getElementById('btn').onclick = function() {
-            var display = document.getElementById('msg');
-            display.innerText = "Tentando...";
-            
-            db.ref('TESTE_FINAL').set({
-                timestamp: Date.now(),
-                origem: "Celular"
+        // Função do Botão
+        document.getElementById('btnPing').onclick = function() {
+            var statusLabel = document.getElementById('txtStatus');
+            statusLabel.innerText = "🚀 TENTANDO ENVIAR...";
+            statusLabel.style.color = "#d35400";
+
+            // Envia um registro de teste para o banco
+            db.ref('TESTE_CELULAR').set({
+                conexao: "OK",
+                horario: new Date().toLocaleTimeString(),
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             })
             .then(function() {
-                alert("SUCESSO! O Firebase respondeu!");
-                display.innerText = "ENVIADO COM SUCESSO!";
+                // Se chegar aqui, o banco recebeu!
+                alert("✅ SUCESSO! O FIREBASE RECEBEU O SINAL!");
+                statusLabel.innerText = "SINAL RECEBIDO COM SUCESSO!";
+                statusLabel.style.color = "#27ae60";
             })
-            .catch(function(err) {
-                alert("FALHA: " + err.message);
-                display.innerText = "Erro: " + err.message;
+            .catch(function(error) {
+                // Se der erro (permissão, rede, etc)
+                alert("❌ FALHA NO ENVIO: " + error.message);
+                statusLabel.innerText = "Erro: " + error.message;
+                statusLabel.style.color = "#c0392b";
             });
         };
     </script>
+
 </body>
 </html>
