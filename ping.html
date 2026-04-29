@@ -2,70 +2,64 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Ping Final Control Door</title>
-    <!-- Versão estável 8.10.1 -->
+    <title>Ping Final</title>
+    <!-- Scripts universais estáveis -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
 </head>
-<body style="font-family: sans-serif; text-align: center; padding: 20px;">
-
-    <h2>TESTE DE PING DEFINITIVO</h2>
-    
-    <button id="btnPing" style="width: 100%; padding: 50px; font-size: 22px; background: #2980b9; color: white; border: none; border-radius: 15px; font-weight: bold;">
+<body style="text-align:center; padding:50px; font-family:sans-serif;">
+    <h2>TESTE DE CONEXÃO DIRETA</h2>
+    <button id="btn" style="padding:40px; width:100%; background:#2980b9; color:white; font-size:22px; border:none; border-radius:15px;">
         ENVIAR SINAL AGORA
     </button>
-
-    <div id="caixaStatus" style="margin-top: 30px; padding: 20px; border: 2px solid #ccc; border-radius: 10px;">
-        <p id="txtStatus" style="font-size: 20px; color: #7f8c8d;">Status: Aguardando clique...</p>
-    </div>
+    <p id="msg" style="font-size:20px; margin-top:20px; color:#7f8c8d;">Status: Aguardando...</p>
 
     <script>
-        // Configuração exata extraída do seu console
-        var firebaseConfig = {
+        // Configuração baseada no seu print oficial
+        var config = {
             apiKey: "AIzaSyDnHzXTN8YgHsJYivJv9yTkc_pnU5E2fME",
             authDomain: "://firebaseapp.com",
+            // Forçamos a URL padrão do Firebase para projetos criados nos EUA
             databaseURL: "https://firebaseio.com",
-            projectId: "control-door-f501d",
-            storageBucket: "://appspot.com",
-            messagingSenderId: "590100166898",
-            appId: "1:590100166898:web:b234ee092ec3be2fb2786b"
+            projectId: "control-door-f501d"
         };
 
-        // Inicializa o Firebase
+        // Inicializa
         try {
-            firebase.initializeApp(firebaseConfig);
+            firebase.initializeApp(config);
             var db = firebase.database();
-            document.getElementById('txtStatus').innerText = "Sistema pronto para enviar!";
+            document.getElementById('msg').innerText = "Firebase Pronto!";
         } catch (e) {
-            document.getElementById('txtStatus').innerText = "Erro na inicialização: " + e.message;
+            document.getElementById('msg').innerText = "Erro ao iniciar: " + e.message;
         }
 
-        // Função do Botão
-        document.getElementById('btnPing').onclick = function() {
-            var statusLabel = document.getElementById('txtStatus');
-            statusLabel.innerText = "🚀 TENTANDO ENVIAR...";
-            statusLabel.style.color = "#d35400";
+        document.getElementById('btn').onclick = function() {
+            var label = document.getElementById('msg');
+            label.innerText = "🚀 ENVIANDO...";
+            label.style.color = "orange";
 
-            // Envia um registro de teste para o banco
-            db.ref('TESTE_CELULAR').set({
-                conexao: "OK",
-                horario: new Date().toLocaleTimeString(),
-                timestamp: firebase.database.ServerValue.TIMESTAMP
+            // Tentativa de escrita com timeout de 8 segundos
+            var timeout = setTimeout(function() {
+                alert("TIMEOUT: O sinal não chegou ao banco. Verifique a URL no seu Console do Firebase.");
+                label.innerText = "Falha por tempo esgotado.";
+            }, 8000);
+
+            db.ref('TESTE_FINAL').set({
+                status: "Conectado com Sucesso!",
+                data: new Date().toLocaleString()
             })
             .then(function() {
-                // Se chegar aqui, o banco recebeu!
-                alert("✅ SUCESSO! O FIREBASE RECEBEU O SINAL!");
-                statusLabel.innerText = "SINAL RECEBIDO COM SUCESSO!";
-                statusLabel.style.color = "#27ae60";
+                clearTimeout(timeout);
+                alert("✅ SUCESSO! O BANCO RECEBEU O SINAL!");
+                label.innerText = "SINAL RECEBIDO!";
+                label.style.color = "green";
             })
-            .catch(function(error) {
-                // Se der erro (permissão, rede, etc)
-                alert("❌ FALHA NO ENVIO: " + error.message);
-                statusLabel.innerText = "Erro: " + error.message;
-                statusLabel.style.color = "#c0392b";
+            .catch(function(err) {
+                clearTimeout(timeout);
+                alert("❌ ERRO: " + err.message);
+                label.innerText = "Erro: " + err.message;
             });
         };
     </script>
-
 </body>
 </html>
