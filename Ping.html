@@ -1,37 +1,42 @@
-
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visitante - Control Door</title>
+    <title>Teste de Ping Firebase</title>
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
-    <script src="config.js"></script>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f0f2f5; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        button { background: #007bff; color: white; border: none; padding: 20px; font-size: 18px; border-radius: 10px; width: 100%; cursor: pointer; }
-    </style>
 </head>
 <body>
-    <div class="card">
-        <h1 id="titulo">Chamando...</h1>
-        <button onclick="chamar()">🔔 CHAMAR MORADOR</button>
-        <p id="status"></p>
-    </div>
+    <h2>TESTE DE PING</h2>
+    <button id="btn" style="padding: 50px; font-size: 20px;">DAR PING NO BANCO</button>
+    <p id="log">Aguardando clique...</p>
+
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const casa = params.get('casa') || "Principal";
-        document.getElementById('titulo').innerText = "Casa " + casa;
-        function chamar() {
-            db.ref('chamadas/casa_' + casa).set({
-                timestamp: firebase.database.ServerValue.TIMESTAMP,
-                status: "chamando"
-            }).then(() => {
-                document.getElementById('status').innerText = "Morador avisado! Aguarde.";
+        const firebaseConfig = {
+            apiKey: "AIzaSyDnHzXTN8YgHsJYivJv9yTkc_pnU5E2fME",
+            authDomain: "://firebaseapp.com",
+            databaseURL: "https://control-door-f501d-default-rtdb.firebaseio.com",
+            projectId: "control-door-f501d"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        document.getElementById('btn').onclick = function() {
+            document.getElementById('log').innerText = "Enviando...";
+            
+            database.ref('PING_TESTE').set({
+                mensagem: "Opa, o celular conectou!",
+                hora: new Date().toLocaleTimeString()
+            })
+            .then(() => {
+                alert("PING RECEBIDO PELO FIREBASE!");
+                document.getElementById('log').innerText = "Sucesso!";
+            })
+            .catch((err) => {
+                alert("ERRO NO PING: " + err.message);
+                document.getElementById('log').innerText = "Erro: " + err.message;
             });
-        }
+        };
     </script>
 </body>
 </html>
