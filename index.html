@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Black Edition v6.6</title>
+    <title>Interfone Black Edition v6.7</title>
     <style>
         :root { --led-green: #39FF14; --pure-white: #FFFFFF; --true-black: #000000; }
         
@@ -26,11 +26,9 @@
             background: var(--true-black); 
             display: flex; align-items: center; justify-content: center;
             flex-direction: column; text-align: center;
-            /* Começa sem borda */
             border: 5px solid transparent; 
         }
 
-        /* CLASSE ATIVADA APENAS NA SELFIE */
         .com-guia { 
             border: 5px solid var(--led-green) !important; 
             box-shadow: 0 0 25px var(--led-green); 
@@ -48,20 +46,21 @@
         }
 
         .btn-inox { 
-            background: #27ae60; color: white; padding: 18px; width: 85%; 
-            border-radius: 10px; border: none; font-weight: bold; 
-            font-size: 1.3rem; cursor: pointer; margin-bottom: 12px; 
+            background: #27ae60; color: white; padding: 22px; width: 85%; 
+            border-radius: 12px; border: none; font-weight: bold; 
+            font-size: 1.5rem; cursor: pointer; margin-bottom: 12px; 
             text-transform: uppercase;
+            box-shadow: 0 4px 0 #1e8449;
         }
 
         input { 
-            width: 75%; padding: 12px; margin-bottom: 15px; 
+            width: 75%; padding: 15px; margin-bottom: 15px; 
             background: var(--pure-white); color: var(--true-black); 
             border: 2px solid var(--led-green); text-align: center; 
-            font-size: 1.8rem; font-weight: bold; border-radius: 8px;
+            font-size: 2rem; font-weight: bold; border-radius: 8px;
         }
 
-        .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.8rem; margin: 10px; font-weight: bold; text-transform: uppercase; }
+        .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.5rem; margin: 10px; font-weight: bold; text-transform: uppercase; }
         
         .msg-privacidade-inicial { 
             color: var(--pure-white); font-size: 0.85rem; line-height: 1.4; 
@@ -75,28 +74,27 @@
     <div class="moldura-global">
         <div class="container-central" id="main-container">
             <div id="step-1" class="conteudo" style="display: flex;">
-                <div class="lcd-text">INICIAR</div>
-            </div>
+                </div>
 
             <div id="step-2" class="conteudo">
                 <video id="video" autoplay playsinline muted></video>
             </div>
 
             <div id="step-3" class="conteudo">
-                <div class="lcd-text" style="font-size: 1.3rem;">UNIDADE</div>
+                <div class="lcd-text">DIGITE A UNIDADE</div>
             </div>
 
             <div id="step-4" class="conteudo">
-                <div id="timer" style="font-size: 3.5rem; color: var(--pure-white);">60</div>
+                <div id="timer" style="font-size: 4rem; color: var(--pure-white);">60</div>
             </div>
         </div>
 
         <div class="area-botoes">
             <div id="btn-step-1" style="display: block; width: 100%; text-align: center;">
-                <button class="btn-inox" onclick="passo2()">INICIAR ACESSO</button>
+                <button class="btn-inox" onclick="passo2()">INICIAR</button>
                 <div class="msg-privacidade-inicial">
                     <strong>AVISO DE SEGURANÇA:</strong><br>
-                    Ao clicar em iniciar, você autoriza a captura de selfie e localização para identificação biométrica monitorada.
+                    Identificação biométrica e localização monitorada obrigatórias.
                 </div>
             </div>
             
@@ -131,23 +129,26 @@
 
     function tocarSom(tipo) {
         if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.connect(audioCtx.destination);
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime); // Volume 50% real
 
         if(tipo === 'chamada') {
-            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            const osc = audioCtx.createOscillator();
+            osc.type = 'square'; // Onda quadrada: mais audível em ruído
+            osc.connect(gain);
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Tom de 880Hz
             osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
-            osc.stop(audioCtx.currentTime + 0.8);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2); // Duração aumentada
+            osc.stop(audioCtx.currentTime + 1.2);
         } else if (tipo === 'falha') {
             for(let i=0; i<3; i++) {
                 const o = audioCtx.createOscillator();
-                o.connect(audioCtx.destination);
-                o.frequency.setValueAtTime(300, audioCtx.currentTime + (i * 0.25));
-                o.start(audioCtx.currentTime + (i * 0.25));
-                o.stop(audioCtx.currentTime + (i * 0.25) + 0.15);
+                o.type = 'square';
+                o.connect(gain);
+                o.frequency.setValueAtTime(1200, audioCtx.currentTime + (i * 0.2));
+                o.start(audioCtx.currentTime + (i * 0.2));
+                o.stop(audioCtx.currentTime + (i * 0.2) + 0.1);
             }
         }
     }
@@ -155,14 +156,10 @@
     function showStep(n) {
         document.querySelectorAll('.conteudo').forEach(c => c.style.display = 'none');
         document.querySelectorAll('.area-botoes > div').forEach(d => d.style.display = 'none');
-        
         document.getElementById('step-'+n).style.display = 'flex';
-        if(document.getElementById('btn-step-'+n)) {
-            document.getElementById('btn-step-'+n).style.display = 'block';
-        }
+        if(document.getElementById('btn-step-'+n)) document.getElementById('btn-step-'+n).style.display = 'block';
         
         const container = document.getElementById('main-container');
-        // A regra de ouro: O oval só aparece no Step 2
         if(n === 2) container.classList.add('com-guia');
         else container.classList.remove('com-guia');
     }
@@ -173,7 +170,7 @@
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
             document.getElementById('video').srcObject = stream;
-        } catch(e) { alert("Câmera indisponível."); }
+        } catch(e) { alert("Câmera bloqueada."); }
     }
 
     function passo3() {
