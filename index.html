@@ -3,119 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Inteligente v5.5</title>
+    <title>Interfone Inteligente v5.0</title>
     <style>
         :root { --led-green: #39FF14; --led-red: #FF3131; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
 
-        /* MOLDURA GLOBAL (A BASE DE TUDO) */
-        .moldura-global {
-            position: fixed; width: 100vw; height: 100vh;
-            background: linear-gradient(135deg, #222, #000); /* Fundo base */
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border: 10px solid #444; box-sizing: border-box; z-index: 5;
-        }
-
-        .container-central {
-            position: relative; width: 290px; height: 390px;
-            border: 5px solid var(--led-green); border-radius: 50% 50% 45% 45%;
-            overflow: hidden; box-shadow: 0 0 30px var(--led-green);
-            background: #000; display: flex; align-items: center; justify-content: center;
-            flex-direction: column; text-align: center; color: white;
-        }
-
-        /* CONTEÚDOS DAS TELAS */
-        .conteudo { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        .tela { position: fixed; width: 100vw; height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center;}
         
-        /* VIDEO E ESPELHO */
-        #video { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        /* TELA 1: ENTRADA */
+        #tela-entrada { display: flex; padding: 20px; box-sizing: border-box; }
+        .msg-privacidade { color: #666; font-size: 0.85rem; line-height: 1.4; margin-top: 30px; max-width: 300px; }
 
-        /* BOTOES E INPUTS */
-        .btn-inox { background: #27ae60; color: white; padding: 20px; width: 80%; border-radius: 10px; border: none; font-weight: bold; font-size: 1.2rem; margin-top: 20px; cursor: pointer; }
-        input { width: 80%; padding: 10px; margin: 5px; background: #000; color: var(--led-green); border: 1px solid var(--led-green); text-align: center; }
+        /* TELA 2: SELFIE (COM EFEITO ESPELHO) */
+        #camera-section { background: #000; }
+        .container-selfie {
+            position: relative; width: 280px; height: 380px;
+            border: 5px solid var(--led-green); border-radius: 50% 50% 45% 45%;
+            overflow: hidden; box-shadow: 0 0 30px var(--led-green); margin-bottom: 80px;
+        }
+        #video {
+            position: absolute; top: 50%; left: 50%;
+            min-width: 100%; min-height: 100%;
+            object-fit: cover;
+            /* EFEITO ESPELHO AQUI */
+            transform: translate(-50%, -50%) scaleX(-1);
+        }
 
-        .lcd-text { color: var(--led-green); font-family: 'Courier New', monospace; font-size: 1.2rem; margin: 10px; }
+        /* TELA 3: SUCESSO (PRETA) */
+        #tela-sucesso { background: #000; color: var(--led-green); font-size: 2rem; font-weight: bold; }
+
+        /* TELA 4: PAINEL INOX */
+        #painel-inox { background: linear-gradient(135deg, #bdbdbd, #ffffff, #7a7a7a); border: 12px solid #555; box-sizing: border-box;}
+        .display-lcd { width: 90%; background: #050505; border: 5px inset #444; padding: 20px; color: var(--led-green); margin-bottom: 20px; box-sizing: border-box;}
+        .lcd-timer { font-size: 4rem; color: #fff; display: block; }
+        
+        input { width: 80%; font-size: 1.5rem; text-align: center; background: #000; color: var(--led-green); border: 2px solid #666; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+        .opcional { font-size: 0.7rem; color: #333; font-weight: bold; width: 80%; text-align: right; margin-bottom: 20px; }
+
+        .btn-comando { width: 85%; padding: 25px; font-size: 1.6rem; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; text-transform: uppercase; }
+        .verde { background: #27ae60; color: white; box-shadow: 0 5px 0 #156135; }
+        .vermelho { background: #c0392b; color: white; box-shadow: 0 5px 0 #7b241c; }
+        .btn-borda { background: transparent; color: var(--led-green); border: 2px solid var(--led-green); border-radius: 50px; padding: 20px 60px; }
     </style>
 </head>
 <body>
 
-    <div class="moldura-global">
+    <div id="tela-entrada" class="tela">
+        <button class="btn-comando btn-borda" onclick="solicitarPermissoes()">INICIAR</button>
+        <div class="msg-privacidade">
+            <strong>AVISO DE PRIVACIDADE:</strong><br>
+            Para prosseguir, o sistema requer acesso à sua câmera e localização. Estes dados são utilizados exclusivamente para segurança e identificação durante a chamada.
+        </div>
+    </div>
+
+    <div id="camera-section" class="tela">
+        <div class="container-selfie">
+            <video id="video" autoplay playsinline muted></video>
+        </div>
+        <button class="btn-comando verde" style="position:absolute; bottom:40px;" onclick="concluirSelfie()">CONCLUIR SELFIE</button>
+    </div>
+
+    <div id="tela-sucesso" class="tela">SELFIE CONCLUÍDA<br>COM SUCESSO!</div>
+
+    <div id="painel-inox" class="tela">
+        <div class="display-lcd">
+            <div id="status-texto" style="font-size: 1.5rem; font-weight: bold;">DIGITE A UNIDADE</div>
+            <div id="timer-display" class="lcd-timer" style="display:none;">60</div>
+        </div>
         
-        <div class="container-central" id="main-container">
-            <div id="step-1" class="conteudo" style="display: flex;">
-                <div class="lcd-text">SISTEMA DE SEGURANÇA</div>
-                <button class="btn-inox" onclick="passo2()">INICIAR</button>
-            </div>
-
-            <div id="step-2" class="conteudo">
-                <video id="video" autoplay playsinline muted></video>
-                <button class="btn-inox" style="position: absolute; bottom: 20px;" onclick="passo3()">CONCLUIR</button>
-            </div>
-
-            <div id="step-3" class="conteudo">
-                <div class="lcd-text">UNIDADE:</div>
-                <input type="number" id="unidade" placeholder="000">
-                <input type="text" id="obs" placeholder="Sua mensagem">
-                <button class="btn-inox" onclick="passo4()">CHAMAR</button>
-            </div>
-
-            <div id="step-4" class="conteudo">
-                <div class="lcd-text" id="status-lcd">CHAMANDO...</div>
-                <div id="timer" style="font-size: 3rem;">60</div>
-                <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">CANCELAR</button>
-            </div>
-
-            <div id="step-5" class="conteudo">
-                <div class="lcd-text" style="font-size: 1.5rem; color: #39FF14;">PORTÃO LIBERADO!</div>
-                <div class="lcd-text">BEM-VINDO</div>
-            </div>
+        <div id="bloco-input" style="width:100%;">
+            <input type="number" id="unidade" placeholder="Nº DA CASA">
+            <input type="text" id="obs" placeholder="Observação (Opcional)" style="font-size: 1.1rem;">
+            <div class="opcional">NOME (OPCIONAL)</div>
+            <button class="btn-comando verde" onclick="iniciarChamada()">CHAMAR</button>
         </div>
 
-        <div id="footer-msg" style="color: #555; font-size: 0.7rem; margin-top: 20px; text-align: center; padding: 0 20px;">
-            Identificação biométrica obrigatória para acesso monitorado.
+        <button id="btn-encerrar" class="btn-comando vermelho" style="display:none;" onclick="cancelar()">ENCERRAR</button>
+
+        <div id="botoes-finais" style="display:none; width: 90%; gap: 10px;">
+            <button class="btn-comando vermelho" style="flex:1; font-size: 1.2rem;" onclick="cancelar()">ENCERRAR</button>
+            <button class="btn-comando verde" style="flex:1; font-size: 1.2rem;" onclick="iniciarChamada()">CHAMAR</button>
         </div>
     </div>
 
 <script>
-    let stream;
-    function hideAll() { document.querySelectorAll('.conteudo').forEach(c => c.style.display = 'none'); }
+    let stream, timer, audioCtx;
 
-    async function passo2() {
-        hideAll();
-        document.getElementById('step-2').style.display = 'flex';
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        document.getElementById('video').srcObject = stream;
+    function show(id) {
+        ['tela-entrada', 'camera-section', 'tela-sucesso', 'painel-inox'].forEach(t => {
+            document.getElementById(t).style.display = (t === id) ? (id === 'painel-inox' ? 'flex' : 'flex') : 'none';
+        });
+        if(id !== 'painel-inox') document.getElementById(id).style.display = 'flex';
     }
 
-    function passo3() {
+    async function solicitarPermissoes() {
+        try {
+            // Solicita Câmera
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('video').srcObject = stream;
+            show('camera-section');
+        } catch(e) {
+            alert("Acesso negado. O sistema não pode continuar sem a câmera.");
+            show('tela-entrada'); // Volta para o início se recusar
+        }
+    }
+
+    function concluirSelfie() {
         if(stream) stream.getTracks().forEach(t => t.stop());
-        hideAll();
-        document.getElementById('step-3').style.display = 'flex';
+        show('tela-sucesso');
+        setTimeout(() => {
+            show('painel-inox');
+            document.getElementById('bloco-input').style.display = 'block';
+        }, 2000);
     }
 
-    function passo4() {
-        hideAll();
-        document.getElementById('step-4').style.display = 'flex';
-        iniciarContagem();
+    function tocarSom() {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.value = 425;
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
+        osc.stop(audioCtx.currentTime + 1);
     }
 
-    function iniciarContagem() {
+    function iniciarChamada() {
+        if(!document.getElementById('unidade').value) return;
+        
+        document.getElementById('bloco-input').style.display = 'none';
+        document.getElementById('btn-encerrar').style.display = 'block';
+        document.getElementById('status-texto').innerText = "CHAMANDO...";
+        document.getElementById('timer-display').style.display = "block";
+        document.getElementById('botoes-finais').style.display = 'none';
+
         let t = 60;
-        let timerInterval = setInterval(() => {
+        clearInterval(timer);
+        tocarSom();
+        
+        timer = setInterval(() => {
             t--;
-            document.getElementById('timer').innerText = t;
-            if(t <= 55) { // Simulação: Morador atende rápido
-                clearInterval(timerInterval);
-                exibirResposta();
+            document.getElementById('timer-display').innerText = t;
+            if(t % 4 === 0) tocarSom();
+            if(t <= 0) {
+                clearInterval(timer);
+                document.getElementById('status-texto').innerText = "SEM RESPOSTA";
+                document.getElementById('timer-display').style.display = "none";
+                document.getElementById('btn-encerrar').style.display = 'none';
+                document.getElementById('botoes-finais').style.display = 'flex';
             }
         }, 1000);
     }
 
-    function exibirResposta() {
-        hideAll();
-        document.getElementById('step-5').style.display = 'flex';
-        // Aqui o ESP32 receberia o comando via Firebase
-    }
+    function cancelar() { location.reload(); }
 </script>
 </body>
 </html>
