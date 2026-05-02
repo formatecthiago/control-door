@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Black Edition v6.7</title>
+    <title>Interfone Black Edition v6.8</title>
     <style>
         :root { --led-green: #39FF14; --pure-white: #FFFFFF; --true-black: #000000; }
         
@@ -17,85 +17,64 @@
         }
 
         .container-central {
-            position: relative; 
-            width: 200px; 
-            height: 270px; 
-            margin-top: -20px; 
-            border-radius: 50% 50% 45% 45%;
-            overflow: hidden; 
-            background: var(--true-black); 
-            display: flex; align-items: center; justify-content: center;
-            flex-direction: column; text-align: center;
-            border: 5px solid transparent; 
+            position: relative; width: 200px; height: 250px; margin-top: -30px; 
+            border-radius: 50% 50% 45% 45%; overflow: hidden; 
+            background: var(--true-black); display: flex; align-items: center; justify-content: center;
+            flex-direction: column; text-align: center; border: 5px solid transparent; 
         }
 
-        .com-guia { 
-            border: 5px solid var(--led-green) !important; 
-            box-shadow: 0 0 25px var(--led-green); 
-        }
+        .com-guia { border: 5px solid var(--led-green) !important; box-shadow: 0 0 25px var(--led-green); }
 
         .conteudo { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
         #video { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 
-        .area-botoes {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 20px;
-        }
+        .area-botoes { width: 100%; display: flex; flex-direction: column; align-items: center; margin-top: 15px; }
 
         .btn-inox { 
-            background: #27ae60; color: white; padding: 22px; width: 85%; 
+            background: #27ae60; color: white; padding: 18px; width: 85%; 
             border-radius: 12px; border: none; font-weight: bold; 
-            font-size: 1.5rem; cursor: pointer; margin-bottom: 12px; 
-            text-transform: uppercase;
-            box-shadow: 0 4px 0 #1e8449;
+            font-size: 1.4rem; cursor: pointer; margin-bottom: 10px; text-transform: uppercase;
         }
 
-        input { 
-            width: 75%; padding: 15px; margin-bottom: 15px; 
-            background: var(--pure-white); color: var(--true-black); 
-            border: 2px solid var(--led-green); text-align: center; 
-            font-size: 2rem; font-weight: bold; border-radius: 8px;
-        }
-
-        .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.5rem; margin: 10px; font-weight: bold; text-transform: uppercase; }
+        /* ESTILO DA CAIXA DE MENSAGEM */
+        .wrapper-msg { position: relative; width: 85%; margin-bottom: 10px; }
         
-        .msg-privacidade-inicial { 
-            color: var(--pure-white); font-size: 0.85rem; line-height: 1.4; 
-            margin-top: 20px; max-width: 280px; text-align: center; 
-            padding: 0 15px; font-weight: bold;
+        #msg-texto { 
+            width: 100%; padding: 12px; background: #111; color: var(--pure-white); 
+            border: 2px solid #444; border-radius: 8px; font-size: 1rem; 
+            resize: none; box-sizing: border-box; padding-right: 40px;
         }
+
+        .selo-opcional { position: absolute; top: 5px; right: 8px; font-size: 0.6rem; color: #888; font-weight: bold; text-transform: uppercase; }
+        
+        .contador-mic { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 5px; color: #888; font-size: 0.8rem; }
+
+        .btn-mic { background: none; border: none; color: var(--led-green); font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; }
+
+        input#unidade { 
+            width: 75%; padding: 12px; margin-bottom: 15px; background: var(--pure-white); 
+            color: var(--true-black); border: 2px solid var(--led-green); 
+            text-align: center; font-size: 1.8rem; font-weight: bold; border-radius: 8px;
+        }
+
+        .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.3rem; margin: 10px; font-weight: bold; text-transform: uppercase; }
+        .msg-privacidade-inicial { color: var(--pure-white); font-size: 0.8rem; margin-top: 15px; text-align: center; padding: 0 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="moldura-global">
         <div class="container-central" id="main-container">
-            <div id="step-1" class="conteudo" style="display: flex;">
-                </div>
-
-            <div id="step-2" class="conteudo">
-                <video id="video" autoplay playsinline muted></video>
-            </div>
-
-            <div id="step-3" class="conteudo">
-                <div class="lcd-text">DIGITE A UNIDADE</div>
-            </div>
-
-            <div id="step-4" class="conteudo">
-                <div id="timer" style="font-size: 4rem; color: var(--pure-white);">60</div>
-            </div>
+            <div id="step-1" class="conteudo" style="display: flex;"></div>
+            <div id="step-2" class="conteudo"><video id="video" autoplay playsinline muted></video></div>
+            <div id="step-3" class="conteudo"><div class="lcd-text">DADOS DE ACESSO</div></div>
+            <div id="step-4" class="conteudo"><div id="timer" style="font-size: 4rem; color: var(--pure-white);">60</div></div>
         </div>
 
         <div class="area-botoes">
             <div id="btn-step-1" style="display: block; width: 100%; text-align: center;">
                 <button class="btn-inox" onclick="passo2()">INICIAR</button>
-                <div class="msg-privacidade-inicial">
-                    <strong>AVISO DE SEGURANÇA:</strong><br>
-                    Identificação biométrica e localização monitorada obrigatórias.
-                </div>
+                <div class="msg-privacidade-inicial"><strong>AVISO:</strong> Biometria e localização monitoradas.</div>
             </div>
             
             <div id="btn-step-2" style="display: none; width: 100%; text-align: center;">
@@ -103,18 +82,26 @@
             </div>
 
             <div id="btn-step-3" style="display: none; width: 100%; text-align: center;">
-                <input type="number" id="unidade" placeholder="000">
+                <input type="number" id="unidade" placeholder="CASA / APTO">
+                
+                <div class="wrapper-msg">
+                    <span class="selo-opcional">Opcional</span>
+                    <textarea id="msg-texto" maxlength="100" rows="2" placeholder="Deixe um recado..."></textarea>
+                    <div class="contador-mic">
+                        <span id="char-count">0/100</span>
+                        <button class="btn-mic" onclick="ativarVoz()">🎤 <span style="font-size: 0.7rem; margin-left: 5px;">FALAR</span></button>
+                    </div>
+                </div>
+
                 <button class="btn-inox" onclick="passo4()">CHAMAR AGORA</button>
             </div>
 
             <div id="btn-step-4" style="display: none; width: 100%; text-align: center;">
-                <div class="lcd-text" id="status-label" style="font-size: 1.2rem;">CHAMANDO...</div>
-                <div id="controles-chamada">
-                    <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">CANCELAR</button>
-                </div>
+                <div class="lcd-text" id="status-label">CHAMANDO...</div>
+                <div id="controles-chamada"><button class="btn-inox" style="background:#c0392b" onclick="location.reload()">CANCELAR</button></div>
                 <div id="opcoes-finais" style="display:none; width: 100%;">
                     <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">ENCERRAR</button>
-                    <button class="btn-inox" onclick="passo4()">CHAMAR NOVAMENTE</button>
+                    <button class="btn-inox" onclick="passo4()">TENTAR DE NOVO</button>
                 </div>
             </div>
         </div>
@@ -122,30 +109,51 @@
 
 <script>
     let stream, timerInterval, audioCtx;
+    const msgArea = document.getElementById('msg-texto');
+    const charCount = document.getElementById('char-count');
 
-    function initAudio() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Contador de Caracteres
+    msgArea.addEventListener('input', () => {
+        charCount.innerText = `${msgArea.value.length}/100`;
+    });
+
+    // Função de Voz (Speech to Text)
+    function ativarVoz() {
+        const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!Recognition) { alert("Seu navegador não suporta voz."); return; }
+        
+        const rec = new Recognition();
+        rec.lang = 'pt-BR';
+        rec.onstart = () => msgArea.placeholder = "Ouvindo...";
+        rec.onresult = (e) => {
+            msgArea.value = e.results[0][0].transcript;
+            charCount.innerText = `${msgArea.value.length}/100`;
+        };
+        rec.onend = () => msgArea.placeholder = "Deixe um recado...";
+        rec.start();
     }
+
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
 
     function tocarSom(tipo) {
         if (!audioCtx) return;
         const gain = audioCtx.createGain();
         gain.connect(audioCtx.destination);
-        gain.gain.setValueAtTime(0.5, audioCtx.currentTime); // Volume 50% real
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+
+        const osc = audioCtx.createOscillator();
+        osc.type = 'square';
+        osc.connect(gain);
 
         if(tipo === 'chamada') {
-            const osc = audioCtx.createOscillator();
-            osc.type = 'square'; // Onda quadrada: mais audível em ruído
-            osc.connect(gain);
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Tom de 880Hz
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
             osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2); // Duração aumentada
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
             osc.stop(audioCtx.currentTime + 1.2);
         } else if (tipo === 'falha') {
             for(let i=0; i<3; i++) {
                 const o = audioCtx.createOscillator();
-                o.type = 'square';
-                o.connect(gain);
+                o.type = 'square'; o.connect(gain);
                 o.frequency.setValueAtTime(1200, audioCtx.currentTime + (i * 0.2));
                 o.start(audioCtx.currentTime + (i * 0.2));
                 o.stop(audioCtx.currentTime + (i * 0.2) + 0.1);
@@ -165,8 +173,7 @@
     }
 
     async function passo2() {
-        initAudio();
-        showStep(2);
+        initAudio(); showStep(2);
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
             document.getElementById('video').srcObject = stream;
