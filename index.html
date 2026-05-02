@@ -3,160 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Inteligente v5.0</title>
+    <title>Interfone Industrial v6.0</title>
     <style>
-        :root { --led-green: #39FF14; --led-red: #FF3131; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
-
-        .tela { position: fixed; width: 100vw; height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center;}
-        
-        /* TELA 1: ENTRADA */
-        #tela-entrada { display: flex; padding: 20px; box-sizing: border-box; }
-        .msg-privacidade { color: #666; font-size: 0.85rem; line-height: 1.4; margin-top: 30px; max-width: 300px; }
-
-        /* TELA 2: SELFIE (COM EFEITO ESPELHO) */
-        #camera-section { background: #000; }
-        .container-selfie {
-            position: relative; width: 280px; height: 380px;
-            border: 5px solid var(--led-green); border-radius: 50% 50% 45% 45%;
-            overflow: hidden; box-shadow: 0 0 30px var(--led-green); margin-bottom: 80px;
+        :root { 
+            --led-green: #39FF14; 
+            --metal-dark: #1a1a1a;
+            --pure-white: #FFFFFF;
         }
-        #video {
-            position: absolute; top: 50%; left: 50%;
-            min-width: 100%; min-height: 100%;
-            object-fit: cover;
-            /* EFEITO ESPELHO AQUI */
-            transform: translate(-50%, -50%) scaleX(-1);
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; background-color: #000; font-family: 'Segoe UI', Roboto, sans-serif; 
         }
 
-        /* TELA 3: SUCESSO (PRETA) */
-        #tela-sucesso { background: #000; color: var(--led-green); font-size: 2rem; font-weight: bold; }
+        /* MOLDURA ROBUSTA INSPIRADA NA CAPINHA */
+        .moldura-tactical {
+            position: fixed; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, #2c2c2c 0%, #000000 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 12px solid #333; 
+            box-shadow: inset 0 0 50px #000;
+            box-sizing: border-box;
+        }
 
-        /* TELA 4: PAINEL INOX */
-        #painel-inox { background: linear-gradient(135deg, #bdbdbd, #ffffff, #7a7a7a); border: 12px solid #555; box-sizing: border-box;}
-        .display-lcd { width: 90%; background: #050505; border: 5px inset #444; padding: 20px; color: var(--led-green); margin-bottom: 20px; box-sizing: border-box;}
-        .lcd-timer { font-size: 4rem; color: #fff; display: block; }
-        
-        input { width: 80%; font-size: 1.5rem; text-align: center; background: #000; color: var(--led-green); border: 2px solid #666; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
-        .opcional { font-size: 0.7rem; color: #333; font-weight: bold; width: 80%; text-align: right; margin-bottom: 20px; }
+        /* CONTAINER OVAL COM EFEITO DE ENCAIXE */
+        .case-central {
+            position: relative; width: 295px; height: 395px;
+            border: 6px solid var(--led-green); border-radius: 50% 50% 45% 45%;
+            overflow: hidden; box-shadow: 0 0 25px var(--led-green), inset 0 0 20px #000;
+            background: #050505; display: flex; align-items: center; justify-content: center;
+        }
 
-        .btn-comando { width: 85%; padding: 25px; font-size: 1.6rem; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; text-transform: uppercase; }
-        .verde { background: #27ae60; color: white; box-shadow: 0 5px 0 #156135; }
-        .vermelho { background: #c0392b; color: white; box-shadow: 0 5px 0 #7b241c; }
-        .btn-borda { background: transparent; color: var(--led-green); border: 2px solid var(--led-green); border-radius: 50px; padding: 20px 60px; }
+        #video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+        /* TEXTOS EM BRANCO PURO E MAIORES */
+        .instrucao-branca {
+            color: var(--pure-white); font-size: 1.1rem; font-weight: bold;
+            margin-top: 25px; text-transform: uppercase; letter-spacing: 1px;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        /* BOTÃO ENVIAR SELFIE (MAIS ALTO) */
+        .btn-enviar-selfie {
+            position: absolute; bottom: 45px; /* Subi a posição como pedido */
+            background: #27ae60; color: white; padding: 18px 40px;
+            border: none; border-radius: 8px; font-weight: bold; font-size: 1.3rem;
+            box-shadow: 0 6px 0 #156135, 0 10px 20px rgba(0,0,0,0.5);
+            cursor: pointer; width: 85%;
+        }
+
+        /* INPUT: FUNDO BRANCO, LETRA PRETA */
+        .campo-unidade {
+            width: 80%; padding: 15px; font-size: 2.5rem; text-align: center;
+            background: var(--pure-white); color: #000; /* Inversão de contraste */
+            border: 4px solid var(--led-green); border-radius: 12px;
+            margin-top: 15px; font-weight: bold;
+        }
+
+        .lcd-container {
+            background: #000; border: 2px solid #444; padding: 15px;
+            width: 85%; margin-top: 20px; border-radius: 5px; text-align: center;
+        }
+
+        .conteudo { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-    <div id="tela-entrada" class="tela">
-        <button class="btn-comando btn-borda" onclick="solicitarPermissoes()">INICIAR</button>
-        <div class="msg-privacidade">
-            <strong>AVISO DE PRIVACIDADE:</strong><br>
-            Para prosseguir, o sistema requer acesso à sua câmera e localização. Estes dados são utilizados exclusivamente para segurança e identificação durante a chamada.
-        </div>
-    </div>
-
-    <div id="camera-section" class="tela">
-        <div class="container-selfie">
-            <video id="video" autoplay playsinline muted></video>
-        </div>
-        <button class="btn-comando verde" style="position:absolute; bottom:40px;" onclick="concluirSelfie()">CONCLUIR SELFIE</button>
-    </div>
-
-    <div id="tela-sucesso" class="tela">SELFIE CONCLUÍDA<br>COM SUCESSO!</div>
-
-    <div id="painel-inox" class="tela">
-        <div class="display-lcd">
-            <div id="status-texto" style="font-size: 1.5rem; font-weight: bold;">DIGITE A UNIDADE</div>
-            <div id="timer-display" class="lcd-timer" style="display:none;">60</div>
-        </div>
+    <div class="moldura-tactical">
         
-        <div id="bloco-input" style="width:100%;">
-            <input type="number" id="unidade" placeholder="Nº DA CASA">
-            <input type="text" id="obs" placeholder="Observação (Opcional)" style="font-size: 1.1rem;">
-            <div class="opcional">NOME (OPCIONAL)</div>
-            <button class="btn-comando verde" onclick="iniciarChamada()">CHAMAR</button>
+        <div class="case-central">
+            <div id="step-1" class="conteudo" style="display: flex;">
+                <div class="instrucao-branca">IDENTIFICAÇÃO BIOMÉTRICA</div>
+                <button class="btn-enviar-selfie" style="position:static; margin-top:40px;" onclick="iniciarCamera()">INICIAR ACESSO</button>
+            </div>
+
+            <div id="step-2" class="conteudo">
+                <video id="video" autoplay playsinline muted></video>
+                <button class="btn-enviar-selfie" onclick="concluirSelfie()">ENVIAR SELFIE</button>
+            </div>
+
+            <div id="step-3" class="conteudo">
+                <div class="instrucao-branca">NÚMERO DA UNIDADE:</div>
+                <input type="number" id="unidade" class="campo-unidade" placeholder="000">
+                <button class="btn-enviar-selfie" style="position:static; margin-top:30px;" onclick="chamarMorador()">CHAMAR AGORA</button>
+            </div>
+
+            <div id="step-4" class="conteudo">
+                <div class="instrucao-branca" id="status-display">CHAMANDO...</div>
+                <div style="font-size: 4rem; color: var(--pure-white); margin: 20px 0;">60</div>
+                <button class="btn-enviar-selfie" style="background:#c0392b; position:static;" onclick="location.reload()">CANCELAR</button>
+            </div>
         </div>
 
-        <button id="btn-encerrar" class="btn-comando vermelho" style="display:none;" onclick="cancelar()">ENCERRAR</button>
-
-        <div id="botoes-finais" style="display:none; width: 90%; gap: 10px;">
-            <button class="btn-comando vermelho" style="flex:1; font-size: 1.2rem;" onclick="cancelar()">ENCERRAR</button>
-            <button class="btn-comando verde" style="flex:1; font-size: 1.2rem;" onclick="iniciarChamada()">CHAMAR</button>
+        <div class="instrucao-branca" style="font-size: 0.75rem; margin-top: 20px; opacity: 0.8;">
+            ACESSO MONITORADO - NATAL/RN
         </div>
     </div>
 
 <script>
-    let stream, timer, audioCtx;
+    let stream;
 
-    function show(id) {
-        ['tela-entrada', 'camera-section', 'tela-sucesso', 'painel-inox'].forEach(t => {
-            document.getElementById(t).style.display = (t === id) ? (id === 'painel-inox' ? 'flex' : 'flex') : 'none';
-        });
-        if(id !== 'painel-inox') document.getElementById(id).style.display = 'flex';
-    }
-
-    async function solicitarPermissoes() {
-        try {
-            // Solicita Câmera
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            document.getElementById('video').srcObject = stream;
-            show('camera-section');
-        } catch(e) {
-            alert("Acesso negado. O sistema não pode continuar sem a câmera.");
-            show('tela-entrada'); // Volta para o início se recusar
-        }
+    async function iniciarCamera() {
+        document.getElementById('step-1').style.display = 'none';
+        document.getElementById('step-2').style.display = 'flex';
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        document.getElementById('video').srcObject = stream;
     }
 
     function concluirSelfie() {
         if(stream) stream.getTracks().forEach(t => t.stop());
-        show('tela-sucesso');
+        document.getElementById('step-2').style.display = 'none';
+        document.getElementById('step-3').style.display = 'flex';
+        
+        // FOCO AUTOMÁTICO NO INPUT
+        const input = document.getElementById('unidade');
         setTimeout(() => {
-            show('painel-inox');
-            document.getElementById('bloco-input').style.display = 'block';
-        }, 2000);
+            input.focus();
+            input.click();
+        }, 300);
     }
 
-    function tocarSom() {
-        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        let osc = audioCtx.createOscillator();
-        let gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.frequency.value = 425;
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        osc.start();
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
-        osc.stop(audioCtx.currentTime + 1);
-    }
-
-    function iniciarChamada() {
+    function chamarMorador() {
         if(!document.getElementById('unidade').value) return;
-        
-        document.getElementById('bloco-input').style.display = 'none';
-        document.getElementById('btn-encerrar').style.display = 'block';
-        document.getElementById('status-texto').innerText = "CHAMANDO...";
-        document.getElementById('timer-display').style.display = "block";
-        document.getElementById('botoes-finais').style.display = 'none';
-
-        let t = 60;
-        clearInterval(timer);
-        tocarSom();
-        
-        timer = setInterval(() => {
-            t--;
-            document.getElementById('timer-display').innerText = t;
-            if(t % 4 === 0) tocarSom();
-            if(t <= 0) {
-                clearInterval(timer);
-                document.getElementById('status-texto').innerText = "SEM RESPOSTA";
-                document.getElementById('timer-display').style.display = "none";
-                document.getElementById('btn-encerrar').style.display = 'none';
-                document.getElementById('botoes-finais').style.display = 'flex';
-            }
-        }, 1000);
+        document.getElementById('step-3').style.display = 'none';
+        document.getElementById('step-4').style.display = 'flex';
     }
-
-    function cancelar() { location.reload(); }
 </script>
 </body>
 </html>
