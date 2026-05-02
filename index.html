@@ -3,173 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Digital Profissional</title>
+    <title>Interfone Digital v4.5</title>
     <style>
-        :root { 
-            --led-green: #39FF14; 
-            --led-red: #FF3131;
-            --inox: linear-gradient(135deg, #bdbdbd 0%, #ffffff 50%, #7a7a7a 100%);
-        }
-        
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Roboto, sans-serif; }
+        :root { --led-green: #39FF14; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
 
-        /* TELAS */
         .tela { position: fixed; width: 100vw; height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        #tela-entrada { display: flex; background: #000; }
+        #tela-entrada { display: flex; }
+
+        /* --- AJUSTE DA ABERTURA DA CÂMERA --- */
         #camera-section { background: #000; }
-        #painel-inox { background: var(--inox); border: 12px solid #555; box-sizing: border-box; }
 
-        /* BOTAO INICIAL */
-        .btn-round { background: transparent; color: var(--led-green); border: 2px solid var(--led-green); padding: 20px 60px; font-size: 1.8rem; font-weight: bold; border-radius: 50px; cursor: pointer; }
-        .texto-seguranca { color: #666; font-size: 0.8rem; margin-top: 20px; max-width: 280px; text-align: center; }
-
-        /* CAMERA COM CORREÇÃO DE PROPORÇÃO */
-        #video-preview { 
-            width: 100%; height: 100%; 
-            object-fit: cover; /* Garante que o vídeo preencha a tela sem achatar */
+        .container-selfie {
+            position: relative;
+            /* Definimos o tamanho exato da abertura aqui */
+            width: 280px; 
+            height: 380px;
+            border: 5px solid var(--led-green);
+            border-radius: 50% 50% 45% 45%;
+            overflow: hidden; /* O vídeo que sobrar para fora do oval será cortado */
+            box-shadow: 0 0 30px var(--led-green);
+            background: #111;
+            margin-bottom: 80px;
         }
 
-        .mask-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.9) 38%);
-            display: flex; align-items: center; justify-content: center; pointer-events: none;
+        #video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 100%;
+            min-height: 100%;
+            object-fit: cover; /* Faz a câmera preencher o oval sem distorcer */
         }
 
-        .mask-oval-guide {
-            width: 260px; height: 360px; /* Proporção Vertical de Rosto */
-            border: 4px solid var(--led-green); border-radius: 50% 50% 45% 45%;
-            box-shadow: 0 0 25px var(--led-green); transform: translateY(-10%);
-        }
-
-        /* PAINEL INOX ELEMENTOS */
-        .display-lcd { width: 90%; background: #050505; border: 5px inset #444; padding: 20px; text-align: center; color: var(--led-green); margin-bottom: 20px; }
-        .lcd-grande { font-size: 2.5rem; font-weight: bold; }
-        .lcd-timer { font-size: 4rem; color: #fff; }
-
-        .campo-num { width: 80%; font-size: 3rem; text-align: center; background: #000; color: var(--led-green); border: 3px solid #666; margin-bottom: 10px; }
-        .campo-txt { width: 80%; font-size: 1.2rem; padding: 10px; background: #111; color: #fff; border: 2px solid #444; }
-        .opcional { font-size: 0.7rem; color: #333; align-self: flex-end; margin-right: 12%; margin-bottom: 15px; font-weight: bold; }
-
-        .btn-comando { width: 85%; padding: 25px; font-size: 1.8rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; color: white; text-transform: uppercase; }
-        .verde { background: #27ae60; box-shadow: 0 6px 0 #156135; }
-        .vermelho { background: #c0392b; box-shadow: 0 6px 0 #7b241c; }
-
-        .container-duplo { display: flex; width: 90%; gap: 10px; }
-        .btn-meio { flex: 1; padding: 20px; font-size: 1.2rem; }
+        /* TELA SUCESSO E INOX (Simplificados para teste) */
+        #tela-sucesso { background: #000; color: var(--led-green); text-align: center; font-size: 2rem; font-weight: bold; }
+        #painel-inox { background: linear-gradient(135deg, #bdbdbd, #ffffff, #7a7a7a); border: 10px solid #555; }
+        .display-lcd { width: 90%; background: #050505; border: 5px inset #444; padding: 20px; text-align: center; color: var(--led-green); }
+        .btn-comando { width: 85%; padding: 25px; font-size: 1.8rem; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; text-transform: uppercase; margin-top: 20px; }
+        .verde { background: #27ae60; color: white; }
     </style>
 </head>
 <body>
 
     <div id="tela-entrada" class="tela">
-        <button class="btn-round" onclick="iniciarFluxo()">INICIAR</button>
-        <div class="texto-seguranca">IDENTIFICAÇÃO BIOMÉTRICA MONITORADA: Sua imagem será registrada para acesso ao condomínio.</div>
+        <button class="btn-comando verde" style="width: 200px; border-radius: 50px;" onclick="iniciar()">INICIAR</button>
     </div>
 
     <div id="camera-section" class="tela">
-        <video id="video-preview" autoplay playsinline muted></video>
-        <div class="mask-overlay"><div class="mask-oval-guide"></div></div>
-        <button class="btn-comando verde" style="position: absolute; bottom: 40px;" onclick="capturarSelfie()">CONCLUIR SELFIE</button>
+        <div class="container-selfie">
+            <video id="video" autoplay playsinline muted></video>
+        </div>
+        <button class="btn-comando verde" style="position:absolute; bottom:30px;" onclick="concluirSelfie()">CONCLUIR SELFIE</button>
     </div>
 
+    <div id="tela-sucesso" class="tela">SELFIE CONCLUÍDA!</div>
+
     <div id="painel-inox" class="tela">
-        <div class="display-lcd" id="lcd-status">
-            <div id="texto-lcd" class="lcd-grande">UNIDADE</div>
-            <div id="timer-lcd" class="lcd-timer" style="display:none">60</div>
-        </div>
-
-        <div id="form-chamada" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-            <input type="number" id="input-unidade" class="campo-num" placeholder="000">
-            <input type="text" id="input-msg" class="campo-txt" placeholder="Mensagem para o morador">
-            <div class="opcional">NOME (OPCIONAL)</div>
-            <button class="btn-comando verde" onclick="fazerChamada()">CHAMAR</button>
-        </div>
-
-        <div id="controles-chamada" style="display:none; width: 100%; flex-direction: column; align-items: center;">
-            <button class="btn-comando vermelho" onclick="cancelar()">ENCERRAR</button>
-        </div>
-
-        <div id="botoes-finais" style="display:none; width: 100%;" class="container-duplo">
-            <button class="btn-comando vermelho btn-meio" onclick="cancelar()">ENCERRAR</button>
-            <button class="btn-comando verde btn-meio" onclick="resetChamada()">CHAMAR</button>
-        </div>
+        <div class="display-lcd" id="status">DIGITE A UNIDADE</div>
+        <input type="number" id="unidade" style="width:80%; font-size:3rem; text-align:center; margin-top:20px; background:#000; color:var(--led-green);">
+        <button class="btn-comando verde" onclick="alert('Chamando...')">CHAMAR</button>
     </div>
 
 <script>
-    const telas = {
-        entrada: document.getElementById('tela-entrada'),
-        selfie: document.getElementById('camera-section'),
-        inox: document.getElementById('painel-inox')
-    };
-    
-    let streamMedia = null;
-    let tempo = 60;
-    let cronometro;
+    let stream;
 
-    function mudarTela(alvo) {
-        Object.values(telas).forEach(t => t.style.display = 'none');
-        telas[alvo].style.display = 'flex';
+    function show(id) {
+        ['tela-entrada', 'camera-section', 'tela-sucesso', 'painel-inox'].forEach(t => document.getElementById(t).style.display = 'none');
+        document.getElementById(id).style.display = 'flex';
     }
 
-    async function iniciarFluxo() {
+    async function iniciar() {
         try {
-            streamMedia = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, 
-                audio: false 
+            // Solicitamos a maior resolução possível para que o corte (object-fit) tenha qualidade
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: "user",
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } 
             });
-            document.getElementById('video-preview').srcObject = streamMedia;
-            mudarTela('selfie');
-        } catch (e) { alert("Acesso à câmera negado."); }
+            document.getElementById('video').srcObject = stream;
+            show('camera-section');
+        } catch(e) { alert("Erro ao acessar câmera."); }
     }
 
-    function capturarSelfie() {
-        if (streamMedia) streamMedia.getTracks().forEach(t => t.stop());
-        
-        // Mensagem de sucesso rápida antes de mudar
-        document.getElementById('texto-lcd').innerText = "SELFIE CONCLUÍDA!";
-        mudarTela('inox');
-        
-        setTimeout(() => {
-            document.getElementById('texto-lcd').innerText = "UNIDADE";
-        }, 2000);
-    }
-
-    function fazerChamada() {
-        const unidade = document.getElementById('input-unidade').value;
-        if(!unidade) return alert("Digite a unidade");
-
-        document.getElementById('form-chamada').style.display = 'none';
-        document.getElementById('controles-chamada').style.display = 'flex';
-        document.getElementById('texto-lcd').innerText = "CHAMANDO...";
-        document.getElementById('timer-lcd').style.display = 'block';
-        
-        iniciarTimer();
-    }
-
-    function iniciarTimer() {
-        tempo = 60;
-        document.getElementById('timer-lcd').innerText = tempo;
-        cronometro = setInterval(() => {
-            tempo--;
-            document.getElementById('timer-lcd').innerText = (tempo < 10 ? '0'+tempo : tempo);
-            if(tempo <= 0) encerrouPorTempo();
-        }, 1000);
-    }
-
-    function encerrouPorTempo() {
-        clearInterval(cronometro);
-        document.getElementById('texto-lcd').innerText = "SEM RESPOSTA";
-        document.getElementById('timer-lcd').style.display = 'none';
-        document.getElementById('controles-chamada').style.display = 'none';
-        document.getElementById('botoes-finais').style.display = 'flex';
-    }
-
-    function cancelar() {
-        location.reload();
-    }
-
-    function resetChamada() {
-        document.getElementById('botoes-finais').style.display = 'none';
-        fazerChamada();
+    function concluirSelfie() {
+        if(stream) stream.getTracks().forEach(t => t.stop());
+        show('tela-sucesso');
+        setTimeout(() => show('painel-inox'), 2000);
     }
 </script>
 </body>
