@@ -3,131 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Industrial v6.0</title>
+    <title>Interfone Inteligente v6.1</title>
     <style>
-        :root { 
-            --led-green: #39FF14; 
-            --metal-dark: #1a1a1a;
-            --pure-white: #FFFFFF;
-        }
-        
-        body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; background-color: #000; font-family: 'Segoe UI', Roboto, sans-serif; 
-        }
+        :root { --led-green: #39FF14; --led-red: #FF3131; --pure-white: #FFFFFF; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
 
-        /* MOLDURA ROBUSTA INSPIRADA NA CAPINHA */
-        .moldura-tactical {
+        /* MOLDURA GLOBAL (RESTAURADA) */
+        .moldura-global {
             position: fixed; width: 100vw; height: 100vh;
-            background: radial-gradient(circle, #2c2c2c 0%, #000000 100%);
+            background: linear-gradient(135deg, #222, #000); 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border: 12px solid #333; 
-            box-shadow: inset 0 0 50px #000;
-            box-sizing: border-box;
+            border: 10px solid #444; box-sizing: border-box; z-index: 5;
         }
 
-        /* CONTAINER OVAL COM EFEITO DE ENCAIXE */
-        .case-central {
-            position: relative; width: 295px; height: 395px;
-            border: 6px solid var(--led-green); border-radius: 50% 50% 45% 45%;
-            overflow: hidden; box-shadow: 0 0 25px var(--led-green), inset 0 0 20px #000;
-            background: #050505; display: flex; align-items: center; justify-content: center;
+        .container-central {
+            position: relative; width: 290px; height: 390px;
+            border: 5px solid var(--led-green); border-radius: 50% 50% 45% 45%;
+            overflow: hidden; box-shadow: 0 0 30px var(--led-green);
+            background: #000; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; text-align: center; color: white;
         }
 
-        #video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .conteudo { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        
+        #video { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+        /* BOTÕES COM AJUSTE DE POSIÇÃO */
+        .btn-inox { background: #27ae60; color: white; padding: 20px; width: 85%; border-radius: 10px; border: none; font-weight: bold; font-size: 1.4rem; cursor: pointer; margin-bottom: 20px; }
+        
+        /* INPUT COM CONTRASTE INVERTIDO */
+        input { 
+            width: 80%; padding: 15px; margin: 10px; 
+            background: var(--pure-white); color: #000; 
+            border: 2px solid var(--led-green); text-align: center; 
+            font-size: 1.5rem; font-weight: bold; border-radius: 8px;
+        }
 
         /* TEXTOS EM BRANCO PURO E MAIORES */
-        .instrucao-branca {
-            color: var(--pure-white); font-size: 1.1rem; font-weight: bold;
-            margin-top: 25px; text-transform: uppercase; letter-spacing: 1px;
-            text-shadow: 2px 2px 4px #000;
+        .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.3rem; margin: 10px; font-weight: bold; }
+        
+        .msg-privacidade { 
+            color: var(--pure-white); font-size: 0.85rem; line-height: 1.4; 
+            margin-top: 30px; max-width: 300px; text-align: center; padding: 0 15px;
         }
-
-        /* BOTÃO ENVIAR SELFIE (MAIS ALTO) */
-        .btn-enviar-selfie {
-            position: absolute; bottom: 45px; /* Subi a posição como pedido */
-            background: #27ae60; color: white; padding: 18px 40px;
-            border: none; border-radius: 8px; font-weight: bold; font-size: 1.3rem;
-            box-shadow: 0 6px 0 #156135, 0 10px 20px rgba(0,0,0,0.5);
-            cursor: pointer; width: 85%;
-        }
-
-        /* INPUT: FUNDO BRANCO, LETRA PRETA */
-        .campo-unidade {
-            width: 80%; padding: 15px; font-size: 2.5rem; text-align: center;
-            background: var(--pure-white); color: #000; /* Inversão de contraste */
-            border: 4px solid var(--led-green); border-radius: 12px;
-            margin-top: 15px; font-weight: bold;
-        }
-
-        .lcd-container {
-            background: #000; border: 2px solid #444; padding: 15px;
-            width: 85%; margin-top: 20px; border-radius: 5px; text-align: center;
-        }
-
-        .conteudo { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-    <div class="moldura-tactical">
+    <div class="moldura-global">
         
-        <div class="case-central">
+        <div class="container-central" id="main-container">
             <div id="step-1" class="conteudo" style="display: flex;">
-                <div class="instrucao-branca">IDENTIFICAÇÃO BIOMÉTRICA</div>
-                <button class="btn-enviar-selfie" style="position:static; margin-top:40px;" onclick="iniciarCamera()">INICIAR ACESSO</button>
+                <div class="lcd-text">SISTEMA DE SEGURANÇA</div>
+                <button class="btn-inox" onclick="passo2()">INICIAR</button>
             </div>
 
             <div id="step-2" class="conteudo">
                 <video id="video" autoplay playsinline muted></video>
-                <button class="btn-enviar-selfie" onclick="concluirSelfie()">ENVIAR SELFIE</button>
+                <button class="btn-inox" style="position: absolute; bottom: 35px;" onclick="passo3()">ENVIAR SELFIE</button>
             </div>
 
             <div id="step-3" class="conteudo">
-                <div class="instrucao-branca">NÚMERO DA UNIDADE:</div>
-                <input type="number" id="unidade" class="campo-unidade" placeholder="000">
-                <button class="btn-enviar-selfie" style="position:static; margin-top:30px;" onclick="chamarMorador()">CHAMAR AGORA</button>
+                <div class="lcd-text">UNIDADE:</div>
+                <input type="number" id="unidade" placeholder="Nº CASA">
+                <button class="btn-inox" onclick="passo4()">CHAMAR</button>
             </div>
 
             <div id="step-4" class="conteudo">
-                <div class="instrucao-branca" id="status-display">CHAMANDO...</div>
-                <div style="font-size: 4rem; color: var(--pure-white); margin: 20px 0;">60</div>
-                <button class="btn-enviar-selfie" style="background:#c0392b; position:static;" onclick="location.reload()">CANCELAR</button>
+                <div class="lcd-text" id="status-lcd">CHAMANDO...</div>
+                <div id="timer" style="font-size: 4rem; color: var(--pure-white);">60</div>
+                <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">CANCELAR</button>
+            </div>
+
+            <div id="step-5" class="conteudo">
+                <div class="lcd-text" style="font-size: 1.5rem; color: var(--led-green);">PORTÃO LIBERADO!</div>
+                <div class="lcd-text">BEM-VINDO</div>
             </div>
         </div>
 
-        <div class="instrucao-branca" style="font-size: 0.75rem; margin-top: 20px; opacity: 0.8;">
-            ACESSO MONITORADO - NATAL/RN
+        <div id="footer-area" class="msg-privacidade">
+            <strong>AVISO DE PRIVACIDADE:</strong><br>
+            Ao iniciar, você autoriza a captura de selfie e localização para fins exclusivos de segurança e identificação biométrica monitorada.
         </div>
     </div>
 
 <script>
     let stream;
+    let timerInterval;
 
-    async function iniciarCamera() {
-        document.getElementById('step-1').style.display = 'none';
+    function hideAll() { 
+        document.querySelectorAll('.conteudo').forEach(c => c.style.display = 'none'); 
+    }
+
+    async function passo2() {
+        hideAll();
         document.getElementById('step-2').style.display = 'flex';
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        document.getElementById('video').srcObject = stream;
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('video').srcObject = stream;
+        } catch(e) { alert("Erro na câmera."); location.reload(); }
     }
 
-    function concluirSelfie() {
+    function passo3() {
         if(stream) stream.getTracks().forEach(t => t.stop());
-        document.getElementById('step-2').style.display = 'none';
+        hideAll();
         document.getElementById('step-3').style.display = 'flex';
-        
-        // FOCO AUTOMÁTICO NO INPUT
-        const input = document.getElementById('unidade');
+        // FOCO AUTOMÁTICO
+        const inputUnidade = document.getElementById('unidade');
         setTimeout(() => {
-            input.focus();
-            input.click();
-        }, 300);
+            inputUnidade.focus();
+        }, 500);
     }
 
-    function chamarMorador() {
+    function passo4() {
         if(!document.getElementById('unidade').value) return;
-        document.getElementById('step-3').style.display = 'none';
+        hideAll();
         document.getElementById('step-4').style.display = 'flex';
+        iniciarContagem();
+    }
+
+    function iniciarContagem() {
+        let t = 60;
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            t--;
+            document.getElementById('timer').innerText = t;
+            if(t <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('status-lcd').innerText = "SEM RESPOSTA";
+            }
+        }, 1000);
+    }
+
+    // Função para simular a resposta do morador (Para seu teste)
+    function simularLiberacao() {
+        clearInterval(timerInterval);
+        hideAll();
+        document.getElementById('step-5').style.display = 'flex';
     }
 </script>
 </body>
