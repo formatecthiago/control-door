@@ -3,26 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Black Edition v6.3</title>
+    <title>Interfone Black Edition v6.4</title>
     <style>
-        :root { --led-green: #39FF14; --pure-white: #FFFFFF; --true-black: #000000; }
+        :root { --led-green: #39FF14; --pure-white: #FFFFFF; --true-black: #000000; --soft-red: #c0392b; }
         
-        /* UNIFICAÇÃO DO PRETO EM TODA A INTERFACE */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: var(--true-black); font-family: sans-serif; }
 
         .moldura-global {
             position: fixed; width: 100vw; height: 100vh;
-            background-color: var(--true-black); /* Preto absoluto */
+            background-color: var(--true-black);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             border: 8px solid #222; box-sizing: border-box; z-index: 5;
         }
 
-        /* CONTAINER REDUZIDO EM 30% E POSICIONADO MAIS ACIMA */
         .container-central {
             position: relative; 
-            width: 200px; /* Reduzido de 290px */
-            height: 270px; /* Reduzido de 390px */
-            margin-top: -50px; /* Sobe o painel na tela */
+            width: 200px; 
+            height: 270px; 
+            margin-top: -40px; 
             border-radius: 50% 50% 45% 45%;
             overflow: hidden; 
             background: var(--true-black); 
@@ -34,31 +32,30 @@
         .conteudo { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
         #video { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 
-        /* BOTÕES AGORA FORA DO PAINEL CENTRAL */
         .area-botoes {
             width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 30px; /* Espaço entre o oval e os botões */
+            margin-top: 25px;
         }
 
         .btn-inox { 
-            background: #27ae60; color: white; padding: 18px; width: 80%; 
+            background: #27ae60; color: white; padding: 18px; width: 85%; 
             border-radius: 10px; border: none; font-weight: bold; 
-            font-size: 1.2rem; cursor: pointer; margin-bottom: 15px; 
+            font-size: 1.2rem; cursor: pointer; margin-bottom: 12px; 
         }
-        .vermelho { background: #c0392b; }
+        .vermelho { background: var(--soft-red); }
 
         input { 
-            width: 75%; padding: 12px; margin: 10px; 
+            width: 75%; padding: 12px; margin-bottom: 15px; 
             background: var(--pure-white); color: var(--true-black); 
             border: 2px solid var(--led-green); text-align: center; 
             font-size: 1.8rem; font-weight: bold; border-radius: 8px;
         }
 
         .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.2rem; margin: 10px; font-weight: bold; }
-        .msg-privacidade { color: var(--pure-white); font-size: 0.8rem; margin-top: 20px; text-align: center; padding: 0 25px; opacity: 0.9; }
+        .msg-privacidade { color: var(--pure-white); font-size: 0.8rem; margin-top: 15px; text-align: center; padding: 0 25px; opacity: 0.9; line-height: 1.3; }
     </style>
 </head>
 <body>
@@ -66,7 +63,7 @@
     <div class="moldura-global">
         <div class="container-central" id="main-container">
             <div id="step-1" class="conteudo" style="display: flex;">
-                <div class="lcd-text">PRONTO</div>
+                <div class="lcd-text">SISTEMA ATIVO</div>
             </div>
 
             <div id="step-2" class="conteudo">
@@ -74,15 +71,11 @@
             </div>
 
             <div id="step-3" class="conteudo">
-                <div class="lcd-text">UNIDADE</div>
+                <div class="lcd-text">Aguardando...</div>
             </div>
 
             <div id="step-4" class="conteudo">
                 <div id="timer" style="font-size: 3.5rem; color: var(--pure-white);">60</div>
-            </div>
-
-            <div id="step-5" class="conteudo">
-                <div class="lcd-text" style="color: var(--led-green);">AUTORIZADO</div>
             </div>
         </div>
 
@@ -96,69 +89,120 @@
             </div>
 
             <div id="btn-step-3" style="display: none; width: 100%; text-align: center;">
-                <input type="number" id="unidade" placeholder="CASA">
+                <input type="number" id="unidade" placeholder="Nº CASA">
                 <button class="btn-inox" onclick="passo4()">CHAMAR AGORA</button>
             </div>
 
             <div id="btn-step-4" style="display: none; width: 100%; text-align: center;">
-                <div class="lcd-text">CHAMANDO...</div>
-                <button class="btn-inox vermelho" onclick="location.reload()">CANCELAR</button>
+                <div id="status-label" class="lcd-text">CHAMANDO...</div>
+                
+                <div id="controles-chamada">
+                    <button class="btn-inox vermelho" onclick="location.reload()">CANCELAR</button>
+                </div>
+
+                <div id="opcoes-finais" style="display:none; width: 100%;">
+                    <button class="btn-inox vermelho" onclick="location.reload()">ENCERRAR</button>
+                    <button class="btn-inox" onclick="passo4()">REPETIR CHAMADA</button>
+                </div>
             </div>
         </div>
 
         <div class="msg-privacidade">
-            <strong>BIOMETRIA MONITORADA</strong><br>
-            Acesso restrito e identificado.
+            <strong>AVISO DE SEGURANÇA:</strong><br>
+            Biometria capturada para identificação monitorada.
         </div>
     </div>
 
 <script>
     let stream, timerInterval, audioCtx;
 
+    // Inicializa o contexto de áudio no primeiro clique do usuário
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function tocarSom(tipo) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+
+        if(tipo === 'chamada') {
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+            osc.stop(audioCtx.currentTime + 0.8);
+        } else if (tipo === 'falha') {
+            for(let i=0; i<3; i++) {
+                const o = audioCtx.createOscillator();
+                o.connect(audioCtx.destination);
+                o.frequency.setValueAtTime(300, audioCtx.currentTime + (i * 0.25));
+                o.start(audioCtx.currentTime + (i * 0.25));
+                o.stop(audioCtx.currentTime + (i * 0.25) + 0.15);
+            }
+        }
+    }
+
     function showStep(n) {
-        // Esconde todos os conteúdos e botões
         document.querySelectorAll('.conteudo').forEach(c => c.style.display = 'none');
         document.querySelectorAll('.area-botoes > div').forEach(d => d.style.display = 'none');
         
-        // Mostra o específico
         document.getElementById('step-'+n).style.display = 'flex';
         if(document.getElementById('btn-step-'+n)) {
             document.getElementById('btn-step-'+n).style.display = 'block';
         }
         
-        // Controle da Guia Verde
-        if(n === 2) document.getElementById('main-container').classList.add('com-guia');
-        else document.getElementById('main-container').classList.remove('com-guia');
+        const container = document.getElementById('main-container');
+        if(n === 2) container.classList.add('com-guia');
+        else container.classList.remove('com-guia');
     }
 
     async function passo2() {
+        initAudio(); // Ativa o áudio no primeiro clique
         showStep(2);
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        document.getElementById('video').srcObject = stream;
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('video').srcObject = stream;
+        } catch(e) { alert("Câmera não disponível."); }
     }
 
     function passo3() {
         if(stream) stream.getTracks().forEach(t => t.stop());
         showStep(3);
-        setTimeout(() => document.getElementById('unidade').focus(), 500);
+        const input = document.getElementById('unidade');
+        setTimeout(() => input.focus(), 400);
     }
 
     function passo4() {
         if(!document.getElementById('unidade').value) return;
         showStep(4);
+        // Reseta estados dos botões de finalização
+        document.getElementById('status-label').innerText = "CHAMANDO...";
+        document.getElementById('controles-chamada').style.display = "block";
+        document.getElementById('opcoes-finais').style.display = "none";
         iniciarContagem();
     }
 
     function iniciarContagem() {
         let t = 60;
         clearInterval(timerInterval);
+        tocarSom('chamada');
         timerInterval = setInterval(() => {
             t--;
             document.getElementById('timer').innerText = t;
+            
+            // Toque periódico a cada 4 segundos
+            if(t % 4 === 0 && t > 0) tocarSom('chamada');
+
             if(t <= 0) {
                 clearInterval(timerInterval);
-                alert("Sem resposta.");
-                location.reload();
+                tocarSom('falha');
+                document.getElementById('status-label').innerText = "SEM RESPOSTA";
+                document.getElementById('controles-chamada').style.display = "none";
+                document.getElementById('opcoes-finais').style.display = "block";
             }
         }, 1000);
     }
