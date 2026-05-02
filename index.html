@@ -2,99 +2,120 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Morador - Controle de Acesso</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interfone Inteligente v5.5</title>
     <style>
-        :root { --led-green: #39FF14; --led-red: #FF3131; --led-blue: #2196F3; }
-        body { background: #000; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        :root { --led-green: #39FF14; --led-red: #FF3131; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
 
-        /* MOLDURA PARA VER O VISITANTE */
-        .visor-visitante {
-            width: 260px; height: 340px;
-            border: 4px solid var(--led-blue); border-radius: 50% 50% 45% 45%;
-            overflow: hidden; background: #111; margin-bottom: 20px;
-            display: flex; align-items: center; justify-content: center;
+        /* MOLDURA GLOBAL (A BASE DE TUDO) */
+        .moldura-global {
+            position: fixed; width: 100vw; height: 100vh;
+            background: linear-gradient(135deg, #222, #000); /* Fundo base */
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 10px solid #444; box-sizing: border-box; z-index: 5;
         }
-        #foto-visitante { width: 100%; height: 100%; object-fit: cover; }
 
-        .info-chamada { text-align: center; margin-bottom: 30px; }
-        .unidade-destaque { font-size: 2rem; color: var(--led-green); }
-
-        /* BOTÕES DE CONTROLE */
-        .btn-controle {
-            width: 90%; padding: 20px; margin: 10px 0; border: none;
-            border-radius: 12px; font-weight: bold; font-size: 1.2rem;
-            text-transform: uppercase; cursor: pointer;
+        .container-central {
+            position: relative; width: 290px; height: 390px;
+            border: 5px solid var(--led-green); border-radius: 50% 50% 45% 45%;
+            overflow: hidden; box-shadow: 0 0 30px var(--led-green);
+            background: #000; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; text-align: center; color: white;
         }
-        .recusar { background: var(--led-red); color: white; }
-        .aceitar { background: var(--led-blue); color: white; }
-        .abrir { background: var(--led-green); color: #000; }
+
+        /* CONTEÚDOS DAS TELAS */
+        .conteudo { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
         
-        .legenda { font-size: 0.8rem; margin-top: -8px; margin-bottom: 10px; color: #aaa; }
+        /* VIDEO E ESPELHO */
+        #video { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 
-        /* ÁREA DE EDIÇÃO DE MENSAGEM */
-        #painel-mensagem {
-            display: none; width: 100%; flex-direction: column; align-items: center;
-            background: #222; padding: 20px; border-radius: 15px; position: fixed; bottom: 0;
-        }
-        textarea { width: 90%; padding: 10px; background: #000; color: white; border: 1px solid var(--led-blue); border-radius: 8px; margin-bottom: 15px; }
+        /* BOTOES E INPUTS */
+        .btn-inox { background: #27ae60; color: white; padding: 20px; width: 80%; border-radius: 10px; border: none; font-weight: bold; font-size: 1.2rem; margin-top: 20px; cursor: pointer; }
+        input { width: 80%; padding: 10px; margin: 5px; background: #000; color: var(--led-green); border: 1px solid var(--led-green); text-align: center; }
+
+        .lcd-text { color: var(--led-green); font-family: 'Courier New', monospace; font-size: 1.2rem; margin: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="info-chamada">
-        <div class="lcd-text">VISITANTE NA UNIDADE:</div>
-        <div class="unidade-destaque" id="num-unidade">102</div>
-    </div>
+    <div class="moldura-global">
+        
+        <div class="container-central" id="main-container">
+            <div id="step-1" class="conteudo" style="display: flex;">
+                <div class="lcd-text">SISTEMA DE SEGURANÇA</div>
+                <button class="btn-inox" onclick="passo2()">INICIAR</button>
+            </div>
 
-    <div class="visor-visitante">
-        <img id="foto-visitante" src="https://via.placeholder.com/260x340?text=Carregando+Foto..." alt="Visitante">
-    </div>
+            <div id="step-2" class="conteudo">
+                <video id="video" autoplay playsinline muted></video>
+                <button class="btn-inox" style="position: absolute; bottom: 20px;" onclick="passo3()">CONCLUIR</button>
+            </div>
 
-    <button class="btn-controle recusar" onclick="recusar()">Recusar</button>
+            <div id="step-3" class="conteudo">
+                <div class="lcd-text">UNIDADE:</div>
+                <input type="number" id="unidade" placeholder="000">
+                <input type="text" id="obs" placeholder="Sua mensagem">
+                <button class="btn-inox" onclick="passo4()">CHAMAR</button>
+            </div>
 
-    <button class="btn-controle aceitar" onclick="abrirEdicao()">Aceitar</button>
-    <div class="legenda">EDITAR MENSAGEM</div>
+            <div id="step-4" class="conteudo">
+                <div class="lcd-text" id="status-lcd">CHAMANDO...</div>
+                <div id="timer" style="font-size: 3rem;">60</div>
+                <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">CANCELAR</button>
+            </div>
 
-    <button class="btn-controle abrir" onclick="abrirPortao()">Abrir Portão</button>
+            <div id="step-5" class="conteudo">
+                <div class="lcd-text" style="font-size: 1.5rem; color: #39FF14;">PORTÃO LIBERADO!</div>
+                <div class="lcd-text">BEM-VINDO</div>
+            </div>
+        </div>
 
-    <div id="painel-mensagem">
-        <div style="color: var(--led-blue); margin-bottom: 10px;">DIGITE OU FALE A MENSAGEM</div>
-        <textarea id="msg-texto" rows="3" placeholder="Ex: Já estou descendo..."></textarea>
-        <div style="display: flex; gap: 10px; width: 100%;">
-            <button class="btn-controle aceitar" style="flex: 1;" onclick="enviarMensagem()">Enviar</button>
-            <button class="btn-controle recusar" style="flex: 1;" onclick="fecharEdicao()">Voltar</button>
+        <div id="footer-msg" style="color: #555; font-size: 0.7rem; margin-top: 20px; text-align: center; padding: 0 20px;">
+            Identificação biométrica obrigatória para acesso monitorado.
         </div>
     </div>
 
 <script>
-    function abrirEdicao() {
-        document.getElementById('painel-mensagem').style.display = 'flex';
+    let stream;
+    function hideAll() { document.querySelectorAll('.conteudo').forEach(c => c.style.display = 'none'); }
+
+    async function passo2() {
+        hideAll();
+        document.getElementById('step-2').style.display = 'flex';
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        document.getElementById('video').srcObject = stream;
     }
 
-    function fecharEdicao() {
-        document.getElementById('painel-mensagem').style.display = 'none';
+    function passo3() {
+        if(stream) stream.getTracks().forEach(t => t.stop());
+        hideAll();
+        document.getElementById('step-3').style.display = 'flex';
     }
 
-    function enviarMensagem() {
-        const texto = document.getElementById('msg-texto').value;
-        alert("Mensagem enviada ao visitante: " + texto);
-        // Lógica Firebase: salvar texto no campo 'resposta_morador'
-        fecharEdicao();
+    function passo4() {
+        hideAll();
+        document.getElementById('step-4').style.display = 'flex';
+        iniciarContagem();
     }
 
-    function abrirPortao() {
-        alert("Comando enviado: PORTÃO ABERTO");
-        // Lógica Firebase: mudar status para 'autorizado'
+    function iniciarContagem() {
+        let t = 60;
+        let timerInterval = setInterval(() => {
+            t--;
+            document.getElementById('timer').innerText = t;
+            if(t <= 55) { // Simulação: Morador atende rápido
+                clearInterval(timerInterval);
+                exibirResposta();
+            }
+        }, 1000);
     }
 
-    function recusar() {
-        if(confirm("Deseja recusar a entrada?")) {
-            // Lógica Firebase: mudar status para 'recusado'
-            location.reload();
-        }
+    function exibirResposta() {
+        hideAll();
+        document.getElementById('step-5').style.display = 'flex';
+        // Aqui o ESP32 receberia o comando via Firebase
     }
 </script>
-
 </body>
 </html>
