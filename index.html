@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Inteligente v6.1</title>
+    <title>Interfone Profissional v6.2</title>
     <style>
         :root { --led-green: #39FF14; --led-red: #FF3131; --pure-white: #FFFFFF; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
 
-        /* MOLDURA GLOBAL (RESTAURADA) */
         .moldura-global {
             position: fixed; width: 100vw; height: 100vh;
             background: linear-gradient(135deg, #222, #000); 
@@ -16,42 +15,37 @@
             border: 10px solid #444; box-sizing: border-box; z-index: 5;
         }
 
+        /* O segredo: A borda só aparece quando a classe .com-guia é adicionada */
         .container-central {
             position: relative; width: 290px; height: 390px;
-            border: 5px solid var(--led-green); border-radius: 50% 50% 45% 45%;
-            overflow: hidden; box-shadow: 0 0 30px var(--led-green);
+            border-radius: 50% 50% 45% 45%;
+            overflow: hidden; 
             background: #000; display: flex; align-items: center; justify-content: center;
             flex-direction: column; text-align: center; color: white;
+            transition: border 0.3s ease;
         }
+        .com-guia { border: 5px solid var(--led-green); box-shadow: 0 0 30px var(--led-green); }
 
         .conteudo { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        
         #video { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 
-        /* BOTÕES COM AJUSTE DE POSIÇÃO */
-        .btn-inox { background: #27ae60; color: white; padding: 20px; width: 85%; border-radius: 10px; border: none; font-weight: bold; font-size: 1.4rem; cursor: pointer; margin-bottom: 20px; }
-        
-        /* INPUT COM CONTRASTE INVERTIDO */
+        .btn-inox { background: #27ae60; color: white; padding: 20px; width: 85%; border-radius: 10px; border: none; font-weight: bold; font-size: 1.4rem; cursor: pointer; margin-bottom: 15px; }
+        .vermelho { background: #c0392b; }
+
         input { 
             width: 80%; padding: 15px; margin: 10px; 
             background: var(--pure-white); color: #000; 
             border: 2px solid var(--led-green); text-align: center; 
-            font-size: 1.5rem; font-weight: bold; border-radius: 8px;
+            font-size: 1.8rem; font-weight: bold; border-radius: 8px;
         }
 
-        /* TEXTOS EM BRANCO PURO E MAIORES */
         .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.3rem; margin: 10px; font-weight: bold; }
-        
-        .msg-privacidade { 
-            color: var(--pure-white); font-size: 0.85rem; line-height: 1.4; 
-            margin-top: 30px; max-width: 300px; text-align: center; padding: 0 15px;
-        }
+        .msg-privacidade { color: var(--pure-white); font-size: 0.85rem; line-height: 1.4; margin-top: 30px; max-width: 300px; text-align: center; padding: 0 15px; }
     </style>
 </head>
 <body>
 
     <div class="moldura-global">
-        
         <div class="container-central" id="main-container">
             <div id="step-1" class="conteudo" style="display: flex;">
                 <div class="lcd-text">SISTEMA DE SEGURANÇA</div>
@@ -65,14 +59,20 @@
 
             <div id="step-3" class="conteudo">
                 <div class="lcd-text">UNIDADE:</div>
-                <input type="number" id="unidade" placeholder="Nº CASA">
+                <input type="number" id="unidade" placeholder="000">
                 <button class="btn-inox" onclick="passo4()">CHAMAR</button>
             </div>
 
             <div id="step-4" class="conteudo">
                 <div class="lcd-text" id="status-lcd">CHAMANDO...</div>
                 <div id="timer" style="font-size: 4rem; color: var(--pure-white);">60</div>
-                <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">CANCELAR</button>
+                
+                <button id="btn-cancelar" class="btn-inox vermelho" onclick="location.reload()">CANCELAR</button>
+                
+                <div id="opcoes-finais" style="display:none; width: 100%;">
+                    <button class="btn-inox vermelho" onclick="location.reload()">ENCERRAR</button>
+                    <button class="btn-inox" onclick="passo4()">CHAMAR</button>
+                </div>
             </div>
 
             <div id="step-5" class="conteudo">
@@ -83,62 +83,102 @@
 
         <div id="footer-area" class="msg-privacidade">
             <strong>AVISO DE PRIVACIDADE:</strong><br>
-            Ao iniciar, você autoriza a captura de selfie e localização para fins exclusivos de segurança e identificação biométrica monitorada.
+            Ao iniciar, você autoriza a captura de selfie e localização para fins de segurança e identificação biométrica monitorada.
         </div>
     </div>
 
 <script>
-    let stream;
-    let timerInterval;
+    let stream, timerInterval, audioCtx;
 
     function hideAll() { 
         document.querySelectorAll('.conteudo').forEach(c => c.style.display = 'none'); 
+        document.getElementById('main-container').classList.remove('com-guia');
+    }
+
+    // Gerador de Som Turbinado
+    function tocarSom(tipo) {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime); // Volume aumentado
+
+        if(tipo === 'chamada') {
+            osc.frequency.setValueAtTime(425, audioCtx.currentTime);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
+            osc.stop(audioCtx.currentTime + 1);
+        } else if (tipo === 'sucesso') {
+            // Som de premiação/vitória
+            [440, 554, 659].forEach((freq, i) => {
+                const o = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                o.connect(g); g.connect(audioCtx.destination);
+                o.frequency.setValueAtTime(freq, audioCtx.currentTime + (i * 0.15));
+                g.gain.setValueAtTime(0.2, audioCtx.currentTime + (i * 0.15));
+                g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (i * 0.15) + 0.5);
+                o.start(audioCtx.currentTime + (i * 0.15));
+                o.stop(audioCtx.currentTime + (i * 0.15) + 0.5);
+            });
+        } else if (tipo === 'falha') {
+            // 3 bips rápidos
+            for(let i=0; i<3; i++) {
+                const o = audioCtx.createOscillator();
+                o.connect(audioCtx.destination);
+                o.frequency.setValueAtTime(300, audioCtx.currentTime + (i * 0.2));
+                o.start(audioCtx.currentTime + (i * 0.2));
+                o.stop(audioCtx.currentTime + (i * 0.2) + 0.1);
+            }
+        }
     }
 
     async function passo2() {
         hideAll();
         document.getElementById('step-2').style.display = 'flex';
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            document.getElementById('video').srcObject = stream;
-        } catch(e) { alert("Erro na câmera."); location.reload(); }
+        document.getElementById('main-container').classList.add('com-guia'); // Adiciona o oval
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        document.getElementById('video').srcObject = stream;
     }
 
     function passo3() {
         if(stream) stream.getTracks().forEach(t => t.stop());
         hideAll();
         document.getElementById('step-3').style.display = 'flex';
-        // FOCO AUTOMÁTICO
-        const inputUnidade = document.getElementById('unidade');
-        setTimeout(() => {
-            inputUnidade.focus();
-        }, 500);
+        setTimeout(() => document.getElementById('unidade').focus(), 500);
     }
 
     function passo4() {
         if(!document.getElementById('unidade').value) return;
         hideAll();
         document.getElementById('step-4').style.display = 'flex';
+        document.getElementById('opcoes-finais').style.display = 'none';
+        document.getElementById('btn-cancelar').style.display = 'block';
         iniciarContagem();
     }
 
     function iniciarContagem() {
         let t = 60;
         clearInterval(timerInterval);
+        tocarSom('chamada');
         timerInterval = setInterval(() => {
             t--;
             document.getElementById('timer').innerText = t;
+            if(t % 4 === 0 && t > 0) tocarSom('chamada');
             if(t <= 0) {
                 clearInterval(timerInterval);
+                tocarSom('falha');
                 document.getElementById('status-lcd').innerText = "SEM RESPOSTA";
+                document.getElementById('btn-cancelar').style.display = 'none';
+                document.getElementById('opcoes-finais').style.display = 'block';
             }
         }, 1000);
     }
 
-    // Função para simular a resposta do morador (Para seu teste)
+    // Para você testar a liberação e ouvir o som de "premiação"
     function simularLiberacao() {
         clearInterval(timerInterval);
         hideAll();
+        tocarSom('sucesso');
         document.getElementById('step-5').style.display = 'flex';
     }
 </script>
