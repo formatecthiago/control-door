@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Black Edition v6.12</title>
+    <title>Interfone Black Edition v6.13</title>
     <style>
         :root { 
             --led-green: #39FF14; 
@@ -17,19 +17,20 @@
         .moldura-global {
             position: fixed; width: 100vw; height: 100vh;
             background-color: var(--true-black);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start; /* Alinha tudo ao topo */
             border: 10px solid var(--grafite-metal); 
             box-sizing: border-box; z-index: 5;
+            padding-top: 40px; /* Margem de cima definida */
         }
 
-        /* OVAL RESTAURADO */
         .container-central {
             position: relative; width: 220px; height: 280px; 
-            margin-top: -40px; border-radius: 50% 50% 45% 45%;
+            border-radius: 50% 50% 45% 45%;
             overflow: hidden; background: var(--true-black); 
             display: flex; align-items: center; justify-content: center;
             flex-direction: column; text-align: center;
             border: 5px solid transparent; 
+            margin-bottom: 20px;
         }
 
         .com-guia { 
@@ -42,7 +43,7 @@
 
         .check-sucesso { font-size: 8rem; color: var(--led-green); text-shadow: 0 0 20px var(--led-green); }
 
-        .area-botoes { width: 100%; display: flex; flex-direction: column; align-items: center; margin-top: 15px; }
+        .area-botoes { width: 100%; display: flex; flex-direction: column; align-items: center; }
 
         .btn-inox { 
             background: #27ae60; color: white; padding: 22px; width: 85%; 
@@ -51,30 +52,38 @@
             text-transform: uppercase; box-shadow: 0 4px 0 #1e8449;
         }
 
-        .welcome-msg { color: var(--pure-white); text-align: center; margin-bottom: 30px; }
-        .welcome-msg h1 { font-size: 3.2rem; margin: 0; }
-        .welcome-msg p { font-size: 1.8rem; margin: 5px 0 0; font-weight: bold; }
+        /* BOAS-VINDAS FIXADAS NA MARGEM DE CIMA */
+        .welcome-msg { color: var(--pure-white); text-align: center; margin-bottom: 20px; }
+        .welcome-msg h1 { font-size: 3.5rem; margin: 0; }
+        .welcome-msg p { font-size: 2rem; margin: 5px 0 0; font-weight: bold; width: 90%; margin-left: auto; margin-right: auto; }
 
         .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.5rem; margin: 10px; font-weight: bold; text-transform: uppercase; }
-        .msg-privacidade-inicial { color: #888; font-size: 0.8rem; margin-top: 20px; font-weight: bold; }
+        .msg-privacidade-inicial { color: #888; font-size: 0.8rem; margin-top: 10px; font-weight: bold; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
     <div class="moldura-global">
+        
+        <div id="header-msg" style="display: block; width: 100%;">
+            <div class="welcome-msg">
+                <h1>Olá!</h1>
+                <p>Toque em INICIAR para solicitar o seu acesso.</p>
+            </div>
+        </div>
+
         <div class="container-central" id="main-container">
             <div id="step-1" class="conteudo" style="display: flex;"></div>
             <div id="step-2" class="conteudo"><video id="video" autoplay playsinline muted></video></div>
-            <div id="step-3" class="conteudo"><div class="lcd-text">DIGITE A UNIDADE</div></div>
+            <div id="step-3" class="conteudo"><div class="lcd-text">UNIDADE</div></div>
             <div id="step-4" class="conteudo"><div id="timer" style="font-size: 4.5rem; color: var(--pure-white);">60</div></div>
-            <div id="step-5" class="conteudo"><div class="check-sucesso">✓</div><div class="lcd-text" style="font-size: 1.2rem;">ACESSO LIBERADO</div></div>
+            <div id="step-5" class="conteudo"><div class="check-sucesso">✓</div><div class="lcd-text">ACESSO LIBERADO</div></div>
         </div>
 
         <div class="area-botoes">
             <div id="btn-step-1" style="display: block; width: 100%; text-align: center;">
-                <div class="welcome-msg"><h1>Olá!</h1><p>Toque em INICIAR para solicitar o seu acesso.</p></div>
                 <button class="btn-inox" onclick="passo2()">INICIAR</button>
-                <div class="msg-privacidade-inicial">BIOMETRIA E LOCALIZAÇÃO MONITORADAS.</div>
+                <div class="msg-privacidade-inicial">BIOMETRIA E LOCALIZAÇÃO MONITORADAS</div>
             </div>
             
             <div id="btn-step-2" style="display: none; width: 100%; text-align: center;">
@@ -92,7 +101,7 @@
             </div>
 
             <div id="btn-step-5" style="display: none; width: 100%; text-align: center;">
-                <button class="btn-inox" style="background:#2c3e50" onclick="location.reload()">ENCERRAR</button>
+                <button class="btn-inox" style="background:#2c3e50" onclick="location.reload()">FINALIZAR</button>
             </div>
         </div>
     </div>
@@ -104,8 +113,8 @@
     function tocarSom(tipo) {
         if (!audioCtx) return;
         const gain = audioCtx.createGain(); gain.connect(audioCtx.destination);
-        // VOLUME 30% MAIS BAIXO QUE O ANTERIOR
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime); 
+        // VOLUME REDUZIDO EM 40% (GANHO REDUZIDO PARA 0.12)
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime); 
 
         const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.connect(gain);
 
@@ -115,7 +124,6 @@
             gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
             osc.stop(audioCtx.currentTime + 1.2);
         } else if (tipo === 'aceite') {
-            // O "PLIM" DE ACESSO
             osc.type = 'sine';
             osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(1500, audioCtx.currentTime + 0.3);
@@ -136,16 +144,20 @@
         document.getElementById('step-'+n).style.display = 'flex';
         if(document.getElementById('btn-step-'+n)) document.getElementById('btn-step-'+n).style.display = 'block';
         
+        // Esconde o Header (Olá!) após o passo 1 para dar espaço à câmera/teclado
+        if(n > 1) document.getElementById('header-msg').style.display = 'none';
+        else document.getElementById('header-msg').style.display = 'block';
+
         const container = document.getElementById('main-container');
         if(n === 2) container.classList.add('com-guia');
         else container.classList.remove('com-guia');
     }
 
-    async function passo2() { initAudio(); showStep(2); try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); document.getElementById('video').srcObject = stream; } catch(e) { alert("Câmera indisponível."); } }
+    async function passo2() { initAudio(); showStep(2); try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); document.getElementById('video').srcObject = stream; } catch(e) { alert("Câmera OFF."); } }
     function passo3() { if(stream) stream.getTracks().forEach(t => t.stop()); showStep(3); setTimeout(() => document.getElementById('unidade').focus(), 400); }
     function passo4() { if(!document.getElementById('unidade').value) return; showStep(4); iniciarContagem(); }
     
-    // ESTA FUNÇÃO SERÁ DISPARADA PELO MORADOR NO FUTURO
+    // Função para aceite futuro
     function passo5() { clearInterval(timerInterval); tocarSom('aceite'); showStep(5); }
 
     function iniciarContagem() {
