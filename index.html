@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Black Edition v6.13</title>
+    <title>Interfone Black Edition v6.14</title>
     <style>
         :root { 
             --led-green: #39FF14; 
@@ -17,55 +17,56 @@
         .moldura-global {
             position: fixed; width: 100vw; height: 100vh;
             background-color: var(--true-black);
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-start; /* Alinha tudo ao topo */
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
             border: 10px solid var(--grafite-metal); 
             box-sizing: border-box; z-index: 5;
-            padding-top: 40px; /* Margem de cima definida */
+            padding-top: 20px; /* Subimos tudo ao máximo */
         }
 
         .container-central {
-            position: relative; width: 220px; height: 280px; 
+            position: relative; width: 200px; height: 240px; 
             border-radius: 50% 50% 45% 45%;
             overflow: hidden; background: var(--true-black); 
             display: flex; align-items: center; justify-content: center;
             flex-direction: column; text-align: center;
-            border: 5px solid transparent; 
-            margin-bottom: 20px;
+            border: 4px solid transparent; 
+            margin-bottom: 10px;
         }
 
-        .com-guia { 
-            border: 5px solid var(--led-green) !important; 
-            box-shadow: 0 0 25px var(--led-green); 
-        }
+        .com-guia { border: 4px solid var(--led-green) !important; box-shadow: 0 0 20px var(--led-green); }
 
         .conteudo { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
         #video { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 
-        .check-sucesso { font-size: 8rem; color: var(--led-green); text-shadow: 0 0 20px var(--led-green); }
-
         .area-botoes { width: 100%; display: flex; flex-direction: column; align-items: center; }
 
         .btn-inox { 
-            background: #27ae60; color: white; padding: 22px; width: 85%; 
+            background: #27ae60; color: white; padding: 18px; width: 85%; 
             border-radius: 12px; border: none; font-weight: bold; 
-            font-size: 1.5rem; cursor: pointer; margin-bottom: 12px; 
+            font-size: 1.4rem; cursor: pointer; margin-bottom: 10px; 
             text-transform: uppercase; box-shadow: 0 4px 0 #1e8449;
         }
 
-        /* BOAS-VINDAS FIXADAS NA MARGEM DE CIMA */
-        .welcome-msg { color: var(--pure-white); text-align: center; margin-bottom: 20px; }
-        .welcome-msg h1 { font-size: 3.5rem; margin: 0; }
-        .welcome-msg p { font-size: 2rem; margin: 5px 0 0; font-weight: bold; width: 90%; margin-left: auto; margin-right: auto; }
+        .welcome-msg { color: var(--pure-white); text-align: center; margin-bottom: 15px; }
+        .welcome-msg h1 { font-size: 3rem; margin: 0; }
+        .welcome-msg p { font-size: 1.6rem; margin: 5px 0 0; font-weight: bold; width: 85%; margin-left: auto; margin-right: auto; }
 
-        .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.5rem; margin: 10px; font-weight: bold; text-transform: uppercase; }
-        .msg-privacidade-inicial { color: #888; font-size: 0.8rem; margin-top: 10px; font-weight: bold; text-transform: uppercase; }
+        .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.3rem; margin: 5px; font-weight: bold; text-transform: uppercase; }
+        .msg-privacidade { color: #888; font-size: 0.75rem; margin-top: 5px; font-weight: bold; text-align: center; width: 80%; }
+
+        /* Estilo do Input limitado */
+        input#unidade {
+            width: 120px; padding: 15px; font-size: 2.5rem; background: #fff; 
+            color: #000; border: 3px solid var(--led-green); border-radius: 10px;
+            text-align: center; font-weight: bold; margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
 
     <div class="moldura-global">
         
-        <div id="header-msg" style="display: block; width: 100%;">
+        <div id="header-msg">
             <div class="welcome-msg">
                 <h1>Olá!</h1>
                 <p>Toque em INICIAR para solicitar o seu acesso.</p>
@@ -76,14 +77,14 @@
             <div id="step-1" class="conteudo" style="display: flex;"></div>
             <div id="step-2" class="conteudo"><video id="video" autoplay playsinline muted></video></div>
             <div id="step-3" class="conteudo"><div class="lcd-text">UNIDADE</div></div>
-            <div id="step-4" class="conteudo"><div id="timer" style="font-size: 4.5rem; color: var(--pure-white);">60</div></div>
-            <div id="step-5" class="conteudo"><div class="check-sucesso">✓</div><div class="lcd-text">ACESSO LIBERADO</div></div>
+            <div id="step-4" class="conteudo"><div id="timer" style="font-size: 4rem; color: var(--pure-white);">60</div></div>
+            <div id="step-5" class="conteudo"><div style="font-size: 6rem; color: var(--led-green);">✓</div><div class="lcd-text">LIBERADO</div></div>
         </div>
 
         <div class="area-botoes">
             <div id="btn-step-1" style="display: block; width: 100%; text-align: center;">
                 <button class="btn-inox" onclick="passo2()">INICIAR</button>
-                <div class="msg-privacidade-inicial">BIOMETRIA E LOCALIZAÇÃO MONITORADAS</div>
+                <div class="msg-privacidade">AVISO: BIOMETRIA E LOCALIZAÇÃO MONITORADAS</div>
             </div>
             
             <div id="btn-step-2" style="display: none; width: 100%; text-align: center;">
@@ -91,17 +92,18 @@
             </div>
 
             <div id="btn-step-3" style="display: none; width: 100%; text-align: center;">
-                <input type="number" id="unidade" style="width:70%; padding:15px; font-size:2rem; margin-bottom:15px; border-radius:8px; text-align:center;" placeholder="000">
+                <input type="number" id="unidade" pattern="\d*" maxlength="3" oninput="limitInput(this)" placeholder="000">
                 <button class="btn-inox" onclick="passo4()">CHAMAR</button>
             </div>
 
             <div id="btn-step-4" style="display: none; width: 100%; text-align: center;">
                 <div class="lcd-text" id="status-label">CHAMANDO...</div>
-                <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">CANCELAR</button>
+                <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">FECHAR</button>
+                <button class="btn-inox" style="background:#2980b9" onclick="passo3()">CHAMAR OUTRO</button>
             </div>
 
             <div id="btn-step-5" style="display: none; width: 100%; text-align: center;">
-                <button class="btn-inox" style="background:#2c3e50" onclick="location.reload()">FINALIZAR</button>
+                <button class="btn-inox" style="background:#2c3e50" onclick="location.reload()">FECHAR</button>
             </div>
         </div>
     </div>
@@ -110,31 +112,28 @@
     let stream, timerInterval, audioCtx;
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
 
+    // Limita o input a 3 dígitos
+    function limitInput(el) {
+        if (el.value.length > 3) el.value = el.value.slice(0, 3);
+    }
+
     function tocarSom(tipo) {
         if (!audioCtx) return;
         const gain = audioCtx.createGain(); gain.connect(audioCtx.destination);
-        // VOLUME REDUZIDO EM 40% (GANHO REDUZIDO PARA 0.12)
-        gain.gain.setValueAtTime(0.12, audioCtx.currentTime); 
+        // VOLUME MUITO BAIXO (0.07)
+        gain.gain.setValueAtTime(0.07, audioCtx.currentTime); 
 
-        const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.connect(gain);
+        const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.connect(gain);
 
         if(tipo === 'chamada') {
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
             osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
-            osc.stop(audioCtx.currentTime + 1.2);
-        } else if (tipo === 'aceite') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(1500, audioCtx.currentTime + 0.3);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
+            osc.stop(audioCtx.currentTime + 1);
         } else if (tipo === 'falha') {
-            for(let i=0; i<3; i++) {
-                const o = audioCtx.createOscillator(); o.type = 'square'; o.connect(gain);
-                o.frequency.setValueAtTime(1200, audioCtx.currentTime + (i * 0.2));
-                o.start(audioCtx.currentTime + (i * 0.2));
-                o.stop(audioCtx.currentTime + (i * 0.2) + 0.1);
-            }
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
         }
     }
 
@@ -144,7 +143,6 @@
         document.getElementById('step-'+n).style.display = 'flex';
         if(document.getElementById('btn-step-'+n)) document.getElementById('btn-step-'+n).style.display = 'block';
         
-        // Esconde o Header (Olá!) após o passo 1 para dar espaço à câmera/teclado
         if(n > 1) document.getElementById('header-msg').style.display = 'none';
         else document.getElementById('header-msg').style.display = 'block';
 
@@ -156,9 +154,6 @@
     async function passo2() { initAudio(); showStep(2); try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); document.getElementById('video').srcObject = stream; } catch(e) { alert("Câmera OFF."); } }
     function passo3() { if(stream) stream.getTracks().forEach(t => t.stop()); showStep(3); setTimeout(() => document.getElementById('unidade').focus(), 400); }
     function passo4() { if(!document.getElementById('unidade').value) return; showStep(4); iniciarContagem(); }
-    
-    // Função para aceite futuro
-    function passo5() { clearInterval(timerInterval); tocarSom('aceite'); showStep(5); }
 
     function iniciarContagem() {
         let t = 60; clearInterval(timerInterval); tocarSom('chamada');
