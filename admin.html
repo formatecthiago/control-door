@@ -1,1 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Admin - Virty Access</title>
+    <style>
+        :root { --led-green: #39FF14; --grafite: #2c2f33; }
+        body { background: #121212; color: white; font-family: sans-serif; padding: 20px; }
+        h1 { color: var(--led-green); border-bottom: 2px solid var(--grafite); padding-bottom: 10px; }
+        
+        .tabela-pedidos { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .tabela-pedidos th { text-align: left; color: var(--led-green); padding: 10px; border-bottom: 1px solid #333; }
+        .tabela-pedidos td { padding: 15px 10px; border-bottom: 1px solid #222; }
+        
+        .foto-preview { width: 60px; height: 60px; border-radius: 50%; border: 1px solid var(--led-green); object-fit: cover; }
+        
+        .btn-autorizar { background: var(--led-green); color: black; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-recusar { background: #ff4d4d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-left: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>Solicitações de Acesso - Virty</h1>
+    
+    <table class="tabela-pedidos">
+        <thead>
+            <tr>
+                <th>Selfie</th>
+                <th>Nome / CPF</th>
+                <th>ID Aparelho</th>
+                <th>Localização</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="lista-solicitacoes">
+            <tr>
+                <td colspan="5" style="text-align:center; color:#666;">Aguardando novas solicitações...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script type="module">
+        // Importamos as funções necessárias do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // CONFIGURAÇÃO DO SEU FIREBASE (Você vai colar a sua aqui)
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "SEU_PROJETO.firebaseapp.com",
+            databaseURL: "https://SEU_PROJETO.firebaseio.com",
+            projectId: "SEU_PROJETO",
+            storageBucket: "SEU_PROJETO.appspot.com",
+            messagingSenderId: "ID",
+            appId: "APP_ID"
+        };
+
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Referência para a pasta de solicitações
+        const solicitacoesRef = ref(db, 'solicitacoes_pendentes');
+
+        // Escuta o banco de dados em tempo real
+        onValue(solicitacoesRef, (snapshot) => {
+            const data = snapshot.val();
+            const tabela = document.getElementById('lista-solicitacoes');
+            tabela.innerHTML = ""; // Limpa a tabela antes de atualizar
+
+            if (data) {
+                Object.keys(data).forEach(id => {
+                    const item = data[id];
+                    tabela.innerHTML += `
+                        <tr>
+                            <td><img src="${item.foto}" class="foto-preview"></td>
+                            <td><b>${item.nome}</b><br><small>${item.cpf}</small></td>
+                            <td><code>${id}</code></td>
+                            <td><small>${item.localizacao || 'Não informada'}</small></td>
+                            <td>
+                                <button class="btn-autorizar" onclick="autorizar('${id}')">AUTORIZAR</button>
+                                <button class="btn-recusar" onclick="recusar('${id}')">X</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tabela.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#666;'>Nenhuma solicitação pendente.</td></tr>";
+            }
+        });
+
+        // Funções de ação (vão precisar estar no escopo global ou vinculadas ao window)
+        window.autorizar = (deviceId) => {
+            // Lógica para mover de 'pendentes' para 'autorizados'
+            console.log("Autorizando: " + deviceId);
+        };
+    </script>
+</body>
+</html>
 
