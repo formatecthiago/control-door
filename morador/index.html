@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Virty Access - Morador</title>
+    <style>
+        :root { 
+            --led-green: #39FF14; --pure-white: #FFFFFF; --true-black: #000000;
+            --grafite-metal: #2c2f33; --danger-red: #ff4d4d; --info-blue: #2980b9;
+            --standard-gap: 25px; 
+        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: var(--true-black); font-family: sans-serif; color: var(--pure-white); }
+        .moldura-global { width: 100%; min-height: 100vh; border: 10px solid var(--grafite-metal); box-sizing: border-box; display: flex; flex-direction: column; padding: var(--standard-gap); }
+        
+        .tela { display: none; flex-direction: column; align-items: center; width: 100%; }
+        .ativa { display: flex; }
+
+        /* Estilo dos Campos */
+        .campo-grupo { width: 100%; margin-bottom: 15px; }
+        .campo-grupo label { display: block; font-size: 0.7rem; color: var(--led-green); margin-bottom: 5px; text-transform: uppercase; }
+        .campo-grupo input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #1a1a1a; color: white; box-sizing: border-box; font-size: 1rem; }
+
+        /* Câmera */
+        #area-camera { width: 180px; height: 180px; border-radius: 50%; border: 3px solid var(--led-green); margin: 10px 0; overflow: hidden; background: #111; display: flex; align-items: center; justify-content: center; }
+        #video-preview, #foto-capturada { width: 100%; height: 100%; object-fit: cover; }
+
+        .btn-acao { width: 100%; padding: 18px; border-radius: 12px; border: none; font-weight: bold; font-size: 1.1rem; text-transform: uppercase; cursor: pointer; margin-top: 10px; }
+        
+        /* Dashboard */
+        .topo-home { text-align: center; width: 100%; margin-bottom: 20px; }
+        .topo-home h1 { color: var(--led-green); font-size: 1.4rem; margin: 0; }
+        .card-chamada { background: #1a1a1a; padding: 12px; border-radius: 12px; display: flex; align-items: center; border: 1px solid #333; margin-top: 10px; width: 100%; box-sizing: border-box;}
+        
+        .loader { border: 4px solid #333; border-top: 4px solid var(--led-green); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="moldura-global">
+        
+        <div id="tela-cadastro" class="tela">
+            <h2 style="color: var(--led-green); margin: 0;">VIRTY ACCESS</h2>
+            <p style="font-size: 0.8rem; color: #888;">Complete seu cadastro de morador</p>
+
+            <div id="area-camera">
+                <video id="video-preview" autoplay playsinline></video>
+                <img id="foto-capturada" style="display:none;">
+            </div>
+            <canvas id="canvas-foto" style="display:none;"></canvas>
+            <button class="btn-acao" style="background: var(--info-blue); font-size: 0.8rem; padding: 10px; width: auto;" onclick="tirarFoto()">Tirar Selfie</button>
+
+            <div class="campo-grupo" style="margin-top: 15px;">
+                <label>Nome Completo</label>
+                <input type="text" id="cad-nome">
+            </div>
+            <div class="campo-grupo">
+                <label>CPF</label>
+                <input type="tel" id="cad-cpf">
+            </div>
+            <div class="campo-grupo">
+                <label>WhatsApp</label>
+                <input type="tel" id="cad-tel">
+            </div>
+
+            <button class="btn-acao" style="background: var(--led-green); color: black;" onclick="enviarParaFirebase()">Solicitar Acesso</button>
+        </div>
+
+        <div id="tela-aguarde" class="tela">
+            <div style="text-align: center; padding: 40px 0;">
+                <h2 style="color: var(--led-green);">Analisando Cadastro...</h2>
+                <div class="loader"></div>
+                <p>Sua solicitação foi enviada.</p>
+                <p style="font-size: 0.8rem; color: #888;">O administrador irá liberar seu acesso em breve.</p>
+                <p id="display-id" style="font-family: monospace; color: var(--info-blue); font-size: 0.7rem;"></p>
+            </div>
+        </div>
+
+        <div id="tela-home" class="tela">
+            <div class="topo-home">
+                <h1>Virty Access Door</h1>
+                <div style="color: #666; font-size: 0.8rem;">DISPOSITIVO AUTORIZADO</div>
+            </div>
+            <div style="width: 100%;">
+                <p style="font-size: 0.7rem; color: var(--led-green);">HISTÓRICO RECENTE</p>
+                <div class="card-chamada">
+                    <div style="flex-grow:1;"><small>Status:</small><br><b>Sistema Online</b></div>
+                    <div style="color: var(--led-green);">●</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
+            authDomain: "virty-access-door.firebaseapp.com",
+            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
+            projectId: "virty-access-door",
+            storageBucket: "virty-access-door.firebasestorage.app",
+            messagingSenderId: "694822891117",
+            appId: "1:694822891117:web:b95a71c1eb273071fa9964"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const video = document.getElementById('video-preview');
+        const canvas = document.getElementById('canvas-foto');
+        const fotoImg = document.getElementById('foto-capturada');
+        let fotoBase64 = null;
+
+        // Inicia Câmera
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(s => video.srcObject = s).catch(e => console.log(e));
+
+        window.tirarFoto = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            fotoImg.src = fotoBase64;
+            fotoImg.style.display = 'block';
+            video.style.display = 'none';
+        };
+
+        window.enviarParaFirebase = async () => {
+            const nome = document.getElementById('cad-nome').value;
+            const cpf = document.getElementById('cad-cpf').value;
+            const tel = document.getElementById('cad-tel').value;
+
+            if(!nome || !cpf || !fotoBase64) return alert("Preencha tudo e tire a foto!");
+
+            const deviceID = "ID-" + Math.floor(1000 + Math.random() * 9000);
+            localStorage.setItem('virty_id', deviceID);
+
+            await set(ref(db, 'solicitacoes_pendentes/' + deviceID), {
+                nome, cpf, telefone: tel, foto: fotoBase64, data: new Date().toLocaleString()
+            });
+
+            verificarStatus();
+        };
+
+        function verificarStatus() {
+            const id = localStorage.getItem('virty_id');
+            if(!id) {
+                document.getElementById('tela-cadastro').classList.add('ativa');
+                return;
+            }
+
+            document.getElementById('display-id').innerText = "Seu ID: " + id;
+            document.getElementById('tela-cadastro').classList.remove('ativa');
+            document.getElementById('tela-aguarde').classList.add('ativa');
+
+            // Escuta se o admin autorizou
+            onValue(ref(db, 'moradores_autorizados/' + id), (snapshot) => {
+                if(snapshot.exists()) {
+                    document.getElementById('tela-aguarde').classList.remove('ativa');
+                    document.getElementById('tela-home').classList.add('ativa');
+                }
+            });
+        }
+
+        verificarStatus();
+    </script>
+</body>
+</html>
