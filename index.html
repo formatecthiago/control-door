@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Black Edition v6.14</title>
+    <title>Interfone Black Edition v6.16</title>
     <style>
         :root { 
             --led-green: #39FF14; 
@@ -17,20 +17,19 @@
         .moldura-global {
             position: fixed; width: 100vw; height: 100vh;
             background-color: var(--true-black);
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             border: 10px solid var(--grafite-metal); 
             box-sizing: border-box; z-index: 5;
-            padding-top: 20px; /* Subimos tudo ao máximo */
         }
 
         .container-central {
-            position: relative; width: 200px; height: 240px; 
+            position: relative; width: 220px; height: 260px; 
             border-radius: 50% 50% 45% 45%;
             overflow: hidden; background: var(--true-black); 
             display: flex; align-items: center; justify-content: center;
             flex-direction: column; text-align: center;
             border: 4px solid transparent; 
-            margin-bottom: 10px;
+            margin-bottom: 25px; /* Margem aumentada para desgrudar do botão */
         }
 
         .com-guia { border: 4px solid var(--led-green) !important; box-shadow: 0 0 20px var(--led-green); }
@@ -43,30 +42,37 @@
         .btn-inox { 
             background: #27ae60; color: white; padding: 18px; width: 85%; 
             border-radius: 12px; border: none; font-weight: bold; 
-            font-size: 1.4rem; cursor: pointer; margin-bottom: 10px; 
+            font-size: 1.4rem; cursor: pointer; margin-bottom: 12px; 
             text-transform: uppercase; box-shadow: 0 4px 0 #1e8449;
         }
 
-        .welcome-msg { color: var(--pure-white); text-align: center; margin-bottom: 15px; }
+        .welcome-msg { color: var(--pure-white); text-align: center; margin-bottom: 30px; margin-top: 10px; }
         .welcome-msg h1 { font-size: 3rem; margin: 0; }
-        .welcome-msg p { font-size: 1.6rem; margin: 5px 0 0; font-weight: bold; width: 85%; margin-left: auto; margin-right: auto; }
+        .welcome-msg p { font-size: 1.6rem; margin: 10px auto; font-weight: bold; width: 90%; }
 
-        .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.3rem; margin: 5px; font-weight: bold; text-transform: uppercase; }
-        .msg-privacidade { color: #888; font-size: 0.75rem; margin-top: 5px; font-weight: bold; text-align: center; width: 80%; }
-
-        /* Estilo do Input limitado */
-        input#unidade {
-            width: 120px; padding: 15px; font-size: 2.5rem; background: #fff; 
-            color: #000; border: 3px solid var(--led-green); border-radius: 10px;
-            text-align: center; font-weight: bold; margin-bottom: 15px;
+        .label-pequena { color: #888; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; }
+        .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.2rem; margin: 5px; font-weight: bold; text-transform: uppercase; }
+        
+        /* Centralização do Aviso de Segurança */
+        .msg-privacidade { 
+            color: #888; font-size: 0.75rem; font-weight: bold; 
+            text-align: center; width: 100%; margin-top: 10px;
+            display: block;
         }
+
+        input, textarea {
+            width: 80%; background: #fff; color: #000; border: 2px solid var(--led-green); 
+            border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 12px;
+        }
+        input { font-size: 2rem; padding: 10px; }
+        textarea { font-size: 1rem; padding: 10px; resize: none; }
     </style>
 </head>
 <body>
 
     <div class="moldura-global">
         
-        <div id="header-msg">
+        <div id="header-msg" style="display: block;">
             <div class="welcome-msg">
                 <h1>Olá!</h1>
                 <p>Toque em INICIAR para solicitar o seu acesso.</p>
@@ -76,34 +82,49 @@
         <div class="container-central" id="main-container">
             <div id="step-1" class="conteudo" style="display: flex;"></div>
             <div id="step-2" class="conteudo"><video id="video" autoplay playsinline muted></video></div>
-            <div id="step-3" class="conteudo"><div class="lcd-text">UNIDADE</div></div>
-            <div id="step-4" class="conteudo"><div id="timer" style="font-size: 4rem; color: var(--pure-white);">60</div></div>
+            <div id="step-3" class="conteudo"><div class="lcd-text">DADOS DE ACESSO</div></div>
+            <div id="step-4" class="conteudo">
+                <div id="timer" style="font-size: 4rem; color: var(--pure-white);">60</div>
+                <div id="calling-info" class="lcd-text" style="color: var(--led-green); font-size: 1.1rem; margin-top: 10px;"></div>
+            </div>
             <div id="step-5" class="conteudo"><div style="font-size: 6rem; color: var(--led-green);">✓</div><div class="lcd-text">LIBERADO</div></div>
         </div>
 
         <div class="area-botoes">
             <div id="btn-step-1" style="display: block; width: 100%; text-align: center;">
                 <button class="btn-inox" onclick="passo2()">INICIAR</button>
-                <div class="msg-privacidade">AVISO: BIOMETRIA E LOCALIZAÇÃO MONITORADAS</div>
+                <span class="msg-privacidade">AVISO: BIOMETRIA E LOCALIZAÇÃO MONITORADAS</span>
             </div>
             
             <div id="btn-step-2" style="display: none; width: 100%; text-align: center;">
-                <button class="btn-inox" onclick="passo3()">ENVIAR SELFIE</button>
+                <button class="btn-inox" onclick="passo3()">INICIAR CAPTURA</button>
             </div>
 
             <div id="btn-step-3" style="display: none; width: 100%; text-align: center;">
-                <input type="number" id="unidade" pattern="\d*" maxlength="3" oninput="limitInput(this)" placeholder="000">
+                <div class="label-pequena">Digitar o número</div>
+                <input type="number" id="unidade" oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3);" placeholder="000">
+                
+                <div class="label-pequena">Digitar texto (Opcional)</div>
+                <textarea id="recado" rows="2" placeholder="Sua mensagem..."></textarea>
+                
                 <button class="btn-inox" onclick="passo4()">CHAMAR</button>
             </div>
 
             <div id="btn-step-4" style="display: none; width: 100%; text-align: center;">
-                <div class="lcd-text" id="status-label">CHAMANDO...</div>
-                <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">FECHAR</button>
-                <button class="btn-inox" style="background:#2980b9" onclick="passo3()">CHAMAR OUTRO</button>
+                <div id="status-label" class="lcd-text" style="margin-bottom: 20px;">CONECTANDO...</div>
+                
+                <div id="ctrl-durante">
+                    <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">ENCERRAR</button>
+                </div>
+
+                <div id="ctrl-final" style="display: none;">
+                    <button class="btn-inox" style="background:#34495e" onclick="location.reload()">FECHAR</button>
+                    <button class="btn-inox" style="background:#2980b9" onclick="passo3()">CHAMAR OUTRO</button>
+                </div>
             </div>
 
             <div id="btn-step-5" style="display: none; width: 100%; text-align: center;">
-                <button class="btn-inox" style="background:#2c3e50" onclick="location.reload()">FECHAR</button>
+                <button class="btn-inox" style="background:#34495e" onclick="location.reload()">FECHAR</button>
             </div>
         </div>
     </div>
@@ -112,28 +133,25 @@
     let stream, timerInterval, audioCtx;
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
 
-    // Limita o input a 3 dígitos
-    function limitInput(el) {
-        if (el.value.length > 3) el.value = el.value.slice(0, 3);
-    }
-
     function tocarSom(tipo) {
         if (!audioCtx) return;
         const gain = audioCtx.createGain(); gain.connect(audioCtx.destination);
-        // VOLUME MUITO BAIXO (0.07)
-        gain.gain.setValueAtTime(0.07, audioCtx.currentTime); 
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime); 
 
-        const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.connect(gain);
+        const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.connect(gain);
 
         if(tipo === 'chamada') {
-            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
             osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
-            osc.stop(audioCtx.currentTime + 1);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+            osc.stop(audioCtx.currentTime + 1.2);
         } else if (tipo === 'falha') {
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            for(let i=0; i<3; i++) {
+                const o = audioCtx.createOscillator(); o.type = 'square'; o.connect(gain);
+                o.frequency.setValueAtTime(400, audioCtx.currentTime + (i * 0.2));
+                o.start(audioCtx.currentTime + (i * 0.2));
+                o.stop(audioCtx.currentTime + (i * 0.2) + 0.15);
+            }
         }
     }
 
@@ -143,8 +161,7 @@
         document.getElementById('step-'+n).style.display = 'flex';
         if(document.getElementById('btn-step-'+n)) document.getElementById('btn-step-'+n).style.display = 'block';
         
-        if(n > 1) document.getElementById('header-msg').style.display = 'none';
-        else document.getElementById('header-msg').style.display = 'block';
+        document.getElementById('header-msg').style.display = (n === 1) ? 'block' : 'none';
 
         const container = document.getElementById('main-container');
         if(n === 2) container.classList.add('com-guia');
@@ -152,15 +169,36 @@
     }
 
     async function passo2() { initAudio(); showStep(2); try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); document.getElementById('video').srcObject = stream; } catch(e) { alert("Câmera OFF."); } }
-    function passo3() { if(stream) stream.getTracks().forEach(t => t.stop()); showStep(3); setTimeout(() => document.getElementById('unidade').focus(), 400); }
-    function passo4() { if(!document.getElementById('unidade').value) return; showStep(4); iniciarContagem(); }
+    
+    function passo3() { 
+        if(stream) stream.getTracks().forEach(t => t.stop()); 
+        showStep(3); 
+        setTimeout(() => document.getElementById('unidade').focus(), 400); 
+    }
+
+    function passo4() { 
+        const num = document.getElementById('unidade').value;
+        if(!num) return;
+        showStep(4);
+        document.getElementById('calling-info').innerText = "UNIDADE: " + num;
+        document.getElementById('status-label').innerText = "CHAMANDO...";
+        document.getElementById('ctrl-durante').style.display = "block";
+        document.getElementById('ctrl-final').style.display = "none";
+        iniciarContagem(); 
+    }
 
     function iniciarContagem() {
         let t = 60; clearInterval(timerInterval); tocarSom('chamada');
         timerInterval = setInterval(() => {
             t--; document.getElementById('timer').innerText = t;
             if(t % 4 === 0 && t > 0) tocarSom('chamada');
-            if(t <= 0) { clearInterval(timerInterval); tocarSom('falha'); document.getElementById('status-label').innerText = "SEM RESPOSTA"; }
+            if(t <= 0) { 
+                clearInterval(timerInterval); 
+                tocarSom('falha'); 
+                document.getElementById('status-label').innerText = "NÃO RESPONDEU";
+                document.getElementById('ctrl-durante').style.display = "none";
+                document.getElementById('ctrl-final').style.display = "block";
+            }
         }, 1000);
     }
 </script>
