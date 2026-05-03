@@ -6,21 +6,27 @@
     <style>
         :root { --led-green: #39FF14; --grafite: #2c2f33; }
         body { background: #121212; color: white; font-family: sans-serif; padding: 20px; }
-        h1 { color: var(--led-green); border-bottom: 2px solid var(--grafite); padding-bottom: 10px; }
+        h1 { color: var(--led-green); border-bottom: 2px solid var(--grafite); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
         
-        .tabela-pedidos { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .tabela-pedidos th { text-align: left; color: var(--led-green); padding: 10px; border-bottom: 1px solid #333; }
-        .tabela-pedidos td { padding: 15px 10px; border-bottom: 1px solid #222; }
+        .tabela-pedidos { width: 100%; border-collapse: collapse; margin-top: 20px; background: #1a1a1a; border-radius: 10px; overflow: hidden; }
+        .tabela-pedidos th { text-align: left; color: var(--led-green); padding: 15px; border-bottom: 2px solid #333; font-size: 0.8rem; text-transform: uppercase; }
+        .tabela-pedidos td { padding: 15px; border-bottom: 1px solid #222; }
         
-        .foto-preview { width: 60px; height: 60px; border-radius: 50%; border: 1px solid var(--led-green); object-fit: cover; }
+        .foto-preview { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--led-green); object-fit: cover; background: #000; }
         
-        .btn-autorizar { background: var(--led-green); color: black; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .btn-recusar { background: #ff4d4d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-left: 5px; }
+        .btn-autorizar { background: var(--led-green); color: black; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-autorizar:hover { background: #2ecc71; transform: scale(1.05); }
+        
+        .btn-recusar { background: #ff4d4d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-left: 5px; transition: 0.3s; }
+        .btn-recusar:hover { background: #c0392b; }
+
+        code { background: #333; padding: 4px 8px; border-radius: 4px; color: var(--led-green); }
     </style>
 </head>
 <body>
 
-    <h1>Solicitações de Acesso - Virty</h1>
+    <h1>Painel de Controle Virty</h1>
+    <p style="color: #888;">Gerencie as solicitações de acesso dos moradores em tempo real.</p>
     
     <table class="tabela-pedidos">
         <thead>
@@ -34,67 +40,88 @@
         </thead>
         <tbody id="lista-solicitacoes">
             <tr>
-                <td colspan="5" style="text-align:center; color:#666;">Aguardando novas solicitações...</td>
+                <td colspan="5" style="text-align:center; padding: 50px; color:#666;">Conectando ao banco de dados...</td>
             </tr>
         </tbody>
     </table>
 
     <script type="module">
-        // Importamos as funções necessárias do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // CONFIGURAÇÃO DO SEU FIREBASE (Você vai colar a sua aqui)
+        // CONFIGURAÇÃO REAL DO SEU FIREBASE
         const firebaseConfig = {
-            apiKey: "SUA_API_KEY",
-            authDomain: "SEU_PROJETO.firebaseapp.com",
-            databaseURL: "https://SEU_PROJETO.firebaseio.com",
-            projectId: "SEU_PROJETO",
-            storageBucket: "SEU_PROJETO.appspot.com",
-            messagingSenderId: "ID",
-            appId: "APP_ID"
+            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
+            authDomain: "virty-access-door.firebaseapp.com",
+            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
+            projectId: "virty-access-door",
+            storageBucket: "virty-access-door.firebasestorage.app",
+            messagingSenderId: "694822891117",
+            appId: "1:694822891117:web:b95a71c1eb273071fa9964"
         };
 
-        // Inicializa o Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Referência para a pasta de solicitações
+        // Referência para a lista de solicitações
         const solicitacoesRef = ref(db, 'solicitacoes_pendentes');
 
-        // Escuta o banco de dados em tempo real
+        // Escuta novas solicitações
         onValue(solicitacoesRef, (snapshot) => {
             const data = snapshot.val();
             const tabela = document.getElementById('lista-solicitacoes');
-            tabela.innerHTML = ""; // Limpa a tabela antes de atualizar
+            tabela.innerHTML = ""; 
 
             if (data) {
-                Object.keys(data).forEach(id => {
-                    const item = data[id];
+                Object.keys(data).forEach(deviceId => {
+                    const morador = data[deviceId];
                     tabela.innerHTML += `
                         <tr>
-                            <td><img src="${item.foto}" class="foto-preview"></td>
-                            <td><b>${item.nome}</b><br><small>${item.cpf}</small></td>
-                            <td><code>${id}</code></td>
-                            <td><small>${item.localizacao || 'Não informada'}</small></td>
+                            <td><img src="${morador.foto}" class="foto-preview"></td>
+                            <td><b>${morador.nome}</b><br><small>CPF: ${morador.cpf}</small><br><small>Tel: ${morador.telefone}</small></td>
+                            <td><code>${deviceId}</code></td>
+                            <td><small>${morador.localizacao || 'Natal, RN'}</small></td>
                             <td>
-                                <button class="btn-autorizar" onclick="autorizar('${id}')">AUTORIZAR</button>
-                                <button class="btn-recusar" onclick="recusar('${id}')">X</button>
+                                <button class="btn-autorizar" onclick="gerenciarAcesso('${deviceId}', true)">AUTORIZAR</button>
+                                <button class="btn-recusar" onclick="gerenciarAcesso('${deviceId}', false)">EXCLUIR</button>
                             </td>
                         </tr>
                     `;
                 });
             } else {
-                tabela.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#666;'>Nenhuma solicitação pendente.</td></tr>";
+                tabela.innerHTML = "<tr><td colspan='5' style='text-align:center; padding: 50px; color:#666;'>Nenhuma solicitação pendente no momento.</td></tr>";
             }
         });
 
-        // Funções de ação (vão precisar estar no escopo global ou vinculadas ao window)
-        window.autorizar = (deviceId) => {
-            // Lógica para mover de 'pendentes' para 'autorizados'
-            console.log("Autorizando: " + deviceId);
+        // Função para Autorizar ou Recusar
+        window.gerenciarAcesso = async (deviceId, autorizar) => {
+            const statusTxt = autorizar ? "Autorizar este morador?" : "Excluir esta solicitação?";
+            if (!confirm(statusTxt)) return;
+
+            const pathPendente = ref(db, `solicitacoes_pendentes/${deviceId}`);
+            const pathAutorizado = ref(db, `moradores_autorizados/${deviceId}`);
+
+            if (autorizar) {
+                // Busca os dados da solicitação para mover
+                const snapshot = await get(pathPendente);
+                if (snapshot.exists()) {
+                    const dados = snapshot.val();
+                    // Salva na pasta de autorizados
+                    await set(pathAutorizado, {
+                        ...dados,
+                        dataAtivacao: new Date().toISOString(),
+                        status: "liberado"
+                    });
+                    // Remove de pendentes
+                    await remove(pathPendente);
+                    alert("Morador Autorizado com Sucesso!");
+                }
+            } else {
+                // Apenas remove
+                await remove(pathPendente);
+                alert("Solicitação removida.");
+            }
         };
     </script>
 </body>
 </html>
-
