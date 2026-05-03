@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Virty Access">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>Virty Access Door - Home</title>
+    <title>Virty Access Door</title>
     <style>
         :root { 
             --led-green: #39FF14; 
@@ -15,49 +12,144 @@
             --grafite-metal: #2c2f33; 
             --danger-red: #ff4d4d;
             --info-blue: #2980b9;
-            --standard-gap: 20px; 
+            --standard-gap: 25px; 
         }
         
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background-color: var(--true-black); 
             font-family: sans-serif; color: var(--pure-white);
-            overflow: hidden;
         }
 
+        /* Moldura principal com o espaçamento que você pediu */
         .moldura-global {
-            width: 100vw; height: 100vh;
+            width: 100%; height: 100vh;
             border: 10px solid var(--grafite-metal);
             box-sizing: border-box;
             display: flex; flex-direction: column;
             padding: var(--standard-gap);
-            justify-content: space-between;
+            position: relative;
         }
 
-        /* --- TELA HOME / HISTÓRICO --- */
-        #tela-home { display: flex; flex-direction: column; height: 100%; justify-content: space-between; }
-        .topo-id h1 { font-size: 1.4rem; color: var(--led-green); margin: 0; text-align: center; text-transform: uppercase; }
-        .info-apto { font-size: 0.9rem; color: #888; text-align: center; margin-top: 5px; font-weight: bold; }
+        /* --- ESTILO DA HOME (HISTÓRICO) --- */
+        #tela-home { display: flex; flex-direction: column; height: 100%; }
+        
+        .topo-id { text-align: center; margin-bottom: var(--standard-gap); }
+        .topo-id h1 { font-size: 1.5rem; color: var(--led-green); margin: 0; }
+        .info-apto { font-size: 0.9rem; color: #888; margin-top: 5px; }
 
-        .lista-chamadas { flex-grow: 1; margin: var(--standard-gap) 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
-        .item-chamada { background: #1a1a1a; padding: 10px; border-radius: 12px; display: flex; align-items: center; border: 1px solid #333; }
-        .mini-selfie { width: 45px; height: 55px; border-radius: 50% 50% 45% 45%; border: 1px solid var(--led-green); overflow: hidden; background: #000; }
+        .lista-chamadas { flex-grow: 1; display: flex; flex-direction: column; gap: 15px; }
+        .item-chamada { background: #1a1a1a; padding: 12px; border-radius: 12px; display: flex; align-items: center; border: 1px solid #333; }
+        .mini-selfie { width: 50px; height: 60px; border-radius: 10px; border: 1px solid var(--led-green); background: #000; overflow: hidden; }
         .mini-selfie img { width: 100%; height: 100%; object-fit: cover; }
         .dados-chamada { flex-grow: 1; margin-left: 15px; }
-        .data-hora { font-size: 0.85rem; font-weight: bold; }
-        .status-txt { font-size: 0.7rem; color: #666; text-transform: uppercase; }
-        .status-v { color: var(--led-green); font-weight: bold; }
-        .status-x { color: var(--danger-red); font-weight: bold; }
+        .status-v { color: var(--led-green); font-weight: bold; font-size: 1.2rem; }
 
-        /* --- TELA CHAMADA ATIVA (SOBREPOSIÇÃO) --- */
-        #tela-chamada { display: none; flex-direction: column; align-items: center; height: 100%; justify-content: space-around; }
-        .foto-visitante { width: 160px; height: 200px; border-radius: 50% 50% 45% 45%; border: 4px solid var(--led-green); overflow: hidden; box-shadow: 0 0 20px var(--led-green); }
+        /* --- ESTILO DA CHAMADA ATIVA --- */
+        #tela-chamada { display: none; flex-direction: column; align-items: center; text-align: center; height: 100%; }
+        
+        .foto-visitante { width: 150px; height: 180px; border-radius: 20px; border: 3px solid var(--led-green); margin-bottom: 20px; overflow: hidden; }
         .foto-visitante img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .msg-visitante-box { background: #1a1a1a; padding: 15px; border-radius: 10px; border-left: 4px solid var(--led-green); width: 85%; font-style: italic; font-size: 0.95rem; }
 
-        /* --- BOTÕES E INPUTS --- */
-        .area-botoes { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .btn-comando { width: 85%; padding: 18px; border-radius: 12px; border: none; color: white; font-weight: bold; font-size: 1.2rem; text-transform: uppercase; cursor: pointer; }
+        .area-botoes { width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+        .btn-comando { width: 90%; padding: 18px; border-radius: 12px; border: none; color: white; font-weight: bold; font-size: 1.1rem; text-transform: uppercase; }
+
+        /* CAIXA DE TEXTO DO BOTÃO AZUL */
+        #container-mensagem { display: none; width: 90%; margin-top: 10px; }
+        #input-texto { width: 100%; padding: 15px; border-radius: 8px; border: 2px solid var(--info-blue); font-size: 1rem; margin-bottom: 10px; }
+
+        /* POP-UP BRANCO (O CAPRICHO) */
+        #pop-informativo {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80%; background: white; color: black; border-radius: 15px; padding: 25px; z-index: 1000; text-align: center;
+        }
+        .x-fechar { position: absolute; top: 5px; right: 12px; font-size: 1.8rem; color: var(--danger-red); cursor: pointer; font-weight: bold; }
+
+        /* NAVEGAÇÃO BASE */
+        .base-nav { margin-top: auto; display: flex; justify-content: center; padding-top: 10px; }
+        .btn-nav { font-size: 2rem; cursor: pointer; color: var(--led-green); }
+    </style>
+</head>
+<body>
+
+    <div class="moldura-global">
         
-        #caixa-texto-container { display: none; width: 85%; flex-direction: column; gap: 1
+        <div id="tela-home">
+            <div class="topo-id">
+                <h1>Virty Access Door</h1>
+                <div class="info-apto">ID: #9921 | UNIDADE 101</div>
+            </div>
+
+            <div class="lista-chamadas">
+                <p style="color:#666; font-size: 0.8rem; text-transform: uppercase;">Histórico Recente</p>
+                <div class="item-chamada">
+                    <div class="mini-selfie"><img src="https://via.placeholder.com/50x60"></div>
+                    <div class="dados-chamada"><b>Hoje - 12:45</b><br><small>Acesso Liberado</small></div>
+                    <div class="status-v">✓</div>
+                </div>
+            </div>
+
+            <div class="base-nav">
+                <span onclick="mostrarChamada()" style="cursor:pointer">🔔 Simular Chamada</span>
+            </div>
+        </div>
+
+        <div id="tela-chamada">
+            <div class="foto-visitante">
+                <img src="https://via.placeholder.com/150x180?text=Visitante">
+            </div>
+
+            <div class="area-botoes" id="bloco-acoes">
+                <button class="btn-comando" style="background: var(--danger-red);" onclick="location.reload()">RECUSAR</button>
+                <button class="btn-comando" style="background: var(--info-blue);" onclick="abrirEscrita()">ACEITAR / MENSAGEM</button>
+                <button class="btn-comando" style="background: var(--led-green); color: black;" onclick="abrirPortao()">ABRIR PORTÃO</button>
+            </div>
+
+            <div id="container-mensagem">
+                <input type="text" id="input-texto" maxlength="60" placeholder="Digite aqui...">
+                <button class="btn-comando" style="background: var(--info-blue);" onclick="enviarMensagem()">ENVIAR</button>
+            </div>
+
+            <div class="base-nav">
+                <span class="btn-nav" onclick="location.reload()">🏠</span>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="pop-informativo">
+        <span class="x-fechar" onclick="fecharPop()">×</span>
+        <p>Para liberar click no botão verde liberar portão</p>
+    </div>
+
+    <script>
+        function mostrarChamada() {
+            document.getElementById('tela-home').style.display = 'none';
+            document.getElementById('tela-chamada').style.display = 'flex';
+        }
+
+        function abrirEscrita() {
+            document.getElementById('bloco-acoes').style.display = 'none';
+            document.getElementById('container-mensagem').style.display = 'block';
+            document.getElementById('input-texto').focus();
+        }
+
+        function enviarMensagem() {
+            // Fecha a escrita e volta os botões
+            document.getElementById('container-mensagem').style.display = 'none';
+            document.getElementById('bloco-acoes').style.display = 'flex';
+            // Abre o pop-up de capricho
+            document.getElementById('pop-informativo').style.display = 'block';
+        }
+
+        function fecharPop() {
+            document.getElementById('pop-informativo').style.display = 'none';
+        }
+
+        function abrirPortao() {
+            alert("Portão Aberto!");
+            location.reload();
+        }
+    </script>
+</body>
+</html>
