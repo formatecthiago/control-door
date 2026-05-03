@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Virty Access">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Virty Access Door - Home</title>
+    <style>
+        :root { 
+            --led-green: #39FF14; 
+            --pure-white: #FFFFFF; 
+            --true-black: #000000;
+            --grafite-metal: #2c2f33; 
+            --danger-red: #ff4d4d;
+            --info-blue: #2980b9;
+            --standard-gap: 20px; 
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background-color: var(--true-black); 
+            font-family: sans-serif; color: var(--pure-white);
+            overflow: hidden;
+        }
+
+        .moldura-global {
+            width: 100vw; height: 100vh;
+            border: 10px solid var(--grafite-metal);
+            box-sizing: border-box;
+            display: flex; flex-direction: column;
+            padding: var(--standard-gap);
+            justify-content: space-between;
+        }
+
+        /* --- TELA HOME / HISTÓRICO --- */
+        #tela-home { display: flex; flex-direction: column; height: 100%; justify-content: space-between; }
+        .topo-id h1 { font-size: 1.4rem; color: var(--led-green); margin: 0; text-align: center; text-transform: uppercase; }
+        .info-apto { font-size: 0.9rem; color: #888; text-align: center; margin-top: 5px; font-weight: bold; }
+
+        .lista-chamadas { flex-grow: 1; margin: var(--standard-gap) 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+        .item-chamada { background: #1a1a1a; padding: 10px; border-radius: 12px; display: flex; align-items: center; border: 1px solid #333; }
+        .mini-selfie { width: 45px; height: 55px; border-radius: 50% 50% 45% 45%; border: 1px solid var(--led-green); overflow: hidden; background: #000; }
+        .mini-selfie img { width: 100%; height: 100%; object-fit: cover; }
+        .dados-chamada { flex-grow: 1; margin-left: 15px; }
+        .data-hora { font-size: 0.85rem; font-weight: bold; }
+        .status-txt { font-size: 0.7rem; color: #666; text-transform: uppercase; }
+        .status-v { color: var(--led-green); font-weight: bold; }
+        .status-x { color: var(--danger-red); font-weight: bold; }
+
+        /* --- TELA CHAMADA ATIVA (SOBREPOSIÇÃO) --- */
+        #tela-chamada { display: none; flex-direction: column; align-items: center; height: 100%; justify-content: space-around; }
+        .foto-visitante { width: 160px; height: 200px; border-radius: 50% 50% 45% 45%; border: 4px solid var(--led-green); overflow: hidden; box-shadow: 0 0 20px var(--led-green); }
+        .foto-visitante img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .msg-visitante-box { background: #1a1a1a; padding: 15px; border-radius: 10px; border-left: 4px solid var(--led-green); width: 85%; font-style: italic; font-size: 0.95rem; }
+
+        /* --- BOTÕES E INPUTS --- */
+        .area-botoes { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .btn-comando { width: 85%; padding: 18px; border-radius: 12px; border: none; color: white; font-weight: bold; font-size: 1.2rem; text-transform: uppercase; cursor: pointer; }
+        
+        #caixa-texto-container { display: none; width: 85%; flex-direction: column; gap: 1
