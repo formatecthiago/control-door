@@ -1,95 +1,96 @@
-<div id="painel-admin" style="max-width: 800px; margin: 20px auto; font-family: sans-serif;">
-    
-    <h2>🔔 Solicitações Pendentes</h2>
-    <div id="lista-pendentes" style="background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
-        </div>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Virty Access</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; }
+        .card img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border-bottom: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #2c3e50; color: white; }
+        .btn-aceitar { background: #27ae60; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        .btn-delete { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 Pendentes</h1>
+        <div id="lista-pendentes"></div>
 
-    <hr style="margin: 40px 0;">
+        <hr>
 
-    <h2>🏠 Banco de Dados: Moradores Autorizados</h2>
-    <div style="margin-bottom: 10px;">
-        <input type="text" id="filtro-casa" placeholder="Filtrar por número da casa..." oninput="filtrarMoradores()" style="padding: 8px; width: 250px;">
+        <h1>🏠 Moradores Autorizados</h1>
+        <table id="tabela-moradores">
+            <thead>
+                <tr>
+                    <th>Casa</th>
+                    <th>Nome</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="corpo-tabela"></tbody>
+        </table>
     </div>
-    
-    <table style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-        <thead>
-            <tr style="background: #2c3e50; color: white; text-align: left;">
-                <th style="padding: 12px;">Casa</th>
-                <th style="padding: 12px;">Nome</th>
-                <th style="padding: 12px;">Ações</th>
-            </tr>
-        </thead>
-        <tbody id="tabela-moradores">
-            </tbody>
-    </table>
-</div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // ... (sua configuração do Firebase continua aqui)
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
+            authDomain: "virty-access-door.firebaseapp.com",
+            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
+            projectId: "virty-access-door",
+            storageBucket: "virty-access-door.firebasestorage.app",
+            messagingSenderId: "694822891117",
+            appId: "1:694822891117:web:b95a71c1eb273071fa9964"
+        };
 
-    // 1. MONITORAR MORADORES JÁ ACEITOS (O SEU BANCO DE DADOS)
-    onValue(ref(db, 'moradores_autorizados'), (snapshot) => {
-        const tabela = document.getElementById('tabela-moradores');
-        tabela.innerHTML = "";
-        
-        if (snapshot.exists()) {
-            const dados = snapshot.val();
-            // Transforma em array para organizar por número de casa
-            const listaOrdenada = Object.keys(dados).map(id => ({ id, ...dados[id] }));
-            listaOrdenada.sort((a, b) => a.casa.localeCompare(b.casa, undefined, {numeric: true}));
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-            listaOrdenada.forEach(m => {
-                tabela.innerHTML += `
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 12px; font-weight: bold;">${m.casa}</td>
-                        <td style="padding: 12px;">${m.nome}</td>
-                        <td style="padding: 12px;">
-                            <button onclick="editarMorador('${m.id}', '${m.nome}', '${m.casa}')" style="background: #f1c40f; border:none; padding: 5px 10px; border-radius:4px; cursor:pointer;">Editar</button>
-                            <button onclick="deletarMorador('${m.id}')" style="background: #e74c3c; color:white; border:none; padding: 5px 10px; border-radius:4px; cursor:pointer; margin-left:5px;">Deletar</button>
-                        </td>
-                    </tr>
-                `;
+        // Monitorar Pendentes
+        onValue(ref(db, 'solicitacoes_pendentes'), (snapshot) => {
+            const div = document.getElementById('lista-pendentes');
+            div.innerHTML = "";
+            snapshot.forEach(item => {
+                const p = item.val();
+                div.innerHTML += `
+                    <div class="card">
+                        <img src="${p.foto}">
+                        <div><b>${p.nome}</b> (Casa: ${p.casa})</div>
+                        <button class="btn-aceitar" onclick="aceitar('${item.key}')">Autorizar</button>
+                    </div>`;
             });
-        } else {
-            tabela.innerHTML = "<tr><td colspan='3' style='padding:20px; text-align:center;'>Nenhum morador cadastrado.</td></tr>";
-        }
-    });
+        });
 
-    // 2. FUNÇÃO PARA DELETAR
-    window.deletarMorador = (id) => {
-        if(confirm("Tem certeza que deseja remover este morador? Ele perderá o acesso imediatamente.")) {
-            remove(ref(db, 'moradores_autorizados/' + id));
-        }
-    };
-
-    // 3. FUNÇÃO PARA EDITAR
-    window.editarMorador = (id, nomeAntigo, casaAntiga) => {
-        const novoNome = prompt("Novo nome:", nomeAntigo);
-        const novaCasa = prompt("Novo número da casa:", casaAntiga);
-        
-        if(novoNome && novaCasa) {
-            update(ref(db, 'moradores_autorizados/' + id), {
-                nome: novoNome,
-                casa: novaCasa
+        // Monitorar Autorizados
+        onValue(ref(db, 'moradores_autorizados'), (snapshot) => {
+            const corpo = document.getElementById('corpo-tabela');
+            corpo.innerHTML = "";
+            snapshot.forEach(item => {
+                const m = item.val();
+                corpo.innerHTML += `
+                    <tr>
+                        <td>${m.casa}</td>
+                        <td>${m.nome}</td>
+                        <td><button class="btn-delete" onclick="deletar('${item.key}')">Excluir</button></td>
+                    </tr>`;
             });
-        }
-    };
+        });
 
-    // FUNÇÃO DE FILTRO (BUSCA RÁPIDA)
-    window.filtrarMoradores = () => {
-        const input = document.getElementById('filtro-casa').value.toUpperCase();
-        const trs = document.getElementById('tabela-moradores').getElementsByTagName('tr');
-        for (let i = 0; i < trs.length; i++) {
-            let td = trs[i].getElementsByTagName('td')[0];
-            if (td) {
-                let txtValue = td.textContent || td.innerText;
-                trs[i].style.display = txtValue.toUpperCase().indexOf(input) > -1 ? "" : "none";
-            }
-        }
-    };
-</script>
+        window.aceitar = (id) => {
+            onValue(ref(db, 'solicitacoes_pendentes/' + id), (snap) => {
+                const dados = snap.val();
+                set(ref(db, 'moradores_autorizados/' + id), dados);
+                remove(ref(db, 'solicitacoes_pendentes/' + id));
+            }, { onlyOnce: true });
+        };
+
+        window.deletar = (id) => { if(confirm("Remover?")) remove(ref(db, 'moradores_autorizados/' + id)); };
+    </script>
+</body>
+</html>
