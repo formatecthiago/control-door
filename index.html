@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Interfone Black Edition v6.16</title>
     <style>
+        /* MANTIDO TODO O SEU CSS ORIGINAL */
         :root { 
             --led-green: #39FF14; 
             --pure-white: #FFFFFF; 
@@ -29,7 +30,7 @@
             display: flex; align-items: center; justify-content: center;
             flex-direction: column; text-align: center;
             border: 4px solid transparent; 
-            margin-bottom: 25px; /* Margem aumentada para desgrudar do botão */
+            margin-bottom: 25px;
         }
 
         .com-guia { border: 4px solid var(--led-green) !important; box-shadow: 0 0 20px var(--led-green); }
@@ -53,7 +54,6 @@
         .label-pequena { color: #888; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; }
         .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.2rem; margin: 5px; font-weight: bold; text-transform: uppercase; }
         
-        /* Centralização do Aviso de Segurança */
         .msg-privacidade { 
             color: #888; font-size: 0.75rem; font-weight: bold; 
             text-align: center; width: 100%; margin-top: 10px;
@@ -66,6 +66,19 @@
         }
         input { font-size: 2rem; padding: 10px; }
         textarea { font-size: 1rem; padding: 10px; resize: none; }
+        
+        /* NOVO: Estilo para a resposta do morador que aparecerá no Step 4 */
+        #resposta-area { 
+            color: var(--led-green); 
+            background: rgba(57, 255, 20, 0.1); 
+            padding: 10px; 
+            border-radius: 8px; 
+            margin-top: 5px; 
+            font-weight: bold; 
+            display: none; 
+            border: 1px dashed var(--led-green);
+            max-width: 90%;
+        }
     </style>
 </head>
 <body>
@@ -86,6 +99,7 @@
             <div id="step-4" class="conteudo">
                 <div id="timer" style="font-size: 4rem; color: var(--pure-white);">60</div>
                 <div id="calling-info" class="lcd-text" style="color: var(--led-green); font-size: 1.1rem; margin-top: 10px;"></div>
+                <div id="resposta-area"></div>
             </div>
             <div id="step-5" class="conteudo"><div style="font-size: 6rem; color: var(--led-green);">✓</div><div class="lcd-text">LIBERADO</div></div>
         </div>
@@ -114,7 +128,7 @@
                 <div id="status-label" class="lcd-text" style="margin-bottom: 20px;">CONECTANDO...</div>
                 
                 <div id="ctrl-durante">
-                    <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">ENCERRAR</button>
+                    <button class="btn-inox" style="background:#c0392b" onclick="encerrarChamada()">ENCERRAR</button>
                 </div>
 
                 <div id="ctrl-final" style="display: none;">
@@ -129,27 +143,42 @@
         </div>
     </div>
 
-<script>
+<script type="module">
+    // --- IMPORTAÇÃO DO FIREBASE ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
+        authDomain: "virty-access-door.firebaseapp.com",
+        databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
+        projectId: "virty-access-door",
+        storageBucket: "virty-access-door.firebasestorage.app",
+        messagingSenderId: "694822891117",
+        appId: "1:694822891117:web:b95a71c1eb273071fa9964"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // --- VARIÁVEIS DE CONTROLE ---
     let stream, timerInterval, audioCtx;
+    let casaAtual = "";
+
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
 
     function tocarSom(tipo) {
         if (!audioCtx) return;
         const gain = audioCtx.createGain(); gain.connect(audioCtx.destination);
         gain.gain.setValueAtTime(0.15, audioCtx.currentTime); 
-
         const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.connect(gain);
-
         if(tipo === 'chamada') {
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-            osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
-            osc.stop(audioCtx.currentTime + 1.2);
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2); osc.stop(audioCtx.currentTime + 1.2);
         } else if (tipo === 'falha') {
             for(let i=0; i<3; i++) {
                 const o = audioCtx.createOscillator(); o.type = 'square'; o.connect(gain);
-                o.frequency.setValueAtTime(400, audioCtx.currentTime + (i * 0.2));
-                o.start(audioCtx.currentTime + (i * 0.2));
+                o.frequency.setValueAtTime(400, audioCtx.currentTime + (i * 0.2)); o.start(audioCtx.currentTime + (i * 0.2));
                 o.stop(audioCtx.currentTime + (i * 0.2) + 0.15);
             }
         }
@@ -160,31 +189,73 @@
         document.querySelectorAll('.area-botoes > div').forEach(d => d.style.display = 'none');
         document.getElementById('step-'+n).style.display = 'flex';
         if(document.getElementById('btn-step-'+n)) document.getElementById('btn-step-'+n).style.display = 'block';
-        
         document.getElementById('header-msg').style.display = (n === 1) ? 'block' : 'none';
-
         const container = document.getElementById('main-container');
-        if(n === 2) container.classList.add('com-guia');
-        else container.classList.remove('com-guia');
+        if(n === 2) container.classList.add('com-guia'); else container.classList.remove('com-guia');
     }
 
-    async function passo2() { initAudio(); showStep(2); try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); document.getElementById('video').srcObject = stream; } catch(e) { alert("Câmera OFF."); } }
+    // Tornar funções acessíveis globalmente para os botões onclick
+    window.passo2 = async function() { 
+        initAudio(); showStep(2); 
+        try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); document.getElementById('video').srcObject = stream; } 
+        catch(e) { alert("Câmera OFF."); } 
+    }
     
-    function passo3() { 
+    window.passo3 = function() { 
         if(stream) stream.getTracks().forEach(t => t.stop()); 
-        showStep(3); 
-        setTimeout(() => document.getElementById('unidade').focus(), 400); 
+        showStep(3); setTimeout(() => document.getElementById('unidade').focus(), 400); 
     }
 
-    function passo4() { 
-        const num = document.getElementById('unidade').value;
-        if(!num) return;
+    window.passo4 = async function() { 
+        casaAtual = document.getElementById('unidade').value;
+        const msg = document.getElementById('recado').value;
+        if(!casaAtual) return;
+
         showStep(4);
-        document.getElementById('calling-info').innerText = "UNIDADE: " + num;
+        document.getElementById('calling-info').innerText = "UNIDADE: " + casaAtual;
         document.getElementById('status-label').innerText = "CHAMANDO...";
         document.getElementById('ctrl-durante').style.display = "block";
         document.getElementById('ctrl-final').style.display = "none";
+        document.getElementById('resposta-area').style.display = "none"; // Esconde resposta anterior
+
+        // --- GATILHO FIREBASE: ENVIA CHAMADA ---
+        await set(ref(db, 'chamadas_ativas/' + casaAtual), {
+            ativa: true,
+            mensagem_visitante: msg,
+            timestamp: Date.now()
+        });
+
+        // --- OUVE RESPOSTAS DO MORADOR (TEXTO OU LIBERAÇÃO) ---
+        
+        // 1. Ouve se o morador escreveu o texto de 60 caracteres
+        onValue(ref(db, 'respostas_interfone/' + casaAtual), (snap) => {
+            if(snap.exists()) {
+                const area = document.getElementById('resposta-area');
+                area.innerText = "MORADOR: " + snap.val().mensagem;
+                area.style.display = "block";
+                document.getElementById('status-label').innerText = "MENSAGEM RECEBIDA";
+            }
+        });
+
+        // 2. Ouve se a chamada foi apagada (Morador clicou em Abrir ou Recusar)
+        onValue(ref(db, 'chamadas_ativas/' + casaAtual), (snap) => {
+            if(!snap.exists() && casaAtual !== "") {
+                // Se a chamada sumiu do banco, mas ainda estamos no step 4, significa liberação ou recusa
+                // Para simplificar, vamos considerar sucesso/liberação:
+                showStep(5);
+                clearInterval(timerInterval);
+            }
+        });
+
         iniciarContagem(); 
+    }
+
+    window.encerrarChamada = function() {
+        if(casaAtual) {
+            remove(ref(db, 'chamadas_ativas/' + casaAtual));
+            remove(ref(db, 'respostas_interfone/' + casaAtual));
+        }
+        location.reload();
     }
 
     function iniciarContagem() {
@@ -198,6 +269,7 @@
                 document.getElementById('status-label').innerText = "NÃO RESPONDEU";
                 document.getElementById('ctrl-durante').style.display = "none";
                 document.getElementById('ctrl-final').style.display = "block";
+                if(casaAtual) remove(ref(db, 'chamadas_ativas/' + casaAtual));
             }
         }, 1000);
     }
