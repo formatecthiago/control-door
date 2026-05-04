@@ -5,18 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Virty Access - Interfone</title>
     <style>
+        /* AQUI ESTÁ O SEU DESIGN ORIGINAL QUE EU TINHA ALTERADO */
         body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
         .container { width: 100%; max-width: 400px; text-align: center; padding: 20px; }
-        .display { font-size: 50px; color: #39FF14; margin-bottom: 30px; height: 60px; font-weight: bold; }
+        .display { font-size: 50px; color: #39FF14; margin-bottom: 30px; height: 60px; font-weight: bold; border-bottom: 2px solid #222; }
         .teclado { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
         .tecla { background: #111; border: 1px solid #333; color: #fff; padding: 20px; font-size: 24px; border-radius: 10px; cursor: pointer; }
         .tecla:active { background: #333; }
         .btn-chamar { grid-column: span 3; background: #39FF14; color: #000; font-weight: bold; border-radius: 10px; border: none; padding: 20px; font-size: 20px; cursor: pointer; margin-top: 10px; }
         
-        /* TELA DE ESPERA DA RESPOSTA */
+        /* TELAS DE STATUS (O QUE APARECE DEPOIS DE CLICAR EM CHAMAR) */
         #tela-status { display: none; }
         .contador { font-size: 70px; color: #f1c40f; margin: 20px 0; }
-        #mensagem-retorno { background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid #39FF14; min-height: 40px; margin-top: 20px; color: #39FF14; }
+        #mensagem-retorno { background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid #39FF14; min-height: 40px; margin-top: 20px; color: #39FF14; font-size: 18px; }
     </style>
 </head>
 <body>
@@ -30,4 +31,80 @@
             <button class="tecla" onclick="digitar('4')">4</button>
             <button class="tecla" onclick="digitar('5')">5</button>
             <button class="tecla" onclick="digitar('6')">6</button>
-            <button class="tecla
+            <button class="tecla" onclick="digitar('7')">7</button>
+            <button class="tecla" onclick="digitar('8')">8</button>
+            <button class="tecla" onclick="digitar('9')">9</button>
+            <button class="tecla" onclick="limpar()" style="color:#ff4444">C</button>
+            <button class="tecla" onclick="digitar('0')">0</button>
+            <button class="btn-chamar" onclick="executarChamada()">CHAMAR</button>
+        </div>
+    </div>
+
+    <div class="container" id="tela-status">
+        <h2>Chamando...</h2>
+        <div class="contador" id="timer">20</div>
+        <p>Aguarde o retorno do morador</p>
+        <div id="mensagem-retorno">...</div>
+        <button onclick="cancelarTudo()" style="background:none; border:1px solid #ff4444; color:#ff4444; margin-top:40px; padding:10px; border-radius:5px;">CANCELAR</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
+            authDomain: "virty-access-door.firebaseapp.com",
+            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
+            projectId: "virty-access-door",
+            storageBucket: "virty-access-door.firebasestorage.app",
+            messagingSenderId: "694822891117",
+            appId: "1:694822891117:web:b95a71c1eb273071fa9964"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let casa = "";
+        const display = document.getElementById('num-casa');
+
+        window.digitar = (n) => { if(casa.length < 4) { casa += n; display.innerText = casa; } };
+        window.limpar = () => { casa = ""; display.innerText = ""; };
+
+        window.executarChamada = async () => {
+            if(!casa) return;
+
+            // DISPARA A CHAMADA NO FIREBASE (AQUI É A COMUNICAÇÃO QUE FALTAVA)
+            await set(ref(db, 'chamadas_ativas/' + casa), { ativa: true, timestamp: Date.now() });
+
+            document.getElementById('painel-teclado').style.display = 'none';
+            document.getElementById('tela-status').style.display = 'block';
+
+            let tempo = 20;
+            const t = setInterval(() => {
+                tempo--;
+                document.getElementById('timer').innerText = tempo;
+                if(tempo <= 0) { clearInterval(t); cancelarTudo(); alert("Morador não atendeu."); }
+            }, 1000);
+
+            // ESCUTA O TEXTO DE 60 CARACTERES QUE O MORADOR ENVIAR
+            onValue(ref(db, 'respostas_interfone/' + casa), (snap) => {
+                if(snap.exists()) {
+                    document.getElementById('mensagem-retorno').innerText = snap.val().mensagem;
+                }
+            });
+
+            // SE O MORADOR ABRIR O PORTÃO, A CHAMADA É APAGADA E O VISITANTE RESETADO
+            onValue(ref(db, 'chamadas_ativas/' + casa), (snap) => {
+                if(!snap.exists() && tempo > 0) { clearInterval(t); location.reload(); }
+            });
+        };
+
+        window.cancelarTudo = () => {
+            remove(ref(db, 'chamadas_ativas/' + casa));
+            remove(ref(db, 'respostas_interfone/' + casa));
+            location.reload();
+        };
+    </script>
+</body>
+</html>
