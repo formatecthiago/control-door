@@ -4,26 +4,26 @@
     <meta charset="UTF-8">
     <title>Admin - Virty Access</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; }
-        .card img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border-bottom: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background: #2c3e50; color: white; }
-        .btn-aceitar { background: #27ae60; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
-        .btn-delete { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .card { background: #252525; border: 1px solid #333; padding: 15px; margin-bottom: 15px; border-radius: 8px; display: flex; align-items: center; gap: 15px; }
+        .card img { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #39FF14; object-fit: cover; }
+        .info { flex-grow: 1; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #252525; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #333; }
+        th { background: #333; color: #39FF14; }
+        .btn-aceitar { background: #39FF14; color: black; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-recusar { background: #ff4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+        .btn-delete { background: none; color: #ff4444; border: 1px solid #ff4444; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔔 Pendentes</h1>
+        <h1>🔔 Solicitações Pendentes</h1>
         <div id="lista-pendentes"></div>
 
-        <hr>
-
-        <h1>🏠 Moradores Autorizados</h1>
-        <table id="tabela-moradores">
+        <h1 style="margin-top: 40px;">🏠 Moradores Autorizados</h1>
+        <table>
             <thead>
                 <tr>
                     <th>Casa</th>
@@ -55,14 +55,18 @@
         // Monitorar Pendentes
         onValue(ref(db, 'solicitacoes_pendentes'), (snapshot) => {
             const div = document.getElementById('lista-pendentes');
-            div.innerHTML = "";
+            div.innerHTML = snapshot.exists() ? "" : "<p>Nenhuma solicitação nova.</p>";
             snapshot.forEach(item => {
                 const p = item.val();
                 div.innerHTML += `
                     <div class="card">
                         <img src="${p.foto}">
-                        <div><b>${p.nome}</b> (Casa: ${p.casa})</div>
-                        <button class="btn-aceitar" onclick="aceitar('${item.key}')">Autorizar</button>
+                        <div class="info">
+                            <b>${p.nome}</b><br>
+                            <span>Casa: ${p.casa} | CPF: ${p.cpf}</span>
+                        </div>
+                        <button class="btn-aceitar" onclick="acao('${item.key}', 'aceitar')">Aceitar</button>
+                        <button class="btn-recusar" onclick="acao('${item.key}', 'recusar')">Recusar</button>
                     </div>`;
             });
         });
@@ -75,22 +79,30 @@
                 const m = item.val();
                 corpo.innerHTML += `
                     <tr>
-                        <td>${m.casa}</td>
+                        <td><b>${m.casa}</b></td>
                         <td>${m.nome}</td>
-                        <td><button class="btn-delete" onclick="deletar('${item.key}')">Excluir</button></td>
+                        <td><button class="btn-delete" onclick="acao('${item.key}', 'deletar')">Remover</button></td>
                     </tr>`;
             });
         });
 
-        window.aceitar = (id) => {
-            onValue(ref(db, 'solicitacoes_pendentes/' + id), (snap) => {
-                const dados = snap.val();
-                set(ref(db, 'moradores_autorizados/' + id), dados);
-                remove(ref(db, 'solicitacoes_pendentes/' + id));
-            }, { onlyOnce: true });
+        window.acao = (id, tipo) => {
+            if (tipo === 'aceitar') {
+                onValue(ref(db, 'solicitacoes_pendentes/' + id), (snap) => {
+                    const dados = snap.val();
+                    set(ref(db, 'moradores_autorizados/' + id), dados);
+                    remove(ref(db, 'solicitacoes_pendentes/' + id));
+                }, { onlyOnce: true });
+            } else if (tipo === 'recusar') {
+                if(confirm("Recusar cadastro? O morador poderá tentar novamente.")) {
+                    remove(ref(db, 'solicitacoes_pendentes/' + id));
+                }
+            } else if (tipo === 'deletar') {
+                if(confirm("Remover morador? O acesso será bloqueado.")) {
+                    remove(ref(db, 'moradores_autorizados/' + id));
+                }
+            }
         };
-
-        window.deletar = (id) => { if(confirm("Remover?")) remove(ref(db, 'moradores_autorizados/' + id)); };
     </script>
 </body>
 </html>
