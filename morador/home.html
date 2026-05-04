@@ -17,6 +17,7 @@
 
         /* Estética Global */
         h2 { color: var(--neon-green); font-size: 1.8rem; text-align: center; margin-top: 10px; }
+        p { font-size: 1.1rem; line-height: 1.4; }
         input { 
             width: 100%; padding: 18px; margin: 12px 0; border-radius: 12px; border: 1px solid #333;
             background: #0a0a0a; color: white; font-size: 1.2rem;
@@ -26,6 +27,7 @@
         .btn { 
             width: 100%; padding: 20px; border-radius: 35px; border: none; font-weight: bold; 
             font-size: 1.2rem; cursor: pointer; margin: 10px 0; text-transform: uppercase;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
         }
         .btn-green { background: var(--neon-green); color: black; }
         .btn-white { background: white; color: black; }
@@ -48,3 +50,128 @@
             text-align: left; border: 1px solid #333;
         }
         .msg-box label { color: #888; font-size: 0.8rem; font-weight: bold; }
+
+        /* HISTÓRICO HOME */
+        .history-list { width: 100%; margin-top: 20px; }
+        #logs-container { margin-bottom: 15px; }
+        .history-item {
+            background: #0a0a0a; padding: 15px; border-radius: 15px; margin-bottom: 10px;
+            display: flex; align-items: center; border: 1px solid #222;
+        }
+
+        /* POPUP */
+        #popup-liberar {
+            display: none; position: fixed; bottom: 30px; background: white; color: black;
+            padding: 20px; border-radius: 15px; width: 90%; text-align: center; 
+            font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="screen-cadastro" class="screen">
+        <h2>VIRTY ACCESS</h2>
+        <p style="color: #888;">Olá! Vamos iniciar seu cadastro.</p>
+        <div class="avatar-main" onclick="document.getElementById('selfie').click()" style="cursor: pointer;">
+            <span id="txt-foto">📷 TIRAR SELFIE</span>
+            <input type="file" id="selfie" accept="image/*" capture="user" style="display:none">
+        </div>
+        <input type="text" id="nome" placeholder="Nome Completo">
+        <input type="number" id="cpf" placeholder="CPF (Apenas números)" inputmode="numeric">
+        <input type="number" id="unidade" placeholder="Número da Unidade" inputmode="numeric">
+        <button class="btn btn-green" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
+    </div>
+
+    <div id="screen-wait" class="screen">
+        <div class="avatar-main" style="border-color: orange; font-size: 3rem;">⏳</div>
+        <h2>Análise em Curso</h2>
+        <p>Seus dados foram enviados com sucesso.<br>Aguarde a liberação do administrador.</p>
+    </div>
+
+    <div id="screen-home" class="screen">
+        <h2 style="text-align: left; width: 100%;">Seja Bem-vindo!</h2>
+        <p style="text-align: left; width: 100%; color: #888;">Morador da Unidade: <span id="home-unidade"></span></p>
+        
+        <div class="history-list">
+            <p style="font-weight: bold;">Chamadas Recentes:</p>
+            <div id="logs-container">
+                <div class="history-item" style="color: #444;">Nenhuma chamada recente.</div>
+            </div>
+            <button class="btn btn-gray" style="border-radius: 15px; padding: 12px; font-size: 0.9rem;">Ver mais chamadas</button>
+        </div>
+    </div>
+
+    <div id="screen-call" class="screen">
+        <div class="call-header">CHAMADA DE VISITANTE</div>
+        
+        <div class="call-panel">
+            <div class="avatar-main" id="vis-avatar">👤</div>
+            <p style="margin:0; font-size: 1.2rem;">Visitante na Unidade: <span id="txt-unidade"></span></p>
+            <div class="msg-box">
+                <label>MENSAGEM DO VISITANTE:</label>
+                <div id="txt-msg-vis" style="font-size: 1.3rem; margin-top: 5px;">...</div>
+            </div>
+        </div>
+
+        <p style="margin-top: 35px; font-weight: bold; letter-spacing: 1px;">COMANDOS DE ACESSO</p>
+        
+        <button class="btn btn-gray" onclick="responder('recusado')">✕ RECUSAR</button>
+        <button class="btn btn-gray" id="btn-aceitar" onclick="abrirChat()">ACEITAR / MENSAGEM</button>
+        <button class="btn btn-white" onclick="responder('liberado')">🔓 ABRIR PORTÃO</button>
+
+        <div id="chat-area" style="display:none; width: 100%;">
+            <input type="text" id="chat-input" placeholder="Digite sua resposta...">
+            <button class="btn btn-green" onclick="enviarMensagem()">ENVIAR E AGUARDAR</button>
+        </div>
+    </div>
+
+    <div id="popup-liberar">⚠️ Para abrir o portão, clique em ABRIR PORTÃO</div>
+
+    <audio id="som-alerta" loop src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, update, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
+        authDomain: "virty-access-door.firebaseapp.com", 
+        databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", 
+        projectId: "virty-access-door", 
+        storageBucket: "virty-access-door.firebasestorage.app", 
+        messagingSenderId: "694822891117", 
+        appId: "1:694822891117:web:b95a71c1eb273071fa9964" 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    let unidadeLocal = localStorage.getItem('virty_unidade');
+
+    function tela(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    // LÓGICA DE INICIALIZAÇÃO E AUTO-RESET
+    if (!unidadeLocal) {
+        tela('screen-cadastro');
+    } else {
+        verificarStatusEletivo();
+    }
+
+    function verificarStatusEletivo() {
+        onValue(ref(db, `moradores/${unidadeLocal}`), (snapAutorizado) => {
+            if (snapAutorizado.exists()) {
+                const dados = snapAutorizado.val();
+                if (dados.autorizado === true) {
+                    document.getElementById('home-unidade').innerText = unidadeLocal;
+                    tela('screen-home');
+                    monitorarChamadas();
+                } else {
+                    tela('screen-wait');
+                }
+            } else {
+                // Se não está nos autorizados, checa se ainda está nos pendentes
+                onValue(ref(db, `moradores_pendentes/${unidadeLocal}`), (snapPendente) => {
+                    if (!snapPendente.exists()) {
+                        // Se
