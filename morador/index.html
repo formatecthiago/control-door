@@ -3,191 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virty Access - Morador</title>
+    <title>Virty Cadastro</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .tela { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; }
-        .ativa { display: flex; }
-        
-        /* Estilo da Home / Espera */
-        .card-home { background: #111; border: 1px solid #333; border-radius: 15px; width: 100%; padding: 20px; box-sizing: border-box; text-align: center; }
-        .historico-container { width: 100%; margin-top: 20px; text-align: left; }
-        .historico-item { background: #1a1a1a; padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; font-size: 13px; }
-
-        /* TELA DE ATENDIMENTO */
-        .btn-atendimento { width: 100%; padding: 20px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 18px; }
-        .btn-recusar { background: #ff4444; color: white; }
-        .btn-aceitar { background: #39FF14; color: black; }
-        .btn-abrir { background: #2980b9; color: white; }
-
-        /* AREA DE TEXTO 60 CARACTERES */
-        #area-resposta { display: none; width: 100%; background: #222; padding: 20px; border-radius: 15px; margin-top: 10px; }
-        #input-msg { width: 100%; background: transparent; border: none; border-bottom: 2px solid #39FF14; color: #fff; font-size: 18px; padding: 10px 0; outline: none; text-align: center; }
-
-        /* POP-UP */
-        #popup-instrucao { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #333; padding: 30px; border-radius: 20px; border: 2px solid #39FF14; z-index: 100; width: 80%; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
-        .btn-fechar-x { position: absolute; top: 10px; right: 15px; color: #ff4444; font-size: 24px; cursor: pointer; font-weight: bold; }
-
-        /* CADASTRO */
-        video, #foto-capturada { width: 200px; height: 200px; border-radius: 50%; border: 3px solid #39FF14; object-fit: cover; margin-bottom: 20px; }
-        input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 8px; border: none; font-size: 16px; }
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .tela { display: none; width: 100%; max-width: 350px; }
+        .ativa { display: flex; flex-direction: column; align-items: center; }
+        video, img { width: 180px; height: 180px; border-radius: 50%; border: 3px solid #39FF14; object-fit: cover; margin-bottom: 15px; }
+        input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: none; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-
     <div id="tela-cadastro" class="tela ativa">
         <h2>Cadastro Virty</h2>
-        <video id="video-preview" autoplay playsinline muted></video>
-        <img id="foto-capturada" style="display:none;">
-        <canvas id="canvas-foto" style="display:none;"></canvas>
-        <button onclick="tirarFoto()" style="background:#2980b9; color:#fff; padding:10px; border-radius:5px; border:none; margin-bottom:10px;">Tirar Selfie</button>
-        <input type="text" id="cad-nome" placeholder="Nome Completo">
-        <input type="number" id="cad-cpf" placeholder="CPF (11 dígitos)">
-        <input type="text" id="cad-casa" placeholder="Nº da Casa / Apto">
-        <button onclick="enviarParaFirebase()" style="background:#39FF14; width:100%; padding:15px; border:none; border-radius:8px; font-weight:bold;">Solicitar Acesso</button>
+        <video id="v" autoplay playsinline muted></video>
+        <img id="f" style="display:none;">
+        <button onclick="tirarFoto()" style="background:#2980b9; color:#fff; margin-bottom:10px;">TIRAR FOTO</button>
+        <input type="text" id="n" placeholder="Nome Completo">
+        <input type="number" id="c" placeholder="Nº da Casa">
+        <button onclick="enviar()" style="background:#39FF14;">SOLICITAR ACESSO</button>
     </div>
-
-    <div id="tela-aguarde" class="tela">
-        <h2 style="color: #39FF14;">Analisando...</h2>
-        <p>Aguarde a liberação do administrador.</p>
-    </div>
-
-    <div id="tela-home" class="tela">
-        <div class="card-home" id="sessao-espera">
-            <h3 style="color: #39FF14;">Virty Access</h3>
-            <p>Olá, <b id="nome-perfil">--</b>! Sistema em espera...</p>
-            <div class="historico-container">
-                <p style="font-size: 14px; color: #39FF14;">Chamadas Recentes</p>
-                <div id="lista-logs"></div>
-            </div>
-        </div>
-
-        <div id="sessao-atendimento" style="display: none; width: 100%;">
-            <h2 style="color: #f1c40f; text-align: center;">🔔 CHAMADA EM CURSO</h2>
-            <button class="btn-atendimento btn-recusar" onclick="cancelarChamada()">RECUSAR</button>
-            <button class="btn-atendimento btn-aceitar" onclick="abrirTeclado()">ACEITAR</button>
-            <button class="btn-atendimento btn-abrir" onclick="abrirPortao()">ABRIR PORTÃO</button>
-
-            <div id="area-resposta">
-                <input type="text" id="input-msg" maxlength="60" placeholder="Digite sua resposta...">
-                <button onclick="enviarTexto()" style="background: #39FF14; color: #000; width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: none; font-weight: bold;">ENVIAR</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="popup-instrucao">
-        <span class="btn-fechar-x" onclick="fecharPopup()">X</span>
-        <p style="font-size: 18px; line-height: 1.5;">Para abrir o portão, clique no botão <b>ABRIR PORTÃO</b></p>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
-            authDomain: "virty-access-door.firebaseapp.com",
-            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
-            projectId: "virty-access-door",
-            storageBucket: "virty-access-door.firebasestorage.app",
-            messagingSenderId: "694822891117",
-            appId: "1:694822891117:web:b95a71c1eb273071fa9964"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // --- CAMERA E CADASTRO (Mantido do anterior) ---
-        const video = document.getElementById('video-preview');
-        const canvas = document.getElementById('canvas-foto');
-        const fotoImg = document.getElementById('foto-capturada');
-        let fotoBase64 = null;
-
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => video.srcObject = s);
-
-        window.tirarFoto = () => {
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-            fotoImg.src = fotoBase64; fotoImg.style.display = 'block'; video.style.display = 'none';
-        };
-
-        window.enviarParaFirebase = async () => {
-            const nome = document.getElementById('cad-nome').value;
-            const casa = document.getElementById('cad-casa').value;
-            if(!nome || !fotoBase64) return alert("Preencha Nome e Foto!");
-            const id = "ID-" + Math.floor(Math.random() * 9999);
-            localStorage.setItem('virty_id', id);
-            localStorage.setItem('virty_casa', casa);
-            await set(ref(db, 'solicitacoes_pendentes/' + id), { nome, casa, foto: fotoBase64 });
-            verificarStatus();
-        };
-
-        // --- LÓGICA DE ATENDIMENTO ---
-
-        function verificarStatus() {
-            const id = localStorage.getItem('virty_id');
-            const casa = localStorage.getItem('virty_casa');
-            if(!id) return;
-
-            onValue(ref(db, 'moradores_autorizados/' + id), (snapshot) => {
-                if(snapshot.exists()) {
-                    document.getElementById('nome-perfil').innerText = snapshot.val().nome;
-                    document.getElementById('tela-cadastro').classList.remove('ativa');
-                    document.getElementById('tela-aguarde').classList.remove('ativa');
-                    document.getElementById('tela-home').classList.add('ativa');
-                    vigiarChamadas(casa);
-                } else {
-                    document.getElementById('tela-cadastro').classList.remove('ativa');
-                    document.getElementById('tela-aguarde').classList.add('ativa');
-                }
-            });
-        }
-
-        function vigiarChamadas(casa) {
-            onValue(ref(db, 'chamadas_ativas/' + casa), (snapshot) => {
-                if(snapshot.exists()) {
-                    document.getElementById('sessao-espera').style.display = 'none';
-                    document.getElementById('sessao-atendimento').style.display = 'block';
-                } else {
-                    document.getElementById('sessao-espera').style.display = 'block';
-                    document.getElementById('sessao-atendimento').style.display = 'none';
-                }
-            });
-        }
-
-        window.abrirTeclado = () => {
-            const area = document.getElementById('area-resposta');
-            const input = document.getElementById('input-msg');
-            area.style.display = 'block';
-            input.focus(); // Abre o teclado e foca o cursor
-        };
-
-        window.enviarTexto = () => {
-            const msg = document.getElementById('input-msg').value;
-            const casa = localStorage.getItem('virty_casa');
-            // Envia para o visitante ler
-            set(ref(db, 'respostas_interfone/' + casa), { mensagem: msg });
-            document.getElementById('area-resposta').style.display = 'none';
-            document.getElementById('popup-instrucao').style.display = 'block';
-        };
-
-        window.abrirPortao = () => {
-            alert("Portão aberto!");
-            cancelarChamada();
-        };
-
-        window.cancelarChamada = () => {
-            const casa = localStorage.getItem('virty_casa');
-            remove(ref(db, 'chamadas_ativas/' + casa));
-            fecharPopup();
-        };
-
-        window.fecharPopup = () => {
-            document.getElementById('popup-instrucao').style.display = 'none';
-        };
-
-        verificarStatus();
-    </script>
+    <div id="tela-aguarde" class="tela"><h2>Analisando...</h2><p>Aguarde a liberação do administrador.</p></div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    const firebaseConfig = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", authDomain: "virty-access-door.firebaseapp.com", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door", storageBucket: "virty-access-door.firebasestorage.app", messagingSenderId: "694822891117", appId: "1:694822891117:web:b95a71c1eb273071fa9964" };
+    const app = initializeApp(firebaseConfig); const db = getDatabase(app);
+    const v = document.getElementById('v'); const f = document.getElementById('f'); let base64 = null;
+    navigator.mediaDevices.getUserMedia({video:true}).then(s => v.srcObject = s);
+    window.tirarFoto = () => { const canvas = document.createElement('canvas'); canvas.width=v.videoWidth; canvas.height=v.videoHeight; canvas.getContext('2d').drawImage(v,0,0); base64=canvas.toDataURL('image/jpeg',0.7); f.src=base64; f.style.display='block'; v.style.display='none'; }
+    window.enviar = async () => {
+        const id = "ID-" + Date.now(); const casa = document.getElementById('c').value;
+        localStorage.setItem('virty_id', id); localStorage.setItem('virty_casa', casa);
+        await set(ref(db, `solicitacoes_pendentes/${id}`), { nome: document.getElementById('n').value, casa: casa, foto: base64 });
+        verificar();
+    }
+    function verificar() {
+        const id = localStorage.getItem('virty_id'); if(!id) return;
+        onValue(ref(db, `moradores_autorizados/${id}`), (snap) => { if(snap.exists()) window.location.href="home.html"; else switchTela('tela-aguarde'); });
+    }
+    function switchTela(id){ document.querySelectorAll('.tela').forEach(t=>t.classList.remove('ativa')); document.getElementById(id).classList.add('ativa'); }
+    verificar();
+</script>
 </body>
 </html>
