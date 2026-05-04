@@ -6,46 +6,28 @@
     <title>Virty Access - Visitante</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
-        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 30px; text-align: center; box-sizing: border-box; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 30px; text-align: center; }
         .active { display: flex; }
-        
-        h1 { color: var(--neon); font-size: 2.5rem; margin-top: 20px; text-transform: uppercase; letter-spacing: 3px; }
-        p { font-size: 1.2rem; color: #ccc; margin-bottom: 30px; }
-
-        /* Container da Câmera */
-        .video-box { 
-            width: 100%; height: 320px; background: #080808; border-radius: 25px; 
-            overflow: hidden; border: 2px solid var(--neon); margin: 20px 0; position: relative; 
-            box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
-        }
+        h1 { color: var(--neon); font-size: 2.2rem; margin-top: 20px; }
+        .video-box { width: 100%; height: 300px; background: #111; border-radius: 20px; overflow: hidden; border: 2px solid var(--neon); margin: 20px 0; position: relative; }
         video, canvas { width: 100%; height: 100%; object-fit: cover; }
         #photo-taken { position: absolute; top: 0; left: 0; display: none; z-index: 5; }
-
-        input { 
-            width: 100%; padding: 18px; margin: 10px 0; border-radius: 15px; border: 1px solid #333; 
-            background: #0a0a0a; color: white; font-size: 1.2rem; text-align: center; outline: none;
-        }
-        input:focus { border-color: var(--neon); }
-
-        .btn { 
-            width: 100%; padding: 20px; border-radius: 40px; border: none; font-weight: bold; 
-            cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; transition: 0.3s;
-        }
-        .btn-green { background: var(--neon); color: black; box-shadow: 0 0 15px rgba(57, 255, 20, 0.4); }
+        input { width: 100%; padding: 18px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #0a0a0a; color: white; font-size: 1.1rem; text-align: center; }
+        .btn { width: 100%; padding: 20px; border-radius: 35px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; }
+        .btn-green { background: var(--neon); color: black; }
         .btn-white { background: #fff; color: #000; }
-        .btn-stop { background: #ff3333; color: white; margin-top: 50px; }
-
-        #timer { font-size: 5rem; color: var(--neon); font-weight: bold; margin: 30px 0; text-shadow: 0 0 20px rgba(57, 255, 20, 0.5); }
+        .btn-stop { background: #ff3333; color: white; margin-top: 30px; }
+        #timer { font-size: 5rem; color: var(--neon); margin: 20px 0; }
     </style>
 </head>
 <body>
 
     <div id="t1" class="screen active">
         <h1>OLÁ</h1>
-        <p>Bem-vindo ao Virty Access.<br>Vamos iniciar sua chamada?</p>
-        <div style="font-size: 6rem; margin: 40px;">👋</div>
-        <button class="btn btn-green" onclick="abrirCam()">INICIAR ACESSO</button>
+        <p>Inicie sua chamada abaixo</p>
+        <div style="font-size: 5rem; margin: 40px;">👋</div>
+        <button class="btn btn-green" onclick="abrirCam()">INICIAR</button>
     </div>
 
     <div id="t2" class="screen">
@@ -53,100 +35,70 @@
             <video id="v" autoplay playsinline muted></video>
             <canvas id="photo-taken"></canvas>
         </div>
-        <button id="btn-selfie" class="btn btn-white" onclick="tirarSelfie()">📷 TIRAR SELFIE (OBRIGATÓRIO)</button>
-        
+        <button id="btn-selfie" class="btn btn-white" onclick="tirarSelfie()">📷 TIRAR SELFIE</button>
         <input type="number" id="un" placeholder="Número da Unidade" inputmode="numeric">
-        <input type="text" id="msg" placeholder="Mensagem para o morador">
-        
-        <button id="btn-chamar" class="btn btn-green" onclick="chamar()" disabled style="opacity: 0.3; margin-top: 20px;">CHAMAR AGORA</button>
+        <input type="text" id="msg" placeholder="Mensagem (Opcional)">
+        <button id="btn-chamar" class="btn btn-green" onclick="chamar()" disabled style="opacity: 0.3;">CHAMAR AGORA</button>
     </div>
 
     <div id="t3" class="screen">
-        <div id="timer">00</div>
-        <p>Chamando Unidade <b id="view-un" style="color:var(--neon)"></b>...</p>
-        <div style="color: #666; font-style: italic;">Aguarde a resposta do morador</div>
+        <div id="timer">60</div>
+        <p>Chamando Unidade <b id="view-un"></b>...</p>
         <button class="btn btn-stop" onclick="cancelar()">CANCELAR</button>
     </div>
+
+    <audio id="som-ring" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const config = { 
-        apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
-        databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", 
-        projectId: "virty-access-door" 
-    };
+    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
     const app = initializeApp(config);
     const db = getDatabase(app);
-
-    let stream, b64 = "", timerInterval;
+    let stream, b64 = "", timer;
 
     window.abrirCam = async () => {
         try {
-            // Força a câmera frontal (user)
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
             document.getElementById('v').srcObject = stream;
             document.getElementById('t1').classList.remove('active');
             document.getElementById('t2').classList.add('active');
-        } catch (err) { 
-            alert("Para sua segurança, é necessário permitir o uso da câmera frontal."); 
-        }
+        } catch { alert("Permita a câmera!"); }
     };
 
     window.tirarSelfie = () => {
         const canv = document.getElementById('photo-taken');
         const video = document.getElementById('v');
-        
-        canv.width = video.videoWidth;
-        canv.height = video.videoHeight;
+        canv.width = video.videoWidth; canv.height = video.videoHeight;
         canv.getContext('2d').drawImage(video, 0, 0);
-        
-        // Converte para Base64 (miniatura leve)
         b64 = canv.toDataURL('image/jpeg', 0.5);
-        
         canv.style.display = "block";
         document.getElementById('btn-chamar').disabled = false;
         document.getElementById('btn-chamar').style.opacity = "1";
-        document.getElementById('btn-selfie').innerText = "✅ SELFIE REGISTRADA (REFAZER)";
-        document.getElementById('btn-selfie').style.background = "#333";
-        document.getElementById('btn-selfie').style.color = "#fff";
     };
 
     window.chamar = () => {
         const u = document.getElementById('un').value;
-        if(!u) return alert("Por favor, digite o número da unidade.");
-        
+        if(!u) return alert("Qual unidade?");
         document.getElementById('view-un').innerText = u;
         document.getElementById('t2').classList.remove('active');
         document.getElementById('t3').classList.add('active');
+        document.getElementById('som-ring').play();
 
-        // Envia para o Firebase
-        set(ref(db, `chamadas_ativas/${u}`), { 
-            status: "chamando", 
-            foto: b64, 
-            texto_visitante: document.getElementById('msg').value || "Visitante na porta"
-        });
+        set(ref(db, `chamadas_ativas/${u}`), { status: "chamando", foto: b64, texto_visitante: document.getElementById('msg').value || "Visitante" });
 
-        // Inicia cronômetro
-        let s = 0; 
-        timerInterval = setInterval(() => { 
-            s++; 
-            document.getElementById('timer').innerText = s < 10 ? '0'+s : s; 
+        let s = 60; 
+        timer = setInterval(() => { 
+            s--; 
+            document.getElementById('timer').innerText = s;
+            if(s <= 0) { cancelar(); alert("Ninguém atendeu."); }
         }, 1000);
 
-        // Ouve a resposta do morador
         onValue(ref(db, `chamadas_ativas/${u}`), (snap) => {
-            const status = snap.val()?.status;
-            if(status === "liberado") {
-                clearInterval(timerInterval);
-                alert("ACESSO AUTORIZADO! O portão foi aberto.");
-                location.reload();
-            } else if(status === "recusado") {
-                clearInterval(timerInterval);
-                alert("CHAMADA ENCERRADA: O morador não pode atender no momento.");
-                location.reload();
-            }
+            const res = snap.val()?.status;
+            if(res === "liberado") { alert("Entrada autorizada!"); location.reload(); }
+            if(res === "recusado") { alert("Chamada encerrada."); location.reload(); }
         });
     };
 
