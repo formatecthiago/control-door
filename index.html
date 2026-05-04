@@ -6,129 +6,28 @@
     <title>Virty Access - Interfone</title>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .painel { width: 100%; max-width: 350px; text-align: center; padding: 20px; }
-        #display-casa { font-size: 48px; color: #39FF14; margin-bottom: 20px; height: 60px; border-bottom: 2px solid #333; }
-        
-        .teclado { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; }
-        .tecla { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 20px; font-size: 24px; border-radius: 10px; cursor: pointer; }
+        .container { width: 100%; max-width: 400px; text-align: center; padding: 20px; }
+        .display { font-size: 50px; color: #39FF14; margin-bottom: 30px; height: 60px; font-weight: bold; }
+        .teclado { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+        .tecla { background: #111; border: 1px solid #333; color: #fff; padding: 20px; font-size: 24px; border-radius: 10px; cursor: pointer; }
         .tecla:active { background: #333; }
-        .btn-chamar { grid-column: span 3; background: #39FF14; color: #000; font-weight: bold; margin-top: 10px; }
-
-        /* TELA DE STATUS */
-        #tela-chamando { display: none; }
-        .timer { font-size: 60px; color: #f1c40f; margin: 20px 0; }
-        #resposta-morador { background: #222; padding: 20px; border-radius: 10px; border: 1px solid #39FF14; margin-top: 20px; min-height: 50px; color: #39FF14; font-weight: bold; }
+        .btn-chamar { grid-column: span 3; background: #39FF14; color: #000; font-weight: bold; border-radius: 10px; border: none; padding: 20px; font-size: 20px; cursor: pointer; margin-top: 10px; }
+        
+        /* TELA DE ESPERA DA RESPOSTA */
+        #tela-status { display: none; }
+        .contador { font-size: 70px; color: #f1c40f; margin: 20px 0; }
+        #mensagem-retorno { background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid #39FF14; min-height: 40px; margin-top: 20px; color: #39FF14; }
     </style>
 </head>
 <body>
 
-    <div class="painel" id="tela-principal">
-        <h2 style="color: #888;">Digite o Nº da Casa</h2>
-        <div id="display-casa"></div>
-        
+    <div class="container" id="painel-teclado">
+        <div class="display" id="num-casa"></div>
         <div class="teclado">
-            <button class="tecla" onclick="addNum('1')">1</button>
-            <button class="tecla" onclick="addNum('2')">2</button>
-            <button class="tecla" onclick="addNum('3')">3</button>
-            <button class="tecla" onclick="addNum('4')">4</button>
-            <button class="tecla" onclick="addNum('5')">5</button>
-            <button class="tecla" onclick="addNum('6')">6</button>
-            <button class="tecla" onclick="addNum('7')">7</button>
-            <button class="tecla" onclick="addNum('8')">8</button>
-            <button class="tecla" onclick="addNum('9')">9</button>
-            <button class="tecla" style="color: #ff4444;" onclick="limpar()">C</button>
-            <button class="tecla" onclick="addNum('0')">0</button>
-            <button class="tecla btn-chamar" onclick="iniciarChamada()">CHAMAR</button>
-        </div>
-    </div>
-
-    <div class="painel" id="tela-chamando">
-        <h2 id="status-txt">Chamando Casa...</h2>
-        <div class="timer" id="contagem">20</div>
-        <p>Aguardando resposta do morador...</p>
-        <div id="resposta-morador">...</div>
-        <button onclick="cancelar()" style="background: none; border: 1px solid #ff4444; color: #ff4444; padding: 10px; margin-top: 30px; border-radius: 5px;">CANCELAR</button>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
-            authDomain: "virty-access-door.firebaseapp.com",
-            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
-            projectId: "virty-access-door",
-            storageBucket: "virty-access-door.firebasestorage.app",
-            messagingSenderId: "694822891117",
-            appId: "1:694822891117:web:b95a71c1eb273071fa9964"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        let casaDigitada = "";
-        const display = document.getElementById('display-casa');
-
-        window.addNum = (n) => {
-            if(casaDigitada.length < 4) {
-                casaDigitada += n;
-                display.innerText = casaDigitada;
-            }
-        };
-
-        window.limpar = () => {
-            casaDigitada = "";
-            display.innerText = "";
-        };
-
-        window.iniciarChamada = async () => {
-            if(!casaDigitada) return alert("Digite o número da casa!");
-
-            // 1. Grava a chamada no Firebase para o morador ver
-            await set(ref(db, 'chamadas_ativas/' + casaDigitada), {
-                status: 'chamando',
-                timestamp: Date.now()
-            });
-
-            // 2. Muda a tela
-            document.getElementById('tela-principal').style.display = 'none';
-            document.getElementById('tela-chamando').style.display = 'block';
-            document.getElementById('status-txt').innerText = "Chamando Casa " + casaDigitada;
-
-            // 3. Inicia o Timer
-            let tempo = 20;
-            const intervalo = setInterval(() => {
-                tempo--;
-                document.getElementById('contagem').innerText = tempo;
-                if(tempo <= 0) {
-                    clearInterval(intervalo);
-                    cancelar();
-                    alert("Morador não atendeu.");
-                }
-            }, 1000);
-
-            // 4. Fica "ouvindo" se o morador respondeu o texto
-            onValue(ref(db, 'respostas_interfone/' + casaDigitada), (snapshot) => {
-                if(snapshot.exists()) {
-                    document.getElementById('resposta-morador').innerText = snapshot.val().mensagem;
-                }
-            });
-
-            // 5. Se o morador abrir o portão ou recusar, a chamada some do banco
-            onValue(ref(db, 'chamadas_ativas/' + casaDigitada), (snapshot) => {
-                if(!snapshot.exists() && tempo > 0) {
-                    clearInterval(intervalo);
-                    location.reload(); // Reseta o interfone
-                }
-            });
-        };
-
-        window.cancelar = () => {
-            remove(ref(db, 'chamadas_ativas/' + casaDigitada));
-            remove(ref(db, 'respostas_interfone/' + casaDigitada));
-            location.reload();
-        };
-    </script>
-</body>
-</html>
+            <button class="tecla" onclick="digitar('1')">1</button>
+            <button class="tecla" onclick="digitar('2')">2</button>
+            <button class="tecla" onclick="digitar('3')">3</button>
+            <button class="tecla" onclick="digitar('4')">4</button>
+            <button class="tecla" onclick="digitar('5')">5</button>
+            <button class="tecla" onclick="digitar('6')">6</button>
+            <button class="tecla
