@@ -1,78 +1,114 @@
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virty Access - Morador</title>
+    <style>
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .tela { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; }
+        .ativa { display: flex; }
+        video, img { width: 250px; height: 250px; border-radius: 50%; border: 3px solid #39FF14; object-fit: cover; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; }
+        button { width: 100%; padding: 15px; background: #39FF14; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-foto { background: #2980b9; color: white; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
-        authDomain: "virty-access-door.firebaseapp.com",
-        databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
-        projectId: "virty-access-door",
-        storageBucket: "virty-access-door.firebasestorage.app",
-        messagingSenderId: "694822891117",
-        appId: "1:694822891117:web:b95a71c1eb273071fa9964"
-    };
-
-    // Inicializa o Firebase e o Banco
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // Elementos da tela
-    const video = document.querySelector("#video-preview");
-    const canvas = document.querySelector("#canvas-foto");
-    const fotoImg = document.querySelector("#foto-capturada");
-    let fotoBase64 = null;
-
-    // Liga a câmera do jeito que você já sabia que funcionava
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => { video.srcObject = stream; })
-        .catch(err => { console.log("Erro câmera: ", err); });
-
-    // Função de tirar foto
-    window.tirarFoto = function() {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        fotoBase64 = canvas.toDataURL('image/jpeg');
-        fotoImg.src = fotoBase64;
-        fotoImg.style.display = 'block';
-        video.style.display = 'none';
-    };
-
-    // Função de enviar - AQUI ESTAVA O PROBLEMA
-    window.enviarParaFirebase = function() {
-        const nome = document.getElementById('cad-nome').value;
-        const cpf = document.getElementById('cad-cpf').value;
+    <div id="tela-cadastro" class="tela ativa">
+        <h2>Cadastro Virty</h2>
+        <video id="video-preview" autoplay playsinline></video>
+        <img id="foto-capturada" style="display:none;">
+        <canvas id="canvas-foto" style="display:none;"></canvas>
         
-        if(!fotoBase64 || !nome) {
-            alert("Tire a foto e preencha seu nome!");
-            return;
+        <button class="btn-foto" onclick="tirarFoto()">Tirar Selfie</button>
+
+        <input type="text" id="cad-nome" placeholder="Nome Completo">
+        <input type="tel" id="cad-cpf" placeholder="Seu CPF">
+        
+        <button onclick="enviarParaFirebase()">Solicitar Acesso</button>
+    </div>
+
+    <div id="tela-aguarde" class="tela">
+        <h2 style="color: #39FF14;">Analisando...</h2>
+        <p>Aguarde a liberação do administrador.</p>
+        <div style="border: 4px solid #333; border-top: 4px solid #39FF14; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+    </div>
+
+    <div id="tela-home" class="tela">
+        <h2 style="color: #39FF14;">Acesso Liberado!</h2>
+        <p>Bem-vindo ao Virty Access.</p>
+    </div>
+
+    <style> @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
+            authDomain: "virty-access-door.firebaseapp.com",
+            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
+            projectId: "virty-access-door",
+            storageBucket: "virty-access-door.firebasestorage.app",
+            messagingSenderId: "694822891117",
+            appId: "1:694822891117:web:b95a71c1eb273071fa9964"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const video = document.getElementById('video-preview');
+        const canvas = document.getElementById('canvas-foto');
+        const fotoImg = document.getElementById('foto-capturada');
+        let fotoBase64 = null;
+
+        // Inicia câmera
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(s => video.srcObject = s)
+            .catch(e => console.log("Erro câmera:", e));
+
+        window.tirarFoto = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            fotoBase64 = canvas.toDataURL('image/jpeg');
+            fotoImg.src = fotoBase64;
+            fotoImg.style.display = 'block';
+            video.style.display = 'none';
+        };
+
+        window.enviarParaFirebase = async () => {
+            const nome = document.getElementById('cad-nome').value;
+            const cpf = document.getElementById('cad-cpf').value;
+            if(!nome || !fotoBase64) return alert("Nome e Foto são obrigatórios!");
+
+            const id = "ID-" + Math.floor(Math.random() * 9999);
+            localStorage.setItem('virty_id', id);
+
+            await set(ref(db, 'solicitacoes_pendentes/' + id), {
+                nome, cpf, foto: fotoBase64, status: 'pendente'
+            });
+            verificarStatus();
+        };
+
+        function verificarStatus() {
+            const id = localStorage.getItem('virty_id');
+            if(!id) return;
+
+            document.getElementById('tela-cadastro').classList.remove('ativa');
+            document.getElementById('tela-aguarde').classList.add('ativa');
+
+            onValue(ref(db, 'moradores_autorizados/' + id), (snapshot) => {
+                if(snapshot.exists()) {
+                    document.getElementById('tela-aguarde').classList.remove('ativa');
+                    document.getElementById('tela-home').classList.add('ativa');
+                }
+            });
         }
-
-        const idGeral = "ID-" + Math.floor(Math.random() * 9999);
-        localStorage.setItem('meu_id_virty', idGeral);
-
-        // Envia para a pasta de pendentes
-        set(ref(db, 'solicitacoes_pendentes/' + idGeral), {
-            nome: nome,
-            cpf: cpf,
-            foto: fotoBase64,
-            status: "pendente"
-        }).then(() => {
-            // MUDANÇA DE TELA SEM PRECISAR ATUALIZAR
-            document.getElementById('tela-cadastro').style.display = 'none';
-            document.getElementById('tela-aguarde').style.display = 'flex';
-            checarSeFuiLiberado(idGeral);
-        }).catch(erro => {
-            alert("Erro ao enviar: " + erro);
-        });
-    };
-
-    function checarSeFuiLiberado(id) {
-        onValue(ref(db, 'moradores_autorizados/' + id), (snapshot) => {
-            if(snapshot.exists()) {
-                document.getElementById('tela-aguarde').style.display = 'none';
-                document.getElementById('tela-home').style.display = 'flex';
-            }
-        });
-    }
-</script>
+        verificarStatus();
+    </script>
+</body>
+</html>
