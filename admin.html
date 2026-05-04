@@ -3,48 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin | Virty Access Door</title>
+    <title>Admin | Virty Access</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #ff4d4d; --gray: #555; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        header { border-bottom: 2px solid var(--neon); padding-bottom: 15px; margin-bottom: 30px; text-align: center; }
-        header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 2px; }
-        #data-atual { color: var(--neon); font-size: 0.9rem; margin-top: 5px; text-transform: capitalize; }
-        
-        .search-box { width: 100%; max-width: 600px; display: block; margin: 0 auto 30px; padding: 15px; border-radius: 10px; border: 1px solid var(--neon); background: #111; color: #fff; outline: none; }
-        
-        section { max-width: 800px; margin: 0 auto 40px; }
-        h2 { font-size: 1.1rem; border-left: 4px solid var(--neon); padding-left: 10px; margin-bottom: 20px; }
-        
-        .card { background: #080808; border: 1px solid #222; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; border-radius: 15px; }
-        .thumb { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 2px solid var(--neon); }
+        :root { --neon: #39FF14; --bg: #000; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; padding: 20px; }
+        header { border-bottom: 2px solid var(--neon); text-align: center; padding-bottom: 15px; margin-bottom: 20px; }
+        .card { background: #080808; border: 1px solid #222; padding: 15px; margin-bottom: 10px; display: flex; align-items: center; border-radius: 12px; }
+        .thumb { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 1px solid var(--neon); }
         .info { flex: 1; }
-        .info b { color: var(--neon); }
-        .actions { display: flex; gap: 8px; }
-        
-        .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.65rem; }
+        .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.7rem; }
         .btn-ok { background: var(--neon); color: #000; }
-        .btn-del { background: var(--red); color: #fff; }
-        .btn-edit { background: var(--gray); color: #fff; }
+        .btn-del { background: #ff4d4d; color: #fff; }
+        .btn-edit { background: #555; color: #fff; margin-right: 5px; }
+        .search { width: 100%; padding: 12px; background: #111; border: 1px solid var(--neon); color: #fff; border-radius: 8px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <header>
         <h1>ADMIN PAGE / VIRTY ACCESS DOOR</h1>
-        <div id="data-atual"></div>
+        <div id="clock" style="color:var(--neon)"></div>
     </header>
 
-    <input type="text" id="busca" class="search-box" placeholder="Pesquisar morador ou unidade..." oninput="filtrar()">
+    <input type="text" id="busca" class="search" placeholder="Pesquisar..." oninput="filtrar()">
 
-    <section>
-        <h2>SOLICITAÇÕES PENDENTES</h2>
-        <div id="lista-pendentes"></div>
-    </section>
+    <h2>SOLICITAÇÕES</h2>
+    <div id="lista-pendentes"></div>
 
-    <section>
-        <h2>MORADORES CADASTRADOS</h2>
-        <div id="lista-ativos"></div>
-    </section>
+    <h2 style="margin-top:30px">MORADORES</h2>
+    <div id="lista-ativos"></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -54,36 +40,27 @@
     const app = initializeApp(config);
     const db = getDatabase(app);
 
-    document.getElementById('data-atual').innerText = new Date().toLocaleString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
 
     onValue(ref(db, 'moradores_pendentes'), (snap) => {
-        const div = document.getElementById('lista-pendentes');
-        div.innerHTML = '';
+        const div = document.getElementById('lista-pendentes'); div.innerHTML = '';
         snap.forEach(item => {
             const m = item.val();
             div.innerHTML += `<div class="card">
-                <img src="${m.foto}" class="thumb">
-                <div class="info"><b>Apto ${m.unidade}</b><br>${m.nome}</div>
-                <div class="actions">
-                    <button class="btn btn-ok" onclick="aprovar('${m.unidade}')">Aceitar</button>
-                    <button class="btn btn-del" onclick="excluir('${m.unidade}', true)">Recusar</button>
-                </div>
+                <div class="info"><b>Apto ${m.unidade}</b> - ${m.nome}</div>
+                <button class="btn btn-ok" onclick="aprovar('${m.unidade}')">ACEITAR</button>
             </div>`;
         });
     });
 
     onValue(ref(db, 'moradores'), (snap) => {
-        const div = document.getElementById('lista-ativos');
-        div.innerHTML = '';
+        const div = document.getElementById('lista-ativos'); div.innerHTML = '';
         snap.forEach(item => {
             const m = item.val();
-            div.innerHTML += `<div class="card morador-item" data-nome="${m.nome.toLowerCase()}" data-un="${m.unidade}">
-                <img src="${m.foto}" class="thumb">
-                <div class="info"><b>Apto ${m.unidade}</b><br>${m.nome}</div>
-                <div class="actions">
-                    <button class="btn btn-edit" onclick="editar('${m.unidade}', '${m.nome}')">Editar</button>
-                    <button class="btn btn-del" onclick="excluir('${m.unidade}', false)">Excluir</button>
-                </div>
+            div.innerHTML += `<div class="card m-item" data-n="${m.nome.toLowerCase()}">
+                <div class="info"><b>Apto ${m.unidade}</b> - ${m.nome}</div>
+                <button class="btn btn-edit" onclick="editar('${m.unidade}', '${m.nome}')">EDITAR</button>
+                <button class="btn btn-del" onclick="excluir('${m.unidade}')">EXCLUIR</button>
             </div>`;
         });
     });
@@ -94,20 +71,11 @@
         }, { onlyOnce: true });
     };
 
-    window.excluir = (un, isP) => {
-        if(confirm("Deseja excluir este registro?")) remove(ref(db, (isP ? 'moradores_pendentes/' : 'moradores/') + un));
-    };
-
-    window.editar = (un, nomeAtual) => {
-        const novoNome = prompt("Editar Nome do Morador:", nomeAtual);
-        if(novoNome) update(ref(db, `moradores/${un}`), { nome: novoNome });
-    };
-
+    window.excluir = (un) => { if(confirm("Remover?")) remove(ref(db, `moradores/${un}`)); };
+    window.editar = (un, n) => { const nn = prompt("Novo nome:", n); if(nn) update(ref(db, `moradores/${un}`), {nome: nn}); };
     window.filtrar = () => {
-        const t = document.getElementById('busca').value.toLowerCase();
-        document.querySelectorAll('.morador-item').forEach(c => {
-            c.style.display = (c.dataset.nome.includes(t) || c.dataset.un.includes(t)) ? 'flex' : 'none';
-        });
+        const b = document.getElementById('busca').value.toLowerCase();
+        document.querySelectorAll('.m-item').forEach(i => i.style.display = i.dataset.n.includes(b) ? 'flex' : 'none');
     };
 </script>
 </body>
