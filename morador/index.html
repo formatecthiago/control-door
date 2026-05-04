@@ -8,24 +8,25 @@
         body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .tela { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; }
         .ativa { display: flex; }
-        video, img { width: 250px; height: 250px; border-radius: 50%; border: 3px solid #39FF14; object-fit: cover; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; }
+        video, img { width: 250px; height: 250px; border-radius: 50%; border: 3px solid #39FF14; object-fit: cover; margin-bottom: 20px; background: #222; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; box-sizing: border-box; }
         button { width: 100%; padding: 15px; background: #39FF14; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-foto { background: #2980b9; color: white; margin-bottom: 20px; }
+        .erro-msg { color: #ff4444; font-size: 12px; margin-top: -5px; margin-bottom: 10px; width: 100%; text-align: left; }
     </style>
 </head>
 <body>
 
     <div id="tela-cadastro" class="tela ativa">
         <h2>Cadastro Virty</h2>
-        <video id="video-preview" autoplay playsinline></video>
+        <video id="video-preview" autoplay playsinline muted></video>
         <img id="foto-capturada" style="display:none;">
         <canvas id="canvas-foto" style="display:none;"></canvas>
         
         <button class="btn-foto" onclick="tirarFoto()">Tirar Selfie</button>
 
         <input type="text" id="cad-nome" placeholder="Nome Completo">
-        <input type="tel" id="cad-cpf" placeholder="Seu CPF">
+        <input type="number" id="cad-cpf" placeholder="Seu CPF (11 dígitos)" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" maxlength="11">
         
         <button onclick="enviarParaFirebase()">Solicitar Acesso</button>
     </div>
@@ -33,15 +34,12 @@
     <div id="tela-aguarde" class="tela">
         <h2 style="color: #39FF14;">Analisando...</h2>
         <p>Aguarde a liberação do administrador.</p>
-        <div style="border: 4px solid #333; border-top: 4px solid #39FF14; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
     </div>
 
     <div id="tela-home" class="tela">
         <h2 style="color: #39FF14;">Acesso Liberado!</h2>
         <p>Bem-vindo ao Virty Access.</p>
     </div>
-
-    <style> @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -65,33 +63,61 @@
         const fotoImg = document.getElementById('foto-capturada');
         let fotoBase64 = null;
 
-        // Inicia câmera
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-            .then(s => video.srcObject = s)
-            .catch(e => console.log("Erro câmera:", e));
+        // Tenta iniciar a câmera com suporte a mobile
+        async function iniciarCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "user" }, 
+                    audio: false 
+                });
+                video.srcObject = stream;
+            } catch (e) {
+                alert("Câmera bloqueada. Clique no cadeado na barra de endereços e permita o acesso.");
+            }
+        }
+
+        iniciarCamera();
 
         window.tirarFoto = () => {
+            if (!video.srcObject) {
+                alert("Aguarde a câmera carregar...");
+                return;
+            }
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
-            fotoBase64 = canvas.toDataURL('image/jpeg');
+            fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
             fotoImg.src = fotoBase64;
             fotoImg.style.display = 'block';
             video.style.display = 'none';
         };
 
         window.enviarParaFirebase = async () => {
-            const nome = document.getElementById('cad-nome').value;
+            const nome = document.getElementById('cad-nome').value.trim();
             const cpf = document.getElementById('cad-cpf').value;
-            if(!nome || !fotoBase64) return alert("Nome e Foto são obrigatórios!");
+
+            // VALIDAÇÃO DE CPF (Mínimo 11 números)
+            if (cpf.length < 11) {
+                alert("O CPF deve ter exatamente 11 dígitos!");
+                return;
+            }
+
+            if(!nome || !fotoBase64) {
+                alert("Por favor, preencha o nome e tire a foto!");
+                return;
+            }
 
             const id = "ID-" + Math.floor(Math.random() * 9999);
             localStorage.setItem('virty_id', id);
 
-            await set(ref(db, 'solicitacoes_pendentes/' + id), {
-                nome, cpf, foto: fotoBase64, status: 'pendente'
-            });
-            verificarStatus();
+            try {
+                await set(ref(db, 'solicitacoes_pendentes/' + id), {
+                    nome, cpf, foto: fotoBase64, data: new Date().toLocaleString()
+                });
+                verificarStatus();
+            } catch (e) {
+                alert("Erro ao enviar: " + e.message);
+            }
         };
 
         function verificarStatus() {
