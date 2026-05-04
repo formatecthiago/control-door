@@ -5,49 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Virty Access</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
-        h1 { color: #39FF14; border-bottom: 2px solid #39FF14; padding-bottom: 10px; }
-        .card { background: #111; border: 1px solid #333; padding: 15px; margin-bottom: 10px; display: flex; align-items: center; border-radius: 10px; }
-        .thumb { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 2px solid #39FF14; }
+        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        h1 { color: #39FF14; border-bottom: 2px solid #39FF14; padding-bottom: 10px; font-size: 1.5rem; }
+        .card { background: #111; border: 1px solid #222; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; border-radius: 15px; }
+        .thumb { width: 65px; height: 65px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 2px solid #39FF14; cursor: pointer; }
         .info { flex: 1; }
-        .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-left: 5px; }
+        .info b { color: #39FF14; font-size: 1.1rem; }
+        .actions { display: flex; gap: 8px; }
+        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.7rem; }
         .btn-ok { background: #39FF14; color: #000; }
         .btn-del { background: #ff4d4d; color: #fff; }
     </style>
 </head>
 <body>
-    <h1>PEDIDOS DE ACESSO</h1>
+    <h1>SOLICITAÇÕES</h1>
     <div id="lista-pendentes"></div>
 
-    <h1 style="margin-top:40px">MORADORES ATIVOS</h1>
+    <h1 style="margin-top:40px">MORADORES AUTORIZADOS</h1>
     <div id="lista-ativos"></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const firebaseConfig = { 
+    const config = { 
         apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
         databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", 
         projectId: "virty-access-door"
     };
-
-    const app = initializeApp(firebaseConfig);
+    const app = initializeApp(config);
     const db = getDatabase(app);
 
     // ESCUTAR PENDENTES
     onValue(ref(db, 'moradores_pendentes'), (snap) => {
         const div = document.getElementById('lista-pendentes');
         div.innerHTML = '';
-        if(!snap.exists()) div.innerHTML = '<p>Nenhum pedido novo.</p>';
+        if(!snap.exists()) div.innerHTML = '<p style="color:#444">Nenhum pedido pendente.</p>';
         snap.forEach(item => {
             const m = item.val();
             div.innerHTML += `
                 <div class="card">
                     <img src="${m.foto}" class="thumb">
-                    <div class="info"><b>Apt: ${m.unidade}</b><br>${m.nome}</div>
-                    <button class="btn btn-ok" onclick="aprovar('${m.unidade}')">ACEITAR</button>
-                    <button class="btn btn-del" onclick="remover('${m.unidade}', true)">RECUSAR</button>
+                    <div class="info"><b>Apto ${m.unidade}</b><br>${m.nome}</div>
+                    <div class="actions">
+                        <button class="btn btn-ok" onclick="aprovar('${m.unidade}')">Aceitar</button>
+                        <button class="btn btn-del" onclick="excluir('${m.unidade}', true)">Recusar</button>
+                    </div>
                 </div>`;
         });
     });
@@ -56,29 +59,35 @@
     onValue(ref(db, 'moradores'), (snap) => {
         const div = document.getElementById('lista-ativos');
         div.innerHTML = '';
+        if(!snap.exists()) div.innerHTML = '<p style="color:#444">Nenhum morador ativo.</p>';
         snap.forEach(item => {
             const m = item.val();
             div.innerHTML += `
                 <div class="card">
                     <img src="${m.foto}" class="thumb">
-                    <div class="info"><b>Apt: ${m.unidade}</b><br>${m.nome}</div>
-                    <button class="btn btn-del" onclick="remover('${m.unidade}', false)">EXCLUIR</button>
+                    <div class="info"><b>Apto ${m.unidade}</b><br>${m.nome}</div>
+                    <div class="actions">
+                        <button class="btn btn-del" onclick="excluir('${m.unidade}', false)">Excluir</button>
+                    </div>
                 </div>`;
         });
     });
 
-    window.aprovar = (u) => {
-        onValue(ref(db, `moradores_pendentes/${u}`), (snap) => {
+    window.aprovar = (un) => {
+        // Pega o dado do nó pendente e joga pro autorizado
+        onValue(ref(db, `moradores_pendentes/${un}`), (snap) => {
             if(snap.exists()){
-                set(ref(db, `moradores/${u}`), snap.val())
-                .then(() => remove(ref(db, `moradores_pendentes/${u}`)));
+                set(ref(db, `moradores/${un}`), snap.val())
+                .then(() => remove(ref(db, `moradores_pendentes/${un}`)));
             }
         }, { onlyOnce: true });
     };
 
-    window.remover = (u, pendente) => {
-        const path = pendente ? 'moradores_pendentes' : 'moradores';
-        remove(ref(db, `${path}/${u}`));
+    window.excluir = (un, isPendente) => {
+        const local = isPendente ? 'moradores_pendentes' : 'moradores';
+        if(confirm("Deseja realmente excluir/recusar?")) {
+            remove(ref(db, `${local}/${un}`));
+        }
     };
 </script>
 </body>
