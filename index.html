@@ -2,109 +2,205 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virty Access - Interfone</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interfone Black Edition v6.16</title>
     <style>
-        /* AQUI ESTÁ O SEU DESIGN ORIGINAL QUE EU TINHA ALTERADO */
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .container { width: 100%; max-width: 400px; text-align: center; padding: 20px; }
-        .display { font-size: 50px; color: #39FF14; margin-bottom: 30px; height: 60px; font-weight: bold; border-bottom: 2px solid #222; }
-        .teclado { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
-        .tecla { background: #111; border: 1px solid #333; color: #fff; padding: 20px; font-size: 24px; border-radius: 10px; cursor: pointer; }
-        .tecla:active { background: #333; }
-        .btn-chamar { grid-column: span 3; background: #39FF14; color: #000; font-weight: bold; border-radius: 10px; border: none; padding: 20px; font-size: 20px; cursor: pointer; margin-top: 10px; }
+        :root { 
+            --led-green: #39FF14; 
+            --pure-white: #FFFFFF; 
+            --true-black: #000000;
+            --grafite-metal: #2c2f33; 
+        }
         
-        /* TELAS DE STATUS (O QUE APARECE DEPOIS DE CLICAR EM CHAMAR) */
-        #tela-status { display: none; }
-        .contador { font-size: 70px; color: #f1c40f; margin: 20px 0; }
-        #mensagem-retorno { background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid #39FF14; min-height: 40px; margin-top: 20px; color: #39FF14; font-size: 18px; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: var(--true-black); font-family: sans-serif; }
+
+        .moldura-global {
+            position: fixed; width: 100vw; height: 100vh;
+            background-color: var(--true-black);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 10px solid var(--grafite-metal); 
+            box-sizing: border-box; z-index: 5;
+        }
+
+        .container-central {
+            position: relative; width: 220px; height: 260px; 
+            border-radius: 50% 50% 45% 45%;
+            overflow: hidden; background: var(--true-black); 
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; text-align: center;
+            border: 4px solid transparent; 
+            margin-bottom: 25px; /* Margem aumentada para desgrudar do botão */
+        }
+
+        .com-guia { border: 4px solid var(--led-green) !important; box-shadow: 0 0 20px var(--led-green); }
+
+        .conteudo { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        #video { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+        .area-botoes { width: 100%; display: flex; flex-direction: column; align-items: center; }
+
+        .btn-inox { 
+            background: #27ae60; color: white; padding: 18px; width: 85%; 
+            border-radius: 12px; border: none; font-weight: bold; 
+            font-size: 1.4rem; cursor: pointer; margin-bottom: 12px; 
+            text-transform: uppercase; box-shadow: 0 4px 0 #1e8449;
+        }
+
+        .welcome-msg { color: var(--pure-white); text-align: center; margin-bottom: 30px; margin-top: 10px; }
+        .welcome-msg h1 { font-size: 3rem; margin: 0; }
+        .welcome-msg p { font-size: 1.6rem; margin: 10px auto; font-weight: bold; width: 90%; }
+
+        .label-pequena { color: #888; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; }
+        .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.2rem; margin: 5px; font-weight: bold; text-transform: uppercase; }
+        
+        /* Centralização do Aviso de Segurança */
+        .msg-privacidade { 
+            color: #888; font-size: 0.75rem; font-weight: bold; 
+            text-align: center; width: 100%; margin-top: 10px;
+            display: block;
+        }
+
+        input, textarea {
+            width: 80%; background: #fff; color: #000; border: 2px solid var(--led-green); 
+            border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 12px;
+        }
+        input { font-size: 2rem; padding: 10px; }
+        textarea { font-size: 1rem; padding: 10px; resize: none; }
     </style>
 </head>
 <body>
 
-    <div class="container" id="painel-teclado">
-        <div class="display" id="num-casa"></div>
-        <div class="teclado">
-            <button class="tecla" onclick="digitar('1')">1</button>
-            <button class="tecla" onclick="digitar('2')">2</button>
-            <button class="tecla" onclick="digitar('3')">3</button>
-            <button class="tecla" onclick="digitar('4')">4</button>
-            <button class="tecla" onclick="digitar('5')">5</button>
-            <button class="tecla" onclick="digitar('6')">6</button>
-            <button class="tecla" onclick="digitar('7')">7</button>
-            <button class="tecla" onclick="digitar('8')">8</button>
-            <button class="tecla" onclick="digitar('9')">9</button>
-            <button class="tecla" onclick="limpar()" style="color:#ff4444">C</button>
-            <button class="tecla" onclick="digitar('0')">0</button>
-            <button class="btn-chamar" onclick="executarChamada()">CHAMAR</button>
+    <div class="moldura-global">
+        
+        <div id="header-msg" style="display: block;">
+            <div class="welcome-msg">
+                <h1>Olá!</h1>
+                <p>Toque em INICIAR para solicitar o seu acesso.</p>
+            </div>
+        </div>
+
+        <div class="container-central" id="main-container">
+            <div id="step-1" class="conteudo" style="display: flex;"></div>
+            <div id="step-2" class="conteudo"><video id="video" autoplay playsinline muted></video></div>
+            <div id="step-3" class="conteudo"><div class="lcd-text">DADOS DE ACESSO</div></div>
+            <div id="step-4" class="conteudo">
+                <div id="timer" style="font-size: 4rem; color: var(--pure-white);">60</div>
+                <div id="calling-info" class="lcd-text" style="color: var(--led-green); font-size: 1.1rem; margin-top: 10px;"></div>
+            </div>
+            <div id="step-5" class="conteudo"><div style="font-size: 6rem; color: var(--led-green);">✓</div><div class="lcd-text">LIBERADO</div></div>
+        </div>
+
+        <div class="area-botoes">
+            <div id="btn-step-1" style="display: block; width: 100%; text-align: center;">
+                <button class="btn-inox" onclick="passo2()">INICIAR</button>
+                <span class="msg-privacidade">AVISO: BIOMETRIA E LOCALIZAÇÃO MONITORADAS</span>
+            </div>
+            
+            <div id="btn-step-2" style="display: none; width: 100%; text-align: center;">
+                <button class="btn-inox" onclick="passo3()">INICIAR CAPTURA</button>
+            </div>
+
+            <div id="btn-step-3" style="display: none; width: 100%; text-align: center;">
+                <div class="label-pequena">Digitar o número</div>
+                <input type="number" id="unidade" oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3);" placeholder="000">
+                
+                <div class="label-pequena">Digitar texto (Opcional)</div>
+                <textarea id="recado" rows="2" placeholder="Sua mensagem..."></textarea>
+                
+                <button class="btn-inox" onclick="passo4()">CHAMAR</button>
+            </div>
+
+            <div id="btn-step-4" style="display: none; width: 100%; text-align: center;">
+                <div id="status-label" class="lcd-text" style="margin-bottom: 20px;">CONECTANDO...</div>
+                
+                <div id="ctrl-durante">
+                    <button class="btn-inox" style="background:#c0392b" onclick="location.reload()">ENCERRAR</button>
+                </div>
+
+                <div id="ctrl-final" style="display: none;">
+                    <button class="btn-inox" style="background:#34495e" onclick="location.reload()">FECHAR</button>
+                    <button class="btn-inox" style="background:#2980b9" onclick="passo3()">CHAMAR OUTRO</button>
+                </div>
+            </div>
+
+            <div id="btn-step-5" style="display: none; width: 100%; text-align: center;">
+                <button class="btn-inox" style="background:#34495e" onclick="location.reload()">FECHAR</button>
+            </div>
         </div>
     </div>
 
-    <div class="container" id="tela-status">
-        <h2>Chamando...</h2>
-        <div class="contador" id="timer">20</div>
-        <p>Aguarde o retorno do morador</p>
-        <div id="mensagem-retorno">...</div>
-        <button onclick="cancelarTudo()" style="background:none; border:1px solid #ff4444; color:#ff4444; margin-top:40px; padding:10px; border-radius:5px;">CANCELAR</button>
-    </div>
+<script>
+    let stream, timerInterval, audioCtx;
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    function tocarSom(tipo) {
+        if (!audioCtx) return;
+        const gain = audioCtx.createGain(); gain.connect(audioCtx.destination);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime); 
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
-            authDomain: "virty-access-door.firebaseapp.com",
-            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
-            projectId: "virty-access-door",
-            storageBucket: "virty-access-door.firebasestorage.app",
-            messagingSenderId: "694822891117",
-            appId: "1:694822891117:web:b95a71c1eb273071fa9964"
-        };
+        const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.connect(gain);
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        if(tipo === 'chamada') {
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+            osc.stop(audioCtx.currentTime + 1.2);
+        } else if (tipo === 'falha') {
+            for(let i=0; i<3; i++) {
+                const o = audioCtx.createOscillator(); o.type = 'square'; o.connect(gain);
+                o.frequency.setValueAtTime(400, audioCtx.currentTime + (i * 0.2));
+                o.start(audioCtx.currentTime + (i * 0.2));
+                o.stop(audioCtx.currentTime + (i * 0.2) + 0.15);
+            }
+        }
+    }
 
-        let casa = "";
-        const display = document.getElementById('num-casa');
+    function showStep(n) {
+        document.querySelectorAll('.conteudo').forEach(c => c.style.display = 'none');
+        document.querySelectorAll('.area-botoes > div').forEach(d => d.style.display = 'none');
+        document.getElementById('step-'+n).style.display = 'flex';
+        if(document.getElementById('btn-step-'+n)) document.getElementById('btn-step-'+n).style.display = 'block';
+        
+        document.getElementById('header-msg').style.display = (n === 1) ? 'block' : 'none';
 
-        window.digitar = (n) => { if(casa.length < 4) { casa += n; display.innerText = casa; } };
-        window.limpar = () => { casa = ""; display.innerText = ""; };
+        const container = document.getElementById('main-container');
+        if(n === 2) container.classList.add('com-guia');
+        else container.classList.remove('com-guia');
+    }
 
-        window.executarChamada = async () => {
-            if(!casa) return;
+    async function passo2() { initAudio(); showStep(2); try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); document.getElementById('video').srcObject = stream; } catch(e) { alert("Câmera OFF."); } }
+    
+    function passo3() { 
+        if(stream) stream.getTracks().forEach(t => t.stop()); 
+        showStep(3); 
+        setTimeout(() => document.getElementById('unidade').focus(), 400); 
+    }
 
-            // DISPARA A CHAMADA NO FIREBASE (AQUI É A COMUNICAÇÃO QUE FALTAVA)
-            await set(ref(db, 'chamadas_ativas/' + casa), { ativa: true, timestamp: Date.now() });
+    function passo4() { 
+        const num = document.getElementById('unidade').value;
+        if(!num) return;
+        showStep(4);
+        document.getElementById('calling-info').innerText = "UNIDADE: " + num;
+        document.getElementById('status-label').innerText = "CHAMANDO...";
+        document.getElementById('ctrl-durante').style.display = "block";
+        document.getElementById('ctrl-final').style.display = "none";
+        iniciarContagem(); 
+    }
 
-            document.getElementById('painel-teclado').style.display = 'none';
-            document.getElementById('tela-status').style.display = 'block';
-
-            let tempo = 20;
-            const t = setInterval(() => {
-                tempo--;
-                document.getElementById('timer').innerText = tempo;
-                if(tempo <= 0) { clearInterval(t); cancelarTudo(); alert("Morador não atendeu."); }
-            }, 1000);
-
-            // ESCUTA O TEXTO DE 60 CARACTERES QUE O MORADOR ENVIAR
-            onValue(ref(db, 'respostas_interfone/' + casa), (snap) => {
-                if(snap.exists()) {
-                    document.getElementById('mensagem-retorno').innerText = snap.val().mensagem;
-                }
-            });
-
-            // SE O MORADOR ABRIR O PORTÃO, A CHAMADA É APAGADA E O VISITANTE RESETADO
-            onValue(ref(db, 'chamadas_ativas/' + casa), (snap) => {
-                if(!snap.exists() && tempo > 0) { clearInterval(t); location.reload(); }
-            });
-        };
-
-        window.cancelarTudo = () => {
-            remove(ref(db, 'chamadas_ativas/' + casa));
-            remove(ref(db, 'respostas_interfone/' + casa));
-            location.reload();
-        };
-    </script>
+    function iniciarContagem() {
+        let t = 60; clearInterval(timerInterval); tocarSom('chamada');
+        timerInterval = setInterval(() => {
+            t--; document.getElementById('timer').innerText = t;
+            if(t % 4 === 0 && t > 0) tocarSom('chamada');
+            if(t <= 0) { 
+                clearInterval(timerInterval); 
+                tocarSom('falha'); 
+                document.getElementById('status-label').innerText = "NÃO RESPONDEU";
+                document.getElementById('ctrl-durante').style.display = "none";
+                document.getElementById('ctrl-final').style.display = "block";
+            }
+        }, 1000);
+    }
+</script>
 </body>
 </html>
