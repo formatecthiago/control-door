@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Virty Home</title>
+    <style>
+        :root { --led-green: #39FF14; --true-black: #000000; --grafite-metal: #2c2f33; --danger: #ff4d4d; --blue: #2980b9; }
+        body, html { margin:0; padding:0; height:100%; background: var(--true-black); font-family: sans-serif; color: #fff; overflow: hidden; }
+        .moldura { width:100%; height:100vh; border:10px solid var(--grafite-metal); box-sizing:border-box; display:flex; flex-direction:column; padding:20px; }
+        #tela-home { text-align:center; }
+        #tela-chamada { display:none; flex-direction:column; align-items:center; text-align:center; height:100%; }
+        .foto { width:150px; height:180px; border:3px solid var(--led-green); border-radius:20px; margin-bottom:20px; background:#222; overflow:hidden; }
+        .foto img { width:100%; height:100%; object-fit:cover; }
+        .btn { width:90%; padding:18px; border-radius:12px; border:none; color:#fff; font-weight:bold; margin-bottom:10px; cursor:pointer; text-transform:uppercase; }
+        #pop { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:75%; background:#fff; color:#000; padding:20px; border-radius:15px; text-align:center; z-index:100; font-weight:bold; }
+        input { width:90%; padding:15px; border-radius:8px; margin-bottom:10px; border:2px solid var(--blue); }
+    </style>
+</head>
+<body>
+    <div class="moldura">
+        <div id="tela-home">
+            <h1 id="boas-vindas" style="color:var(--led-green)">Virty Access</h1>
+            <p id="unidade-info">UNIDADE --</p>
+            <div style="margin-top:50px; color:#444">Aguardando visitantes...</div>
+        </div>
+        <div id="tela-chamada">
+            <div class="foto"><img id="img-v" src=""></div>
+            <p id="msg-v" style="font-style:italic; color:#888"></p>
+            <div id="acoes" style="width:100%">
+                <button class="btn" style="background:var(--danger)" onclick="finalizar()">RECUSAR</button>
+                <button class="btn" style="background:var(--blue)" onclick="showMsg()">MENSAGEM</button>
+                <button class="btn" style="background:var(--led-green); color:#000" onclick="abrir()">ABRIR PORTÃO</button>
+            </div>
+            <div id="msg-input" style="display:none; width:100%">
+                <input type="text" id="txt" placeholder="Digite aqui...">
+                <button class="btn" style="background:var(--blue)" onclick="enviarMsg()">ENVIAR</button>
+            </div>
+        </div>
+    </div>
+    <div id="pop"><span onclick="this.parentElement.style.display='none'" style="float:right; color:red">X</span><p>Clique agora no botão verde ABRIR PORTÃO</p></div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    const firebaseConfig = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", authDomain: "virty-access-door.firebaseapp.com", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door", storageBucket: "virty-access-door.firebasestorage.app", messagingSenderId: "694822891117", appId: "1:694822891117:web:b95a71c1eb273071fa9964" };
+    const app = initializeApp(firebaseConfig); const db = getDatabase(app);
+    const myID = localStorage.getItem('virty_id'); const myCasa = localStorage.getItem('virty_casa');
+    if(!myID) window.location.href="index.html";
+    onValue(ref(db, `moradores_autorizados/${myID}`), (snap) => {
+        if(!snap.exists()) { localStorage.clear(); window.location.href="index.html"; }
+        else { 
+            document.getElementById('boas-vindas').innerText = "Olá, " + snap.val().nome; 
+            document.getElementById('unidade-info').innerText = "UNIDADE " + myCasa;
+            monitorar();
+        }
+    });
+    function monitorar() {
+        onValue(ref(db, `chamadas_ativas/${myCasa}`), (snap) => {
+            if(snap.exists()) { switchTela('tela-chamada'); document.getElementById('msg-v').innerText = snap.val().msg || ""; }
+            else { switchTela('tela-home'); document.getElementById('pop').style.display='none'; }
+        });
+    }
+    window.showMsg = () => { document.getElementById('acoes').style.display='none'; document.getElementById('msg-input').style.display='block'; }
+    window.enviarMsg = () => { set(ref(db, `respostas_interfone/${myCasa}`), { mensagem: document.getElementById('txt').value }); document.getElementById('acoes').style.display='block'; document.getElementById('msg-input').style.display='none'; document.getElementById('pop').style.display='block'; }
+    window.abrir = () => { update(ref(db, `chamadas_ativas/${myCasa}`), { status_abertura: true }); }
+    window.finalizar = () => { remove(ref(db, `chamadas_ativas/${myCasa}`)); }
+    function switchTela(id){ document.getElementById('tela-home').style.display = (id==='tela-home'?'block':'none'); document.getElementById('tela-chamada').style.display = (id==='tela-chamada'?'flex':'none'); }
+</script>
+</body>
+</html>
