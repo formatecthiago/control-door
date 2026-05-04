@@ -2,49 +2,36 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Virty</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Page | Virty Access Door</title>
     <style>
-        body { background:#121212; color:#fff; font-family:sans-serif; padding:20px; }
-        .card { background:#222; padding:15px; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; border:1px solid #333; }
-        img { width:60px; height:60px; border-radius:50%; border:2px solid #39FF14; margin-right:15px; }
-        .btn-ok { background:#39FF14; border:none; padding:10px; border-radius:5px; font-weight:bold; cursor:pointer; }
-        .btn-del { color:#ff4d4d; background:none; border:1px solid #ff4d4d; padding:5px; border-radius:5px; cursor:pointer; }
-        table { width:100%; text-align:left; border-collapse:collapse; }
-        th, td { padding:10px; border-bottom:1px solid #333; }
-    </style>
-</head>
-<body>
-    <h2>🔔 Solicitações</h2><div id="pendentes"></div>
-    <h2 style="margin-top:40px">🏠 Moradores Autorizados</h2>
-    <table><thead><tr><th>Casa</th><th>Nome</th><th>Ação</th></tr></thead><tbody id="autorizados"></tbody></table>
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    const firebaseConfig = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", authDomain: "virty-access-door.firebaseapp.com", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door", storageBucket: "virty-access-door.firebasestorage.app", messagingSenderId: "694822891117", appId: "1:694822891117:web:b95a71c1eb273071fa9964" };
-    const app = initializeApp(firebaseConfig); const db = getDatabase(app);
-    onValue(ref(db, 'solicitacoes_pendentes'), (snap) => {
-        const d = document.getElementById('pendentes'); d.innerHTML = "";
-        snap.forEach(item => {
-            const p = item.val(); d.innerHTML += `<div class="card"><img src="${p.foto}"><div><b>${p.nome}</b> (CASA ${p.casa})</div>
-            <button class="btn-ok" onclick="acao('${item.key}', 'aceitar')">Aceitar</button>
-            <button class="btn-del" onclick="acao('${item.key}', 'recusar')">Recusar</button></div>`;
-        });
-    });
-    onValue(ref(db, 'moradores_autorizados'), (snap) => {
-        const t = document.getElementById('autorizados'); t.innerHTML = "";
-        snap.forEach(item => {
-            const m = item.val(); t.innerHTML += `<tr><td>${m.casa}</td><td>${m.nome}</td><td><button class="btn-del" onclick="acao('${item.key}', 'deletar')">Remover</button></td></tr>`;
-        });
-    });
-    window.acao = (id, tipo) => {
-        if(tipo === 'aceitar') {
-            onValue(ref(db, `solicitacoes_pendentes/${id}`), (s) => { 
-                if(s.exists()){ set(ref(db, `moradores_autorizados/${id}`), s.val()); remove(ref(db, `solicitacoes_pendentes/${id}`)); }
-            }, {onlyOnce:true});
-        } else {
-            if(confirm("Confirmar?")){ remove(ref(db, `moradores_autorizados/${id}`)); remove(ref(db, `solicitacoes_pendentes/${id}`)); }
+        :root { --neon-green: #39FF14; --bg-black: #000; --card-bg: #111; --red-del: #ff4d4d; --gray-edit: #555; }
+        body { background: var(--bg-black); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        
+        header { border-bottom: 2px solid var(--neon-green); padding-bottom: 15px; margin-bottom: 30px; text-align: center; }
+        header h1 { margin: 0; font-size: 1.6rem; letter-spacing: 3px; font-weight: 800; }
+        #data-atual { color: var(--neon-green); font-size: 1rem; margin-top: 8px; text-transform: capitalize; }
+
+        /* Busca Inteligente */
+        .search-container { position: sticky; top: 10px; z-index: 100; padding-bottom: 20px; background: var(--bg-black); }
+        .search-box { 
+            width: 100%; max-width: 800px; margin: 0 auto; display: block; padding: 18px; 
+            border-radius: 15px; border: 2px solid var(--neon-green); background: #000; 
+            color: #fff; font-size: 1.1rem; outline: none; box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
         }
-    }
-</script>
-</body>
-</html>
+
+        /* Seções e Agrupamento */
+        section { width: 100%; max-width: 900px; margin: 0 auto 50px; }
+        h2 { border-left: 5px solid var(--neon-green); padding-left: 15px; font-size: 1.3rem; margin-bottom: 25px; color: #eee; }
+
+        .unit-group { background: #080808; border: 1px solid #222; border-radius: 20px; padding: 20px; margin-bottom: 25px; }
+        .unit-title { color: var(--neon-green); font-weight: 800; font-size: 1.1rem; margin-bottom: 15px; display: block; border-bottom: 1px solid #222; padding-bottom: 10px; }
+        
+        /* Cards de Usuário */
+        .user-card { display: flex; align-items: center; background: var(--card-bg); padding: 18px; border-radius: 15px; margin-bottom: 12px; gap: 20px; border: 1px solid #222; transition: 0.2s; }
+        .user-card:hover { border-color: #444; background: #161616; }
+        
+        .thumb-admin { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--neon-green); cursor: pointer; background: #222; }
+        
+        .user-info { flex: 1; }
+        .user-info span { display: block
