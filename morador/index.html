@@ -6,45 +6,56 @@
     <title>Virty Access - Morador</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; }
-        body { background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; font-family: sans-serif; }
+        body { background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
         .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; padding: 30px; text-align: center; }
         .active { display: flex; }
-        h2 { color: var(--neon); text-transform: uppercase; }
-        .btn { width: 100%; padding: 20px; border-radius: 35px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
+        h2 { color: var(--neon); text-transform: uppercase; letter-spacing: 1px; }
+        .btn { width: 100%; padding: 20px; border-radius: 35px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; transition: 0.2s; }
         .btn-green { background: var(--neon); color: black; }
         .btn-red { background: #ff3333; color: white; }
-        .btn-gray { background: #222; color: #888; }
-        .caller-img { width: 180px; height: 180px; border-radius: 20px; object-fit: cover; border: 3px solid var(--neon); margin: 20px auto; }
+        .btn-gray { background: #222; color: #fff; }
+        .btn-silence { background: #111; color: #555; border: 1px solid #333; font-size: 0.8rem; }
+        .btn-silence.on { color: orange; border-color: orange; }
+        .caller-img { width: 220px; height: 220px; border-radius: 25px; object-fit: cover; border: 4px solid var(--neon); margin: 20px auto; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); }
+        input { width: 100%; padding: 18px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #0a0a0a; color: white; font-size: 1rem; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="s-cad" class="screen">
-        <h2>REGISTRO</h2>
-        <input type="text" id="n" style="width:100%; padding:15px; margin:10px 0; background:#111; color:#fff; border:1px solid #333;" placeholder="Nome">
-        <input type="number" id="u" style="width:100%; padding:15px; margin:10px 0; background:#111; color:#fff; border:1px solid #333;" placeholder="Unidade">
-        <button class="btn btn-green" onclick="reg()">SOLICITAR</button>
+        <h2>VIRTY ACCESS</h2>
+        <p style="color: #666;">Cadastre sua unidade</p>
+        <input type="text" id="n" placeholder="Nome Completo">
+        <input type="number" id="u" placeholder="Número da Unidade">
+        <button class="btn btn-green" onclick="reg()">SOLICITAR ACESSO</button>
     </div>
 
     <div id="s-wait" class="screen">
-        <h2 style="color:orange">ANÁLISE</h2>
-        <p>Aguarde o síndico autorizar seu celular.</p>
+        <h2 style="color:orange">EM ANÁLISE</h2>
+        <div style="font-size: 4rem; margin: 30px;">⏳</div>
+        <p>Seu acesso está sendo verificado pelo administrador.</p>
     </div>
 
     <div id="s-home" class="screen">
         <h2>SISTEMA ONLINE</h2>
-        <p>Unidade <b id="view-u"></b></p>
-        <div style="padding:40px; border:1px dashed #333; border-radius:20px; color:#444">Aguardando visitantes...</div>
-        <button class="btn btn-gray" onclick="sair()">SAIR</button>
+        <p>Bem-vindo, Unidade <b id="view-u" style="color:var(--neon)"></b></p>
+        <div style="padding:50px 20px; border:1px dashed #222; border-radius:20px; color:#444; margin: 30px 0;">
+            📡 Monitorando entrada...
+        </div>
+        <button id="btn-silenciar" class="btn btn-silence" onclick="toggleSilencio()">🔕 SILENCIAR CHAMADAS</button>
     </div>
 
     <div id="s-call" class="screen">
-        <h2 style="color:var(--neon)">CHAMADA ATIVA!</h2>
+        <h2 style="color:var(--neon)">VISITANTE NA PORTA!</h2>
         <img id="visitante-foto" class="caller-img">
-        <p id="visitante-msg"></p>
+        <p id="visitante-msg" style="font-weight: bold;"></p>
         <button class="btn btn-green" onclick="responder('liberado')">ABRIR PORTÃO</button>
         <button class="btn btn-red" onclick="responder('recusado')">RECUSAR</button>
     </div>
+
+    <audio id="som-campainha" loop preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3" type="audio/mpeg">
+    </audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -54,31 +65,51 @@
     const app = initializeApp(config);
     const db = getDatabase(app);
     let lUn = localStorage.getItem('virty_un');
+    let silencioso = false;
 
-    function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-    window.sair = () => { localStorage.clear(); location.reload(); };
+    function show(id){ 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById(id).classList.add('active'); 
+    }
 
-    if(!lUn) { show('s-cad'); } else {
-        // Vigia status do morador
+    // Só limpa se o Admin deletar. Removido botão de Sair.
+    window.limparEvoltar = () => { localStorage.clear(); location.reload(); };
+
+    window.toggleSilencio = () => {
+        silencioso = !silencioso;
+        const btn = document.getElementById('btn-silenciar');
+        btn.innerText = silencioso ? "🔔 ATIVAR SOM" : "🔕 SILENCIAR CHAMADAS";
+        btn.classList.toggle('on', silencioso);
+    };
+
+    if(!lUn) { 
+        show('s-cad'); 
+    } else {
         onValue(ref(db, `moradores/${lUn}`), (s) => {
             if(s.exists()){ 
                 document.getElementById('view-u').innerText = lUn; 
                 show('s-home');
                 vigiarChamadas(); 
             } else { 
-                onValue(ref(db, `moradores_pendentes/${lUn}`), (sp) => { sp.exists() ? show('s-wait') : sair(); }); 
+                // Se não existe no moradores, checa se está pendente. Se nem pendente está, o admin deletou.
+                onValue(ref(db, `moradores_pendentes/${lUn}`), (sp) => { 
+                    if(sp.exists()) { show('s-wait'); } else { limparEvoltar(); }
+                }); 
             }
         });
     }
 
     function vigiarChamadas() {
+        const som = document.getElementById('som-campainha');
         onValue(ref(db, `chamadas_ativas/${lUn}`), (snap) => {
             if(snap.exists() && snap.val().status === "chamando") {
                 const dados = snap.val();
                 document.getElementById('visitante-foto').src = dados.foto;
                 document.getElementById('visitante-msg').innerText = dados.texto_visitante;
                 show('s-call');
+                if(!silencioso) som.play().catch(e => console.log("Play block:", e));
             } else {
+                som.pause(); som.currentTime = 0;
                 if(document.getElementById('s-call').classList.contains('active')) show('s-home');
             }
         });
@@ -86,13 +117,18 @@
 
     window.responder = (status) => {
         update(ref(db, `chamadas_ativas/${lUn}`), { status: status });
-        setTimeout(() => remove(ref(db, `chamadas_ativas/${lUn}`)), 2000);
+        // Som para imediatamente ao responder
+        document.getElementById('som-campainha').pause();
     };
 
     window.reg = () => {
         const un = document.getElementById('u').value, nom = document.getElementById('n').value;
-        if(!un || !nom) return alert("Faltam dados!");
-        set(ref(db, `moradores_pendentes/${un}`), { nome: nom, unidade: un, foto: "" }).then(() => { localStorage.setItem('virty_un', un); location.reload(); });
+        if(!un || !nom) return alert("Preencha unidade e nome!");
+        set(ref(db, `moradores_pendentes/${un}`), { nome: nom, unidade: un, foto: "" })
+        .then(() => { 
+            localStorage.setItem('virty_un', un); 
+            location.reload(); 
+        });
     };
 </script>
 </body>
