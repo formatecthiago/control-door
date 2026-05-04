@@ -2,107 +2,49 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Virty Access</title>
+    <title>Admin Virty</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .card { background: #252525; border: 1px solid #333; padding: 15px; margin-bottom: 15px; border-radius: 8px; display: flex; align-items: center; gap: 15px; }
-        .card img { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #39FF14; object-fit: cover; }
-        .info { flex-grow: 1; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #252525; border-radius: 8px; overflow: hidden; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #333; }
-        th { background: #333; color: #39FF14; }
-        .btn-aceitar { background: #39FF14; color: black; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-recusar { background: #ff4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
-        .btn-delete { background: none; color: #ff4444; border: 1px solid #ff4444; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        body { background:#121212; color:#fff; font-family:sans-serif; padding:20px; }
+        .card { background:#222; padding:15px; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; border:1px solid #333; }
+        img { width:60px; height:60px; border-radius:50%; border:2px solid #39FF14; margin-right:15px; }
+        .btn-ok { background:#39FF14; border:none; padding:10px; border-radius:5px; font-weight:bold; cursor:pointer; }
+        .btn-del { color:#ff4d4d; background:none; border:1px solid #ff4d4d; padding:5px; border-radius:5px; cursor:pointer; }
+        table { width:100%; text-align:left; border-collapse:collapse; }
+        th, td { padding:10px; border-bottom:1px solid #333; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔔 Solicitações Pendentes</h1>
-        <div id="lista-pendentes"></div>
-
-        <h1 style="margin-top: 40px;">🏠 Moradores Autorizados</h1>
-        <table>
-            <thead>
-                <tr>
-                    <th>Casa</th>
-                    <th>Nome</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="corpo-tabela"></tbody>
-        </table>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
-            authDomain: "virty-access-door.firebaseapp.com",
-            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
-            projectId: "virty-access-door",
-            storageBucket: "virty-access-door.firebasestorage.app",
-            messagingSenderId: "694822891117",
-            appId: "1:694822891117:web:b95a71c1eb273071fa9964"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // Monitorar Pendentes
-        onValue(ref(db, 'solicitacoes_pendentes'), (snapshot) => {
-            const div = document.getElementById('lista-pendentes');
-            div.innerHTML = snapshot.exists() ? "" : "<p>Nenhuma solicitação nova.</p>";
-            snapshot.forEach(item => {
-                const p = item.val();
-                div.innerHTML += `
-                    <div class="card">
-                        <img src="${p.foto}">
-                        <div class="info">
-                            <b>${p.nome}</b><br>
-                            <span>Casa: ${p.casa} | CPF: ${p.cpf}</span>
-                        </div>
-                        <button class="btn-aceitar" onclick="acao('${item.key}', 'aceitar')">Aceitar</button>
-                        <button class="btn-recusar" onclick="acao('${item.key}', 'recusar')">Recusar</button>
-                    </div>`;
-            });
+    <h2>🔔 Solicitações</h2><div id="pendentes"></div>
+    <h2 style="margin-top:40px">🏠 Moradores Autorizados</h2>
+    <table><thead><tr><th>Casa</th><th>Nome</th><th>Ação</th></tr></thead><tbody id="autorizados"></tbody></table>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    const firebaseConfig = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", authDomain: "virty-access-door.firebaseapp.com", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door", storageBucket: "virty-access-door.firebasestorage.app", messagingSenderId: "694822891117", appId: "1:694822891117:web:b95a71c1eb273071fa9964" };
+    const app = initializeApp(firebaseConfig); const db = getDatabase(app);
+    onValue(ref(db, 'solicitacoes_pendentes'), (snap) => {
+        const d = document.getElementById('pendentes'); d.innerHTML = "";
+        snap.forEach(item => {
+            const p = item.val(); d.innerHTML += `<div class="card"><img src="${p.foto}"><div><b>${p.nome}</b> (CASA ${p.casa})</div>
+            <button class="btn-ok" onclick="acao('${item.key}', 'aceitar')">Aceitar</button>
+            <button class="btn-del" onclick="acao('${item.key}', 'recusar')">Recusar</button></div>`;
         });
-
-        // Monitorar Autorizados
-        onValue(ref(db, 'moradores_autorizados'), (snapshot) => {
-            const corpo = document.getElementById('corpo-tabela');
-            corpo.innerHTML = "";
-            snapshot.forEach(item => {
-                const m = item.val();
-                corpo.innerHTML += `
-                    <tr>
-                        <td><b>${m.casa}</b></td>
-                        <td>${m.nome}</td>
-                        <td><button class="btn-delete" onclick="acao('${item.key}', 'deletar')">Remover</button></td>
-                    </tr>`;
-            });
+    });
+    onValue(ref(db, 'moradores_autorizados'), (snap) => {
+        const t = document.getElementById('autorizados'); t.innerHTML = "";
+        snap.forEach(item => {
+            const m = item.val(); t.innerHTML += `<tr><td>${m.casa}</td><td>${m.nome}</td><td><button class="btn-del" onclick="acao('${item.key}', 'deletar')">Remover</button></td></tr>`;
         });
-
-        window.acao = (id, tipo) => {
-            if (tipo === 'aceitar') {
-                onValue(ref(db, 'solicitacoes_pendentes/' + id), (snap) => {
-                    const dados = snap.val();
-                    set(ref(db, 'moradores_autorizados/' + id), dados);
-                    remove(ref(db, 'solicitacoes_pendentes/' + id));
-                }, { onlyOnce: true });
-            } else if (tipo === 'recusar') {
-                if(confirm("Recusar cadastro? O morador poderá tentar novamente.")) {
-                    remove(ref(db, 'solicitacoes_pendentes/' + id));
-                }
-            } else if (tipo === 'deletar') {
-                if(confirm("Remover morador? O acesso será bloqueado.")) {
-                    remove(ref(db, 'moradores_autorizados/' + id));
-                }
-            }
-        };
-    </script>
+    });
+    window.acao = (id, tipo) => {
+        if(tipo === 'aceitar') {
+            onValue(ref(db, `solicitacoes_pendentes/${id}`), (s) => { 
+                if(s.exists()){ set(ref(db, `moradores_autorizados/${id}`), s.val()); remove(ref(db, `solicitacoes_pendentes/${id}`)); }
+            }, {onlyOnce:true});
+        } else {
+            if(confirm("Confirmar?")){ remove(ref(db, `moradores_autorizados/${id}`)); remove(ref(db, `solicitacoes_pendentes/${id}`)); }
+        }
+    }
+</script>
 </body>
 </html>
