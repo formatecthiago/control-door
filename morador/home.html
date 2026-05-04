@@ -5,108 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Virty Access - Morador</title>
     <style>
-        :root { --neon-green: #39FF14; --bg-black: #000; --card-dark: #111; --gray-btn: #333; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            background: var(--bg-black); color: white; font-family: 'Segoe UI', sans-serif;
-            margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh;
-        }
-
-        .screen { display: none; width: 100%; max-width: 480px; flex-direction: column; align-items: center; padding: 25px; }
+        :root { --neon-green: #39FF14; --bg-black: #000; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg-black); color: white; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .screen { display: none; width: 100%; max-width: 400px; flex-direction: column; padding: 20px; }
         .active { display: flex; }
-
-        h2 { color: var(--neon-green); font-size: 1.8rem; text-align: center; margin-top: 10px; }
-        input { 
-            width: 100%; padding: 18px; margin: 12px 0; border-radius: 12px; border: 1px solid #333;
-            background: #0a0a0a; color: white; font-size: 1.2rem; outline: none;
-        }
-        input:focus { border-color: var(--neon-green); }
-
-        .btn { 
-            width: 100%; padding: 20px; border-radius: 35px; border: none; font-weight: bold; 
-            font-size: 1.2rem; cursor: pointer; margin: 10px 0; text-transform: uppercase;
-        }
+        h2 { color: var(--neon-green); text-align: center; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #111; color: white; }
+        .btn { width: 100%; padding: 15px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; margin: 10px 0; }
         .btn-green { background: var(--neon-green); color: black; }
-        .btn-gray { background: var(--gray-btn); color: white; }
-        .btn-white { background: white; color: black; }
-
-        .avatar-main {
-            width: 140px; height: 140px; border-radius: 50%; border: 3px solid #fff;
-            margin: 0 auto 20px; background: #222; display: flex; align-items: center; 
-            justify-content: center; overflow: hidden; position: relative;
-        }
-        .avatar-main img { width: 100%; height: 100%; object-fit: cover; }
-        .avatar-main span { font-size: 0.8rem; text-align: center; padding: 10px; color: #888; }
-
-        /* TELA DE CHAMADA */
-        .call-panel {
-            background: rgba(255,255,255,0.05); width: 100%; border-radius: 30px; padding: 30px;
-            border: 1px solid #222; backdrop-filter: blur(10px); text-align: center;
-        }
-        .msg-box { 
-            background: #1a1a1a; padding: 20px; border-radius: 15px; margin-top: 20px; 
-            text-align: left; border: 1px solid #333; 
-        }
-
-        #popup-liberar {
-            display: none; position: fixed; bottom: 30px; background: white; color: black;
-            padding: 20px; border-radius: 15px; width: 90%; text-align: center; font-weight: bold; z-index: 999;
-        }
+        .btn-gray { background: #333; color: white; }
+        .avatar-box { width: 120px; height: 120px; border-radius: 50%; border: 2px solid white; margin: 20px auto; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #222; }
+        .avatar-box img { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
 
     <div id="screen-cadastro" class="screen">
         <h2>VIRTY ACCESS</h2>
-        <div class="avatar-main" onclick="document.getElementById('selfie').click()">
+        <div class="avatar-box" onclick="document.getElementById('selfie').click()">
             <img id="img-preview" style="display:none">
-            <span id="txt-foto">📷 TOQUE PARA TIRAR SELFIE</span>
+            <span id="txt-foto">📷 FOTO</span>
             <input type="file" id="selfie" accept="image/*" capture="user" style="display:none" onchange="processarFoto(this)">
         </div>
-        <input type="text" id="nome" placeholder="Nome Completo">
-        <input type="number" id="cpf" placeholder="CPF (Apenas números)" inputmode="numeric">
-        <input type="number" id="unidade" placeholder="Número da Unidade" inputmode="numeric">
+        <input type="text" id="nome" placeholder="Nome">
+        <input type="number" id="unidade" placeholder="Nº Unidade">
         <button class="btn btn-green" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
     </div>
 
     <div id="screen-wait" class="screen">
-        <div class="avatar-main" style="border-color: orange; font-size: 3rem;">⏳</div>
-        <h2>Análise em Curso</h2>
-        <p style="text-align: center;">Aguarde a liberação do administrador.</p>
-        <button class="btn btn-gray" onclick="resetManual()" style="font-size: 0.8rem; padding: 10px;">CANCELAR E VOLTAR</button>
+        <h2>Aguardando...</h2>
+        <p style="text-align:center">O síndico está analisando seu cadastro.</p>
+        <button class="btn btn-gray" onclick="resetApp()">CANCELAR</button>
     </div>
 
     <div id="screen-home" class="screen">
-        <h2 style="text-align: left; width: 100%;">Olá, Morador!</h2>
-        <p style="text-align: left; width: 100%; color: #888;">Unidade <span id="home-unidade"></span></p>
-        <div style="margin-top: 50px; color: #444; text-align: center;">
-            <p>Aguardando chamadas...</p>
-        </div>
-        <button class="btn btn-gray" onclick="resetManual()" style="margin-top: 100px; font-size: 0.7rem;">Sair da Conta</button>
+        <h2>Olá, Unidade <span id="view-unidade"></span></h2>
+        <p style="text-align:center; color: #666;">Sistema Ativo</p>
+        <button class="btn btn-gray" onclick="resetApp()">SAIR</button>
     </div>
-
-    <div id="screen-call" class="screen">
-        <h3>VISITANTE CHAMANDO</h3>
-        <div class="call-panel">
-            <div class="avatar-main">👤</div>
-            <div class="msg-box">
-                <small>MENSAGEM:</small>
-                <div id="txt-msg-vis">...</div>
-            </div>
-        </div>
-        <button class="btn btn-gray" onclick="responder('recusado')">✕ RECUSAR</button>
-        <button class="btn btn-white" onclick="responder('liberado')">🔓 ABRIR PORTÃO</button>
-    </div>
-
-    <audio id="som-alerta" loop src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
-        authDomain: "virty-access-door.firebaseapp.com", 
         databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", 
         projectId: "virty-access-door"
     };
@@ -122,44 +66,30 @@
     }
 
     window.processarFoto = (input) => {
-        const file = input.files[0];
         const reader = new FileReader();
-        reader.onloadend = () => {
-            fotoBase64 = reader.result;
+        reader.onload = (e) => {
+            fotoBase64 = e.target.result;
             document.getElementById('img-preview').src = fotoBase64;
             document.getElementById('img-preview').style.display = "block";
             document.getElementById('txt-foto').style.display = "none";
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(input.files[0]);
     };
 
-    window.resetManual = () => {
-        localStorage.removeItem('virty_unidade');
-        location.reload();
-    };
+    window.resetApp = () => { localStorage.clear(); location.reload(); };
 
-    // --- LÓGICA DE VERIFICAÇÃO DE DADOS (IMPEDE O TRAVAMENTO) ---
+    // ESCUTA EM TEMPO REAL
     if (!unidadeLocal) {
         tela('screen-cadastro');
     } else {
-        // Checa nos Autorizados
         onValue(ref(db, `moradores/${unidadeLocal}`), (snap) => {
             if (snap.exists()) {
-                document.getElementById('home-unidade').innerText = unidadeLocal;
+                document.getElementById('view-unidade').innerText = unidadeLocal;
                 tela('screen-home');
-                monitorarChamadas();
             } else {
-                // Se não está no autorizado, checa no Pendentes
                 onValue(ref(db, `moradores_pendentes/${unidadeLocal}`), (snapP) => {
-                    if (snapP.exists()) {
-                        tela('screen-wait');
-                    } else {
-                        // O "PULO DO GATO": Se não está em NENHUM lugar do banco,
-                        // mas o celular tem a unidade guardada, significa que o registro foi excluído.
-                        // Limpamos o celular na hora para ele poder se cadastrar de novo.
-                        resetManual();
-                    }
-                }, { onlyOnce: true });
+                    snapP.exists() ? tela('screen-wait') : resetApp();
+                });
             }
         });
     }
@@ -167,35 +97,13 @@
     window.enviarCadastro = () => {
         const u = document.getElementById('unidade').value;
         const n = document.getElementById('nome').value;
-        const c = document.getElementById('cpf').value;
-        if(!u || !n || !c || !fotoBase64) return alert("Preencha tudo!");
-
-        set(ref(db, `moradores_pendentes/${u}`), { 
-            nome: n, cpf: c, unidade: u, foto: fotoBase64, autorizado: false 
-        }).then(() => {
+        if(!u || !n || !fotoBase64) return alert("Faltam dados!");
+        
+        set(ref(db, `moradores_pendentes/${u}`), { nome: n, unidade: u, foto: fotoBase64 })
+        .then(() => { 
             localStorage.setItem('virty_unidade', u);
             unidadeLocal = u;
-            // O código de verificação acima (onValue) vai detectar o envio e mudar a tela
         });
-    };
-
-    function monitorarChamadas() {
-        onValue(ref(db, `chamadas_ativas/${unidadeLocal}`), (snap) => {
-            if (snap.exists() && snap.val().status === "chamando") {
-                document.getElementById('txt-msg-vis').innerText = snap.val().texto_visitante || "Interfone chamando...";
-                document.getElementById('som-alerta').play();
-                tela('screen-call');
-            } else {
-                document.getElementById('som-alerta').pause();
-                if(document.getElementById('screen-call').classList.contains('active')) tela('screen-home');
-            }
-        });
-    }
-
-    window.responder = (status) => {
-        update(ref(db, `chamadas_ativas/${unidadeLocal}`), { status: status });
-        document.getElementById('som-alerta').pause();
-        setTimeout(() => remove(ref(db, `chamadas_ativas/${unidadeLocal}`)), 3000);
     };
 </script>
 </body>
