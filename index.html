@@ -26,7 +26,7 @@
     <div id="t1" class="screen active">
         <h1>OLÁ</h1>
         <p>Inicie sua chamada abaixo</p>
-        <div style="font-size: 5rem; margin: 40px;">👋</div>
+        <div style="font-size: 6rem; margin: 40px;">👋🏾</div>
         <button class="btn btn-green" onclick="abrirCam()">INICIAR</button>
     </div>
 
@@ -47,7 +47,9 @@
         <button class="btn btn-stop" onclick="cancelar()">CANCELAR</button>
     </div>
 
-    <audio id="som-ring" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
+    <audio id="som-ring" loop preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3" type="audio/mpeg">
+    </audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -56,7 +58,7 @@
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
     const app = initializeApp(config);
     const db = getDatabase(app);
-    let stream, b64 = "", timer;
+    let stream, b64 = "", timerInterval;
 
     window.abrirCam = async () => {
         try {
@@ -64,7 +66,7 @@
             document.getElementById('v').srcObject = stream;
             document.getElementById('t1').classList.remove('active');
             document.getElementById('t2').classList.add('active');
-        } catch { alert("Permita a câmera!"); }
+        } catch { alert("Permita a câmera para continuar."); }
     };
 
     window.tirarSelfie = () => {
@@ -81,24 +83,44 @@
     window.chamar = () => {
         const u = document.getElementById('un').value;
         if(!u) return alert("Qual unidade?");
+        
         document.getElementById('view-un').innerText = u;
         document.getElementById('t2').classList.remove('active');
         document.getElementById('t3').classList.add('active');
-        document.getElementById('som-ring').play();
+        
+        const som = document.getElementById('som-ring');
+        som.play().catch(e => console.log("Erro som:", e));
 
-        set(ref(db, `chamadas_ativas/${u}`), { status: "chamando", foto: b64, texto_visitante: document.getElementById('msg').value || "Visitante" });
+        set(ref(db, `chamadas_ativas/${u}`), { 
+            status: "chamando", 
+            foto: b64, 
+            texto_visitante: document.getElementById('msg').value || "Visitante na porta" 
+        });
 
         let s = 60; 
-        timer = setInterval(() => { 
+        timerInterval = setInterval(() => { 
             s--; 
             document.getElementById('timer').innerText = s;
-            if(s <= 0) { cancelar(); alert("Ninguém atendeu."); }
+            if(s <= 0) { 
+                cancelar(); 
+                alert("Ninguém atendeu na unidade " + u); 
+            }
         }, 1000);
 
         onValue(ref(db, `chamadas_ativas/${u}`), (snap) => {
             const res = snap.val()?.status;
-            if(res === "liberado") { alert("Entrada autorizada!"); location.reload(); }
-            if(res === "recusado") { alert("Chamada encerrada."); location.reload(); }
+            if(res === "liberado") {
+                clearInterval(timerInterval);
+                som.pause();
+                alert("ENTRADA LIBERADA!"); 
+                location.reload(); 
+            }
+            if(res === "recusado") {
+                clearInterval(timerInterval);
+                som.pause();
+                alert("CHAMADA RECUSADA."); 
+                location.reload(); 
+            }
         });
     };
 
