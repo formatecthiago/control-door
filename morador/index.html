@@ -1,9 +1,7 @@
 <script type="module">
-    // 1. IMPORTAÇÃO CORRETA (Sem usar NPM)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // 2. SUA CONFIGURAÇÃO REAL
     const firebaseConfig = {
         apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
         authDomain: "virty-access-door.firebaseapp.com",
@@ -14,76 +12,67 @@
         appId: "1:694822891117:web:b95a71c1eb273071fa9964"
     };
 
+    // Inicializa o Firebase e o Banco
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Variáveis da Câmera
-    const video = document.getElementById('video-preview');
-    const canvas = document.getElementById('canvas-foto');
-    const fotoImg = document.getElementById('foto-capturada');
+    // Elementos da tela
+    const video = document.querySelector("#video-preview");
+    const canvas = document.querySelector("#canvas-foto");
+    const fotoImg = document.querySelector("#foto-capturada");
     let fotoBase64 = null;
 
-    // Inicia a Câmera automaticamente
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-        .then(s => video.srcObject = s)
-        .catch(e => alert("Erro ao acessar câmera: " + e));
+    // Liga a câmera do jeito que você já sabia que funcionava
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => { video.srcObject = stream; })
+        .catch(err => { console.log("Erro câmera: ", err); });
 
-    // Função para tirar a foto
-    window.tirarFoto = () => {
+    // Função de tirar foto
+    window.tirarFoto = function() {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
-        fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        fotoBase64 = canvas.toDataURL('image/jpeg');
         fotoImg.src = fotoBase64;
         fotoImg.style.display = 'block';
         video.style.display = 'none';
     };
 
-    // FUNÇÃO QUE ENVIA PARA O FIREBASE
-    window.enviarParaFirebase = async () => {
+    // Função de enviar - AQUI ESTAVA O PROBLEMA
+    window.enviarParaFirebase = function() {
         const nome = document.getElementById('cad-nome').value;
         const cpf = document.getElementById('cad-cpf').value;
-        const tel = document.getElementById('cad-tel').value;
-
-        if(!nome || !cpf || !fotoBase64) {
-            alert("Por favor, preencha nome, CPF e tire a selfie!");
+        
+        if(!fotoBase64 || !nome) {
+            alert("Tire a foto e preencha seu nome!");
             return;
         }
 
-        // Gera um ID para o seu celular
-        const deviceID = "ID-" + Math.floor(1000 + Math.random() * 9000);
-        localStorage.setItem('virty_id', deviceID);
+        const idGeral = "ID-" + Math.floor(Math.random() * 9999);
+        localStorage.setItem('meu_id_virty', idGeral);
 
-        try {
-            // Tenta gravar no banco
-            await set(ref(db, 'solicitacoes_pendentes/' + deviceID), {
-                nome, cpf, telefone: tel, foto: fotoBase64, data: new Date().toLocaleString()
-            });
-            
-            // Se deu certo, chama a função que muda a tela
-            verificarStatus();
-        } catch (erro) {
-            alert("Erro ao enviar: " + erro.message);
-        }
+        // Envia para a pasta de pendentes
+        set(ref(db, 'solicitacoes_pendentes/' + idGeral), {
+            nome: nome,
+            cpf: cpf,
+            foto: fotoBase64,
+            status: "pendente"
+        }).then(() => {
+            // MUDANÇA DE TELA SEM PRECISAR ATUALIZAR
+            document.getElementById('tela-cadastro').style.display = 'none';
+            document.getElementById('tela-aguarde').style.display = 'flex';
+            checarSeFuiLiberado(idGeral);
+        }).catch(erro => {
+            alert("Erro ao enviar: " + erro);
+        });
     };
 
-    function verificarStatus() {
-        const id = localStorage.getItem('virty_id');
-        if(!id) return;
-
-        // Esconde cadastro e mostra tela de aguarde
-        document.getElementById('tela-cadastro').classList.remove('ativa');
-        document.getElementById('tela-aguarde').classList.add('ativa');
-
-        // Fica vigiando se o admin (você) vai autorizar no painel
+    function checarSeFuiLiberado(id) {
         onValue(ref(db, 'moradores_autorizados/' + id), (snapshot) => {
             if(snapshot.exists()) {
-                document.getElementById('tela-aguarde').classList.remove('ativa');
-                document.getElementById('tela-home').classList.add('ativa');
+                document.getElementById('tela-aguarde').style.display = 'none';
+                document.getElementById('tela-home').style.display = 'flex';
             }
         });
     }
-
-    // Checa se já tem cadastro ao abrir a página
-    verificarStatus();
 </script>
