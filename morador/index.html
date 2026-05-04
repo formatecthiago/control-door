@@ -7,68 +7,92 @@
     <style>
         :root { --neon: #39FF14; --bg: #000; }
         body { background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; font-family: sans-serif; }
-        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; padding: 30px; }
+        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; padding: 30px; text-align: center; }
         .active { display: flex; }
-        h2 { color: var(--neon); text-align: center; text-transform: uppercase; }
-        input { width: 100%; padding: 18px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #0a0a0a; color: white; outline: none; }
+        h2 { color: var(--neon); text-transform: uppercase; }
         .btn { width: 100%; padding: 20px; border-radius: 35px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
         .btn-green { background: var(--neon); color: black; }
+        .btn-red { background: #ff3333; color: white; }
         .btn-gray { background: #222; color: #888; }
-        .photo-box { width: 150px; height: 150px; border-radius: 50%; border: 3px solid white; margin: 20px auto; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #111; cursor: pointer; }
-        .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .caller-img { width: 180px; height: 180px; border-radius: 20px; object-fit: cover; border: 3px solid var(--neon); margin: 20px auto; }
     </style>
 </head>
 <body>
 
     <div id="s-cad" class="screen">
-        <h2>VIRTY ACCESS</h2>
-        <div class="photo-box" onclick="document.getElementById('fin').click()">
-            <img id="prev" style="display:none">
-            <span id="l-ph">📷 SELFIE</span>
-            <input type="file" id="fin" accept="image/*" capture="user" style="display:none" onchange="read(this)">
-        </div>
-        <input type="text" id="n" placeholder="Nome Completo">
-        <input type="number" id="u" placeholder="Nº Unidade">
-        <button class="btn btn-green" onclick="reg()">SOLICITAR ACESSO</button>
+        <h2>REGISTRO</h2>
+        <input type="text" id="n" style="width:100%; padding:15px; margin:10px 0; background:#111; color:#fff; border:1px solid #333;" placeholder="Nome">
+        <input type="number" id="u" style="width:100%; padding:15px; margin:10px 0; background:#111; color:#fff; border:1px solid #333;" placeholder="Unidade">
+        <button class="btn btn-green" onclick="reg()">SOLICITAR</button>
     </div>
 
     <div id="s-wait" class="screen">
-        <h2 style="color: orange;">Análise...</h2>
-        <p style="text-align:center">Aguardando liberação do admin.</p>
-        <button class="btn btn-gray" onclick="sair()">CANCELAR</button>
+        <h2 style="color:orange">ANÁLISE</h2>
+        <p>Aguarde o síndico autorizar seu celular.</p>
     </div>
 
     <div id="s-home" class="screen">
-        <h2>SISTEMA ATIVO</h2>
-        <p style="text-align:center">Unidade <b id="view-u"></b></p>
-        <div style="height: 150px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px dashed #222; border-radius: 15px;">Aguardando...</div>
+        <h2>SISTEMA ONLINE</h2>
+        <p>Unidade <b id="view-u"></b></p>
+        <div style="padding:40px; border:1px dashed #333; border-radius:20px; color:#444">Aguardando visitantes...</div>
         <button class="btn btn-gray" onclick="sair()">SAIR</button>
+    </div>
+
+    <div id="s-call" class="screen">
+        <h2 style="color:var(--neon)">CHAMADA ATIVA!</h2>
+        <img id="visitante-foto" class="caller-img">
+        <p id="visitante-msg"></p>
+        <button class="btn btn-green" onclick="responder('liberado')">ABRIR PORTÃO</button>
+        <button class="btn btn-red" onclick="responder('recusado')">RECUSAR</button>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
     const app = initializeApp(config);
     const db = getDatabase(app);
-    let lUn = localStorage.getItem('virty_un'), b64 = "";
+    let lUn = localStorage.getItem('virty_un');
 
     function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-    window.read = (i) => { const r = new FileReader(); r.onload = (e) => { b64 = e.target.result; document.getElementById('prev').src = b64; document.getElementById('prev').style.display="block"; document.getElementById('l-ph').style.display="none"; }; r.readAsDataURL(i.files[0]); };
     window.sair = () => { localStorage.clear(); location.reload(); };
 
     if(!lUn) { show('s-cad'); } else {
+        // Vigia status do morador
         onValue(ref(db, `moradores/${lUn}`), (s) => {
-            if(s.exists()){ document.getElementById('view-u').innerText = lUn; show('s-home'); }
-            else { onValue(ref(db, `moradores_pendentes/${lUn}`), (sp) => { sp.exists() ? show('s-wait') : sair(); }); }
+            if(s.exists()){ 
+                document.getElementById('view-u').innerText = lUn; 
+                show('s-home');
+                vigiarChamadas(); 
+            } else { 
+                onValue(ref(db, `moradores_pendentes/${lUn}`), (sp) => { sp.exists() ? show('s-wait') : sair(); }); 
+            }
         });
     }
 
+    function vigiarChamadas() {
+        onValue(ref(db, `chamadas_ativas/${lUn}`), (snap) => {
+            if(snap.exists() && snap.val().status === "chamando") {
+                const dados = snap.val();
+                document.getElementById('visitante-foto').src = dados.foto;
+                document.getElementById('visitante-msg').innerText = dados.texto_visitante;
+                show('s-call');
+            } else {
+                if(document.getElementById('s-call').classList.contains('active')) show('s-home');
+            }
+        });
+    }
+
+    window.responder = (status) => {
+        update(ref(db, `chamadas_ativas/${lUn}`), { status: status });
+        setTimeout(() => remove(ref(db, `chamadas_ativas/${lUn}`)), 2000);
+    };
+
     window.reg = () => {
         const un = document.getElementById('u').value, nom = document.getElementById('n').value;
-        if(!un || !nom || !b64) return alert("Faltam dados!");
-        set(ref(db, `moradores_pendentes/${un}`), { nome: nom, unidade: un, foto: b64 }).then(() => { localStorage.setItem('virty_un', un); location.reload(); });
+        if(!un || !nom) return alert("Faltam dados!");
+        set(ref(db, `moradores_pendentes/${un}`), { nome: nom, unidade: un, foto: "" }).then(() => { localStorage.setItem('virty_un', un); location.reload(); });
     };
 </script>
 </body>
