@@ -6,43 +6,138 @@
     <title>Admin Page | Virty Access Door</title>
     <style>
         :root { --neon-green: #39FF14; --bg-black: #000; --card-bg: #111; --red-del: #ff4d4d; --gray-edit: #555; }
-        body { background: var(--bg-black); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
         
-        header { border-bottom: 2px solid var(--neon-green); padding-bottom: 15px; margin-bottom: 30px; text-align: center; }
-        header h1 { margin: 0; font-size: 1.6rem; letter-spacing: 3px; font-weight: 800; }
+        /* Fundo Total Preto */
+        body { 
+            background-color: var(--bg-black); 
+            color: white; 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+        }
+        
+        /* Cabeçalho com Neon */
+        header { 
+            border-bottom: 2px solid var(--neon-green); 
+            padding-bottom: 15px; 
+            margin-bottom: 30px; 
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(57, 255, 20, 0.1);
+        }
+        header h1 { margin: 0; font-size: 1.6rem; letter-spacing: 3px; font-weight: 800; color: #fff; }
         #data-atual { color: var(--neon-green); font-size: 1rem; margin-top: 8px; text-transform: capitalize; }
 
-        .search-container { position: sticky; top: 10px; z-index: 100; padding-bottom: 20px; background: var(--bg-black); }
+        /* Barra de Busca Fixa */
+        .search-container { 
+            position: sticky; 
+            top: 10px; 
+            z-index: 100; 
+            padding-bottom: 20px; 
+            background: var(--bg-black); 
+        }
         .search-box { 
-            width: 100%; max-width: 800px; margin: 0 auto; display: block; padding: 18px; 
-            border-radius: 15px; border: 2px solid var(--neon-green); background: #000; 
-            color: #fff; font-size: 1.1rem; outline: none;
+            width: 100%; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            display: block; 
+            padding: 18px; 
+            border-radius: 15px; 
+            border: 2px solid var(--neon-green); 
+            background: #000; 
+            color: #fff; 
+            font-size: 1.1rem; 
+            outline: none;
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
         }
 
         section { width: 100%; max-width: 900px; margin: 0 auto 50px; }
         h2 { border-left: 5px solid var(--neon-green); padding-left: 15px; font-size: 1.3rem; margin-bottom: 25px; color: #eee; }
 
-        .unit-group { background: #080808; border: 1px solid #222; border-radius: 20px; padding: 20px; margin-bottom: 25px; }
-        .unit-title { color: var(--neon-green); font-weight: 800; font-size: 1.1rem; margin-bottom: 15px; display: block; border-bottom: 1px solid #222; padding-bottom: 10px; }
+        /* Estilo dos Grupos por Unidade */
+        .unit-group { 
+            background: #080808; 
+            border: 1px solid #222; 
+            border-radius: 20px; 
+            padding: 20px; 
+            margin-bottom: 25px; 
+        }
+        .unit-title { 
+            color: var(--neon-green); 
+            font-weight: 800; 
+            font-size: 1.1rem; 
+            margin-bottom: 15px; 
+            display: block; 
+            border-bottom: 1px solid #222; 
+            padding-bottom: 10px; 
+        }
         
-        .user-card { display: flex; align-items: center; background: var(--card-bg); padding: 18px; border-radius: 15px; margin-bottom: 12px; gap: 20px; border: 1px solid #222; }
-        .thumb-admin { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--neon-green); cursor: pointer; background: #222; }
+        /* Cards de Morador */
+        .user-card { 
+            display: flex; 
+            align-items: center; 
+            background: var(--card-bg); 
+            padding: 18px; 
+            border-radius: 15px; 
+            margin-bottom: 12px; 
+            gap: 20px; 
+            border: 1px solid #222; 
+        }
+        .thumb-admin { 
+            width: 70px; 
+            height: 70px; 
+            border-radius: 50%; 
+            object-fit: cover; 
+            border: 2px solid var(--neon-green); 
+            cursor: pointer; 
+            background: #222; 
+        }
         
         .user-info { flex: 1; }
         .user-info span { display: block; font-size: 0.95rem; margin-bottom: 4px; color: #ccc; }
         .user-info b { color: var(--neon-green); }
 
+        /* Botões de Ação */
         .actions { display: flex; gap: 12px; }
-        .btn-adm { padding: 12px 18px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; }
+        .btn-adm { 
+            padding: 12px 18px; 
+            border: none; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 0.85rem; 
+            text-transform: uppercase; 
+            transition: 0.2s;
+        }
         .btn-accept { background: var(--neon-green); color: #000; }
         .btn-recuse { background: var(--red-del); color: #fff; }
         .btn-edit { background: var(--gray-edit); color: #fff; }
         .btn-delete { background: var(--red-del); color: #fff; }
+        .btn-adm:active { transform: scale(0.95); }
 
-        #modal-zoom { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
-        #modal-zoom img { max-width: 90%; max-height: 85%; border: 4px solid var(--neon-green); border-radius: 15px; }
+        /* Modal de Zoom da Foto */
+        #modal-zoom { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.95); 
+            z-index: 1000; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        #modal-zoom img { 
+            max-width: 90%; 
+            max-height: 85%; 
+            border: 4px solid var(--neon-green); 
+            border-radius: 15px; 
+        }
 
-        @media (max-width: 600px) { .user-card { flex-direction: column; text-align: center; } }
+        @media (max-width: 600px) {
+            .user-card { flex-direction: column; text-align: center; }
+            .actions { width: 100%; justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -53,7 +148,7 @@
     </header>
 
     <div class="search-container">
-        <input type="text" class="search-box" id="inputBusca" placeholder="Buscar Morador..." oninput="filtrar()">
+        <input type="text" class="search-box" id="inputBusca" placeholder="Buscar por Nome, CPF ou Unidade..." oninput="filtrar()">
     </div>
 
     <section>
@@ -84,12 +179,13 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // Data Atualizada
     document.getElementById('data-atual').innerText = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     let basePendentes = {};
     let baseAutorizados = {};
 
-    // 1. Escuta Pendentes
+    // Monitorar Pendentes
     onValue(ref(db, 'moradores_pendentes'), (snap) => {
         const container = document.getElementById('container-pendentes');
         container.innerHTML = '';
@@ -97,29 +193,36 @@
         Object.keys(basePendentes).forEach(id => {
             container.innerHTML += criarCard(basePendentes[id], id, true);
         });
+        if(Object.keys(basePendentes).length === 0) container.innerHTML = '<p style="color:#444">Nenhuma solicitação pendente.</p>';
     });
 
-    // 2. Escuta Autorizados e Agrupa
+    // Monitorar Autorizados e Agrupar por Unidade
     onValue(ref(db, 'moradores'), (snap) => {
         const container = document.getElementById('container-autorizados');
         container.innerHTML = '';
         baseAutorizados = snap.val() || {};
+        
         const unidades = {};
         Object.keys(baseAutorizados).forEach(id => {
             const m = baseAutorizados[id];
             if (!unidades[m.unidade]) unidades[m.unidade] = [];
             unidades[m.unidade].push({ ...m, id });
         });
-        Object.keys(unidades).sort((a,b)=>a-b).forEach(num => {
-            let html = `<div class="unit-group"><span class="unit-title">UNIDADE ${num}</span>`;
-            unidades[num].forEach(m => html += criarCard(m, m.id, false));
-            container.innerHTML += html + `</div>`;
+
+        Object.keys(unidades).sort((a,b) => a - b).forEach(num => {
+            let htmlUnidade = `<div class="unit-group" data-unidade="${num}">
+                <span class="unit-title">UNIDADE ${num}</span>`;
+            unidades[num].forEach(m => {
+                htmlUnidade += criarCard(m, m.id, false);
+            });
+            container.innerHTML += htmlUnidade + `</div>`;
         });
     });
 
     function criarCard(m, id, pendente) {
+        const busca = `${m.nome} ${m.cpf} ${m.unidade}`.toLowerCase();
         return `
-            <div class="user-card" data-busca="${m.nome} ${m.cpf} ${m.unidade}">
+            <div class="user-card" data-busca="${busca}">
                 <img src="${m.foto || ''}" class="thumb-admin" onclick="abrirZoom('${m.foto}')">
                 <div class="user-info">
                     <span><b>Nome:</b> ${m.nome}</span>
@@ -138,31 +241,27 @@
         `;
     }
 
-    // Ação crucial: Aceitar Morador
     window.acaoPendente = (id, aprovado) => {
         const dados = basePendentes[id];
         if (aprovado) {
-            // PASSO 1: Criar no Autorizados (Isso faz a tela do morador mudar)
             set(ref(db, `moradores/${id}`), { ...dados, autorizado: true })
-            .then(() => {
-                // PASSO 2: Só depois remove do pendente
-                remove(ref(db, `moradores_pendentes/${id}`));
-            });
+            .then(() => remove(ref(db, `moradores_pendentes/${id}`)));
         } else {
             remove(ref(db, `moradores_pendentes/${id}`));
         }
     };
 
     window.remover = (id) => {
-        if(confirm("Remover este morador?")) remove(ref(db, `moradores/${id}`));
+        if(confirm("Deseja remover este morador permanentemente?")) remove(ref(db, `moradores/${id}`));
     };
 
     window.editar = (id) => {
-        const novo = prompt("Novo Nome:", baseAutorizados[id].nome);
+        const novo = prompt("Editar Nome:", baseAutorizados[id].nome);
         if(novo) update(ref(db, `moradores/${id}`), { nome: novo });
     };
 
     window.abrirZoom = (src) => {
+        if(!src) return;
         document.getElementById('img-zoom').src = src;
         document.getElementById('modal-zoom').style.display = 'flex';
     };
@@ -170,7 +269,7 @@
     window.filtrar = () => {
         const termo = document.getElementById('inputBusca').value.toLowerCase();
         document.querySelectorAll('.user-card').forEach(card => {
-            card.style.display = card.dataset.busca.toLowerCase().includes(termo) ? 'flex' : 'none';
+            card.style.display = card.dataset.busca.includes(termo) ? 'flex' : 'none';
         });
     };
 </script>
