@@ -1,61 +1,108 @@
-<div id="tela-cadastro" class="tela ativa">
-    <h2>Cadastro Virty</h2>
-    <video id="video-preview" autoplay playsinline muted></video>
-    <img id="foto-capturada" style="display:none;">
-    <canvas id="canvas-foto" style="display:none;"></canvas>
-    
-    <button class="btn-foto" onclick="tirarFoto()">Tirar Selfie</button>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virty Access - Morador</title>
+    <style>
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .tela { display: none; width: 100%; max-width: 350px; flex-direction: column; align-items: center; }
+        .ativa { display: flex; }
+        video, img { width: 220px; height: 220px; border-radius: 50%; border: 3px solid #39FF14; object-fit: cover; margin-bottom: 20px; background: #222; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-size: 16px; }
+        button { width: 100%; padding: 15px; background: #39FF14; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .btn-foto { background: #2980b9; color: white; }
+    </style>
+</head>
+<body>
 
-    <input type="text" id="cad-nome" placeholder="Nome Completo">
-    <input type="number" id="cad-cpf" placeholder="CPF (11 dígitos)" maxlength="11">
-    <input type="text" id="cad-casa" placeholder="Número da Casa/Apto"> <button onclick="enviarParaFirebase()">Solicitar Acesso</button>
-</div>
+    <div id="tela-cadastro" class="tela ativa">
+        <h2>Cadastro Virty</h2>
+        <video id="video-preview" autoplay playsinline muted></video>
+        <img id="foto-capturada" style="display:none;">
+        <canvas id="canvas-foto" style="display:none;"></canvas>
+        <button class="btn-foto" onclick="tirarFoto()">Tirar Selfie</button>
+        <input type="text" id="cad-nome" placeholder="Nome Completo">
+        <input type="number" id="cad-cpf" placeholder="CPF (11 dígitos)">
+        <input type="text" id="cad-casa" placeholder="Nº da Casa / Apto">
+        <button onclick="enviarParaFirebase()">Solicitar Acesso</button>
+    </div>
 
-<script type="module">
-    // ... (mantenha sua configuração do Firebase aqui)
+    <div id="tela-aguarde" class="tela">
+        <h2 style="color: #39FF14;">Analisando...</h2>
+        <p>Aguarde a liberação do administrador.</p>
+    </div>
 
-    window.enviarParaFirebase = async () => {
-        const nome = document.getElementById('cad-nome').value;
-        const cpf = document.getElementById('cad-cpf').value;
-        const casa = document.getElementById('cad-casa').value; // PEGA A CASA
+    <div id="tela-home" class="tela">
+        <h2 style="color: #39FF14;">Acesso Liberado!</h2>
+        <p>Bem-vindo ao Virty Access.</p>
+    </div>
 
-        if(!nome || !fotoBase64 || !casa) return alert("Preencha Nome, Casa e tire a Foto!");
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const id = "ID-" + Math.floor(Math.random() * 9999);
-        localStorage.setItem('virty_id', id);
-        localStorage.setItem('virty_casa', casa); // Salva a casa no celular
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
+            authDomain: "virty-access-door.firebaseapp.com",
+            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
+            projectId: "virty-access-door",
+            storageBucket: "virty-access-door.firebasestorage.app",
+            messagingSenderId: "694822891117",
+            appId: "1:694822891117:web:b95a71c1eb273071fa9964"
+        };
 
-        await set(ref(db, 'solicitacoes_pendentes/' + id), {
-            nome, cpf, casa, foto: fotoBase64, status: 'pendente'
-        });
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const video = document.getElementById('video-preview');
+        const canvas = document.getElementById('canvas-foto');
+        const fotoImg = document.getElementById('foto-capturada');
+        let fotoBase64 = null;
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(s => { video.srcObject = s; })
+            .catch(e => console.log(e));
+
+        window.tirarFoto = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            fotoImg.src = fotoBase64;
+            fotoImg.style.display = 'block';
+            video.style.display = 'none';
+        };
+
+        window.enviarParaFirebase = async () => {
+            const nome = document.getElementById('cad-nome').value;
+            const cpf = document.getElementById('cad-cpf').value;
+            const casa = document.getElementById('cad-casa').value;
+
+            if(!nome || !fotoBase64 || cpf.length < 11) return alert("Preencha tudo corretamente!");
+
+            const id = "ID-" + Math.floor(Math.random() * 9999);
+            localStorage.setItem('virty_id', id);
+
+            await set(ref(db, 'solicitacoes_pendentes/' + id), {
+                nome, cpf, casa, foto: fotoBase64, status: 'pendente'
+            });
+            verificarStatus();
+        };
+
+        function verificarStatus() {
+            const id = localStorage.getItem('virty_id');
+            if(!id) return;
+            document.getElementById('tela-cadastro').classList.remove('ativa');
+            document.getElementById('tela-aguarde').classList.add('ativa');
+            onValue(ref(db, 'moradores_autorizados/' + id), (snapshot) => {
+                if(snapshot.exists()) {
+                    document.getElementById('tela-aguarde').classList.remove('ativa');
+                    document.getElementById('tela-home').classList.add('ativa');
+                }
+            });
+        }
         verificarStatus();
-    };
-
-    function verificarStatus() {
-        const id = localStorage.getItem('virty_id');
-        const casa = localStorage.getItem('virty_casa');
-        if(!id) return;
-
-        document.getElementById('tela-cadastro').classList.remove('ativa');
-        document.getElementById('tela-aguarde').classList.add('ativa');
-
-        onValue(ref(db, 'moradores_autorizados/' + id), (snapshot) => {
-            if(snapshot.exists()) {
-                // Quando liberado, o site passa a vigiar chamadas para a CASA dele
-                document.getElementById('tela-aguarde').classList.remove('ativa');
-                document.getElementById('tela-home').classList.add('ativa');
-                vigiarChamadas(casa);
-            }
-        });
-    }
-
-    function vigiarChamadas(numeroDaCasa) {
-        // Esta função fica ouvindo se alguém chamou a casa dele
-        onValue(ref(db, 'chamadas/' + numeroDaCasa), (snapshot) => {
-            if(snapshot.exists()) {
-                alert("ALERTA: Alguém está tocando o seu interfone!");
-                // Aqui depois vamos colocar para abrir o vídeo do visitante
-            }
-        });
-    }
-</script>
+    </script>
+</body>
+</html>
