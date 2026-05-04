@@ -3,97 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Virty - Visitante</title>
+    <title>Virty Access - Visitante</title>
     <style>
-        :root { --neon-green: #39FF14; --bg-black: #000000; --card-bg: #111; }
+        :root { --neon-green: #39FF14; --bg-black: #000; }
         * { box-sizing: border-box; }
         body { 
-            background: var(--bg-black); color: #fff; font-family: 'Segoe UI', Roboto, sans-serif;
-            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            background: var(--bg-black); color: white; font-family: sans-serif;
+            margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh;
         }
-        
+
         /* Telas */
-        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; text-align: center; }
+        .screen { display: none; width: 100%; max-width: 500px; flex-direction: column; align-items: center; padding: 20px; text-align: center; }
         .active { display: flex; }
 
-        h1 { color: var(--neon-green); font-size: 2rem; margin-bottom: 20px; }
-        p { font-size: 1.2rem; margin: 10px 0; }
-
-        /* Inputs e Textos */
-        input, textarea { 
-            width: 90%; background: #222; border: 2px solid #444; border-radius: 12px;
-            color: #fff; padding: 15px; font-size: 1.3rem; text-align: center; margin-bottom: 15px;
+        /* Estética e Textos */
+        h1 { color: var(--neon-green); font-size: 2.5rem; margin-top: 40px; }
+        p { font-size: 1.5rem; margin: 20px 0; }
+        
+        input { 
+            width: 90%; padding: 18px; font-size: 1.4rem; border-radius: 10px; border: 2px solid #444;
+            background: #111; color: white; margin-bottom: 15px; text-align: center;
         }
-        input:focus { border-color: var(--neon-green); outline: none; }
 
-        /* Câmera */
-        .video-container { 
-            width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon-green);
-            overflow: hidden; margin-bottom: 20px; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); background: #222;
+        /* Câmera fixa no topo na Tela 2 */
+        .video-box { 
+            width: 100%; height: 250px; background: #222; border-radius: 15px; 
+            overflow: hidden; border: 3px solid var(--neon-green); margin-bottom: 20px;
         }
         video { width: 100%; height: 100%; object-fit: cover; }
 
         /* Botões */
         .btn { 
-            width: 90%; padding: 18px; border-radius: 15px; border: none; font-size: 1.2rem;
-            font-weight: bold; cursor: pointer; margin: 8px 0; transition: transform 0.1s;
+            width: 90%; padding: 20px; font-size: 1.4rem; font-weight: bold; border-radius: 12px; 
+            border: none; cursor: pointer; margin-top: 10px;
         }
-        .btn:active { transform: scale(0.98); }
-        .btn-green { background: var(--neon-green); color: #000; }
-        .btn-red { background: #ff4d4d; color: #fff; }
-        .btn-outline { background: transparent; border: 2px solid #fff; color: #fff; }
+        .btn-start { background: var(--neon-green); color: black; }
+        .btn-call { background: var(--neon-green); color: black; }
+        .btn-stop { background: #ff3333; color: white; }
+        .btn-outline { background: transparent; border: 2px solid white; color: white; margin-top: 15px; }
 
-        /* Balão de Mensagem */
-        #chat-box { 
-            background: var(--card-bg); border-left: 5px solid var(--neon-green);
-            width: 90%; padding: 15px; margin-top: 15px; border-radius: 8px; text-align: left;
-        }
-        .msg-label { color: var(--neon-green); font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 5px; }
-        #msg-texto { font-size: 1.2rem; }
-
-        #status-atendimento { font-size: 1.5rem; font-weight: bold; margin: 20px 0; min-height: 1.6em; }
+        #timer { font-size: 4rem; color: var(--neon-green); margin: 20px 0; }
+        #status-msg { font-size: 1.8rem; font-weight: bold; margin: 20px; color: var(--neon-green); }
     </style>
 </head>
 <body>
 
-    <div id="screen-start" class="screen active">
-        <h1>VIRTY</h1>
-        <p>Informe o número da unidade:</p>
-        <input type="number" id="input-casa" placeholder="Ex: 101" inputmode="numeric">
-        <button class="btn btn-green" onclick="iniciarChamada()">INICIAR</button>
+    <div id="tela1" class="screen active">
+        <h1>Olá</h1>
+        <p>Vamos iniciar sua chamada?</p>
+        <button class="btn btn-start" onclick="pedirPermissao()">INICIAR</button>
     </div>
 
-    <div id="screen-calling" class="screen">
-        <div class="video-container">
-            <video id="webcam" autoplay playsinline muted></video>
+    <div id="tela2" class="screen">
+        <div class="video-box">
+            <video id="preview" autoplay playsinline muted></video>
         </div>
-        
-        <div id="status-atendimento">CHAMANDO...</div>
-
-        <textarea id="texto-visitante" placeholder="Enviar mensagem rápida..." rows="2"></textarea>
-        
-        <div id="chat-box" style="display: none;">
-            <span class="msg-label">RESPOSTA DO MORADOR:</span>
-            <span id="msg-texto"></span>
-        </div>
-
-        <button class="btn btn-red" id="btn-cancelar" onclick="finalizar(true)">CANCELAR CHAMADA</button>
+        <input type="number" id="num-casa" placeholder="Número da Unidade" inputmode="numeric">
+        <input type="text" id="msg-opcional" placeholder="Mensagem (Opcional)">
+        <button class="btn btn-call" onclick="fazerChamada()">CHAMAR</button>
     </div>
 
-    <div id="screen-end" class="screen">
-        <h1 id="end-title">FIM</h1>
-        <p id="end-msg">Agradecemos o contato.</p>
-        
-        <button class="btn btn-green" onclick="chamarNovamente()">CHAMAR NOVAMENTE</button>
-        <button class="btn btn-outline" onclick="irParaHome()">ENCERRAR</button>
+    <div id="tela3" class="screen">
+        <div id="timer">00</div>
+        <p>Chamando Unidade <span id="display-casa"></span>...</p>
+        <div id="status-msg"></div>
+        <button class="btn btn-stop" onclick="cancelar()">ENCERRAR</button>
     </div>
 
-    <audio id="audio-calling" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
-    <audio id="audio-end" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
+    <div id="tela4" class="screen">
+        <h1 id="final-status">FIM</h1>
+        <p id="final-txt">Chamada encerrada.</p>
+        <button class="btn btn-start" onclick="chamarNovamente()">CHAMAR NOVAMENTE</button>
+        <button class="btn btn-outline" onclick="fechar()">FECHAR</button>
+    </div>
+
+    <audio id="som-chamada" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
+    <audio id="som-fim" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
@@ -108,93 +97,88 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    let casaAtual = "";
-    const audioChamada = document.getElementById('audio-calling');
-    const audioFim = document.getElementById('audio-end');
+    let tempo = 0;
+    let intervalo;
+    let casaSalva = "";
 
-    // Mudar de tela
-    function showScreen(id) {
+    function navegar(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    window.iniciarChamada = async () => {
-        casaAtual = document.getElementById('input-casa').value;
-        if (!casaAtual) return alert("Digite o número da casa!");
-
-        showScreen('screen-calling');
-
-        // 1. Abrir Câmera de imediato
+    // TELA 1 -> TELA 2
+    window.pedirPermissao = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-            document.getElementById('webcam').srcObject = stream;
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            document.getElementById('preview').srcObject = stream;
+            navegar('tela2');
         } catch (err) {
-            console.error("Erro câmera:", err);
+            alert("Você precisa permitir a câmera para continuar.");
         }
-
-        // 2. Iniciar Sons e Firebase
-        audioChamada.play();
-        set(ref(db, `chamadas_ativas/${casaAtual}`), { 
-            ativa: true, 
-            status: "chamando",
-            texto_visitante: "" 
-        });
-
-        // Ouvir respostas
-        onValue(ref(db, `chamadas_ativas/${casaAtual}`), (snap) => {
-            if (!snap.exists()) return;
-            const data = snap.val();
-
-            // Mensagem do morador
-            if (data.texto_morador) {
-                document.getElementById('chat-box').style.display = "block";
-                document.getElementById('msg-texto').innerText = data.texto_morador;
-            }
-
-            // Status da chamada
-            if (data.status === "liberado") {
-                document.getElementById('status-atendimento').innerText = "PORTÃO LIBERADO";
-                document.getElementById('status-atendimento').style.color = "#39FF14";
-                setTimeout(() => finalizar(false, "PORTÃO LIBERADO"), 3000);
-            } else if (data.status === "recusado") {
-                finalizar(false, "CHAMADA RECUSADA");
-            }
-        });
-
-        // Sincronizar campo de texto do visitante
-        document.getElementById('texto-visitante').oninput = (e) => {
-            update(ref(db, `chamadas_ativas/${casaAtual}`), { texto_visitante: e.target.value });
-        };
     };
 
-    window.finalizar = (peloVisitante, msgFinal) => {
-        audioChamada.pause();
-        audioChamada.currentTime = 0;
-        audioFim.play();
+    // TELA 2 -> TELA 3
+    window.fazerChamada = () => {
+        casaSalva = document.getElementById('num-casa').value;
+        const msg = document.getElementById('msg-opcional').value;
+        if (!casaSalva) return alert("Digite o número da casa!");
 
-        if (peloVisitante) {
-            remove(ref(db, `chamadas_ativas/${casaAtual}`));
-        }
+        document.getElementById('display-casa').innerText = casaSalva;
+        navegar('tela3');
 
-        document.getElementById('end-title').innerText = msgFinal ? "AVISO" : "FIM";
-        document.getElementById('end-msg').innerText = msgFinal || "Chamada encerrada.";
-        showScreen('screen-end');
+        // Som e Firebase
+        document.getElementById('som-chamada').play();
+        set(ref(db, `chamadas_ativas/${casaSalva}`), {
+            ativa: true,
+            texto_visitante: msg,
+            status: "chamando"
+        });
+
+        // Contagem
+        tempo = 0;
+        intervalo = setInterval(() => {
+            tempo++;
+            document.getElementById('timer').innerText = tempo < 10 ? '0' + tempo : tempo;
+        }, 1000);
+
+        // Ouvinte do Morador
+        onValue(ref(db, `chamadas_ativas/${casaSalva}`), (snap) => {
+            if (!snap.exists()) return;
+            const dados = snap.val();
+
+            if (dados.status === "liberado") {
+                encerrarFluxo("PORTÃO LIBERADO", "O acesso foi autorizado.");
+            } else if (dados.status === "recusado") {
+                encerrarFluxo("CHAMADA RECUSADA", "O morador não pode atender no momento.");
+            } else if (dados.texto_morador) {
+                document.getElementById('status-msg').innerText = dados.texto_morador;
+            }
+        });
+    };
+
+    function encerrarFluxo(titulo, mensagem) {
+        clearInterval(intervalo);
+        document.getElementById('som-chamada').pause();
+        document.getElementById('som-fim').play();
         
-        // Desligar câmera
-        const video = document.getElementById('webcam');
-        if (video.srcObject) {
-            video.srcObject.getTracks().forEach(track => track.stop());
-        }
+        document.getElementById('final-status').innerText = titulo;
+        document.getElementById('final-txt').innerText = mensagem;
+        navegar('tela4');
+    }
+
+    window.cancelar = () => {
+        remove(ref(db, `chamadas_ativas/${casaSalva}`));
+        encerrarFluxo("FIM", "Chamada encerrada pelo visitante.");
+    };
+
+    window.fechar = () => {
+        location.reload(); // Volta para a Tela 1 limpo
     };
 
     window.chamarNovamente = () => {
-        showScreen('screen-start');
-        iniciarChamada();
-    };
-
-    window.irParaHome = () => {
-        document.getElementById('input-casa').value = "";
-        showScreen('screen-start');
+        navegar('tela2');
+        document.getElementById('timer').innerText = "00";
+        document.getElementById('status-msg').innerText = "";
     };
 </script>
 </body>
