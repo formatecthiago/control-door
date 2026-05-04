@@ -11,8 +11,9 @@
         .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; padding: 30px; }
         .active { display: flex; }
         h2 { color: var(--neon); text-align: center; font-size: 1.8rem; }
-        input { width: 100%; padding: 18px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #0a0a0a; color: white; font-size: 1rem; }
-        .btn { width: 100%; padding: 20px; border-radius: 35px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
+        input { width: 100%; padding: 18px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #0a0a0a; color: white; font-size: 1rem; outline: none; }
+        input:focus { border-color: var(--neon); }
+        .btn { width: 100%; padding: 20px; border-radius: 35px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; transition: 0.2s; }
         .btn-green { background: var(--neon); color: black; }
         .btn-gray { background: #222; color: white; }
         .photo-box { width: 140px; height: 140px; border-radius: 50%; border: 3px solid white; margin: 20px auto; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #111; cursor: pointer; }
@@ -42,7 +43,9 @@
     <div id="screen-home" class="screen">
         <h2>BEM-VINDO!</h2>
         <p style="text-align:center">Unidade <b id="home-un"></b> - Sistema Ativo</p>
-        <div style="height: 200px; display: flex; align-items: center; justify-content: center; color: #444;">Aguardando Interfone...</div>
+        <div style="height: 200px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px dashed #222; border-radius: 15px; margin: 20px 0;">
+            Aguardando Chamadas...
+        </div>
         <button class="btn btn-gray" onclick="sair()">SAIR DA CONTA</button>
     </div>
 
@@ -67,36 +70,42 @@
     }
 
     window.readImg = (input) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            base64 = e.target.result;
-            document.getElementById('preview').src = base64;
-            document.getElementById('preview').style.display = "block";
-            document.getElementById('label-photo').style.display = "none";
-        };
-        reader.readAsDataURL(input.files[0]);
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                base64 = e.target.result;
+                document.getElementById('preview').src = base64;
+                document.getElementById('preview').style.display = "block";
+                document.getElementById('label-photo').style.display = "none";
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
     };
 
-    window.sair = () => { localStorage.clear(); location.reload(); };
+    window.sair = () => { 
+        localStorage.clear(); 
+        location.reload(); 
+    };
 
-    // --- MONITORAMENTO EM TEMPO REAL ---
+    // --- LOGICA DE SINCRONIZAÇÃO ---
     if (!localUn) {
         tela('screen-cadastro');
     } else {
-        // 1. Monitora se foi aprovado
+        // Verifica se ja foi aprovado
         onValue(ref(db, `moradores/${localUn}`), (snap) => {
             if (snap.exists()) {
                 document.getElementById('home-un').innerText = localUn;
                 tela('screen-home');
             } else {
-                // 2. Se não está aprovado, monitora se ainda está pendente
+                // Se nao aprovado, verifica se ainda esta pendente
                 onValue(ref(db, `moradores_pendentes/${localUn}`), (snapP) => {
                     if (snapP.exists()) {
                         document.getElementById('wait-un').innerText = localUn;
                         tela('screen-wait');
                     } else {
-                        // Se sumiu de ambos, o admin recusou ou deletou
-                        sair();
+                        // Se nao existe em nenhum lugar, reseta o celular
+                        localStorage.clear();
+                        location.reload();
                     }
                 }, { onlyOnce: true });
             }
@@ -106,13 +115,17 @@
     window.registrar = () => {
         const u = document.getElementById('unidade').value;
         const n = document.getElementById('nome').value;
-        if(!u || !n || !base64) return alert("Preencha todos os campos e a foto!");
+        if(!u || !n || !base64) return alert("Por favor, preencha nome, unidade e tire a foto!");
         
-        set(ref(db, `moradores_pendentes/${u}`), { nome: n, unidade: u, foto: base64 })
-        .then(() => { 
+        set(ref(db, `moradores_pendentes/${u}`), { 
+            nome: n, 
+            unidade: u, 
+            foto: base64,
+            autorizado: false 
+        }).then(() => { 
             localStorage.setItem('virty_un', u);
             location.reload(); 
-        });
+        }).catch(err => alert("Erro ao salvar: " + err));
     };
 </script>
 </body>
