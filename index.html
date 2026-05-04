@@ -3,71 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfone Black Edition v6.16</title>
+    <title>Virty - Visitante</title>
     <style>
-        :root { --led-green: #39FF14; --pure-white: #FFFFFF; --true-black: #000000; --grafite-metal: #2c2f33; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: var(--true-black); font-family: sans-serif; }
-        .moldura-global { position: fixed; width: 100vw; height: 100vh; background-color: var(--true-black); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 10px solid var(--grafite-metal); box-sizing: border-box; z-index: 5; }
-        .container-central { position: relative; width: 220px; height: 260px; border-radius: 50% 50% 45% 45%; overflow: hidden; background: var(--true-black); display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; border: 4px solid transparent; margin-bottom: 25px; transition: 0.3s; }
-        .com-guia { border: 4px solid var(--led-green) !important; box-shadow: 0 0 20px var(--led-green); }
-        .conteudo { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        #video { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .area-botoes { width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .btn-inox { background: #27ae60; color: white; padding: 18px; width: 85%; border-radius: 12px; border: none; font-weight: bold; font-size: 1.4rem; cursor: pointer; margin-bottom: 12px; text-transform: uppercase; box-shadow: 0 4px 0 #1e8449; }
-        .welcome-msg { color: var(--pure-white); text-align: center; margin-bottom: 30px; }
-        .lcd-text { color: var(--pure-white); font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: bold; text-transform: uppercase; }
-        input, textarea { width: 80%; background: #fff; color: #000; border: 2px solid var(--led-green); border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 12px; }
-        #resposta-area { color: var(--led-green); background: rgba(57, 255, 20, 0.1); padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; display: none; border: 1px dashed var(--led-green); max-width: 90%; }
+        :root { --neon-green: #39FF14; --bg-black: #000000; --card-bg: #111; }
+        * { box-sizing: border-box; }
+        body { 
+            background: var(--bg-black); color: #fff; font-family: 'Segoe UI', Roboto, sans-serif;
+            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        }
+        
+        /* Telas */
+        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; text-align: center; }
+        .active { display: flex; }
+
+        h1 { color: var(--neon-green); font-size: 2rem; margin-bottom: 20px; }
+        p { font-size: 1.2rem; margin: 10px 0; }
+
+        /* Inputs e Textos */
+        input, textarea { 
+            width: 90%; background: #222; border: 2px solid #444; border-radius: 12px;
+            color: #fff; padding: 15px; font-size: 1.3rem; text-align: center; margin-bottom: 15px;
+        }
+        input:focus { border-color: var(--neon-green); outline: none; }
+
+        /* Câmera */
+        .video-container { 
+            width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon-green);
+            overflow: hidden; margin-bottom: 20px; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); background: #222;
+        }
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Botões */
+        .btn { 
+            width: 90%; padding: 18px; border-radius: 15px; border: none; font-size: 1.2rem;
+            font-weight: bold; cursor: pointer; margin: 8px 0; transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-green { background: var(--neon-green); color: #000; }
+        .btn-red { background: #ff4d4d; color: #fff; }
+        .btn-outline { background: transparent; border: 2px solid #fff; color: #fff; }
+
+        /* Balão de Mensagem */
+        #chat-box { 
+            background: var(--card-bg); border-left: 5px solid var(--neon-green);
+            width: 90%; padding: 15px; margin-top: 15px; border-radius: 8px; text-align: left;
+        }
+        .msg-label { color: var(--neon-green); font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 5px; }
+        #msg-texto { font-size: 1.2rem; }
+
+        #status-atendimento { font-size: 1.5rem; font-weight: bold; margin: 20px 0; min-height: 1.6em; }
     </style>
 </head>
 <body>
-    <div class="moldura-global">
-        <div id="header-msg"><div class="welcome-msg"><h1>Olá!</h1><p>Toque em INICIAR.</p></div></div>
-        <div class="container-central" id="main-container">
-            <div id="step-1" class="conteudo" style="display: flex;"></div>
-            <div id="step-2" class="conteudo"><video id="video" autoplay playsinline muted></video></div>
-            <div id="step-3" class="conteudo"><div class="lcd-text">DADOS DE ACESSO</div></div>
-            <div id="step-4" class="conteudo">
-                <div id="timer" style="font-size: 3.5rem; color: #fff;">60</div>
-                <div id="calling-info" class="lcd-text" style="color: var(--led-green);">CHAMANDO...</div>
-                <div id="resposta-area"></div>
-            </div>
-            <div id="step-5" class="conteudo"><div style="font-size: 6rem; color: var(--led-green);">✓</div><div class="lcd-text">LIBERADO</div></div>
-        </div>
-        <div class="area-botoes">
-            <div id="btn-step-1" style="display: block; width: 100%; text-align: center;"><button class="btn-inox" onclick="passo2()">INICIAR</button></div>
-            <div id="btn-step-2" style="display: none; width: 100%; text-align: center;"><button class="btn-inox" onclick="passo3()">CAPTURAR</button></div>
-            <div id="btn-step-3" style="display: none; width: 100%; text-align: center;">
-                <input type="number" id="unidade" placeholder="CASA">
-                <textarea id="recado" placeholder="Mensagem (Opcional)"></textarea>
-                <button class="btn-inox" onclick="passo4()">CHAMAR</button>
-            </div>
-            <div id="btn-step-4" style="display: none; width: 100%; text-align: center;"><button class="btn-inox" style="background:#c0392b" onclick="cancelarTudo()">CANCELAR</button></div>
-            <div id="btn-step-5" style="display: none; width: 100%; text-align: center;"><button class="btn-inox" onclick="location.reload()">FECHAR</button></div>
-        </div>
+
+    <div id="screen-start" class="screen active">
+        <h1>VIRTY</h1>
+        <p>Informe o número da unidade:</p>
+        <input type="number" id="input-casa" placeholder="Ex: 101" inputmode="numeric">
+        <button class="btn btn-green" onclick="iniciarChamada()">INICIAR</button>
     </div>
+
+    <div id="screen-calling" class="screen">
+        <div class="video-container">
+            <video id="webcam" autoplay playsinline muted></video>
+        </div>
+        
+        <div id="status-atendimento">CHAMANDO...</div>
+
+        <textarea id="texto-visitante" placeholder="Enviar mensagem rápida..." rows="2"></textarea>
+        
+        <div id="chat-box" style="display: none;">
+            <span class="msg-label">RESPOSTA DO MORADOR:</span>
+            <span id="msg-texto"></span>
+        </div>
+
+        <button class="btn btn-red" id="btn-cancelar" onclick="finalizar(true)">CANCELAR CHAMADA</button>
+    </div>
+
+    <div id="screen-end" class="screen">
+        <h1 id="end-title">FIM</h1>
+        <p id="end-msg">Agradecemos o contato.</p>
+        
+        <button class="btn btn-green" onclick="chamarNovamente()">CHAMAR NOVAMENTE</button>
+        <button class="btn btn-outline" onclick="irParaHome()">ENCERRAR</button>
+    </div>
+
+    <audio id="audio-calling" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
+    <audio id="audio-end" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    const firebaseConfig = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", authDomain: "virty-access-door.firebaseapp.com", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door", storageBucket: "virty-access-door.firebasestorage.app", messagingSenderId: "694822891117", appId: "1:694822891117:web:b95a71c1eb273071fa9964" };
-    const app = initializeApp(firebaseConfig); const db = getDatabase(app);
-    let timerInterval, casaAtual = "";
-    window.passo2 = async function() { showStep(2); const stream = await navigator.mediaDevices.getUserMedia({ video: true }); document.getElementById('video').srcObject = stream; }
-    window.passo3 = function() { showStep(3); }
-    window.passo4 = async function() {
-        casaAtual = document.getElementById('unidade').value; if(!casaAtual) return;
-        showStep(4);
-        set(ref(db, `chamadas_ativas/${casaAtual}`), { ativa: true, msg: document.getElementById('recado').value, status_abertura: false });
-        onValue(ref(db, `chamadas_ativas/${casaAtual}`), (snap) => { 
-            if(snap.exists() && snap.val().status_abertura) { showStep(5); clearInterval(timerInterval); removerDados(); }
-            if(!snap.exists() && casaAtual !== "") { location.reload(); }
-        });
-        onValue(ref(db, `respostas_interfone/${casaAtual}`), (snap) => { if(snap.exists()){ const a = document.getElementById('resposta-area'); a.innerText = snap.val().mensagem; a.style.display="block"; } });
-        let t = 60; timerInterval = setInterval(() => { t--; document.getElementById('timer').innerText = t; if(t<=0){ cancelarTudo(); } }, 1000);
+    import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
+        authDomain: "virty-access-door.firebaseapp.com", 
+        databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", 
+        projectId: "virty-access-door", 
+        storageBucket: "virty-access-door.firebasestorage.app", 
+        messagingSenderId: "694822891117", 
+        appId: "1:694822891117:web:b95a71c1eb273071fa9964" 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let casaAtual = "";
+    const audioChamada = document.getElementById('audio-calling');
+    const audioFim = document.getElementById('audio-end');
+
+    // Mudar de tela
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
     }
-    window.cancelarTudo = () => { removerDados(); location.reload(); }
-    function removerDados() { if(casaAtual){ remove(ref(db, `chamadas_ativas/${casaAtual}`)); remove(ref(db, `respostas_interfone/${casaAtual}`)); } }
-    function showStep(n) { document.querySelectorAll('.conteudo').forEach(c => c.style.display='none'); document.querySelectorAll('.area-botoes > div').forEach(d => d.style.display='none'); document.getElementById('step-'+n).style.display='flex'; document.getElementById('btn-step-'+n).style.display='block'; if(n===2) document.getElementById('main-container').classList.add('com-guia'); else document.getElementById('main-container').classList.remove('com-guia'); }
+
+    window.iniciarChamada = async () => {
+        casaAtual = document.getElementById('input-casa').value;
+        if (!casaAtual) return alert("Digite o número da casa!");
+
+        showScreen('screen-calling');
+
+        // 1. Abrir Câmera de imediato
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            document.getElementById('webcam').srcObject = stream;
+        } catch (err) {
+            console.error("Erro câmera:", err);
+        }
+
+        // 2. Iniciar Sons e Firebase
+        audioChamada.play();
+        set(ref(db, `chamadas_ativas/${casaAtual}`), { 
+            ativa: true, 
+            status: "chamando",
+            texto_visitante: "" 
+        });
+
+        // Ouvir respostas
+        onValue(ref(db, `chamadas_ativas/${casaAtual}`), (snap) => {
+            if (!snap.exists()) return;
+            const data = snap.val();
+
+            // Mensagem do morador
+            if (data.texto_morador) {
+                document.getElementById('chat-box').style.display = "block";
+                document.getElementById('msg-texto').innerText = data.texto_morador;
+            }
+
+            // Status da chamada
+            if (data.status === "liberado") {
+                document.getElementById('status-atendimento').innerText = "PORTÃO LIBERADO";
+                document.getElementById('status-atendimento').style.color = "#39FF14";
+                setTimeout(() => finalizar(false, "PORTÃO LIBERADO"), 3000);
+            } else if (data.status === "recusado") {
+                finalizar(false, "CHAMADA RECUSADA");
+            }
+        });
+
+        // Sincronizar campo de texto do visitante
+        document.getElementById('texto-visitante').oninput = (e) => {
+            update(ref(db, `chamadas_ativas/${casaAtual}`), { texto_visitante: e.target.value });
+        };
+    };
+
+    window.finalizar = (peloVisitante, msgFinal) => {
+        audioChamada.pause();
+        audioChamada.currentTime = 0;
+        audioFim.play();
+
+        if (peloVisitante) {
+            remove(ref(db, `chamadas_ativas/${casaAtual}`));
+        }
+
+        document.getElementById('end-title').innerText = msgFinal ? "AVISO" : "FIM";
+        document.getElementById('end-msg').innerText = msgFinal || "Chamada encerrada.";
+        showScreen('screen-end');
+        
+        // Desligar câmera
+        const video = document.getElementById('webcam');
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+    };
+
+    window.chamarNovamente = () => {
+        showScreen('screen-start');
+        iniciarChamada();
+    };
+
+    window.irParaHome = () => {
+        document.getElementById('input-casa').value = "";
+        showScreen('screen-start');
+    };
 </script>
 </body>
 </html>
