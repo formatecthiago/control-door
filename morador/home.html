@@ -5,104 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Virty Access - Morador</title>
     <style>
-        :root { --neon-green: #39FF14; --bg-black: #000; }
-        * { box-sizing: border-box; }
-        body { background: var(--bg-black); color: white; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .screen { display: none; width: 100%; max-width: 400px; flex-direction: column; padding: 20px; }
+        :root { --neon: #39FF14; --bg: #000; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; padding: 30px; }
         .active { display: flex; }
-        h2 { color: var(--neon-green); text-align: center; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #111; color: white; }
-        .btn { width: 100%; padding: 15px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; margin: 10px 0; }
-        .btn-green { background: var(--neon-green); color: black; }
-        .btn-gray { background: #333; color: white; }
-        .avatar-box { width: 120px; height: 120px; border-radius: 50%; border: 2px solid white; margin: 20px auto; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #222; }
-        .avatar-box img { width: 100%; height: 100%; object-fit: cover; }
+        h2 { color: var(--neon); text-align: center; font-size: 1.8rem; }
+        input { width: 100%; padding: 18px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #0a0a0a; color: white; font-size: 1rem; }
+        .btn { width: 100%; padding: 20px; border-radius: 35px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
+        .btn-green { background: var(--neon); color: black; }
+        .btn-gray { background: #222; color: white; }
+        .photo-box { width: 140px; height: 140px; border-radius: 50%; border: 3px solid white; margin: 20px auto; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #111; cursor: pointer; }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
 
     <div id="screen-cadastro" class="screen">
         <h2>VIRTY ACCESS</h2>
-        <div class="avatar-box" onclick="document.getElementById('selfie').click()">
-            <img id="img-preview" style="display:none">
-            <span id="txt-foto">📷 FOTO</span>
-            <input type="file" id="selfie" accept="image/*" capture="user" style="display:none" onchange="processarFoto(this)">
+        <div class="photo-box" onclick="document.getElementById('file-input').click()">
+            <img id="preview" style="display:none">
+            <span id="label-photo">📷 SELFIE</span>
+            <input type="file" id="file-input" accept="image/*" capture="user" style="display:none" onchange="readImg(this)">
         </div>
-        <input type="text" id="nome" placeholder="Nome">
-        <input type="number" id="unidade" placeholder="Nº Unidade">
-        <button class="btn btn-green" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
+        <input type="text" id="nome" placeholder="Nome Completo">
+        <input type="number" id="unidade" placeholder="Número da Unidade">
+        <button class="btn btn-green" onclick="registrar()">SOLICITAR ACESSO</button>
     </div>
 
     <div id="screen-wait" class="screen">
-        <h2>Aguardando...</h2>
-        <p style="text-align:center">O síndico está analisando seu cadastro.</p>
-        <button class="btn btn-gray" onclick="resetApp()">CANCELAR</button>
+        <h2 style="color: orange;">Análise...</h2>
+        <p style="text-align:center">Aguardando liberação do administrador para a unidade <b id="wait-un"></b>.</p>
+        <button class="btn btn-gray" onclick="sair()">CANCELAR PEDIDO</button>
     </div>
 
     <div id="screen-home" class="screen">
-        <h2>Olá, Unidade <span id="view-unidade"></span></h2>
-        <p style="text-align:center; color: #666;">Sistema Ativo</p>
-        <button class="btn btn-gray" onclick="resetApp()">SAIR</button>
+        <h2>BEM-VINDO!</h2>
+        <p style="text-align:center">Unidade <b id="home-un"></b> - Sistema Ativo</p>
+        <div style="height: 200px; display: flex; align-items: center; justify-content: center; color: #444;">Aguardando Interfone...</div>
+        <button class="btn btn-gray" onclick="sair()">SAIR DA CONTA</button>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const firebaseConfig = { 
+    const config = { 
         apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
         databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", 
         projectId: "virty-access-door"
     };
-
-    const app = initializeApp(firebaseConfig);
+    const app = initializeApp(config);
     const db = getDatabase(app);
-    let unidadeLocal = localStorage.getItem('virty_unidade');
-    let fotoBase64 = "";
+    
+    let localUn = localStorage.getItem('virty_un');
+    let base64 = "";
 
     function tela(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    window.processarFoto = (input) => {
+    window.readImg = (input) => {
         const reader = new FileReader();
         reader.onload = (e) => {
-            fotoBase64 = e.target.result;
-            document.getElementById('img-preview').src = fotoBase64;
-            document.getElementById('img-preview').style.display = "block";
-            document.getElementById('txt-foto').style.display = "none";
+            base64 = e.target.result;
+            document.getElementById('preview').src = base64;
+            document.getElementById('preview').style.display = "block";
+            document.getElementById('label-photo').style.display = "none";
         };
         reader.readAsDataURL(input.files[0]);
     };
 
-    window.resetApp = () => { localStorage.clear(); location.reload(); };
+    window.sair = () => { localStorage.clear(); location.reload(); };
 
-    // ESCUTA EM TEMPO REAL
-    if (!unidadeLocal) {
+    // --- MONITORAMENTO EM TEMPO REAL ---
+    if (!localUn) {
         tela('screen-cadastro');
     } else {
-        onValue(ref(db, `moradores/${unidadeLocal}`), (snap) => {
+        // 1. Monitora se foi aprovado
+        onValue(ref(db, `moradores/${localUn}`), (snap) => {
             if (snap.exists()) {
-                document.getElementById('view-unidade').innerText = unidadeLocal;
+                document.getElementById('home-un').innerText = localUn;
                 tela('screen-home');
             } else {
-                onValue(ref(db, `moradores_pendentes/${unidadeLocal}`), (snapP) => {
-                    snapP.exists() ? tela('screen-wait') : resetApp();
-                });
+                // 2. Se não está aprovado, monitora se ainda está pendente
+                onValue(ref(db, `moradores_pendentes/${localUn}`), (snapP) => {
+                    if (snapP.exists()) {
+                        document.getElementById('wait-un').innerText = localUn;
+                        tela('screen-wait');
+                    } else {
+                        // Se sumiu de ambos, o admin recusou ou deletou
+                        sair();
+                    }
+                }, { onlyOnce: true });
             }
         });
     }
 
-    window.enviarCadastro = () => {
+    window.registrar = () => {
         const u = document.getElementById('unidade').value;
         const n = document.getElementById('nome').value;
-        if(!u || !n || !fotoBase64) return alert("Faltam dados!");
+        if(!u || !n || !base64) return alert("Preencha todos os campos e a foto!");
         
-        set(ref(db, `moradores_pendentes/${u}`), { nome: n, unidade: u, foto: fotoBase64 })
+        set(ref(db, `moradores_pendentes/${u}`), { nome: n, unidade: u, foto: base64 })
         .then(() => { 
-            localStorage.setItem('virty_unidade', u);
-            unidadeLocal = u;
+            localStorage.setItem('virty_un', u);
+            location.reload(); 
         });
     };
 </script>
