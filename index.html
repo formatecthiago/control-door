@@ -6,47 +6,44 @@
     <title>Virty Access - Visitante</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 20px; text-align: center; box-sizing: border-box; }
         .active { display: flex; }
-        h1 { font-size: 2.5rem; font-weight: 900; color: var(--neon); margin: 10px 0; text-transform: uppercase; }
-        .video-box { width: 100%; height: 300px; background: #111; border-radius: 20px; overflow: hidden; border: 2px solid var(--neon); margin-bottom: 15px; position: relative; }
+        .video-box { width: 280px; height: 280px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin-bottom: 15px; position: relative; }
         video, canvas { width: 100%; height: 100%; object-fit: cover; }
-        #photo-taken { position: absolute; top: 0; left: 0; display: none; z-index: 5; }
         input { width: 100%; padding: 20px; margin: 8px 0; border-radius: 12px; border: 1px solid #333; background: #0a0a0a; color: white; font-size: 1.2rem; text-align: center; box-sizing: border-box; }
         .btn { width: 100%; padding: 22px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 8px 0; font-size: 1rem; }
         .btn-green { background: var(--neon); color: black; }
-        .btn-white { background: #fff; color: #000; }
-        .btn-red { background: #ff3333; color: white; }
-        #timer { font-size: 5rem; font-weight: bold; color: var(--neon); margin: 20px 0; }
+        #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; border:2px solid var(--neon); padding:30px; border-radius:20px; width:80%; z-index:100; }
     </style>
 </head>
 <body>
 
     <div id="t1" class="screen active">
-        <h2 style="margin-top: 60px; color: #555;">Olá.</h2>
-        <h1>INICIE SUA CHAMADA</h1>
-        <button class="btn btn-green" onclick="abrirCam()">CLIQUE PARA COMEÇAR</button>
+        <h1 style="color:var(--neon); margin-top:50px;">VIRTY ACCESS</h1>
+        <div class="video-box">
+            <video id="v" autoplay playsinline muted></video>
+            <canvas id="c-snap" style="display:none;"></canvas>
+        </div>
+        <button id="btn-snap" class="btn btn-green" onclick="tirarFoto()">📷 TIRAR FOTO</button>
+        <input type="number" id="un" placeholder="Nº da Unidade" inputmode="numeric">
+        <input type="text" id="msg" placeholder="Mensagem Opcional">
+        <button id="btn-go" class="btn btn-green" onclick="chamar()" disabled style="opacity:0.3">CHAMAR AGORA</button>
     </div>
 
     <div id="t2" class="screen">
-        <div class="video-box">
-            <video id="v" autoplay playsinline muted></video>
-            <canvas id="photo-taken"></canvas>
-        </div>
-        <button id="btn-foto" class="btn btn-white" onclick="tirarSelfie()">📷 TIRAR FOTO</button>
-        <input type="number" id="un" placeholder="Nº da Casa" inputmode="numeric">
-        <input type="text" id="msg" placeholder="Recado (Opcional)" maxlength="40">
-        <button id="btn-chamar" class="btn btn-green" onclick="chamar()" disabled style="opacity: 0.3;">CHAMAR AGORA</button>
+        <h2 id="timer" style="font-size: 5rem; color: var(--neon); margin-top: 50px;">60</h2>
+        <p>Chamando Unidade <b id="view-un"></b>...</p>
+        <button class="btn" style="background:#ff3333; color:white;" onclick="location.reload()">CANCELAR</button>
     </div>
 
-    <div id="t3" class="screen">
-        <div id="timer">60</div>
-        <p>Chamando Unidade <b id="view-un" style="color:var(--neon)"></b>...</p>
-        <button class="btn btn-red" onclick="location.reload()">CANCELAR</button>
+    <div id="popup">
+        <h2 id="pop-t" style="color:var(--neon)"></h2>
+        <p id="pop-m"></p>
+        <button class="btn btn-green" onclick="location.reload()">FECHAR</button>
     </div>
 
-    <audio id="som-ring" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
+    <audio id="som" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -55,56 +52,53 @@
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
     const app = initializeApp(config);
     const db = getDatabase(app);
-    let b64 = "", timerInterval;
 
-    window.abrirCam = async () => {
-        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        document.getElementById('v').srcObject = s;
-        document.getElementById('t1').classList.remove('active');
-        document.getElementById('t2').classList.add('active');
-    };
+    let b64 = "";
+    const v = document.getElementById('v'), c = document.getElementById('c-snap');
 
-    window.tirarSelfie = () => {
-        const v = document.getElementById('v'), c = document.getElementById('photo-taken');
+    navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}}).then(s => v.srcObject = s);
+
+    window.tirarFoto = () => {
         c.width = v.videoWidth; c.height = v.videoHeight;
-        c.getContext('2d').drawImage(v, 0, 0);
+        c.getContext('2d').drawImage(v,0,0);
         b64 = c.toDataURL('image/jpeg', 0.5);
-        c.style.display = "block";
-        document.getElementById('btn-chamar').disabled = false;
-        document.getElementById('btn-chamar').style.opacity = "1";
+        c.style.display="block"; v.pause();
+        document.getElementById('btn-go').disabled = false;
+        document.getElementById('btn-go').style.opacity = "1";
     };
 
     window.chamar = () => {
         const un = document.getElementById('un').value;
-        if(!un) return alert("Digite a casa.");
+        if(!un) return;
         document.getElementById('view-un').innerText = un;
-        document.getElementById('t2').classList.remove('active');
-        document.getElementById('t3').classList.add('active');
-        document.getElementById('som-ring').play().catch(()=>{});
+        document.getElementById('t1').classList.remove('active');
+        document.getElementById('t2').classList.add('active');
+        document.getElementById('som').play();
 
-        // ENVIO DIRETO PARA O MORADOR
-        set(ref(db, `chamadas_ativas/${un}`), { 
-            status: "chamando", 
-            foto: b64, 
-            texto: document.getElementById('msg').value || "Visitante na porta" 
-        });
+        const chamRef = ref(db, `chamadas_ativas/${un}`);
+        set(chamRef, { status: "chamando", foto: b64, texto: document.getElementById('msg').value });
 
-        // MONITORAR RESPOSTA
-        onValue(ref(db, `chamadas_ativas/${un}`), (snap) => {
+        onValue(chamRef, snap => {
             const d = snap.val();
-            if(d && d.status === "liberado") {
-                alert("ENTRADA LIBERADA!");
-                location.reload();
-            }
+            if(!d) return;
+            if(d.status === "liberado") showPop("LIBERADO", "Pode entrar!");
+            if(d.status === "recusado") showPop("RECUSADO", "O morador não pode atender.");
+            if(d.status === "mensagem") showPop("MENSAGEM", d.msg_morador);
         });
 
         let tempo = 60;
-        timerInterval = setInterval(() => {
-            tempo--;
-            document.getElementById('timer').innerText = tempo;
-            if(tempo <= 0) { clearInterval(timerInterval); location.reload(); }
+        setInterval(() => {
+            tempo--; document.getElementById('timer').innerText = tempo;
+            if(tempo <= 0) location.reload();
         }, 1000);
     };
+
+    function showPop(t, m) {
+        document.getElementById('som').pause();
+        document.getElementById('pop-t').innerText = t;
+        document.getElementById('pop-m').innerText = m;
+        document.getElementById('popup').style.display = "block";
+    }
 </script>
 </body>
 </html>
