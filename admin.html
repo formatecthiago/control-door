@@ -5,50 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Virty Admin | Gestão</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --blue: #007BFF; --red: #ff3333; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        .screen { display: none; padding: 20px; max-width: 500px; margin: 0 auto; box-sizing: border-box; }
+        :root { --neon: #39FF14; --bg: #000; --red: #ff3333; }
+        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; padding: 0; }
+        .screen { display: none; padding: 20px; text-align: center; }
         .active { display: block; }
-        
-        /* Login centralizado no celular */
-        #s-login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
-        .card-login { background: #0a0a0a; border: 1px solid var(--neon); padding: 30px; border-radius: 25px; width: 85%; }
-        
-        input { width: 100%; padding: 18px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; font-size: 1.1rem; box-sizing: border-box; text-align: center; }
-        .btn { width: 100%; padding: 20px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; }
-        .btn-green { background: var(--neon); color: black; }
-        
-        /* Listas de Moradores */
-        .item-card { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 15px; border-radius: 18px; display: flex; align-items: center; margin-bottom: 12px; }
-        .img-user { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--neon); margin-right: 15px; object-fit: cover; background: #222; }
-        .info { flex: 1; font-size: 0.9rem; text-align: left; }
-        .info b { color: var(--neon); display: block; font-size: 1.1rem; }
-        .btns-acao { display: flex; flex-direction: column; gap: 5px; }
-        .btn-sm { padding: 10px; border-radius: 10px; border: none; cursor: pointer; font-size: 0.75rem; font-weight: bold; width: 80px; }
+        input { width: 90%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; font-size: 1rem; }
+        .btn { width: 90%; padding: 15px; border-radius: 30px; border: none; font-weight: bold; margin: 10px 0; cursor: pointer; }
+        .btn-green { background: var(--neon); color: #000; }
+        .item-card { background: #0a0a0a; border: 1px solid #222; padding: 15px; border-radius: 15px; display: flex; align-items: center; margin-bottom: 10px; text-align: left; }
+        .img-user { width: 60px; height: 60px; border-radius: 50%; margin-right: 15px; border: 2px solid var(--neon); object-fit: cover; }
+        .info { flex: 1; }
     </style>
 </head>
 <body>
 
     <div id="s-login" class="screen active">
-        <div class="card-login">
-            <h1 style="color:var(--neon); margin-bottom: 20px;">VIRTY ADMIN</h1>
-            <input type="text" id="adm-nome" placeholder="Seu Nome">
-            <input type="password" id="adm-chave" placeholder="Chave Mestra">
-            <button class="btn btn-green" id="btn-entrar">ENTRAR NO PAINEL</button>
-        </div>
+        <h1 style="color:var(--neon)">ADMIN LOGIN</h1>
+        <input type="text" id="adm-nome" placeholder="Seu Nome">
+        <input type="password" id="adm-chave" placeholder="Chave Mestra">
+        <button class="btn btn-green" onclick="logarAdmin()">ENTRAR</button>
     </div>
 
     <div id="s-dash" class="screen">
-        <header style="border-bottom: 1px solid #222; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-            <span>Olá, <b id="nome-adm"></b></span>
-            <button onclick="location.reload()" style="background:none; border:1px solid #555; color:#aaa; border-radius:10px; padding:5px 10px;">Sair</button>
-        </header>
-
-        <h3 style="color:orange;">PENDENTES (AGUARDANDO)</h3>
-        <div id="lista-p"></div>
-
-        <h3 style="margin-top:40px; color:var(--neon);">MORADORES ATIVOS</h3>
-        <div id="lista-m"></div>
+        <h2 id="boas-vindas">Painel</h2>
+        <div id="lista-p">Carregando pendentes...</div>
+        <hr style="border:0; border-top:1px solid #222; margin:20px 0;">
+        <div id="lista-m">Carregando moradores...</div>
     </div>
 
 <script type="module">
@@ -65,93 +47,64 @@
 
     const CHAVE_MASTER = "Virty_123quatro@#";
 
-    // Função de Login Corrigida
-    document.getElementById('btn-entrar').onclick = () => {
-        const nome = document.getElementById('adm-nome').value;
-        const chave = document.getElementById('adm-chave').value;
-
-        if (chave === CHAVE_MASTER && nome !== "") {
-            document.getElementById('nome-adm').innerText = nome;
+    window.logarAdmin = () => {
+        const n = document.getElementById('adm-nome').value;
+        const c = document.getElementById('adm-chave').value;
+        
+        if(c === CHAVE_MASTER && n !== "") {
+            document.getElementById('boas-vindas').innerText = "Olá, " + n;
             document.getElementById('s-login').classList.remove('active');
             document.getElementById('s-dash').classList.add('active');
-            carregarDados();
+            carregarListas();
         } else {
-            alert("Nome ou Chave Mestra incorretos!");
+            alert("Senha Incorreta ou Nome vazio!");
         }
     };
 
-    function carregarDados() {
-        // BUSCAR PENDENTES (Com Selfie e Dados Completos)
+    function carregarListas() {
+        // Pendentes
         onValue(ref(db, 'moradores_pendentes'), snap => {
             const div = document.getElementById('lista-p');
-            div.innerHTML = "";
-            if (!snap.exists()) div.innerHTML = "<p style='color:#555'>Nenhuma solicitação nova.</p>";
-            
+            div.innerHTML = "<h3>PENDENTES</h3>";
+            if(!snap.exists()) div.innerHTML += "Ninguém na fila.";
             snap.forEach(item => {
                 const m = item.val();
-                const card = document.createElement('div');
-                card.className = 'item-card';
-                card.innerHTML = `
-                    <img src="${m.foto}" class="img-user">
-                    <div class="info">
-                        <b>CASA ${m.unidade}</b>
-                        ${m.nome}<br>
-                        <small>CPF: ${m.cpf}</small>
-                    </div>
-                    <div class="btns-acao">
-                        <button class="btn-sm btn-green" id="aprovar-${m.id}">OK</button>
-                        <button class="btn-sm" style="background:red; color:white;" id="recusar-${m.id}">✖</button>
-                    </div>
-                `;
-                div.appendChild(card);
-                
-                document.getElementById(`aprovar-${m.id}`).onclick = () => decidir(m.id, true);
-                document.getElementById(`recusar-${m.id}`).onclick = () => decidir(m.id, false);
+                div.innerHTML += `
+                    <div class="item-card">
+                        <img src="${m.foto}" class="img-user">
+                        <div class="info"><b>UN: ${m.unidade}</b><br>${m.nome}<br>CPF: ${m.cpf}</div>
+                        <button onclick="aprovar('${m.id}')" style="background:var(--neon); border:none; padding:10px; border-radius:5px;">OK</button>
+                    </div>`;
             });
         });
 
-        // BUSCAR VALIDADOS
+        // Validados
         onValue(ref(db, 'moradores_validados'), snap => {
             const div = document.getElementById('lista-m');
-            div.innerHTML = "";
+            div.innerHTML = "<h3>ATIVOS</h3>";
             snap.forEach(item => {
                 const m = item.val();
-                const card = document.createElement('div');
-                card.className = 'item-card';
-                card.innerHTML = `
-                    <img src="${m.foto}" class="img-user">
-                    <div class="info">
-                        <b>CASA ${m.unidade}</b>
-                        ${m.nome}
-                    </div>
-                    <div class="btns-acao">
-                        <button class="btn-sm" style="background:#444; color:white;" id="del-${m.id}">DELETAR</button>
-                    </div>
-                `;
-                div.appendChild(card);
-                document.getElementById(`del-${m.id}`).onclick = () => deletarMorador(m.id);
+                div.innerHTML += `
+                    <div class="item-card">
+                        <img src="${m.foto}" class="img-user">
+                        <div class="info"><b>UN: ${m.unidade}</b><br>${m.nome}</div>
+                        <button onclick="deletar('${m.id}')" style="background:red; color:white; border:none; padding:10px; border-radius:5px;">DEL</button>
+                    </div>`;
             });
         });
     }
 
-    async function decidir(id, aprovado) {
-        const refP = ref(db, `moradores_pendentes/${id}`);
-        if(aprovado) {
-            const s = await get(refP);
-            if(s.exists()) {
-                await set(ref(db, `moradores_validados/${id}`), s.val());
-                await remove(refP);
-            }
-        } else {
-            await remove(refP);
+    window.aprovar = async (id) => {
+        const snap = await get(ref(db, `moradores_pendentes/${id}`));
+        if(snap.exists()) {
+            await set(ref(db, `moradores_validados/${id}`), snap.val());
+            await remove(ref(db, `moradores_pendentes/${id}`));
         }
-    }
+    };
 
-    async function deletarMorador(id) {
-        if(confirm("Deseja remover este morador permanentemente?")) {
-            await remove(ref(db, `moradores_validados/${id}`));
-        }
-    }
+    window.deletar = (id) => {
+        if(confirm("Remover morador?")) remove(ref(db, `moradores_validados/${id}`));
+    };
 </script>
 </body>
 </html>
