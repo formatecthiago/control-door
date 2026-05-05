@@ -10,17 +10,17 @@
         .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; padding: 25px; margin: 0 auto; box-sizing: border-box; text-align: center; }
         .active { display: flex; }
         
-        /* Campos de Entrada Aumentados */
+        /* Campos de Entrada Padrão Virty */
         input { 
             width: 100%; 
-            padding: 22px; /* Aumentado para melhor toque */
-            margin: 12px 0; 
+            padding: 22px; 
+            margin: 10px 0; 
             border-radius: 15px; 
             border: 1px solid #333; 
             background: #111; 
             color: #fff; 
             box-sizing: border-box; 
-            font-size: 1.2rem; /* Fonte maior para visibilidade */
+            font-size: 1.2rem; 
             text-align: center;
         }
 
@@ -28,30 +28,24 @@
         .btn-green { background: var(--neon); color: black; }
         .btn-grey { background: #222; color: #fff; }
 
-        /* Câmera de Cadastro */
         .cam-container { 
-            width: 200px; 
-            height: 200px; 
+            width: 180px; 
+            height: 180px; 
             border-radius: 50%; 
             border: 3px solid var(--neon); 
-            margin: 20px auto; 
+            margin: 15px auto; 
             overflow: hidden; 
             position: relative; 
             background: #111; 
-            box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
         }
         video, canvas { width: 100%; height: 100%; object-fit: cover; }
         #canvas-selfie { display: none; position: absolute; top: 0; left: 0; }
-
-        /* Estilo da Chamada */
-        .caller-img { width: 250px; height: 250px; border-radius: 30px; border: 3px solid var(--neon); margin: 20px auto; object-fit: cover; }
     </style>
 </head>
 <body>
 
     <div id="s-cad" class="screen">
-        <h2 style="color:var(--neon); margin-bottom: 5px;">CADASTRO MORADOR</h2>
-        <p style="font-size: 0.9rem; color: #777; margin-bottom: 10px;">Posicione seu rosto no círculo</p>
+        <h2 style="color:var(--neon); margin-bottom: 5px;">CADASTRO</h2>
         
         <div class="cam-container">
             <video id="v-cad" autoplay playsinline muted></video>
@@ -62,25 +56,24 @@
         
         <div id="campos-cadastro" style="width: 100%;">
             <input type="text" id="c-nome" placeholder="Nome Completo">
-            <input type="number" id="c-un" placeholder="Número da Unidade/Casa" inputmode="numeric">
-            <button class="btn btn-green" onclick="pedirPermissoes()">SOLICITAR ACESSO AGORA</button>
+            <input type="number" id="c-cpf" placeholder="CPF (Apenas números)" inputmode="numeric">
+            <input type="number" id="c-un" placeholder="Número da Unidade" inputmode="numeric">
+            <button class="btn btn-green" onclick="enviarCadastro()">SOLICITAR ACESSO AGORA</button>
         </div>
     </div>
 
     <div id="s-wait" class="screen">
-        <h1 style="color:orange; margin-top: 80px;">SOLICITAÇÃO EM ANÁLISE</h1>
+        <h1 style="color:orange; margin-top: 80px;">EM ANÁLISE</h1>
         <div class="cam-container" style="border-color: orange;">
             <img id="img-wait" style="width:100%; height:100%; object-fit:cover;">
         </div>
-        <p>Olá <b id="wait-nome"></b>, sua solicitação para a unidade <b id="wait-un"></b> foi enviada ao administrador.</p>
-        <p style="font-size: 0.8rem; color: #555;">Mantenha esta página aberta ou adicione-a à sua tela inicial.</p>
+        <p>Olá <b id="wait-nome"></b>, sua solicitação para a unidade <b id="wait-un"></b> foi enviada.</p>
         <button class="btn btn-grey" onclick="location.reload()">ATUALIZAR STATUS</button>
     </div>
 
     <div id="s-home" class="screen">
         <h2 id="view-un" style="font-size: 2.5rem; margin-top: 40px;">CASA --</h2>
-        <div style="color: var(--neon); font-size: 1.2rem; margin-bottom: 30px;">● SISTEMA ATIVO</div>
-        <p style="color:#555">Aguardando visitantes...</p>
+        <div style="color: var(--neon); font-size: 1.2rem;">● SISTEMA ATIVO</div>
     </div>
 
 <script type="module">
@@ -95,7 +88,6 @@
 
     function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-    // Verificação de Status
     if(lId) {
         onValue(ref(db, `moradores_validados/${lId}`), snap => {
             if(snap.exists()) {
@@ -118,34 +110,30 @@
         try {
             const s = await navigator.mediaDevices.getUserMedia({video: { facingMode: "user" }});
             document.getElementById('v-cad').srcObject = s;
-        } catch (e) { alert("Erro ao abrir câmera. Verifique as permissões."); }
+        } catch (e) { alert("Autorize a câmera."); }
     }
 
     window.tirarFoto = () => {
-        const v = document.getElementById('v-cad');
-        const c = document.getElementById('canvas-selfie');
-        const btn = document.getElementById('btn-foto');
-        
-        c.width = v.videoWidth; 
-        c.height = v.videoHeight;
+        const v = document.getElementById('v-cad'), c = document.getElementById('canvas-selfie'), btn = document.getElementById('btn-foto');
+        c.width = v.videoWidth; c.height = v.videoHeight;
         c.getContext('2d').drawImage(v, 0, 0);
         fBase64 = c.toDataURL('image/jpeg', 0.7);
-        
-        // CONGELAR A IMAGEM NA TELA
         c.style.display = "block";
-        v.pause(); // Para o vídeo
+        v.pause();
         btn.innerText = "🔄 REFAZER FOTO";
-        btn.onclick = () => { location.reload(); }; // Simples para resetar
+        btn.onclick = () => { location.reload(); };
     };
 
-    window.pedirPermissoes = () => {
+    window.enviarCadastro = () => {
         const nome = document.getElementById('c-nome').value;
+        const cpf = document.getElementById('c-cpf').value;
         const un = document.getElementById('c-un').value;
-        if(!nome || !un || !fBase64) return alert("Por favor, preencha o Nome, Unidade e tire a foto.");
+
+        if(!nome || !cpf || !un || !fBase64) return alert("Preencha Nome, CPF, Unidade e tire a foto.");
 
         const id = Date.now();
         set(ref(db, `moradores_pendentes/${id}`), {
-            id, nome, unidade: un, foto: fBase64, status: "pendente"
+            id, nome, cpf, unidade: un, foto: fBase64, status: "pendente", data: new Date().toLocaleDateString()
         }).then(() => {
             localStorage.setItem('virty_id', id);
             location.reload();
