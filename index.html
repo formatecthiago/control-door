@@ -1,31 +1,126 @@
-<div id="t1" class="screen active">
-    <h1 style="font-size: 3.5rem; line-height: 1;">INICIE SUA CHAMADA AGORA</h1>
-    <p style="font-size: 1.5rem; margin-top: 20px;">Toque no botão abaixo</p>
-    <button class="btn btn-green" onclick="abrirCam()" style="margin-top: 40px; height: 100px; font-size: 1.5rem;">INICIAR</button>
-</div>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Virty Access - Visitante</title>
+    <style>
+        :root { --neon: #39FF14; --bg: #000; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 25px; text-align: center; box-sizing: border-box; }
+        .active { display: flex; }
+        h1 { color: var(--neon); font-size: 3.2rem; font-weight: 900; line-height: 1; margin: 40px 0; }
+        .video-box { width: 100%; height: 320px; background: #111; border-radius: 20px; overflow: hidden; border: 2px solid var(--neon); margin-bottom: 15px; position: relative; }
+        video, canvas { width: 100%; height: 100%; object-fit: cover; }
+        #photo-taken { position: absolute; top: 0; left: 0; display: none; z-index: 5; }
+        input { width: 100%; padding: 18px; margin: 8px 0; border-radius: 12px; border: 1px solid #333; background: #0a0a0a; color: white; font-size: 1.1rem; text-align: center; box-sizing: border-box; }
+        .btn { width: 100%; padding: 22px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 8px 0; font-size: 1rem; }
+        .btn-green { background: var(--neon); color: black; }
+        .btn-white { background: #fff; color: #000; }
+        .btn-red { background: #ff3333; color: white; }
+    </style>
+</head>
+<body>
 
-<div id="t3" class="screen">
-    <div id="timer">60</div>
-    <p>Chamando Unidade <b id="view-un"></b>...</p>
-    
-    <div id="pos-chamada" style="display:none; width:100%">
-        <button class="btn btn-green" onclick="voltarParaCam()">CHAMAR NOVAMENTE</button>
-        <button class="btn btn-red" onclick="location.reload()">FECHAR E SAIR</button>
+    <div id="t1" class="screen active">
+        <h1>INICIE SUA CHAMADA AGORA</h1>
+        <button class="btn btn-green" onclick="abrirCam()">INICIAR</button>
     </div>
-    
-    <button id="btn-canc-imediato" class="btn btn-red" onclick="location.reload()">CANCELAR</button>
-</div>
 
-<script>
-    // Na função onde o tempo acaba ou é recusado:
-    function encerrarChamada() {
+    <div id="t2" class="screen">
+        <div class="video-box">
+            <video id="v" autoplay playsinline muted></video>
+            <canvas id="photo-taken"></canvas>
+        </div>
+        <button id="btn-selfie" class="btn btn-white" onclick="tirarSelfie()">📷 CAPTURAR IMAGEM</button>
+        <input type="number" id="un" placeholder="Número da Unidade" inputmode="numeric">
+        <input type="text" id="msg" placeholder="Mensagem (Opcional)">
+        <button id="btn-chamar" class="btn btn-green" onclick="chamar()" disabled style="opacity: 0.3;">CHAMAR AGORA</button>
+    </div>
+
+    <div id="t3" class="screen">
+        <div id="timer" style="font-size: 6rem; color: var(--neon); margin: 30px 0;">60</div>
+        <p id="txt-chamando">Chamando Unidade <b id="view-un"></b>...</p>
+        
+        <div id="pos-chamada" style="display:none; width:100%">
+            <button class="btn btn-green" onclick="voltarParaCam()">CHAMAR NOVAMENTE</button>
+            <button class="btn btn-red" onclick="location.reload()">FECHAR</button>
+        </div>
+        <button id="btn-canc-imediato" class="btn btn-red" onclick="location.reload()">CANCELAR</button>
+    </div>
+
+    <audio id="som-ring" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
+    const app = initializeApp(config);
+    const db = getDatabase(app);
+    let b64 = "", timerInterval;
+
+    window.abrirCam = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('v').srcObject = stream;
+            document.getElementById('t1').classList.remove('active');
+            document.getElementById('t2').classList.add('active');
+        } catch { alert("Erro ao acessar câmera."); }
+    };
+
+    window.tirarSelfie = () => {
+        const canv = document.getElementById('photo-taken');
+        const video = document.getElementById('v');
+        canv.width = video.videoWidth; canv.height = video.videoHeight;
+        canv.getContext('2d').drawImage(video, 0, 0);
+        b64 = canv.toDataURL('image/jpeg', 0.5);
+        canv.style.display = "block";
+        document.getElementById('btn-chamar').disabled = false;
+        document.getElementById('btn-chamar').style.opacity = "1";
+    };
+
+    window.chamar = () => {
+        const u = document.getElementById('un').value;
+        if(!u) return alert("Digite a unidade.");
+        document.getElementById('view-un').innerText = u;
+        document.getElementById('t2').classList.remove('active');
+        document.getElementById('t3').classList.add('active');
+        document.getElementById('som-ring').play();
+
+        set(ref(db, `chamadas_ativas/${u}`), { status: "chamando", foto: b64, texto_visitante: document.getElementById('msg').value || "Visitante" });
+
+        let s = 60; 
+        timerInterval = setInterval(() => { 
+            s--; 
+            document.getElementById('timer').innerText = s;
+            if(s <= 0) encerrarInterface("Ninguém atendeu.");
+        }, 1000);
+
+        onValue(ref(db, `chamadas_ativas/${u}`), (snap) => {
+            const res = snap.val()?.status;
+            if(res === "liberado") { alert("ENTRADA LIBERADA!"); location.reload(); }
+            if(res === "recusado") { encerrarInterface("Chamada Recusada."); }
+        });
+    };
+
+    function encerrarInterface(msg) {
+        clearInterval(timerInterval);
+        document.getElementById('som-ring').pause();
+        document.getElementById('txt-chamando').innerText = msg;
         document.getElementById('timer').style.display = 'none';
         document.getElementById('btn-canc-imediato').style.display = 'none';
         document.getElementById('pos-chamada').style.display = 'block';
     }
+
     window.voltarParaCam = () => {
+        document.getElementById('timer').style.display = 'block';
+        document.getElementById('timer').innerText = '60';
+        document.getElementById('btn-canc-imediato').style.display = 'block';
+        document.getElementById('pos-chamada').style.display = 'none';
         document.getElementById('t3').classList.remove('active');
         document.getElementById('t2').classList.add('active');
-        // Mantém a selfie já feita
     };
 </script>
+</body>
+</html>
