@@ -1,102 +1,38 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin | Virty Access</title>
-    <style>
-        :root { --neon: #39FF14; --bg: #000; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; padding: 20px; margin: 0; }
-        header { border-bottom: 2px solid var(--neon); text-align: center; padding: 20px; margin-bottom: 30px; }
-        .card { background: #080808; border: 1px solid #222; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; border-radius: 15px; }
-        
-        /* Miniatura Prioritária */
-        .thumb { 
-            width: 65px; height: 65px; border-radius: 50%; object-fit: cover; 
-            margin-right: 15px; border: 2px solid var(--neon); background: #111;
-        }
-
-        .info { flex: 1; }
-        .info b { color: var(--neon); font-size: 1.1rem; }
-        .info p { margin: 3px 0; font-size: 0.85rem; color: #aaa; }
-        
-        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.7rem; }
-        .btn-ok { background: var(--neon); color: #000; }
-        .btn-del { background: #ff4d4d; color: #fff; }
-        
-        .search { width: 100%; padding: 15px; background: #111; border: 1px solid var(--neon); color: #fff; border-radius: 12px; margin-bottom: 20px; outline: none; box-sizing: border-box; }
-        h2 { font-size: 1rem; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-top: 30px; }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>PAINEL DE CONTROLE / VIRTY ACCESS</h1>
-    </header>
-
-    <div style="max-width: 800px; margin: 0 auto;">
-        <input type="text" id="busca" class="search" placeholder="Pesquisar por nome ou unidade..." oninput="filtrar()">
-
-        <h2>Solicitações de Cadastro</h2>
-        <div id="lista-pendentes"></div>
-
-        <h2>Moradores Ativos</h2>
-        <div id="lista-ativos"></div>
-    </div>
-
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    // ... (configurações do firebase) ...
 
-    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
-    const app = initializeApp(config);
-    const db = getDatabase(app);
-
-    // Listar Pendentes
+    // Listar Pendentes com todos os campos
     onValue(ref(db, 'moradores_pendentes'), (snap) => {
         const div = document.getElementById('lista-pendentes'); div.innerHTML = '';
         snap.forEach(item => {
             const m = item.val();
-            div.innerHTML += `<div class="card">
-                <img src="${m.foto || ''}" class="thumb" onerror="this.src='https://via.placeholder.com/65/000/39FF14?text=...'">
-                <div class="info">
-                    <b>Apto ${m.unidade}</b> - ${m.nome}
-                    <p>CPF: ${m.cpf || 'Não informado'} | Tel: ${m.tel || 'Não informado'}</p>
+            div.innerHTML += `<div class="card" style="flex-direction:column; align-items:flex-start">
+                <div style="display:flex; align-items:center; width:100%">
+                    <img src="${m.foto}" class="thumb">
+                    <div class="info">
+                        <b>Apto ${m.unidade}</b> - ${m.nome}<br>
+                        <small>CPF: ${m.cpf} | Tel: ${m.tel}</small>
+                    </div>
                 </div>
-                <button class="btn btn-ok" onclick="aprovar('${m.unidade}')">Liberar</button>
+                <button class="btn btn-ok" style="width:100%; margin-top:10px" onclick="aprovar('${m.id}', '${m.unidade}')">APROVAR MORADOR</button>
             </div>`;
         });
     });
 
-    // Listar Ativos com Miniatura
-    onValue(ref(db, 'moradores'), (snap) => {
-        const div = document.getElementById('lista-ativos'); div.innerHTML = '';
-        snap.forEach(item => {
-            const m = item.val();
-            div.innerHTML += `<div class="card m-item" data-n="${m.nome.toLowerCase()}" data-u="${m.unidade}">
-                <img src="${m.foto}" class="thumb">
-                <div class="info">
-                    <b>Apto ${m.unidade}</b> - ${m.nome}
-                    <p>📞 ${m.tel || '---'} | 🪪 ${m.cpf || '---'}</p>
-                </div>
-                <button class="btn btn-del" onclick="excluir('${m.unidade}')">Remover</button>
-            </div>`;
-        });
-    });
+    window.aprovar = async (id, un) => {
+        // Incrementa contagem da unidade e move para validados
+        const snap = await get(ref(db, `moradores_pendentes/${id}`));
+        const dados = snap.val();
+        
+        // Move para lista de validados usando o ID do aparelho
+        set(ref(db, `moradores_validados/${id}`), dados);
+        
+        // Atualiza contador da unidade
+        const countSnap = await get(ref(db, `unidades_contagem/${un}`));
+        const novoTotal = (countSnap.val() || 0) + 1;
+        set(ref(db, `unidades_contagem/${un}`), novoTotal);
 
-    window.aprovar = (un) => {
-        onValue(ref(db, `moradores_pendentes/${un}`), (s) => {
-            if(s.exists()){ set(ref(db, `moradores/${un}`), s.val()).then(() => remove(ref(db, `moradores_pendentes/${un}`))); }
-        }, { onlyOnce: true });
-    };
-
-    window.excluir = (un) => { if(confirm("Deseja remover este morador?")) remove(ref(db, `moradores/${un}`)); };
-
-    window.filtrar = () => {
-        const b = document.getElementById('busca').value.toLowerCase();
-        document.querySelectorAll('.m-item').forEach(i => {
-            i.style.display = (i.dataset.n.includes(b) || i.dataset.u.includes(b)) ? 'flex' : 'none';
-        });
+        // Remove dos pendentes
+        remove(ref(db, `moradores_pendentes/${id}`));
     };
 </script>
-</body>
-</html>
