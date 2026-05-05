@@ -2,78 +2,64 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Virty Admin Fix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virty Admin - Emergência</title>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .box { border: 2px solid #39FF14; padding: 20px; border-radius: 15px; background: #111; margin-top: 30px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 18px; background: #39FF14; color: #000; font-weight: bold; border: none; border-radius: 10px; text-transform: uppercase; cursor: pointer; }
-        .item { border: 1px solid #333; background: #0a0a0a; margin: 10px 0; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .box { border: 2px solid #39FF14; padding: 20px; border-radius: 15px; background: #111; margin-top: 50px; }
+        button { width: 100%; padding: 20px; background: #39FF14; color: #000; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; text-transform: uppercase; }
+        .item { border: 1px solid #333; margin: 10px 0; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; }
         .img-u { width: 50px; height: 50px; border-radius: 50%; border: 1px solid #39FF14; object-fit: cover; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
+    <div id="login-sec">
         <div class="box">
-            <h2 style="color:#39FF14">VIRTY ADMIN</h2>
-            <p style="font-size: 0.8rem; color: #666;">Digite exatamente: Virty_123quatro@#</p>
-            <input type="text" id="user-n" placeholder="Seu Nome">
-            <input type="text" id="user-c" placeholder="Chave Mestra" autocomplete="off" autocapitalize="none">
-            <button onclick="valida()">ENTRAR NO PAINEL</button>
+            <h2 style="color:#39FF14">MODO DE EMERGÊNCIA</h2>
+            <p>Clique no botão abaixo para forçar a entrada sem senha e liberar o sistema.</p>
+            <button onclick="forcarEntrada()">FORÇAR ENTRADA (SEM SENHA)</button>
         </div>
     </div>
 
-    <div id="dash-screen" style="display:none;">
-        <h3 id="welcome"></h3>
-        <div id="lista">Buscando solicitações...</div>
+    <div id="dash-sec" style="display:none;">
+        <h2 style="color:#39FF14">PAINEL DE CONTROLE</h2>
+        <div id="lista">Buscando...</div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // Configuração direta do seu Firebase
+        // Usei a URL exata do seu banco que você confirmou que funciona
         const config = { 
             apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
             databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
         };
         firebase.initializeApp(config);
 
-        function valida() {
-            const n = document.getElementById('user-n').value.trim();
-            const c = document.getElementById('user-c').value.trim(); // O trim() remove espaços acidentais
-            const SENHA_CORRETA = "Virty_123quatro@#";
-
-            console.log("Tentando login com:", c); // Para debug se necessário
-
-            if(c === SENHA_CORRETA && n !== "") {
-                document.getElementById('welcome').innerText = "Admin: " + n;
-                document.getElementById('login-screen').style.display = "none";
-                document.getElementById('dash-screen').style.display = "block";
+        function forcarEntrada() {
+            // PULA A SENHA COMPLETAMENTE
+            document.getElementById('login-sec').style.display = "none";
+            document.getElementById('dash-sec').style.display = "block";
+            
+            firebase.database().ref('moradores_pendentes').on('value', snap => {
+                const lista = document.getElementById('lista');
+                lista.innerHTML = "<h4>PENDENTES</h4>";
+                if(!snap.exists()) lista.innerHTML += "<p>Ninguém aguardando.</p>";
                 
-                // Monitorar Pendentes
-                firebase.database().ref('moradores_pendentes').on('value', snap => {
-                    const lista = document.getElementById('lista');
-                    lista.innerHTML = "<h4>PENDENTES</h4>";
-                    if(!snap.exists()) lista.innerHTML += "<p>Nenhum morador aguardando.</p>";
-                    
-                    snap.forEach(item => {
-                        const m = item.val();
-                        lista.innerHTML += `
-                            <div class="item">
-                                <img src="${m.foto}" class="img-u">
-                                <div style="text-align:left; flex:1; margin-left:10px;">
-                                    <b>CASA ${m.unidade}</b><br><small>${m.nome}</small>
-                                </div>
-                                <button onclick="liberar('${m.id}')" style="width:70px; padding:10px; font-size:10px;">APROVAR</button>
-                            </div>`;
-                    });
+                snap.forEach(item => {
+                    const m = item.val();
+                    lista.innerHTML += `
+                        <div class="item">
+                            <img src="${m.foto}" class="img-u">
+                            <div style="text-align:left; flex:1; margin-left:10px;">
+                                <b>UN: ${m.unidade}</b><br><small>${m.nome}</small>
+                            </div>
+                            <button onclick="liberar('${m.id}')" style="width:80px; padding:10px; font-size:10px;">LIBERAR</button>
+                        </div>`;
                 });
-            } else {
-                alert("ACESSO NEGADO!\n\nVerifique:\n1. Se o 'V' é maiúsculo\n2. Se não tem o 'N' no quatro\n3. Se o nome não está vazio");
-            }
+            });
         }
 
         window.liberar = (id) => {
@@ -82,7 +68,7 @@
                 if(s.exists()){
                     firebase.database().ref('moradores_validados/' + id).set(s.val());
                     pRef.remove();
-                    alert("Morador Ativado com Sucesso!");
+                    alert("Morador Aprovado!");
                 }
             });
         }
