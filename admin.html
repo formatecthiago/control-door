@@ -1,115 +1,91 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Virty Admin</title>
+    <title>Virty Admin Fix</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 20px; text-align: center; }
-        .card { background: #111; border: 1px solid var(--neon); padding: 25px; border-radius: 20px; margin-top: 40px; }
-        input { width: 100%; padding: 18px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #000; color: #fff; font-size: 1.1rem; box-sizing: border-box; }
-        button { width: 100%; padding: 20px; background: var(--neon); color: #000; border: none; border-radius: 40px; font-weight: bold; cursor: pointer; font-size: 1rem; text-transform: uppercase; }
-        .item { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; display: flex; align-items: center; margin-bottom: 10px; text-align: left; }
-        .img-u { width: 55px; height: 55px; border-radius: 50%; margin-right: 12px; border: 2px solid var(--neon); object-fit: cover; }
-        .info { flex: 1; font-size: 0.9rem; }
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .box { border: 2px solid #39FF14; padding: 20px; border-radius: 15px; background: #111; margin-top: 30px; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 18px; background: #39FF14; color: #000; font-weight: bold; border: none; border-radius: 10px; text-transform: uppercase; cursor: pointer; }
+        .item { border: 1px solid #333; background: #0a0a0a; margin: 10px 0; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .img-u { width: 50px; height: 50px; border-radius: 50%; border: 1px solid #39FF14; object-fit: cover; }
     </style>
 </head>
 <body>
 
-    <div id="login-sec">
-        <div class="card">
-            <h2 style="color:var(--neon)">VIRTY ADMIN</h2>
-            <input type="text" id="adm-n" placeholder="Seu Nome">
-            <input type="password" id="adm-c" placeholder="Chave Mestra">
-            <button onclick="entrar()">ENTRAR NO SISTEMA</button>
+    <div id="login-screen">
+        <div class="box">
+            <h2 style="color:#39FF14">VIRTY ADMIN</h2>
+            <p style="font-size: 0.8rem; color: #666;">Digite exatamente: Virty_123quatro@#</p>
+            <input type="text" id="user-n" placeholder="Seu Nome">
+            <input type="text" id="user-c" placeholder="Chave Mestra" autocomplete="off" autocapitalize="none">
+            <button onclick="valida()">ENTRAR NO PAINEL</button>
         </div>
     </div>
 
-    <div id="dash-sec" style="display:none;">
-        <h3 id="boas-vindas"></h3>
-        <div id="lista-p"></div>
-        <hr style="border:0; border-top:1px solid #222; margin:20px 0;">
-        <div id="lista-m"></div>
+    <div id="dash-screen" style="display:none;">
+        <h3 id="welcome"></h3>
+        <div id="lista">Buscando solicitações...</div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // Configuração direta
+        // Configuração direta do seu Firebase
         const config = { 
             apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
-            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", 
-            projectId: "virty-access-door" 
+            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
         };
-        
-        // Inicializa se não estiver inicializado
-        if (!firebase.apps.length) {
-            firebase.initializeApp(config);
-        }
-        const db = firebase.database();
+        firebase.initializeApp(config);
 
-        function entrar() {
-            const n = document.getElementById('adm-n').value;
-            const c = document.getElementById('adm-c').value;
-            const CHAVE = "Virty_123quatro@#";
+        function valida() {
+            const n = document.getElementById('user-n').value.trim();
+            const c = document.getElementById('user-c').value.trim(); // O trim() remove espaços acidentais
+            const SENHA_CORRETA = "Virty_123quatro@#";
 
-            if (c === CHAVE && n !== "") {
-                document.getElementById('boas-vindas').innerText = "Painel: " + n;
-                document.getElementById('login-sec').style.display = "none";
-                document.getElementById('dash-sec').style.display = "block";
-                monitorar();
+            console.log("Tentando login com:", c); // Para debug se necessário
+
+            if(c === SENHA_CORRETA && n !== "") {
+                document.getElementById('welcome').innerText = "Admin: " + n;
+                document.getElementById('login-screen').style.display = "none";
+                document.getElementById('dash-screen').style.display = "block";
+                
+                // Monitorar Pendentes
+                firebase.database().ref('moradores_pendentes').on('value', snap => {
+                    const lista = document.getElementById('lista');
+                    lista.innerHTML = "<h4>PENDENTES</h4>";
+                    if(!snap.exists()) lista.innerHTML += "<p>Nenhum morador aguardando.</p>";
+                    
+                    snap.forEach(item => {
+                        const m = item.val();
+                        lista.innerHTML += `
+                            <div class="item">
+                                <img src="${m.foto}" class="img-u">
+                                <div style="text-align:left; flex:1; margin-left:10px;">
+                                    <b>CASA ${m.unidade}</b><br><small>${m.nome}</small>
+                                </div>
+                                <button onclick="liberar('${m.id}')" style="width:70px; padding:10px; font-size:10px;">APROVAR</button>
+                            </div>`;
+                    });
+                });
             } else {
-                alert("Verifique a senha e o nome.");
+                alert("ACESSO NEGADO!\n\nVerifique:\n1. Se o 'V' é maiúsculo\n2. Se não tem o 'N' no quatro\n3. Se o nome não está vazio");
             }
         }
 
-        function monitorar() {
-            // Pendentes
-            db.ref('moradores_pendentes').on('value', snap => {
-                const div = document.getElementById('lista-p');
-                div.innerHTML = "<h4 style='color:orange'>PENDENTES</h4>";
-                snap.forEach(item => {
-                    const m = item.val();
-                    div.innerHTML += `
-                        <div class="item">
-                            <img src="${m.foto}" class="img-u">
-                            <div class="info"><b>CASA ${m.unidade}</b><br>${m.nome}</div>
-                            <button onclick="aprovar('${m.id}')" style="width:60px; padding:8px; font-size:0.7rem">OK</button>
-                        </div>`;
-                });
-            });
-
-            // Validados
-            db.ref('moradores_validados').on('value', snap => {
-                const div = document.getElementById('lista-m');
-                div.innerHTML = "<h4 style='color:var(--neon)'>ATIVOS</h4>";
-                snap.forEach(item => {
-                    const m = item.val();
-                    div.innerHTML += `
-                        <div class="item">
-                            <img src="${m.foto}" class="img-u">
-                            <div class="info"><b>CASA ${m.unidade}</b><br>${m.nome}</div>
-                            <button onclick="deletar('${m.id}')" style="width:60px; padding:8px; background:red; color:white; font-size:0.7rem">DEL</button>
-                        </div>`;
-                });
-            });
-        }
-
-        window.aprovar = (id) => {
-            db.ref('moradores_pendentes/' + id).once('value', s => {
+        window.liberar = (id) => {
+            const pRef = firebase.database().ref('moradores_pendentes/' + id);
+            pRef.once('value', s => {
                 if(s.exists()){
-                    db.ref('moradores_validados/' + id).set(s.val());
-                    db.ref('moradores_pendentes/' + id).remove();
-                    alert("Morador Aprovado!");
+                    firebase.database().ref('moradores_validados/' + id).set(s.val());
+                    pRef.remove();
+                    alert("Morador Ativado com Sucesso!");
                 }
             });
-        };
-
-        window.deletar = (id) => {
-            if(confirm("Remover morador?")) db.ref('moradores_validados/' + id).remove();
-        };
+        }
     </script>
 </body>
 </html>
