@@ -6,129 +6,119 @@
     <title>Virty Access - Morador</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; }
-        body { background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
-        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; padding: 30px; text-align: center; }
+        body { background: var(--bg); color: white; margin: 0; font-family: 'Segoe UI', sans-serif; }
+        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; padding: 25px; margin: 0 auto; box-sizing: border-box; }
         .active { display: flex; }
-        h2 { color: var(--neon); text-transform: uppercase; letter-spacing: 1px; }
-        .btn { width: 100%; padding: 20px; border-radius: 35px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; transition: 0.2s; }
+        
+        h2 { color: var(--neon); text-transform: uppercase; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 8px 0; }
         .btn-green { background: var(--neon); color: black; }
         .btn-red { background: #ff3333; color: white; }
-        .btn-gray { background: #222; color: #fff; }
         .btn-silence { background: #111; color: #555; border: 1px solid #333; font-size: 0.8rem; }
         .btn-silence.on { color: orange; border-color: orange; }
-        .caller-img { width: 220px; height: 220px; border-radius: 25px; object-fit: cover; border: 4px solid var(--neon); margin: 20px auto; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); }
-        input { width: 100%; padding: 18px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #0a0a0a; color: white; font-size: 1rem; text-align: center; }
+
+        /* Histórico Estilizado */
+        .history-container { margin-top: 25px; text-align: left; }
+        .history-item { 
+            background: #0a0a0a; border: 1px solid #222; padding: 10px; 
+            border-radius: 12px; display: flex; align-items: center; margin-bottom: 8px;
+        }
+        .hist-thumb { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; margin-right: 12px; border: 1px solid #333; }
+        .hist-info b { font-size: 0.85rem; color: #ddd; }
+        .hist-info p { font-size: 0.7rem; color: #666; margin: 0; }
+
+        #s-call { text-align: center; }
+        .caller-img { width: 200px; height: 200px; border-radius: 20px; object-fit: cover; border: 3px solid var(--neon); margin: 20px auto; }
     </style>
 </head>
 <body>
 
-    <div id="s-cad" class="screen">
-        <h2>VIRTY ACCESS</h2>
-        <p style="color: #666;">Cadastre sua unidade</p>
-        <input type="text" id="n" placeholder="Nome Completo">
-        <input type="number" id="u" placeholder="Número da Unidade">
-        <button class="btn btn-green" onclick="reg()">SOLICITAR ACESSO</button>
-    </div>
-
-    <div id="s-wait" class="screen">
-        <h2 style="color:orange">EM ANÁLISE</h2>
-        <div style="font-size: 4rem; margin: 30px;">⏳</div>
-        <p>Seu acesso está sendo verificado pelo administrador.</p>
-    </div>
-
-    <div id="s-home" class="screen">
-        <h2>SISTEMA ONLINE</h2>
-        <p>Bem-vindo, Unidade <b id="view-u" style="color:var(--neon)"></b></p>
-        <div style="padding:50px 20px; border:1px dashed #222; border-radius:20px; color:#444; margin: 30px 0;">
-            📡 Monitorando entrada...
-        </div>
+    <div id="s-home" class="screen active">
+        <h2>UNIDADE <span id="view-u"></span></h2>
         <button id="btn-silenciar" class="btn btn-silence" onclick="toggleSilencio()">🔕 SILENCIAR CHAMADAS</button>
+        
+        <div class="history-container">
+            <h3 style="font-size: 0.9rem; color: #888;">HISTÓRICO RECENTE</h3>
+            <div id="lista-historico">
+                <p style="color:#333; font-size: 0.8rem;">Nenhuma chamada registrada.</p>
+            </div>
+        </div>
     </div>
 
     <div id="s-call" class="screen">
-        <h2 style="color:var(--neon)">VISITANTE NA PORTA!</h2>
-        <img id="visitante-foto" class="caller-img">
-        <p id="visitante-msg" style="font-weight: bold;"></p>
+        <h2 style="color:var(--neon)">VISITANTE!</h2>
+        <img id="v-foto" class="caller-img">
+        <p id="v-msg" style="font-size: 1.1rem;"></p>
         <button class="btn btn-green" onclick="responder('liberado')">ABRIR PORTÃO</button>
         <button class="btn btn-red" onclick="responder('recusado')">RECUSAR</button>
     </div>
 
-    <audio id="som-campainha" loop preload="auto">
-        <source src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3" type="audio/mpeg">
-    </audio>
+    <audio id="som-campainha" loop src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, update, set, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
     const app = initializeApp(config);
     const db = getDatabase(app);
-    let lUn = localStorage.getItem('virty_un');
-    let silencioso = false;
+    let lUn = localStorage.getItem('virty_un'), silencioso = false;
 
-    function show(id){ 
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
-        document.getElementById(id).classList.add('active'); 
+    if(lUn) {
+        document.getElementById('view-u').innerText = lUn;
+        vigiar();
+        carregarHistorico();
     }
 
-    // Só limpa se o Admin deletar. Removido botão de Sair.
-    window.limparEvoltar = () => { localStorage.clear(); location.reload(); };
-
-    window.toggleSilencio = () => {
-        silencioso = !silencioso;
-        const btn = document.getElementById('btn-silenciar');
-        btn.innerText = silencioso ? "🔔 ATIVAR SOM" : "🔕 SILENCIAR CHAMADAS";
-        btn.classList.toggle('on', silencioso);
-    };
-
-    if(!lUn) { 
-        show('s-cad'); 
-    } else {
-        onValue(ref(db, `moradores/${lUn}`), (s) => {
-            if(s.exists()){ 
-                document.getElementById('view-u').innerText = lUn; 
-                show('s-home');
-                vigiarChamadas(); 
-            } else { 
-                // Se não existe no moradores, checa se está pendente. Se nem pendente está, o admin deletou.
-                onValue(ref(db, `moradores_pendentes/${lUn}`), (sp) => { 
-                    if(sp.exists()) { show('s-wait'); } else { limparEvoltar(); }
-                }); 
-            }
-        });
-    }
-
-    function vigiarChamadas() {
+    function vigiar() {
         const som = document.getElementById('som-campainha');
         onValue(ref(db, `chamadas_ativas/${lUn}`), (snap) => {
             if(snap.exists() && snap.val().status === "chamando") {
                 const dados = snap.val();
-                document.getElementById('visitante-foto').src = dados.foto;
-                document.getElementById('visitante-msg').innerText = dados.texto_visitante;
-                show('s-call');
-                if(!silencioso) som.play().catch(e => console.log("Play block:", e));
+                document.getElementById('v-foto').src = dados.foto;
+                document.getElementById('v-msg').innerText = dados.texto_visitante;
+                
+                // Grava no histórico local assim que a chamada entra
+                push(ref(db, `historico/${lUn}`), { 
+                    foto: dados.foto, 
+                    hora: new Date().toLocaleTimeString(), 
+                    data: new Date().toLocaleDateString() 
+                });
+
+                document.getElementById('s-home').classList.remove('active');
+                document.getElementById('s-call').classList.add('active');
+                if(!silencioso) som.play().catch(()=>{});
             } else {
-                som.pause(); som.currentTime = 0;
-                if(document.getElementById('s-call').classList.contains('active')) show('s-home');
+                som.pause();
+                document.getElementById('s-call').classList.remove('active');
+                document.getElementById('s-home').classList.add('active');
             }
         });
     }
 
-    window.responder = (status) => {
-        update(ref(db, `chamadas_ativas/${lUn}`), { status: status });
-        // Som para imediatamente ao responder
-        document.getElementById('som-campainha').pause();
-    };
-
-    window.reg = () => {
-        const un = document.getElementById('u').value, nom = document.getElementById('n').value;
-        if(!un || !nom) return alert("Preencha unidade e nome!");
-        set(ref(db, `moradores_pendentes/${un}`), { nome: nom, unidade: un, foto: "" })
-        .then(() => { 
-            localStorage.setItem('virty_un', un); 
-            location.reload(); 
+    function carregarHistorico() {
+        onValue(ref(db, `historico/${lUn}`), (snap) => {
+            const div = document.getElementById('lista-historico'); div.innerHTML = '';
+            let itens = [];
+            snap.forEach(i => { itens.unshift(i.val()); }); // Inverte para o mais novo vir primeiro
+            
+            itens.slice(0, 5).forEach(m => { // Mostra as últimas 5
+                div.innerHTML += `<div class="history-item">
+                    <img src="${m.foto}" class="hist-thumb">
+                    <div class="hist-info">
+                        <b>Visitante</b>
+                        <p>${m.data} às ${m.hora}</p>
+                    </div>
+                </div>`;
+            });
         });
+    }
+
+    window.responder = (st) => update(ref(db, `chamadas_ativas/${lUn}`), { status: st });
+    window.toggleSilencio = () => {
+        silencioso = !silencioso;
+        document.getElementById('btn-silenciar').classList.toggle('on', silencioso);
+        document.getElementById('btn-silenciar').innerText = silencioso ? "🔔 ATIVAR SOM" : "🔕 SILENCIAR CHAMADAS";
     };
 </script>
 </body>
