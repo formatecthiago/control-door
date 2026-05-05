@@ -6,22 +6,19 @@
     <title>Virty Access - Visitante</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
         .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 20px; text-align: center; box-sizing: border-box; }
         .active { display: flex; }
         
-        /* Tela Inicial */
         .seta { font-size: 3rem; color: var(--neon); margin-bottom: 10px; animation: bounce 1s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
-        h1 { font-size: 3.5rem; font-weight: 900; color: var(--neon); margin: 10px 0; line-height: 1; }
+        h1 { font-size: 3rem; font-weight: 900; color: var(--neon); margin: 10px 0; line-height: 1; text-transform: uppercase; }
 
-        /* Video e Selfie */
-        .video-box { width: 100%; height: 320px; background: #111; border-radius: 20px; overflow: hidden; border: 2px solid var(--neon); margin-bottom: 15px; position: relative; }
+        .video-box { width: 100%; height: 300px; background: #111; border-radius: 20px; overflow: hidden; border: 2px solid var(--neon); margin-bottom: 15px; position: relative; }
         video, canvas { width: 100%; height: 100%; object-fit: cover; }
         #photo-taken { position: absolute; top: 0; left: 0; display: none; z-index: 5; }
 
-        /* Inputs e Botões */
-        input { width: 100%; padding: 18px; margin: 8px 0; border-radius: 12px; border: 1px solid #333; background: #0a0a0a; color: white; font-size: 1.1rem; text-align: center; box-sizing: border-box; }
+        input { width: 100%; padding: 20px; margin: 8px 0; border-radius: 12px; border: 1px solid #333; background: #0a0a0a; color: white; font-size: 1.2rem; text-align: center; box-sizing: border-box; }
         .btn { width: 100%; padding: 22px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 8px 0; font-size: 1rem; }
         .btn-green { background: var(--neon); color: black; }
         .btn-white { background: #fff; color: #000; }
@@ -30,18 +27,20 @@
         /* Pop-up de Status */
         #popup-status { 
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            background: #111; border: 3px solid var(--neon); padding: 30px; width: 80%; 
-            border-radius: 20px; z-index: 100; box-shadow: 0 0 50px rgba(0,0,0,1);
+            background: #000; border: 3px solid var(--neon); padding: 30px; width: 85%; 
+            border-radius: 25px; z-index: 1000; box-shadow: 0 0 100px rgba(0,0,0,1); text-align: center;
         }
+
+        #timer { font-size: 5rem; font-weight: bold; color: var(--neon); margin: 20px 0; text-shadow: 0 0 20px rgba(57,255,20,0.5); }
     </style>
 </head>
 <body>
 
     <div id="t1" class="screen active">
-        <h2 style="font-size: 2rem; margin-top: 50px;">Olá.</h2>
-        <h1>INICIE SUA CHAMADA AGORA</h1>
+        <h2 style="font-size: 2rem; margin-top: 60px; color: #555;">Olá.</h2>
+        <h1>INICIE SUA CHAMADA</h1>
         <div class="seta">↓</div>
-        <button class="btn btn-green" onclick="abrirCam()">CLIQUE AQUI PARA INICIAR</button>
+        <button class="btn btn-green" onclick="abrirCam()">CLIQUE PARA INICIAR</button>
     </div>
 
     <div id="t2" class="screen">
@@ -49,38 +48,38 @@
             <video id="v" autoplay playsinline muted></video>
             <canvas id="photo-taken"></canvas>
         </div>
-        <button class="btn btn-white" onclick="tirarSelfie()">📷 CAPTURAR IMAGEM (OBRIGATÓRIO)</button>
-        <input type="number" id="un" placeholder="Número da Casa" inputmode="numeric">
-        <input type="text" id="msg" placeholder="Mensagem (Opcional)" maxlength="60">
-        <button id="btn-chamar" class="btn btn-green" onclick="chamar()" disabled style="opacity: 0.3;">CHAMAR AGORA</button>
+        <button id="btn-foto" class="btn btn-white" onclick="tirarSelfie()">📷 TIRAR FOTO OBRIGATÓRIA</button>
+        <input type="number" id="un" placeholder="Nº da Unidade" inputmode="numeric">
+        <input type="text" id="msg" placeholder="Recado rápido (Opcional)" maxlength="60">
+        <button id="btn-chamar" class="btn btn-green" onclick="chamar()" disabled style="opacity: 0.3;">CHAMAR MORADOR</button>
     </div>
 
     <div id="t3" class="screen">
-        <div id="timer" style="font-size: 6rem; color: var(--neon); margin: 30px 0;">60</div>
-        <p id="txt-status">Chamando Unidade <b id="view-un"></b>...</p>
+        <div id="timer">60</div>
+        <p id="txt-status" style="font-size: 1.2rem;">Chamando Unidade <b id="view-un" style="color:var(--neon)"></b>...</p>
         
         <div id="controles-final" style="display:none; width:100%">
-            <button class="btn btn-green" onclick="voltarParaSelfie()">CHAMAR NOVAMENTE</button>
-            <button class="btn btn-red" onclick="location.reload()">FECHAR</button>
+            <button class="btn btn-green" onclick="location.reload()">NOVA CHAMADA</button>
         </div>
-        <button id="btn-canc-imediato" class="btn btn-red" onclick="location.reload()">CANCELAR</button>
+        <button id="btn-canc-imediato" class="btn btn-red" onclick="cancelarChamada()">CANCELAR</button>
     </div>
 
     <div id="popup-status">
-        <h2 id="pop-titulo" style="color:var(--neon); font-size: 2rem;"></h2>
-        <p id="pop-msg" style="font-size: 1.2rem;"></p>
+        <h2 id="pop-titulo" style="color:var(--neon); margin:0;"></h2>
+        <p id="pop-msg" style="margin: 20px 0; font-size: 1.3rem;"></p>
+        <button class="btn btn-white" onclick="location.reload()">FECHAR</button>
     </div>
 
     <audio id="som-ring" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
     const app = initializeApp(config);
     const db = getDatabase(app);
-    let b64 = "", timerInterval, unidadeAtual = "";
+    let b64 = "", timerInterval, unidadeAtual = "", ouvindoResposta = false;
 
     window.abrirCam = async () => {
         try {
@@ -88,7 +87,7 @@
             document.getElementById('v').srcObject = stream;
             document.getElementById('t1').classList.remove('active');
             document.getElementById('t2').classList.add('active');
-        } catch { alert("Por favor, autorize a câmera."); }
+        } catch { alert("Por favor, autorize o uso da câmera para prosseguir."); }
     };
 
     window.tirarSelfie = () => {
@@ -98,6 +97,8 @@
         canv.getContext('2d').drawImage(video, 0, 0);
         b64 = canv.toDataURL('image/jpeg', 0.5);
         canv.style.display = "block";
+        video.pause();
+        document.getElementById('btn-foto').innerText = "🔄 REFAZER FOTO";
         document.getElementById('btn-chamar').disabled = false;
         document.getElementById('btn-chamar').style.opacity = "1";
     };
@@ -109,39 +110,65 @@
         document.getElementById('view-un').innerText = unidadeAtual;
         document.getElementById('t2').classList.remove('active');
         document.getElementById('t3').classList.add('active');
-        document.getElementById('som-ring').play();
+        document.getElementById('som-ring').play().catch(()=>{});
 
-        set(ref(db, `chamadas_ativas/${unidadeAtual}`), { 
+        // LIMPA QUALQUER LIXO ANTERIOR E INICIA CHAMADA
+        const chamadaRef = ref(db, `chamadas_ativas/${unidadeAtual}`);
+        set(chamadaRef, { 
             status: "chamando", 
             foto: b64, 
-            texto_visitante: document.getElementById('msg').value || "Visitante na porta" 
+            texto_visitante: document.getElementById('msg').value || "Visitante na porta",
+            timestamp: Date.now()
         });
 
+        iniciarTimer();
+        vigiarResposta();
+    };
+
+    function iniciarTimer() {
         let tempo = 60;
         timerInterval = setInterval(() => {
             tempo--;
             document.getElementById('timer').innerText = tempo;
-            if(tempo <= 0) pararChamada("Sem resposta.");
+            if(tempo <= 0) pararChamada("Sem resposta. Tente novamente mais tarde.");
         }, 1000);
+    }
 
-        // Ouvir resposta do morador
+    function vigiarResposta() {
+        if(ouvindoResposta) return;
+        ouvindoResposta = true;
+        
         onValue(ref(db, `chamadas_ativas/${unidadeAtual}`), (snap) => {
             const dados = snap.val();
             if(!dados) return;
 
             if(dados.status === "liberado") {
-                exibirPopup("ENTRADA LIBERADA", "O portão foi aberto.");
-                setTimeout(() => location.reload(), 4000);
+                exibirPopup("ENTRADA LIBERADA", "O portão foi aberto. Pode entrar!");
+                registrarHistorico();
             } 
             else if(dados.status === "recusado") {
                 exibirPopup("CHAMADA RECUSADA", "O morador não pode atender no momento.");
-                setTimeout(() => location.reload(), 4000);
             }
             else if(dados.msg_morador) {
-                exibirPopup("MENSAGEM DO MORADOR", dados.msg_morador);
-                pararChamada("Mensagem recebida.");
+                // Se o morador enviou mensagem mas não abriu ainda
+                exibirPopup("MENSAGEM RECEBIDA", `"${dados.msg_morador}"`);
             }
         });
+    }
+
+    function registrarHistorico() {
+        const agora = new Date();
+        const data = agora.toLocaleDateString();
+        const hora = agora.toLocaleTimeString().slice(0,5);
+        // Salva no histórico da unidade para o Admin e Morador verem depois
+        set(ref(db, `historico/${unidadeAtual}/${Date.now()}`), {
+            foto: b64, data, hora, unidade: unidadeAtual
+        });
+    }
+
+    window.cancelarChamada = () => {
+        if(unidadeAtual) remove(ref(db, `chamadas_ativas/${unidadeAtual}`));
+        location.reload();
     };
 
     function exibirPopup(titulo, msg) {
@@ -159,17 +186,8 @@
         document.getElementById('timer').style.display = 'none';
         document.getElementById('btn-canc-imediato').style.display = 'none';
         document.getElementById('controles-final').style.display = 'block';
+        if(unidadeAtual) remove(ref(db, `chamadas_ativas/${unidadeAtual}`));
     }
-
-    window.voltarParaSelfie = () => {
-        document.getElementById('popup-status').style.display = 'none';
-        document.getElementById('controles-final').style.display = 'none';
-        document.getElementById('timer').style.display = 'block';
-        document.getElementById('timer').innerText = '60';
-        document.getElementById('btn-canc-imediato').style.display = 'block';
-        document.getElementById('t3').classList.remove('active');
-        document.getElementById('t2').classList.add('active');
-    };
 </script>
 </body>
 </html>
