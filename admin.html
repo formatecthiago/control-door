@@ -1,38 +1,59 @@
-<script type="module">
-    // ... (configurações do firebase) ...
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Virty</title>
+    <style>
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
+        .card { background: #111; border: 1px solid #39FF14; padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; }
+        .thumb { width: 60px; height: 60px; border-radius: 50%; margin-right: 15px; border: 1px solid #39FF14; }
+        .btn { background: #39FF14; color: #000; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2 style="color:#39FF14">PENDENTES</h2>
+    <div id="lista-p"></div>
+    <h2 style="color:#39FF14">ATIVOS</h2>
+    <div id="lista-a"></div>
 
-    // Listar Pendentes com todos os campos
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
+    const app = initializeApp(config);
+    const db = getDatabase(app);
+
     onValue(ref(db, 'moradores_pendentes'), (snap) => {
-        const div = document.getElementById('lista-pendentes'); div.innerHTML = '';
+        const div = document.getElementById('lista-p'); div.innerHTML = '';
         snap.forEach(item => {
             const m = item.val();
-            div.innerHTML += `<div class="card" style="flex-direction:column; align-items:flex-start">
-                <div style="display:flex; align-items:center; width:100%">
-                    <img src="${m.foto}" class="thumb">
-                    <div class="info">
-                        <b>Apto ${m.unidade}</b> - ${m.nome}<br>
-                        <small>CPF: ${m.cpf} | Tel: ${m.tel}</small>
-                    </div>
-                </div>
-                <button class="btn btn-ok" style="width:100%; margin-top:10px" onclick="aprovar('${m.id}', '${m.unidade}')">APROVAR MORADOR</button>
+            div.innerHTML += `<div class="card">
+                <img src="${m.foto}" class="thumb">
+                <div style="flex:1"><b>Apto ${m.unidade} - ${m.nome}</b><br><small>CPF: ${m.cpf} | Tel: ${m.tel}</small></div>
+                <button class="btn" onclick="aprovar('${m.id}')">APROVAR</button>
             </div>`;
         });
     });
 
-    window.aprovar = async (id, un) => {
-        // Incrementa contagem da unidade e move para validados
-        const snap = await get(ref(db, `moradores_pendentes/${id}`));
-        const dados = snap.val();
-        
-        // Move para lista de validados usando o ID do aparelho
-        set(ref(db, `moradores_validados/${id}`), dados);
-        
-        // Atualiza contador da unidade
-        const countSnap = await get(ref(db, `unidades_contagem/${un}`));
-        const novoTotal = (countSnap.val() || 0) + 1;
-        set(ref(db, `unidades_contagem/${un}`), novoTotal);
+    onValue(ref(db, 'moradores_validados'), (snap) => {
+        const div = document.getElementById('lista-a'); div.innerHTML = '';
+        snap.forEach(item => {
+            const m = item.val();
+            div.innerHTML += `<div class="card">
+                <img src="${m.foto}" class="thumb">
+                <div style="flex:1">Apto ${m.unidade} - ${m.nome}</div>
+                <button class="btn" style="background:red; color:white" onclick="remover('${m.id}')">X</button>
+            </div>`;
+        });
+    });
 
-        // Remove dos pendentes
-        remove(ref(db, `moradores_pendentes/${id}`));
+    window.aprovar = (id) => {
+        onValue(ref(db, `moradores_pendentes/${id}`), (s) => {
+            if(s.exists()) { set(ref(db, `moradores_validados/${id}`), s.val()).then(() => remove(ref(db, `moradores_pendentes/${id}`))); }
+        }, {onlyOnce: true});
     };
+    window.remover = (id) => { if(confirm("Remover?")) remove(ref(db, `moradores_validados/${id}`)); };
 </script>
+</body>
+</html>
