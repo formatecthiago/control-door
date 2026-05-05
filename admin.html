@@ -2,58 +2,168 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Virty</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Virty Access</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
-        .card { background: #111; border: 1px solid #39FF14; padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; }
-        .thumb { width: 60px; height: 60px; border-radius: 50%; margin-right: 15px; border: 1px solid #39FF14; }
-        .btn { background: #39FF14; color: #000; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        :root { --neon: #39FF14; --bg: #000; --grey: #222; --red: #ff3333; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        
+        /* Topo */
+        header { border-bottom: 1px solid var(--neon); padding-bottom: 15px; margin-bottom: 25px; }
+        .header-info { font-size: 0.85rem; color: #888; display: flex; justify-content: space-between; }
+        h1 { color: var(--neon); font-size: 1.2rem; margin: 5px 0; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* Blocos */
+        h2 { font-size: 1rem; color: var(--neon); border-left: 3px solid var(--neon); padding-left: 10px; margin-top: 30px; }
+        .card { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; position: relative; }
+        
+        /* Miniatura e Dados */
+        .thumb { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 1px solid var(--neon); margin-right: 15px; }
+        .dados { flex: 1; font-size: 0.85rem; }
+        .dados b { font-size: 1rem; color: #fff; }
+        .dados span { color: #666; display: block; }
+
+        /* Botões e Pesquisa */
+        .search-box { width: 100%; padding: 15px; background: #111; border: 1px solid #333; border-radius: 10px; color: #fff; margin-bottom: 20px; outline: none; }
+        .search-box:focus { border-color: var(--neon); }
+        
+        .icon-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; margin-left: 10px; padding: 10px; }
+        .btn-edit { color: #888; }
+        .btn-del { color: var(--red); }
+        .btn-ver-mais { background: var(--grey); color: #fff; width: 100%; padding: 10px; border-radius: 8px; border: none; cursor: pointer; margin-top: 5px; }
+        .btn-aprovar { background: var(--neon); color: #000; font-weight: bold; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+
+        /* Pop-up Confirmação */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; }
+        .modal { background: #111; border: 1px solid var(--red); padding: 25px; border-radius: 15px; text-align: center; width: 80%; max-width: 350px; }
+
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <h2 style="color:#39FF14">PENDENTES</h2>
-    <div id="lista-p"></div>
-    <h2 style="color:#39FF14">ATIVOS</h2>
-    <div id="lista-a"></div>
+
+    <header>
+        <div class="header-info">
+            <span id="data-hora">--/--/-- 00:00:00</span>
+            <span>Admin: <b>Thiago Vieira</b></span>
+        </div>
+        <h1>Admin Page - Virty Access Door</h1>
+        <small style="color:#444">CPF: 000.***.***-00</small>
+    </header>
+
+    <div style="max-width: 800px; margin: 0 auto;">
+        <h2>Solicitações de Acesso</h2>
+        <div id="lista-pendentes"></div>
+        <button id="btn-pendentes-mais" class="btn-ver-mais hidden" onclick="verMaisPendentes()">VER MAIS SOLICITAÇÕES</button>
+
+        <h2>Moradores Cadastrados</h2>
+        <input type="text" id="busca" class="search-box" placeholder="Pesquisa inteligente (Nome, Casa ou CPF)..." oninput="filtrar()">
+        <div id="lista-cadastrados"></div>
+    </div>
+
+    <div id="modal-del" class="overlay">
+        <div class="modal">
+            <h3 style="color:var(--red)">CONFIRMAR EXCLUSÃO?</h3>
+            <p>O acesso deste smartphone será bloqueado imediatamente.</p>
+            <div style="display:flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-ver-mais" onclick="fecharModal()">CANCELAR</button>
+                <button class="btn-ver-mais" style="background:var(--red)" id="confirma-excluir">DELETAR</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audio-sucesso" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, set, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
     const app = initializeApp(config);
     const db = getDatabase(app);
 
+    // Relógio em tempo real
+    setInterval(() => {
+        const d = new Date();
+        document.getElementById('data-hora').innerText = d.toLocaleDateString() + " " + d.toLocaleTimeString();
+    }, 1000);
+
+    // Listar Pendentes (3 Primeiros)
     onValue(ref(db, 'moradores_pendentes'), (snap) => {
-        const div = document.getElementById('lista-p'); div.innerHTML = '';
-        snap.forEach(item => {
-            const m = item.val();
-            div.innerHTML += `<div class="card">
-                <img src="${m.foto}" class="thumb">
-                <div style="flex:1"><b>Apto ${m.unidade} - ${m.nome}</b><br><small>CPF: ${m.cpf} | Tel: ${m.tel}</small></div>
-                <button class="btn" onclick="aprovar('${m.id}')">APROVAR</button>
-            </div>`;
+        const div = document.getElementById('lista-pendentes'); div.innerHTML = '';
+        let pendentes = [];
+        snap.forEach(i => { pendentes.push(i.val()); });
+        
+        pendentes.slice(0, 3).forEach(m => {
+            div.innerHTML += `
+                <div class="card">
+                    <img src="${m.foto}" class="thumb">
+                    <div class="dados">
+                        <b>CASA ${m.unidade} - ${m.nome}</b>
+                        <span>CPF: ${m.cpf}</span>
+                    </div>
+                    <button class="btn-aprovar" onclick="aprovar('${m.id}')">LIBERAR</button>
+                </div>`;
         });
+        document.getElementById('btn-pendentes-mais').classList.toggle('hidden', pendentes.length <= 3);
     });
 
+    // Listar Cadastrados com Busca
     onValue(ref(db, 'moradores_validados'), (snap) => {
-        const div = document.getElementById('lista-a'); div.innerHTML = '';
-        snap.forEach(item => {
-            const m = item.val();
-            div.innerHTML += `<div class="card">
-                <img src="${m.foto}" class="thumb">
-                <div style="flex:1">Apto ${m.unidade} - ${m.nome}</div>
-                <button class="btn" style="background:red; color:white" onclick="remover('${m.id}')">X</button>
-            </div>`;
+        const div = document.getElementById('lista-cadastrados'); div.innerHTML = '';
+        snap.forEach(i => {
+            const m = i.val();
+            const dataFormatada = new Date(m.id).toLocaleDateString();
+            div.innerHTML += `
+                <div class="card item-cadastrado" data-info="${m.nome} ${m.unidade} ${m.cpf}">
+                    <img src="${m.foto}" class="thumb">
+                    <div class="dados">
+                        <b>CASA ${m.unidade} - ${m.nome.split(' ').slice(0,2).join(' ')}</b>
+                        <span>CPF: ${m.cpf} | Tel: ${m.tel}</span>
+                        <span style="font-size:0.7rem">Cadastrado em: ${dataFormatada}</span>
+                    </div>
+                    <button class="icon-btn btn-edit" onclick="editar('${m.id}', '${m.nome}', '${m.tel}')">✎</button>
+                    <button class="icon-btn btn-del" onclick="abrirModalExcluir('${m.id}')">🗑</button>
+                </div>`;
         });
     });
 
     window.aprovar = (id) => {
-        onValue(ref(db, `moradores_pendentes/${id}`), (s) => {
-            if(s.exists()) { set(ref(db, `moradores_validados/${id}`), s.val()).then(() => remove(ref(db, `moradores_pendentes/${id}`))); }
-        }, {onlyOnce: true});
+        get(ref(db, `moradores_pendentes/${id}`)).then(s => {
+            if(s.exists()){
+                set(ref(db, `moradores_validados/${id}`), s.val()).then(() => {
+                    remove(ref(db, `moradores_pendentes/${id}`));
+                    document.getElementById('audio-sucesso').play();
+                });
+            }
+        });
     };
-    window.remover = (id) => { if(confirm("Remover?")) remove(ref(db, `moradores_validados/${id}`)); };
+
+    window.abrirModalExcluir = (id) => {
+        document.getElementById('modal-del').style.display = 'flex';
+        document.getElementById('confirma-excluir').onclick = () => {
+            remove(ref(db, `moradores_validados/${id}`)).then(() => fecharModal());
+        };
+    };
+
+    window.fecharModal = () => document.getElementById('modal-del').style.display = 'none';
+
+    window.editar = (id, nomeAtual, telAtual) => {
+        const novoNome = prompt("Editar Nome (Apenas 2 primeiros):", nomeAtual);
+        const novoTel = prompt("Editar Telefone:", telAtual);
+        if(novoNome && novoTel) {
+            const nomeCurto = novoNome.split(' ').slice(0,2).join(' ');
+            update(ref(db, `moradores_validados/${id}`), { nome: nomeCurto, tel: novoTel });
+        }
+    };
+
+    window.filtrar = () => {
+        const busca = document.getElementById('busca').value.toLowerCase();
+        document.querySelectorAll('.item-cadastrado').forEach(item => {
+            const texto = item.getAttribute('data-info').toLowerCase();
+            item.style.display = texto.includes(busca) ? 'flex' : 'none';
+        });
+    };
 </script>
 </body>
 </html>
