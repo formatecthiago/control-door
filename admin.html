@@ -3,216 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virty Admin | Painel de Controle</title>
+    <title>Virty Admin | Gestão</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --blue: #007BFF; --red: #ff3333; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; }
+        .screen { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .active { display: block; }
         
-        /* Pré-tela de Login */
-        #s-login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
-        .login-card { background: #0a0a0a; border: 1px solid var(--neon); padding: 35px; border-radius: 20px; width: 90%; max-width: 380px; box-shadow: 0 0 30px rgba(57, 255, 20, 0.1); }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; font-size: 1rem; }
+        /* Login */
+        #s-login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        .card-login { background: #0a0a0a; border: 1px solid var(--neon); padding: 30px; border-radius: 20px; width: 90%; max-width: 350px; }
         
-        /* Painel Principal */
-        #s-main { display: none; padding: 20px; max-width: 800px; margin: 0 auto; }
-        header { border-bottom: 1px solid var(--neon); padding-bottom: 15px; margin-bottom: 20px; }
-        .header-meta { display: flex; justify-content: space-between; font-size: 0.8rem; color: #666; }
-        
-        /* Botões */
-        .btn { width: 100%; padding: 18px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 8px 0; }
+        input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; }
+        .btn { width: 100%; padding: 18px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 5px 0; }
         .btn-green { background: var(--neon); color: black; }
         .btn-blue { background: var(--blue); color: white; }
-        .btn-red { background: var(--red); color: white; }
         
-        /* Gestão de Tokens (Só para Super Admin) */
-        #gestao-tokens { display: none; background: #0a0a0a; border: 1px dashed var(--blue); padding: 15px; border-radius: 15px; margin-bottom: 20px; }
-        .token-display { font-size: 1.5rem; color: var(--blue); font-weight: bold; margin: 10px 0; letter-spacing: 3px; }
-
-        /* Lista de Cadastrados */
-        .card { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 12px; border-radius: 15px; display: flex; align-items: center; margin-bottom: 10px; }
-        .thumb { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--neon); margin-right: 15px; object-fit: cover; }
-        .dados { flex: 1; font-size: 0.85rem; }
-        .dados b { font-size: 1rem; display: block; }
-        .acoes { display: flex; gap: 10px; }
-        .btn-icon { background: none; border: none; font-size: 1.3rem; cursor: pointer; }
+        /* Listas */
+        .item-card { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 15px; border-radius: 15px; display: flex; align-items: center; margin-bottom: 10px; }
+        .img-user { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--neon); margin-right: 15px; object-fit: cover; }
+        .info { flex: 1; font-size: 0.85rem; }
+        .info b { font-size: 1rem; color: var(--neon); display: block; }
+        .btns-acao { display: flex; gap: 8px; }
+        .btn-sm { padding: 8px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.7rem; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="s-login">
-        <div class="login-card">
-            <h1 style="color:var(--neon); font-size: 1.4rem;">VIRTY ACCESS DOOR</h1>
-            <p id="data-atual" style="font-size: 0.8rem; color: #555;"></p>
-            <input type="text" id="adm-nome" placeholder="Nome do Administrador">
-            <input type="number" id="adm-cpf" placeholder="CPF">
+    <div id="s-login" class="screen active">
+        <div class="card-login">
+            <h2 style="color:var(--neon); text-align: center;">VIRTY ADMIN</h2>
+            <input type="text" id="adm-nome" placeholder="Seu Nome">
             <input type="password" id="adm-chave" placeholder="Chave Mestra ou Token">
-            <button class="btn btn-green" onclick="validarAcesso()">ACESSAR PAINEL</button>
+            <button class="btn btn-green" onclick="logarAdmin()">ENTRAR</button>
         </div>
     </div>
 
-    <div id="s-main">
-        <header>
-            <div class="header-meta">
-                <span id="relogio"></span>
-                <span>ADMIN: <b id="nome-exibicao">--</b></span>
+    <div id="s-dash" class="screen">
+        <header style="border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 20px;">
+            <div id="area-token" style="display:none; background:#111; padding:15px; border-radius:15px; margin-bottom:15px; border:1px dashed var(--blue)">
+                <small style="color:var(--blue)">GERAR ACESSO (5 MIN)</small>
+                <h2 id="token-display" style="margin:5px 0;">----</h2>
+                <button class="btn-sm btn-blue" onclick="gerarToken()">GERAR NOVO TOKEN</button>
             </div>
-            <h2 style="color:var(--neon); margin: 10px 0;">ADMIN PAGE</h2>
-            <small id="cpf-exibicao" style="color:#444"></small>
+            <span>Olá, <b id="nome-adm"></b></span>
         </header>
 
-        <div id="gestao-tokens">
-            <h3 style="color:var(--blue); font-size: 0.9rem; margin-top: 0;">GERAR ACESSO TEMPORÁRIO (5 MIN)</h3>
-            <div id="token-gerado" class="token-display">----</div>
-            <button class="btn btn-blue" onclick="gerarTokenTemporario()">GERAR NOVA CHAVE</button>
-            <p style="font-size: 0.7rem; color: #555;">Passe este código para o novo administrador. Ele expira em 5 minutos.</p>
-        </div>
-
-        <input type="text" id="busca" placeholder="Pesquisa inteligente..." oninput="filtrar()" style="width:100%; padding:12px; background:#111; border:1px solid #333; border-radius:10px; color:white; box-sizing: border-box;">
-
-        <h3>SOLICITAÇÕES PENDENTES</h3>
+        <h3>PENDENTES DE APROVAÇÃO</h3>
         <div id="lista-p"></div>
 
-        <h3>MORADORES CADASTRADOS</h3>
-        <div id="lista-c"></div>
+        <h3 style="margin-top:30px;">MORADORES ATIVOS</h3>
+        <div id="lista-m"></div>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
     const app = initializeApp(config);
     const db = getDatabase(app);
 
-    const CHAVE_MESTRA_SISTEMA = "Virty_123quatro@#";
-    let adminLogado = JSON.parse(localStorage.getItem('virty_admin_sessao'));
+    const CHAVE_MASTER = "Virty_123quatro@#";
+    let admNome = "";
 
-    // Atualiza relógio e data
-    setInterval(() => {
-        const d = new Date();
-        document.getElementById('data-atual').innerText = d.toLocaleDateString();
-        if(document.getElementById('relogio')) document.getElementById('relogio').innerText = d.toLocaleTimeString();
-    }, 1000);
-
-    // 1. VERIFICAÇÃO DE SESSÃO EXISTENTE
-    if(adminLogado) {
-        get(ref(db, `admins_ativos/${adminLogado.token}`)).then(snap => {
-            if(snap.exists()) carregarPainel(snap.val());
-            else localStorage.removeItem('virty_admin_sessao');
-        });
-    }
-
-    // 2. LOGICA DE LOGIN (CHAVE MESTRA OU TOKEN)
-    window.validarAcesso = async () => {
+    window.logarAdmin = async () => {
         const nome = document.getElementById('adm-nome').value;
-        const cpf = document.getElementById('adm-cpf').value;
         const chave = document.getElementById('adm-chave').value;
 
-        if(!nome || !cpf || !chave) return alert("Preencha todos os campos.");
-
-        if(chave === CHAVE_MESTRA_SISTEMA) {
-            loginSucesso(nome, cpf, "super", "MASTER-" + Date.now());
+        if(chave === CHAVE_MASTER) {
+            entrar(nome, "super");
         } else {
-            // Verificar se é um token temporário válido no Firebase
             const snap = await get(ref(db, `tokens_temporarios/${chave}`));
-            if(snap.exists()) {
-                const tempoCriado = snap.val().timestamp;
-                const agora = Date.now();
-                if(agora - tempoCriado < 300000) { // 5 minutos em ms
-                    loginSucesso(nome, cpf, "comum", chave);
-                    remove(ref(db, `tokens_temporarios/${chave}`)); // "Queima" o token após usar
-                } else {
-                    alert("Este token já expirou (limite de 5 min).");
-                    remove(ref(db, `tokens_temporarios/${chave}`));
-                }
-            } else {
-                alert("Chave ou Token inválido.");
-            }
+            if(snap.exists() && (Date.now() - snap.val().ts < 300000)) {
+                entrar(nome, "comum");
+                remove(ref(db, `tokens_temporarios/${chave}`));
+            } else { alert("Chave inválida ou expirada."); }
         }
     };
 
-    function loginSucesso(nome, cpf, tipo, token) {
-        const dados = { nome, cpf, tipo, token, idAparelho: navigator.userAgent };
-        set(ref(db, `admins_ativos/${token}`), dados).then(() => {
-            localStorage.setItem('virty_admin_sessao', JSON.stringify(dados));
-            carregarPainel(dados);
-        });
+    function entrar(nome, tipo) {
+        admNome = nome;
+        document.getElementById('nome-adm').innerText = nome;
+        document.getElementById('s-login').classList.remove('active');
+        document.getElementById('s-dash').classList.add('active');
+        if(tipo === "super") document.getElementById('area-token').style.display = "block";
+        carregarDados();
     }
 
-    function carregarPainel(dados) {
-        document.getElementById('s-login').style.display = 'none';
-        document.getElementById('s-main').style.display = 'block';
-        document.getElementById('nome-exibicao').innerText = dados.nome;
-        document.getElementById('cpf-exibicao').innerText = "CPF: " + dados.cpf;
-        
-        if(dados.tipo === "super") {
-            document.getElementById('gestao-tokens').style.display = 'block';
-        }
-        iniciarListas();
-    }
-
-    // 3. GESTÃO DE TOKENS (SÓ SUPER ADMIN)
-    window.gerarTokenTemporario = () => {
-        const novoToken = Math.floor(1000 + Math.random() * 9000).toString();
-        set(ref(db, `tokens_temporarios/${novoToken}`), {
-            timestamp: Date.now(),
-            geradoPor: document.getElementById('nome-exibicao').innerText
-        }).then(() => {
-            document.getElementById('token-gerado').innerText = novoToken;
-        });
+    window.gerarToken = () => {
+        const tk = Math.floor(1000 + Math.random() * 9000).toString();
+        set(ref(db, `tokens_temporarios/${tk}`), { ts: Date.now() });
+        document.getElementById('token-display').innerText = tk;
     };
 
-    // 4. GESTÃO DE MORADORES (REUTILIZANDO LÓGICA SÓLIDA)
-    function iniciarListas() {
+    function carregarDados() {
+        // PENDENTES
         onValue(ref(db, 'moradores_pendentes'), snap => {
-            const div = document.getElementById('lista-p'); div.innerHTML = '';
-            snap.forEach(i => {
-                const m = i.val();
-                div.innerHTML += `<div class="card">
-                    <img src="${m.foto}" class="thumb">
-                    <div class="dados"><b>CASA ${m.unidade} - ${m.nome}</b><span>Aguardando Aprovação</span></div>
-                    <button class="btn-green" style="padding:10px; width:auto; border-radius:10px;" onclick="aprovar('${m.id}')">LIBERAR</button>
+            const div = document.getElementById('lista-p'); div.innerHTML = "";
+            snap.forEach(item => {
+                const m = item.val();
+                div.innerHTML += `<div class="item-card">
+                    <img src="${m.foto}" class="img-user">
+                    <div class="info"><b>CASA ${m.unidade} - ${m.nome}</b>CPF: ${m.cpf}<br>TEL: ${m.tel}</div>
+                    <div class="btns-acao">
+                        <button class="btn-sm btn-green" onclick="decidir('${m.id}', true)">OK</button>
+                        <button class="btn-sm" style="background:#ff3333; color:white;" onclick="decidir('${m.id}', false)">✖</button>
+                    </div>
                 </div>`;
             });
         });
 
+        // CADASTRADOS
         onValue(ref(db, 'moradores_validados'), snap => {
-            const div = document.getElementById('lista-c'); div.innerHTML = '';
-            snap.forEach(i => {
-                const m = i.val();
-                div.innerHTML += `<div class="card item-c" data-info="${m.nome} ${m.unidade}">
-                    <img src="${m.foto}" class="thumb">
-                    <div class="dados"><b>CASA ${m.unidade} - ${m.nome}</b><span>${m.cpf || '---'}</span></div>
-                    <div class="acoes">
-                        <button class="btn-icon" onclick="editar('${m.id}', '${m.nome}')">🔘</button>
-                        <button class="btn-icon" onclick="deletar('${m.id}')">🗑️</button>
+            const div = document.getElementById('lista-m'); div.innerHTML = "";
+            snap.forEach(item => {
+                const m = item.val();
+                div.innerHTML += `<div class="item-card">
+                    <img src="${m.foto}" class="img-user">
+                    <div class="info"><b>CASA ${m.unidade} - ${m.nome}</b>ID: ${m.id}</div>
+                    <div class="btns-acao">
+                        <button class="btn-sm" style="background:#555; color:white;" onclick="editar('${m.id}')">EDITAR</button>
+                        <button class="btn-sm" style="background:#ff3333; color:white;" onclick="deletar('${m.id}')">DELETAR</button>
                     </div>
                 </div>`;
             });
         });
     }
 
-    window.aprovar = (id) => {
-        get(ref(db, `moradores_pendentes/${id}`)).then(s => {
-            if(s.exists()) {
-                set(ref(db, `moradores_validados/${id}`), s.val()).then(() => remove(ref(db, `moradores_pendentes/${id}`)));
-            }
-        });
+    window.decidir = (id, aprovado) => {
+        const refP = ref(db, `moradores_pendentes/${id}`);
+        if(aprovado) {
+            get(refP).then(s => {
+                set(ref(db, `moradores_validados/${id}`), s.val());
+                remove(refP);
+            });
+        } else { remove(refP); }
     };
 
-    window.deletar = (id) => { if(confirm("Deseja realmente excluir este morador?")) remove(ref(db, `moradores_validados/${id}`)); };
-    
-    window.editar = (id, nome) => {
-        const n = prompt("Novo Nome (Apenas 2 primeiros):", nome);
-        if(n) update(ref(db, `moradores_validados/${id}`), { nome: n.split(' ').slice(0,2).join(' ') });
-    };
-
-    window.filtrar = () => {
-        const b = document.getElementById('busca').value.toLowerCase();
-        document.querySelectorAll('.item-c').forEach(el => {
-            el.style.display = el.getAttribute('data-info').toLowerCase().includes(b) ? 'flex' : 'none';
-        });
-    };
+    window.deletar = (id) => { if(confirm("Remover morador?")) remove(ref(db, `moradores_validados/${id}`)); };
 </script>
 </body>
 </html>
