@@ -5,86 +5,148 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Virty Morador</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; }
+        :root { --neon: #39FF14; --bg: #000; --blue: #007BFF; --red: #ff3333; --grey: #333; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; text-align: center; }
-        .screen { display: none; width: 100%; padding: 20px; box-sizing: border-box; }
-        .active { display: block; }
-        .cam-box { width: 250px; height: 250px; border-radius: 50%; border: 3px solid var(--neon); margin: 20px auto; overflow: hidden; }
-        .btn { width: 100%; padding: 20px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1.1rem; }
+        .screen { display: none; width: 100%; padding: 20px; box-sizing: border-box; flex-direction: column; min-height: 100vh; }
+        .active { display: flex; }
+        
+        /* Inputs Padronizados */
+        input { width: 100%; padding: 18px; margin: 8px 0; border-radius: 12px; background: #111; color: #fff; border: 1px solid var(--grey); font-size: 1.1rem; text-align: center; box-sizing: border-box; }
+        
+        /* Botões */
+        .btn { width: 100%; padding: 20px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 8px 0; font-size: 1rem; }
         .btn-green { background: var(--neon); color: black; }
-        .btn-red { background: #ff3333; color: white; }
-        input { width: 100%; padding: 20px; margin: 10px 0; border-radius: 15px; background: #111; color: #fff; border: 1px solid #333; font-size: 1.2rem; text-align: center; box-sizing: border-box; }
+        .btn-blue { background: var(--blue); color: white; }
+        .btn-red { background: var(--red); color: white; }
+        .btn-grey { background: var(--grey); color: white; }
+
+        /* Câmera e Selfie */
+        .circle-box { width: 180px; height: 180px; border-radius: 50%; border: 3px solid var(--neon); margin: 15px auto; overflow: hidden; position: relative; background: #111; }
+        video, canvas, .img-fit { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Histórico */
+        .hist-item { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 10px; border-radius: 15px; display: flex; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
+        .hist-img { width: 45px; height: 45px; border-radius: 50%; margin-right: 12px; border: 1px solid var(--neon); }
     </style>
 </head>
 <body>
 
-    <div id="s-cad" class="screen active">
+    <div id="s-cad" class="screen">
         <h2 style="color:var(--neon)">CADASTRO VIRTY</h2>
-        <input type="text" id="c-nome" placeholder="Nome Completo">
-        <input type="number" id="c-un" placeholder="Nº da Casa">
-        <button class="btn btn-green" onclick="cadastrar()">SOLICITAR ACESSO</button>
+        <div class="circle-box">
+            <video id="v-cad" autoplay playsinline muted></video>
+            <canvas id="c-selfie" style="display:none;"></canvas>
+        </div>
+        <button id="btn-foto" class="btn btn-grey" onclick="capturar()">📷 TIRAR FOTO</button>
+        <input type="text" id="in-nome" placeholder="Nome Completo">
+        <input type="number" id="in-cpf" placeholder="CPF (apenas números)" inputmode="numeric">
+        <input type="number" id="in-tel" placeholder="Telefone com DDD" inputmode="numeric">
+        <input type="number" id="in-un" placeholder="Número da Unidade" inputmode="numeric">
+        <button class="btn btn-green" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
+    </div>
+
+    <div id="s-wait" class="screen">
+        <h2 style="color:orange; margin-top: 50px;">ANÁLISE</h2>
+        <div class="circle-box" style="border-color: orange;"><img id="wait-foto" class="img-fit"></div>
+        <p>Olá <b id="wait-nome"></b>, aguarde enquanto o Admin autoriza seu acesso.</p>
+        <button class="btn btn-grey" onclick="location.reload()">VERIFICAR STATUS</button>
     </div>
 
     <div id="s-home" class="screen">
-        <h1 id="txt-un" style="font-size: 3rem; margin-top: 50px;">CASA --</h1>
-        <p style="color: var(--neon)">● SISTEMA CONECTADO</p>
+        <h1 id="home-un" style="font-size: 2.5rem; margin-top: 30px;">CASA --</h1>
+        <p style="color: var(--neon)">● SISTEMA ATIVO</p>
+        <hr style="width:100%; border:0; border-top:1px solid #1a1a1a; margin: 20px 0;">
+        <h3 style="text-align: left; font-size: 0.9rem; color: #555;">ÚLTIMAS CHAMADAS</h3>
+        <div id="lista-hist"></div>
+        <button id="btn-ver-mais" class="btn btn-grey" style="display:none; padding:10px; font-size: 0.8rem;" onclick="mostrarTudo()">Ver mais</button>
     </div>
 
-    <div id="s-call" class="screen">
-        <h2 style="color:var(--neon)">VISITANTE NA PORTA!</h2>
-        <div class="cam-box"><img id="img-v" style="width:100%; height:100%; object-fit:cover;"></div>
-        <p id="msg-v" style="font-style: italic; color: #aaa;"></p>
-        <button class="btn btn-green" onclick="responder('liberado')">ABRIR PORTÃO</button>
-        <button class="btn btn-red" onclick="responder('recusado')">RECUSAR</button>
+    <div id="s-call" class="screen" style="background: rgba(0,0,0,0.95); position:fixed; z-index:100; left:0; top:0;">
+        <h2 style="color:var(--neon); margin-top: 40px;">VISITANTE CHAMANDO!</h2>
+        <div class="circle-box" style="width:220px; height:220px;"><img id="call-foto" class="img-fit"></div>
+        <p id="call-msg" style="font-style: italic; color: #ccc; margin-bottom: 20px;"></p>
+        
+        <button class="btn btn-green" onclick="responder('liberado')">🔓 ABRIR PORTÃO</button>
+        <button class="btn btn-blue" onclick="enviarMensagem()">💬 ENVIAR MENSAGEM</button>
+        <button class="btn btn-red" onclick="responder('recusado')">✖ RECUSAR</button>
     </div>
 
     <audio id="som-ring" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, remove, update, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
     const app = initializeApp(config);
     const db = getDatabase(app);
 
-    let lId = localStorage.getItem('virty_id');
-    let unLogada = "";
+    let lId = localStorage.getItem('virty_id'), unLogada = "", fBase64 = "";
 
     function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-    // VERIFICAR STATUS
+    // --- LÓGICA DE STATUS E TRAVA ---
     if(lId) {
         onValue(ref(db, `moradores_validados/${lId}`), snap => {
             if(snap.exists()) {
-                unLogada = snap.val().unidade;
-                document.getElementById('txt-un').innerText = "CASA " + unLogada;
+                const dados = snap.val();
+                unLogada = dados.unidade;
+                document.getElementById('home-un').innerText = "CASA " + unLogada;
                 show('s-home');
                 vigiarChamadas();
+                carregarHistorico(5);
+            } else {
+                // Se não tá validado, checa se ainda tá pendente
+                onValue(ref(db, `moradores_pendentes/${lId}`), s => {
+                    if(s.exists()) {
+                        document.getElementById('wait-nome').innerText = s.val().nome;
+                        document.getElementById('wait-foto').src = s.val().foto;
+                        show('s-wait');
+                    } else {
+                        // Se não tá em nenhum dos dois, o admin deletou/recusou. Libera pra novo cadastro.
+                        localStorage.removeItem('virty_id');
+                        show('s-cad'); abrirCam();
+                    }
+                });
             }
         });
+    } else { show('s-cad'); abrirCam(); }
+
+    // --- CÂMERA ---
+    async function abrirCam() {
+        const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}});
+        document.getElementById('v-cad').srcObject = s;
     }
 
-    window.cadastrar = () => {
-        const n = document.getElementById('c-nome').value, u = document.getElementById('c-un').value;
+    window.capturar = () => {
+        const v = document.getElementById('v-cad'), c = document.getElementById('c-selfie'), btn = document.getElementById('btn-foto');
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        fBase64 = c.toDataURL('image/jpeg', 0.5);
+        c.style.display = "block"; v.pause();
+        btn.innerText = "🔄 REFAZER"; btn.onclick = () => location.reload();
+    };
+
+    window.enviarCadastro = () => {
+        const n = document.getElementById('in-nome').value, u = document.getElementById('in-un').value;
+        const c = document.getElementById('in-cpf').value, t = document.getElementById('in-tel').value;
+        if(!n || !u || !c || !fBase64) return alert("Preencha todos os campos e tire a foto.");
         const id = Date.now();
-        set(ref(db, `moradores_pendentes/${id}`), { id, nome: n, unidade: u }).then(() => {
-            localStorage.setItem('virty_id', id);
-            alert("Aguarde o Admin aprovar.");
+        set(ref(db, `moradores_pendentes/${id}`), { id, nome:n, unidade:u, cpf:c, tel:t, foto:fBase64 }).then(()=>{
+            localStorage.setItem('virty_id', id); location.reload();
         });
     };
 
+    // --- COMUNICAÇÃO (O QUE FUNCIONOU) ---
     function vigiarChamadas() {
         onValue(ref(db, `chamadas_ativas/${unLogada}`), snap => {
             const d = snap.val();
             if(d && d.status === "chamando") {
-                document.getElementById('img-v').src = d.foto;
-                document.getElementById('msg-v').innerText = d.texto;
-                show('s-call');
-                document.getElementById('som-ring').play().catch(()=>{});
+                document.getElementById('call-foto').src = d.foto;
+                document.getElementById('call-msg').innerText = d.texto || "Visitante aguardando...";
+                show('s-call'); document.getElementById('som-ring').play().catch(()=>{});
             } else {
-                show('s-home');
-                document.getElementById('som-ring').pause();
+                show('s-home'); document.getElementById('som-ring').pause();
             }
         });
     }
@@ -94,6 +156,35 @@
             setTimeout(() => remove(ref(db, `chamadas_ativas/${unLogada}`)), 1000);
         });
     };
+
+    window.enviarMensagem = () => {
+        const msg = prompt("Digite a mensagem para o visitante:");
+        if(msg) {
+            update(ref(db, `chamadas_ativas/${unLogada}`), { msg_morador: msg, status: "mensagem" }).then(() => {
+                setTimeout(() => remove(ref(db, `chamadas_ativas/${unLogada}`)), 1500);
+            });
+        }
+    };
+
+    // --- HISTÓRICO ---
+    function carregarHistorico(qtd) {
+        const hRef = query(ref(db, `historico/${unLogada}`), limitToLast(10));
+        onValue(hRef, snap => {
+            const div = document.getElementById('lista-hist'); div.innerHTML = "";
+            let itens = [];
+            snap.forEach(i => itens.unshift(i.val())); // Mais recentes primeiro
+            
+            itens.slice(0, qtd).forEach(h => {
+                div.innerHTML += `<div class="hist-item">
+                    <img src="${h.foto}" class="hist-img">
+                    <div style="text-align:left"><b>Entrada Liberada</b><br><small>${h.data} às ${h.hora}</small></div>
+                </div>`;
+            });
+            if(itens.length > 5 && qtd === 5) document.getElementById('btn-ver-mais').style.display = "block";
+        });
+    }
+    window.mostrarTudo = () => { carregarHistorico(10); document.getElementById('btn-ver-mais').style.display = "none"; };
+
 </script>
 </body>
 </html>
