@@ -4,181 +4,152 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Virty Morador</title>
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2555/2555572.png">
-    
     <style>
         :root { --neon: #39FF14; --bg: #000; --blue: #007BFF; --red: #ff3333; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; }
         .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; padding: 25px; margin: 0 auto; box-sizing: border-box; text-align: center; }
         .active { display: flex; }
         
-        /* Botões Estilizados */
-        .btn { width: 100%; padding: 20px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 8px 0; font-size: 1rem; }
+        /* Campos de Entrada Aumentados */
+        input { 
+            width: 100%; 
+            padding: 22px; /* Aumentado para melhor toque */
+            margin: 12px 0; 
+            border-radius: 15px; 
+            border: 1px solid #333; 
+            background: #111; 
+            color: #fff; 
+            box-sizing: border-box; 
+            font-size: 1.2rem; /* Fonte maior para visibilidade */
+            text-align: center;
+        }
+
+        .btn { width: 100%; padding: 22px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1.1rem; }
         .btn-green { background: var(--neon); color: black; }
-        .btn-red { background: var(--red); color: white; }
-        .btn-blue { background: var(--blue); color: white; }
         .btn-grey { background: #222; color: #fff; }
 
-        /* Pop-up Mensagem/Abrir */
-        .overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; 
+        /* Câmera de Cadastro */
+        .cam-container { 
+            width: 200px; 
+            height: 200px; 
+            border-radius: 50%; 
+            border: 3px solid var(--neon); 
+            margin: 20px auto; 
+            overflow: hidden; 
+            position: relative; 
+            background: #111; 
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
         }
-        .modal { 
-            background: #111; border: 2px solid var(--neon); width: 85%; padding: 25px; 
-            border-radius: 20px; position: relative; text-align: center; 
-        }
-        .close-x { position: absolute; top: 10px; right: 20px; color: var(--red); font-size: 2rem; font-weight: bold; cursor: pointer; }
-        
-        textarea { width: 100%; background: #000; color: #fff; border: 1px solid #333; border-radius: 10px; padding: 10px; margin: 15px 0; font-size: 1rem; resize: none; }
-        
-        .caller-img { width: 220px; height: 220px; border-radius: 25px; border: 3px solid var(--neon); margin: 20px auto; object-fit: cover; }
+        video, canvas { width: 100%; height: 100%; object-fit: cover; }
+        #canvas-selfie { display: none; position: absolute; top: 0; left: 0; }
+
+        /* Estilo da Chamada */
+        .caller-img { width: 250px; height: 250px; border-radius: 30px; border: 3px solid var(--neon); margin: 20px auto; object-fit: cover; }
     </style>
 </head>
 <body>
 
     <div id="s-cad" class="screen">
-        <h2 style="color:var(--neon)">CADASTRO</h2>
-        <p style="font-size: 0.8rem; color: #777;">Para receber chamadas, você deve autorizar a Câmera e Notificações no próximo passo.</p>
-        <div id="cam-preview" style="width:150px; height:150px; border-radius:50%; border:2px solid var(--neon); margin:10px auto; overflow:hidden;">
-            <video id="v-cad" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover;"></video>
+        <h2 style="color:var(--neon); margin-bottom: 5px;">CADASTRO MORADOR</h2>
+        <p style="font-size: 0.9rem; color: #777; margin-bottom: 10px;">Posicione seu rosto no círculo</p>
+        
+        <div class="cam-container">
+            <video id="v-cad" autoplay playsinline muted></video>
+            <canvas id="canvas-selfie"></canvas>
         </div>
-        <button class="btn btn-grey" onclick="tirarFoto()">CAPTURAR IMAGEM</button>
-        <input type="text" id="c-nome" placeholder="Nome Completo" style="width:100%; padding:15px; margin:5px 0; border-radius:10px; background:#111; color:#fff; border:1px solid #333;">
-        <input type="number" id="c-un" placeholder="Unidade">
-        <button class="btn btn-green" onclick="pedirPermissoes()">ACEITAR E CADASTRAR</button>
+        
+        <button id="btn-foto" class="btn btn-grey" onclick="tirarFoto()">📷 CAPTURAR FOTO</button>
+        
+        <div id="campos-cadastro" style="width: 100%;">
+            <input type="text" id="c-nome" placeholder="Nome Completo">
+            <input type="number" id="c-un" placeholder="Número da Unidade/Casa" inputmode="numeric">
+            <button class="btn btn-green" onclick="pedirPermissoes()">SOLICITAR ACESSO AGORA</button>
+        </div>
+    </div>
+
+    <div id="s-wait" class="screen">
+        <h1 style="color:orange; margin-top: 80px;">SOLICITAÇÃO EM ANÁLISE</h1>
+        <div class="cam-container" style="border-color: orange;">
+            <img id="img-wait" style="width:100%; height:100%; object-fit:cover;">
+        </div>
+        <p>Olá <b id="wait-nome"></b>, sua solicitação para a unidade <b id="wait-un"></b> foi enviada ao administrador.</p>
+        <p style="font-size: 0.8rem; color: #555;">Mantenha esta página aberta ou adicione-a à sua tela inicial.</p>
+        <button class="btn btn-grey" onclick="location.reload()">ATUALIZAR STATUS</button>
     </div>
 
     <div id="s-home" class="screen">
-        <h2 id="view-un">CASA --</h2>
-        <p>Sistema Ativo e Monitorando...</p>
-        <div id="hist" style="text-align:left"></div>
+        <h2 id="view-un" style="font-size: 2.5rem; margin-top: 40px;">CASA --</h2>
+        <div style="color: var(--neon); font-size: 1.2rem; margin-bottom: 30px;">● SISTEMA ATIVO</div>
+        <p style="color:#555">Aguardando visitantes...</p>
     </div>
-
-    <div id="s-call" class="screen">
-        <h2 style="color:var(--neon); animation: blink 1s infinite;">ALGUÉM NA PORTA!</h2>
-        <img id="v-foto" class="caller-img">
-        
-        <button class="btn btn-red" onclick="resp('recusado')">RECUSAR</button>
-        <button class="btn btn-blue" onclick="abrirModalMensagem()">ACEITAR / MENSAGEM</button>
-        <button class="btn btn-green" onclick="resp('liberado')">ABRIR</button>
-    </div>
-
-    <div id="modal-msg" class="overlay">
-        <div class="modal">
-            <span class="close-x" onclick="fecharModais()">×</span>
-            <h3>MENSAGEM AO VISITANTE</h3>
-            <textarea id="texto-msg" maxlength="60" placeholder="Ex: Já estou descendo..."></textarea>
-            <button class="btn btn-blue" onclick="enviarMensagemPersonalizada()">ENVIAR MENSAGEM</button>
-        </div>
-    </div>
-
-    <div id="modal-abrir" class="overlay">
-        <div class="modal">
-            <span class="close-x" onclick="fecharModais()">×</span>
-            <h2 style="color:var(--neon)">MENSAGEM ENVIADA!</h2>
-            <p>Para liberar a entrada agora, clique abaixo:</p>
-            <button class="btn btn-green" onclick="resp('liberado')">ABRIR</button>
-        </div>
-    </div>
-
-    <audio id="som" loop src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com", projectId: "virty-access-door" };
     const app = initializeApp(config);
     const db = getDatabase(app);
     
-    let fBase64 = "", lId = localStorage.getItem('virty_id'), un = "";
+    let fBase64 = "", lId = localStorage.getItem('virty_id');
 
     function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-    // Ao iniciar: verifica se já é cadastrado
+    // Verificação de Status
     if(lId) {
         onValue(ref(db, `moradores_validados/${lId}`), snap => {
             if(snap.exists()) {
-                un = snap.val().unidade;
-                document.getElementById('view-un').innerText = "CASA " + un;
+                document.getElementById('view-un').innerText = "CASA " + snap.val().unidade;
                 show('s-home');
-                vigiar();
-            } else { show('s-cad'); abrirCam(); }
+            } else {
+                get(ref(db, `moradores_pendentes/${lId}`)).then(s => {
+                    if(s.exists()){
+                        document.getElementById('wait-nome').innerText = s.val().nome;
+                        document.getElementById('wait-un').innerText = s.val().unidade;
+                        document.getElementById('img-wait').src = s.val().foto;
+                        show('s-wait');
+                    } else { show('s-cad'); abrirCam(); }
+                });
+            }
         });
     } else { show('s-cad'); abrirCam(); }
 
     async function abrirCam() {
-        const s = await navigator.mediaDevices.getUserMedia({video:true});
-        document.getElementById('v-cad').srcObject = s;
+        try {
+            const s = await navigator.mediaDevices.getUserMedia({video: { facingMode: "user" }});
+            document.getElementById('v-cad').srcObject = s;
+        } catch (e) { alert("Erro ao abrir câmera. Verifique as permissões."); }
     }
+
+    window.tirarFoto = () => {
+        const v = document.getElementById('v-cad');
+        const c = document.getElementById('canvas-selfie');
+        const btn = document.getElementById('btn-foto');
+        
+        c.width = v.videoWidth; 
+        c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        fBase64 = c.toDataURL('image/jpeg', 0.7);
+        
+        // CONGELAR A IMAGEM NA TELA
+        c.style.display = "block";
+        v.pause(); // Para o vídeo
+        btn.innerText = "🔄 REFAZER FOTO";
+        btn.onclick = () => { location.reload(); }; // Simples para resetar
+    };
 
     window.pedirPermissoes = () => {
-        // Solicita permissão de notificação nativa do navegador
-        if ("Notification" in window) {
-            Notification.requestPermission().then(permission => {
-                if(permission === "granted") {
-                    console.log("Notificações permitidas.");
-                    confirmarCadastro();
-                } else {
-                    alert("Atenção: Sem notificações você não ouvirá a campainha com a tela fechada.");
-                    confirmarCadastro();
-                }
-            });
-        }
-    };
-
-    function confirmarCadastro() {
         const nome = document.getElementById('c-nome').value;
-        const unidade = document.getElementById('c-un').value;
-        if(!nome || !unidade || !fBase64) return alert("Preencha todos os dados e tire a foto.");
-        
+        const un = document.getElementById('c-un').value;
+        if(!nome || !un || !fBase64) return alert("Por favor, preencha o Nome, Unidade e tire a foto.");
+
         const id = Date.now();
-        set(ref(db, `moradores_pendentes/${id}`), { id, nome, unidade, foto: fBase64 }).then(() => {
+        set(ref(db, `moradores_pendentes/${id}`), {
+            id, nome, unidade: un, foto: fBase64, status: "pendente"
+        }).then(() => {
             localStorage.setItem('virty_id', id);
-            alert("Cadastro enviado! Aguarde aprovação do Admin.");
             location.reload();
         });
-    }
-
-    function vigiar() {
-        onValue(ref(db, `chamadas_ativas/${un}`), snap => {
-            const d = snap.val();
-            if(d && d.status === "chamando") {
-                document.getElementById('v-foto').src = d.foto;
-                show('s-call');
-                document.getElementById('som').play();
-                enviarNotificacaoNativa(); // Dispara o alerta do sistema
-            } else {
-                document.getElementById('som').pause();
-                show('s-home');
-                fecharModais();
-            }
-        });
-    }
-
-    function enviarNotificacaoNativa() {
-        if (Notification.permission === "granted") {
-            new Notification("VIRTY ACCESS", { body: "Tem alguém na porta chamando agora!", icon: "https://cdn-icons-png.flaticon.com/512/2555/2555572.png" });
-        }
-    }
-
-    window.resp = (st) => update(ref(db, `chamadas_ativas/${un}`), { status: st });
-
-    // Fluxo dos Modais
-    window.abrirModalMensagem = () => document.getElementById('modal-msg').style.display = 'flex';
-    window.fecharModais = () => {
-        document.querySelectorAll('.overlay').forEach(m => m.style.display = 'none');
-    };
-
-    window.enviarMensagemPersonalizada = () => {
-        const txt = document.getElementById('texto-msg').value;
-        if(!txt) return alert("Escreva uma mensagem.");
-        update(ref(db, `chamadas_ativas/${un}`), { msg_morador: txt });
-        document.getElementById('modal-msg').style.display = 'none';
-        document.getElementById('modal-abrir').style.display = 'flex'; // Abre o pop-up de Abrir com o X
     };
 </script>
 </body>
