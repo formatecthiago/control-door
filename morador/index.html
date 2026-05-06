@@ -2,40 +2,47 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY ACCESS DOOR v10.1</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --blue: #007BFF; --red: #FF3131; --gray: #1a1a1a; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
+
+        /* Cabeçalho New 10 */
         .header-main { text-align: center; border-bottom: 2px solid var(--gray); padding-bottom: 15px; margin-bottom: 15px; }
         .virty-title { color: var(--neon); font-size: 1.1rem; font-weight: 900; letter-spacing: 2px; margin: 0; }
         .user-info { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.85rem; }
         .unidade-box { background: var(--neon); color: #000; padding: 3px 10px; border-radius: 5px; font-weight: bold; }
 
-        /* Histórico New 10.1 */
+        /* Histórico com Bloqueio Individual */
         .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; position: relative; }
         .hist-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 12px; }
         .hist-info { flex: 1; }
-        .btn-bloquear { font-size: 1.2rem; cursor: pointer; padding: 10px; filter: grayscale(1); transition: 0.3s; }
-        .bloqueado { filter: grayscale(0) !important; color: var(--red); }
+        .hist-info b { font-size: 0.9rem; display: block; color: #fff; }
+        .hist-info small { color: #777; font-size: 0.75rem; }
         
+        /* Botão de Bloqueio */
+        .btn-lock { font-size: 1.4rem; cursor: pointer; padding: 5px 10px; transition: 0.3s; border-radius: 10px; }
+        .is-blocked { color: var(--red); background: rgba(255, 49, 49, 0.1); border: 1px solid var(--red); }
+        .is-free { color: var(--neon); filter: grayscale(1); opacity: 0.3; }
+
         .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: 0.2s; }
         .btn-v { background: var(--neon); color: #000; }
-        .btn-a { background: var(--blue); color: #fff; }
         .btn-r { background: var(--red); color: #fff; }
 
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #111; border: 1px solid var(--neon); padding: 25px; border-radius: 20px; width: 100%; text-align: center; position: relative; }
         #bloqueio-inicio { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
 <body>
 
     <div id="bloqueio-inicio">
-        <h1 style="color:var(--neon)">VIRTY NEW 10.1</h1>
-        <button class="btn btn-v" onclick="conectarSistema()" style="width:250px;">CONECTAR E ATIVAR SOM</button>
+        <h1 style="color:var(--neon); margin-bottom:10px;">VIRTY NEW 10.1</h1>
+        <p style="color:#666; margin-bottom:25px;">Sincronizando áudio e segurança...</p>
+        <button class="btn btn-v" onclick="ativarEEntrar()" style="width:260px;">ATIVAR E CONECTAR</button>
     </div>
 
     <div id="s-home" class="screen">
@@ -45,8 +52,9 @@
                 <span id="nome-exibir">Thiago Vieira</span>
                 <span class="unidade-box">CASA <span id="un-exibir">10</span></span>
             </div>
-            <button class="btn" id="btn-silenciar" onclick="setSilenciar()" style="background:#111; color:#fff; border:1px solid #333; padding:10px; font-size:0.75rem; margin-top:10px;">🔔 SOM ATIVO</button>
+            <button class="btn" id="btn-silenciar" onclick="toggleSilenciar()" style="background:#111; color:#fff; border:1px solid #333; padding:10px; font-size:0.75rem; margin-top:10px;">🔔 SOM ATIVO</button>
         </div>
+        <h3 style="margin-bottom:15px;">Controle de Acesso</h3>
         <div id="lista-hist"></div>
     </div>
 
@@ -75,34 +83,38 @@
         const db = firebase.database();
         
         let audioCtx;
-        let somAtivo = true;
         let meuId = "1778000704147";
+        let somHabilitado = true;
         let blacklist = JSON.parse(localStorage.getItem('virty_blacklist') || '[]');
 
-        function conectarSistema() {
+        function ativarEEntrar() {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             document.getElementById('bloqueio-inicio').style.display = 'none';
             inicializar();
         }
 
-        function setSilenciar() {
-            somAtivo = !somAtivo;
-            document.getElementById('btn-silenciar').innerHTML = somAtivo ? "🔔 SOM ATIVO" : "🔕 SILENCIADO";
-            document.getElementById('btn-silenciar').style.color = somAtivo ? "#fff" : "#ff3131";
+        function toggleSilenciar() {
+            somHabilitado = !somHabilitado;
+            const btn = document.getElementById('btn-silenciar');
+            btn.innerHTML = somHabilitado ? "🔔 SOM ATIVO" : "🔕 SILENCIADO (VIBRAR)";
+            btn.style.color = somHabilitado ? "#fff" : var(--red);
+            if(navigator.vibrate) navigator.vibrate(100);
         }
 
-        function tocarCampainha() {
-            if(!somAtivo || !audioCtx) return;
+        function tocarAlerta() {
+            if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]); // Vibra sempre
+            if(!somHabilitado || !audioCtx) return;
+
             const t = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const g = audioCtx.createGain();
             osc.connect(g); g.connect(audioCtx.destination);
-            osc.type = 'triangle';
+            osc.type = 'sine';
             osc.frequency.setValueAtTime(440, t);
             osc.frequency.exponentialRampToValueAtTime(880, t + 0.5);
-            g.gain.setValueAtTime(0.2, t);
-            g.gain.exponentialRampToValueAtTime(0.00001, t + 1.5);
-            osc.start(t); osc.stop(t + 1.5);
+            g.gain.setValueAtTime(0.3, t);
+            g.gain.exponentialRampToValueAtTime(0.00001, t + 2);
+            osc.start(t); osc.stop(t + 2);
         }
 
         function inicializar() {
@@ -121,65 +133,86 @@
             db.ref('chamadas_ativas/'+un).on('value', s => {
                 const d = s.val();
                 if(d && d.status === 'chamando') {
-                    // VERIFICA BLOQUEIO
+                    // BLOQUEIO INDIVIDUAL: Se o ID estiver na lista negra, ignora.
                     if(blacklist.includes(d.v_id)) {
-                        console.log("Chamada bloqueada de: " + d.v_id);
+                        console.log("Visitante Bloqueado: " + d.v_id);
                         return;
                     }
                     document.getElementById('img-vis').src = d.foto;
                     mudarTela('s-call');
-                    tocarCampainha();
+                    tocarAlerta();
                 }
             });
 
-            db.ref('historico/'+un).limitToLast(10).on('value', snap => {
-                let histLocal = [];
-                snap.forEach(i => { histLocal.unshift(i.val()); });
-                renderHist(histLocal);
+            db.ref('historico/'+un).on('value', snap => {
+                let brutos = []; snap.forEach(i => { brutos.unshift(i.val()); });
+                let histAgrupado = [];
+                brutos.forEach(it => {
+                    let last = histAgrupado[histAgrupado.length-1];
+                    if(last && last.v_id === it.v_id && (it.ts - last.ts < 600000)) {
+                        last.qtd = (last.qtd || 1) + 1;
+                    } else { histAgrupado.push({...it, qtd: 1}); }
+                });
+                renderHist(histAgrupado);
             });
         }
 
         function renderHist(lista) {
             const container = document.getElementById('lista-hist');
             container.innerHTML = "";
-            lista.forEach(h => {
-                const isBloqueado = blacklist.includes(h.v_id);
+            lista.slice(0, 10).forEach(h => {
+                const bloqueado = blacklist.includes(h.v_id);
                 container.innerHTML += `
                     <div class="hist-card">
                         <img src="${h.foto}" class="hist-img">
                         <div class="hist-info">
-                            <b>VISITANTE</b>
+                            <b>VISITANTE ${h.qtd > 1 ? h.qtd+'x' : ''}</b>
                             <small>${h.hora}</small>
                         </div>
-                        <div class="btn-bloquear ${isBloqueado ? 'bloqueado' : ''}" 
-                             onclick="toggleBloqueio('${h.v_id}')">🚫</div>
+                        <div class="btn-lock ${bloqueado ? 'is-blocked' : 'is-free'}" 
+                             onclick="toggleBloqueio('${h.v_id}')">
+                             ${bloqueado ? '🚫' : '🟢'}
+                        </div>
                     </div>`;
             });
         }
 
-        function toggleBloqueio(id) {
-            if(!id || id === 'anonimo') return;
-            if(blacklist.includes(id)) {
-                blacklist = blacklist.filter(item => item !== id);
+        function toggleBloqueio(vid) {
+            if(!vid || vid === 'anonimo') {
+                alert("Não é possível bloquear visitantes sem ID.");
+                return;
+            }
+            if(blacklist.includes(vid)) {
+                blacklist = blacklist.filter(id => id !== vid);
             } else {
-                blacklist.push(id);
+                blacklist.push(vid);
             }
             localStorage.setItem('virty_blacklist', JSON.stringify(blacklist));
-            alert("Status de bloqueio atualizado para este visitante.");
-            location.reload(); 
+            if(navigator.vibrate) navigator.vibrate(100);
+            // Renderiza novamente para atualizar o ícone
+            inicializar(); 
         }
 
         function responder(tipo) {
             const un = document.getElementById('un-exibir').innerText;
-            db.ref('chamadas_ativas/'+un).update({ status: tipo });
-            setTimeout(() => { db.ref('chamadas_ativas/'+un).remove(); irHome(); }, 500);
+            const ref = db.ref('chamadas_ativas/'+un);
+            ref.once('value', s => {
+                const d = s.val();
+                if(d) {
+                    db.ref('historico/'+un).push({ 
+                        foto: d.foto, v_id: d.v_id || 'anon', ts: Date.now(), 
+                        hora: new Date().toLocaleTimeString(), tipo: tipo.toUpperCase() 
+                    });
+                    ref.update({ status: tipo });
+                    setTimeout(() => { ref.remove(); mudarTela('s-home'); }, 500);
+                }
+            });
         }
 
         function mudarTela(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
-        function irHome() { mudarTela('s-home'); }
     </script>
 </body>
 </html>
