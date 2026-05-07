@@ -1,76 +1,138 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virty Admin - Emergência</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VIRTY - MASTER ADMIN</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .box { border: 2px solid #39FF14; padding: 20px; border-radius: 15px; background: #111; margin-top: 50px; }
-        button { width: 100%; padding: 20px; background: #39FF14; color: #000; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; text-transform: uppercase; }
-        .item { border: 1px solid #333; margin: 10px 0; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; }
-        .img-u { width: 50px; height: 50px; border-radius: 50%; border: 1px solid #39FF14; object-fit: cover; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        
+        /* Tela de Login */
+        #login-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
+        .login-box { background: #0a0a0a; border: 1px solid var(--neon); padding: 30px; border-radius: 20px; width: 100%; max-width: 320px; text-align: center; }
+        input { width: 100%; padding: 15px; margin: 15px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; text-align: center; font-size: 1rem; box-sizing: border-box; }
+        
+        /* Painel Admin */
+        .header { padding: 20px; border-bottom: 2px solid var(--gray); text-align: center; }
+        .container { padding: 20px; }
+        .card { background: #0a0a0a; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
+        
+        .btn { border: none; border-radius: 12px; padding: 15px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; }
+        .btn-v { background: var(--neon); color: #000; }
+        .btn-r { background: var(--red); color: #fff; padding: 8px 15px; width: auto; font-size: 0.8rem; }
+        
+        .badge-pendente { color: #ffcc00; font-size: 0.8rem; font-weight: bold; }
+        .badge-ok { color: var(--neon); font-size: 0.8rem; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="login-sec">
-        <div class="box">
-            <h2 style="color:#39FF14">MODO DE EMERGÊNCIA</h2>
-            <p>Clique no botão abaixo para forçar a entrada sem senha e liberar o sistema.</p>
-            <button onclick="forcarEntrada()">FORÇAR ENTRADA (SEM SENHA)</button>
+    <div id="login-screen">
+        <div class="login-box">
+            <h2 style="color:var(--neon); margin:0;">VIRTY MASTER</h2>
+            <p style="color:#666; font-size:0.8rem;">Acesso Administrativo</p>
+            <input type="password" id="master-pass" placeholder="Digite a Senha Mestra">
+            <button class="btn btn-v" onclick="verificarSenha()">ACESSAR SISTEMA</button>
+            <p id="erro" style="color:var(--red); font-size:0.8rem; margin-top:10px; display:none;">Senha Incorreta!</p>
         </div>
     </div>
 
-    <div id="dash-sec" style="display:none;">
-        <h2 style="color:#39FF14">PAINEL DE CONTROLE</h2>
-        <div id="lista">Buscando...</div>
+    <div id="admin-panel" style="display:none;">
+        <div class="header">
+            <h1 style="color:var(--neon); margin:0; font-size:1.2rem;">GERENCIAMENTO DE ACESSO</h1>
+            <p style="color:#666; font-size:0.7rem;">Controle de Moradores e Validações</p>
+        </div>
+
+        <div class="container">
+            <h3 style="border-left: 3px solid var(--neon); padding-left: 10px;">Solicitações Pendentes</h3>
+            <div id="lista-pendentes">
+                </div>
+
+            <h3 style="border-left: 3px solid #666; padding-left: 10px; margin-top:30px; color:#666;">Unidades Ativas</h3>
+            <div id="lista-validados">
+                </div>
+            
+            <button class="btn" onclick="logout()" style="background:#111; color:#fff; margin-top:30px;">SAIR DO SISTEMA</button>
+        </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // Usei a URL exata do seu banco que você confirmou que funciona
-        const config = { 
-            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
-            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
-        };
+        const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
         firebase.initializeApp(config);
+        const db = firebase.database();
 
-        function forcarEntrada() {
-            // PULA A SENHA COMPLETAMENTE
-            document.getElementById('login-sec').style.display = "none";
-            document.getElementById('dash-sec').style.display = "block";
-            
-            firebase.database().ref('moradores_pendentes').on('value', snap => {
-                const lista = document.getElementById('lista');
-                lista.innerHTML = "<h4>PENDENTES</h4>";
-                if(!snap.exists()) lista.innerHTML += "<p>Ninguém aguardando.</p>";
-                
-                snap.forEach(item => {
-                    const m = item.val();
-                    lista.innerHTML += `
-                        <div class="item">
-                            <img src="${m.foto}" class="img-u">
-                            <div style="text-align:left; flex:1; margin-left:10px;">
-                                <b>UN: ${m.unidade}</b><br><small>${m.nome}</small>
+        // A SENHA MESTRE QUE VOCÊ DEFINIU
+        const MASTER_KEY = "Virty_123quatro@#";
+
+        function verificarSenha() {
+            const pass = document.getElementById('master-pass').value;
+            if(pass === MASTER_KEY) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                carregarDados();
+            } else {
+                document.getElementById('erro').style.display = 'block';
+                document.getElementById('master-pass').value = "";
+            }
+        }
+
+        function carregarDados() {
+            // Monitora Moradores Pendentes
+            db.ref('solicitacoes_cadastro').on('value', s => {
+                const cont = document.getElementById('lista-pendentes');
+                cont.innerHTML = "";
+                s.forEach(item => {
+                    const d = item.val();
+                    cont.innerHTML += `
+                        <div class="card">
+                            <div>
+                                <b>Unidade ${d.unidade}</b><br>
+                                <span class="badge-pendente">AGUARDANDO APROVAÇÃO</span>
                             </div>
-                            <button onclick="liberar('${m.id}')" style="width:80px; padding:10px; font-size:10px;">LIBERAR</button>
+                            <div style="display:flex; gap:5px;">
+                                <button class="btn btn-v" style="padding:8px 12px;" onclick="aprovar('${item.key}', '${d.unidade}')">Aprovar</button>
+                                <button class="btn btn-r" onclick="excluir('solicitacoes_cadastro', '${item.key}')">✖</button>
+                            </div>
+                        </div>`;
+                });
+            });
+
+            // Monitora Moradores Ativos
+            db.ref('moradores_validados').on('value', s => {
+                const cont = document.getElementById('lista-validados');
+                cont.innerHTML = "";
+                s.forEach(item => {
+                    const d = item.val();
+                    cont.innerHTML += `
+                        <div class="card">
+                            <div>
+                                <b>Unidade ${d.unidade}</b><br>
+                                <span class="badge-ok">VALIDADO</span>
+                            </div>
+                            <button class="btn btn-r" onclick="excluir('moradores_validados', '${item.key}')">Remover</button>
                         </div>`;
                 });
             });
         }
 
-        window.liberar = (id) => {
-            const pRef = firebase.database().ref('moradores_pendentes/' + id);
-            pRef.once('value', s => {
-                if(s.exists()){
-                    firebase.database().ref('moradores_validados/' + id).set(s.val());
-                    pRef.remove();
-                    alert("Morador Aprovado!");
-                }
-            });
+        function aprovar(id, unidade) {
+            db.ref('moradores_validados').push({ unidade: unidade, ts: Date.now() });
+            db.ref('solicitacoes_cadastro/' + id).remove();
+            alert("Unidade " + unidade + " ativada com sucesso!");
+        }
+
+        function excluir(path, id) {
+            if(confirm("Tem certeza que deseja excluir este registro?")) {
+                db.ref(path + '/' + id).remove();
+            }
+        }
+
+        function logout() {
+            location.reload();
         }
     </script>
 </body>
