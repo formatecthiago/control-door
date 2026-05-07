@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v10.9.1</title>
+    <title>VIRTY MORADOR v11.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
         
@@ -14,8 +14,10 @@
         .virty-title { color: var(--neon); font-size: 1.1rem; font-weight: 900; letter-spacing: 2px; margin: 0; }
         .unidade-box { background: var(--neon); color: #000; padding: 3px 10px; border-radius: 5px; font-weight: bold; }
         
-        .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        /* Histórico */
+        .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; position: relative; }
         .hist-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 12px; }
+        .badge-count { position: absolute; top: 10px; left: 50px; background: var(--red); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; font-weight: bold; border: 2px solid #000; }
         
         .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: 0.2s; text-transform: uppercase; }
         .btn-v { background: var(--neon); color: #000; }
@@ -26,25 +28,25 @@
         #bloqueio-inicio { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 20px; }
         #modal-msg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index: 10000; align-items:center; justify-content:center; padding:20px; }
         .modal-content { background:#111; border:1px solid var(--blue); padding:25px; border-radius:20px; width:100%; max-width:400px; text-align:center; position:relative; }
+        
+        #btn-ver-mais { background: none; border: none; color: var(--neon); padding: 10px; cursor: pointer; font-weight: bold; width: 100%; display: none; }
     </style>
 </head>
 <body>
 
     <div id="bloqueio-inicio">
         <h1 style="color:var(--neon); margin:0;">VIRTY ACCESS</h1>
-        <p style="color:#666; margin-top:5px;">Toque para ativar som e painel</p><br>
+        <p style="color:#666; margin-top:5px;">Toque para iniciar o sistema</p><br>
         <button class="btn btn-v" onclick="entrarApp()" style="width:250px;">ENTRAR NO PAINEL</button>
     </div>
 
     <div id="s-cadastro" class="screen">
         <h2 style="color:var(--neon); text-align:center;">CADASTRO</h2>
-        <div style="width:150px; height:150px; border-radius:50%; margin: 10px auto; border:2px solid var(--neon); overflow:hidden; background:#111;">
-            <video id="v-cad" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
-        </div>
+        <video id="v-cad" autoplay playsinline style="width:150px; height:150px; border-radius:50%; margin: 10px auto; border:2px solid var(--neon); object-fit:cover; display: block;"></video>
         <button class="btn" style="background:#fff; padding:10px; margin-bottom:15px;" onclick="tirarFotoCad()">📸 TIRAR SELFIE</button>
         <input type="text" id="cad-nome" placeholder="Nome Completo">
-        <input type="number" id="cad-cpf" placeholder="CPF (Somente números)">
-        <input type="number" id="cad-un" placeholder="Nº da Unidade">
+        <input type="number" id="cad-cpf" placeholder="CPF">
+        <input type="number" id="cad-un" placeholder="Unidade">
         <button class="btn btn-v" onclick="solicitarCadastro()">CADASTRAR</button>
     </div>
 
@@ -61,11 +63,12 @@
             </div>
         </div>
         <div id="lista-hist" style="flex:1; overflow-y:auto;"></div>
+        <button id="btn-ver-mais" onclick="mostrarMais()">VER MAIS CHAMADAS</button>
     </div>
 
     <div id="s-call" class="screen">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span onclick="mudarTela('s-home')" style="cursor:pointer; color:#888;">🏠 VOLTAR</span>
+            <span onclick="cancelarChamada()" style="cursor:pointer; color:#888;">🏠 VOLTAR</span>
             <b style="color:var(--neon)">AO VIVO</b>
             <span id="timer" style="color:var(--red); font-weight:bold; font-size:1.2rem;">60s</span>
         </div>
@@ -81,7 +84,7 @@
     <div id="modal-msg">
         <div class="modal-content">
             <span onclick="fecharMsg()" style="position:absolute; top:10px; right:15px; color:var(--red); font-size:1.5rem; cursor:pointer;">×</span>
-            <h3 style="color:var(--blue); margin-top:0;">ENVIAR MENSAGEM</h3>
+            <h3 style="color:var(--blue); margin-top:0;">ENVIAR RESPOSTA</h3>
             <input type="text" id="input-msg" maxlength="50" placeholder="Mensagem...">
             <button class="btn btn-a" onclick="enviarM()">ENVIAR E ENCERRAR</button>
         </div>
@@ -95,37 +98,39 @@
         firebase.initializeApp(config);
         const db = firebase.database();
         
-        let audioCtx, un = "", b64_cad = "", somOn = true, crono, tocando = false;
+        let audioCtx, un = "", b64_cad = "", somOn = true, crono, loopCampainha, mostrarDez = false;
 
         function entrarApp() {
             try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
             document.getElementById('bloqueio-inicio').style.display = 'none';
             const salvo = localStorage.getItem('virty_user');
             if(salvo) {
-                const user = JSON.parse(salvo);
-                un = user.unidade;
+                const user = JSON.parse(salvo); un = user.unidade;
                 document.getElementById('u-txt').innerText = un;
                 document.getElementById('nome-exibir').innerText = user.nome;
-                mudarTela('s-home');
-                iniciarMonitor();
-            } else {
-                mudarTela('s-cadastro');
-                iniciarCamera();
-            }
+                mudarTela('s-home'); iniciarMonitor();
+            } else { mudarTela('s-cadastro'); iniciarCamera(); }
         }
 
-        function playSom() {
-            if(!somOn || !audioCtx || tocando) return;
-            tocando = true;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start();
-            setTimeout(() => { osc.stop(); tocando = false; }, 800);
+        // --- SISTEMA DE SOM (CAMPAINHA DIGITAL) ---
+        function ringtone() {
+            if(!somOn || !audioCtx) return;
+            const playPulse = () => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(660, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            };
+            playPulse();
+            loopCampainha = setInterval(playPulse, 1500); // Toca, pausa 1s aprox, toca de novo
         }
+
+        function stopRingtone() { clearInterval(loopCampainha); }
 
         function iniciarCamera() {
             navigator.mediaDevices.getUserMedia({video: true}).then(s => document.getElementById('v-cad').srcObject = s);
@@ -137,12 +142,12 @@
             c.width = v.videoWidth; c.height = v.videoHeight;
             c.getContext('2d').drawImage(v, 0, 0);
             b64_cad = c.toDataURL('image/jpeg', 0.5);
-            alert("Foto salva!");
+            alert("Selfie salva!");
         }
 
         function solicitarCadastro() {
             const n = document.getElementById('cad-nome').value, c = document.getElementById('cad-cpf').value, u = document.getElementById('cad-un').value;
-            if(!n || !c || !u || !b64_cad) return alert("Preencha tudo!");
+            if(!n || !c || !u || !b64_cad) return alert("Preencha todos os campos!");
             const d = { nome: n, cpf: c, unidade: u, foto: b64_cad };
             db.ref('solicitacoes_cadastro/' + c).set(d);
             localStorage.setItem('virty_user', JSON.stringify(d));
@@ -150,35 +155,62 @@
         }
 
         function iniciarMonitor() {
+            // Monitor de Chamadas
             db.ref('chamadas_ativas/' + un).on('value', s => {
                 const d = s.val();
                 if(d && d.status === 'chamando') {
+                    // VERIFICA BLOQUEIO INSTANTÂNEO
+                    if(localStorage.getItem('blk_' + d.v_id)) {
+                        db.ref('chamadas_ativas/' + un).update({ status: 'bloqueado' });
+                        setTimeout(() => db.ref('chamadas_ativas/' + un).remove(), 500);
+                        return;
+                    }
+                    
                     document.getElementById('img-vis').src = d.foto;
                     document.getElementById('box-msg-vis').innerText = d.texto || "";
                     mudarTela('s-call');
-                    playSom();
-                    if(!somOn && navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                    ringtone();
+                    if(!somOn && navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
                     iniciarTimer(d.ts);
                 } else if(document.getElementById('s-call').classList.contains('active')) {
-                    mudarTela('s-home');
-                    clearInterval(crono);
+                    mudarTela('s-home'); stopRingtone(); clearInterval(crono);
                 }
             });
 
+            // Monitor de Histórico (Super Agrupamento 60min)
             db.ref('historico/' + un).on('value', s => {
                 const cont = document.getElementById('lista-hist');
                 cont.innerHTML = "";
-                let lista = [];
-                s.forEach(child => { lista.unshift(child.val()); });
-                lista.forEach(h => {
+                let raw = [];
+                s.forEach(c => { raw.push(c.val()); });
+                raw.reverse();
+
+                let agrupado = [];
+                raw.forEach(item => {
+                    let ultimo = agrupado[agrupado.length - 1];
+                    let diff = ultimo ? (ultimo.ts - item.ts) / 1000 / 60 : 999;
+                    if(ultimo && ultimo.v_id === item.v_id && diff < 60) {
+                        ultimo.count = (ultimo.count || 1) + 1;
+                    } else {
+                        item.count = 1;
+                        agrupado.push(item);
+                    }
+                });
+
+                const limite = mostrarDez ? 10 : 5;
+                if(agrupado.length > 5 && !mostrarDez) document.getElementById('btn-ver-mais').style.display = 'block';
+
+                agrupado.slice(0, limite).forEach(h => {
                     const isBlk = localStorage.getItem('blk_' + h.v_id);
-                    cont.innerHTML += `<div class="hist-card">
-                        <div style="display:flex; align-items:center;">
-                            <img src="${h.foto}" class="hist-img">
-                            <div><b>VISITANTE</b><br><small>${h.hora} - ${h.data || ''}</small></div>
-                        </div>
-                        <button onclick="toggleBlock('${h.v_id}')" style="background:none; border:1px solid ${isBlk ? 'var(--red)' : '#444'}; color:${isBlk ? 'var(--red)' : '#666'}; padding:6px; border-radius:10px; font-size:0.6rem;">${isBlk ? '🚫' : '🟢'}</button>
-                    </div>`;
+                    cont.innerHTML += `
+                        <div class="hist-card">
+                            ${h.count > 1 ? `<div class="badge-count">${h.count}x</div>` : ''}
+                            <div style="display:flex; align-items:center;">
+                                <img src="${h.foto}" class="hist-img">
+                                <div><b>VISITANTE</b><br><small>${h.hora} - ${h.data}</small></div>
+                            </div>
+                            <button onclick="toggleBlock('${h.v_id}')" style="background:none; border:1px solid ${isBlk ? 'var(--red)' : '#444'}; color:${isBlk ? 'var(--red)' : '#666'}; padding:8px; border-radius:10px;">${isBlk ? '🚫' : '🟢'}</button>
+                        </div>`;
                 });
             });
         }
@@ -195,42 +227,50 @@
         function responder(status) {
             db.ref('chamadas_ativas/' + un).once('value', s => {
                 const d = s.val();
-                if(d) {
+                if(d && status !== 'expirado') {
                     const agora = new Date();
                     db.ref('historico/' + un).push({
-                        foto: d.foto,
-                        v_id: d.v_id || 'anonimo',
+                        foto: d.foto, v_id: d.v_id || 'anonimo', ts: Date.now(),
                         hora: agora.getHours() + ":" + agora.getMinutes().toString().padStart(2, '0'),
-                        data: agora.toLocaleDateString('pt-BR'),
-                        ts: Date.now()
+                        data: agora.toLocaleDateString('pt-BR')
                     });
                 }
                 db.ref('chamadas_ativas/' + un).update({ status: status });
-                setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); mudarTela('s-home'); }, 500);
+                setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); mudarTela('s-home'); stopRingtone(); }, 500);
             });
-        }
-
-        function abrirMsg() { document.getElementById('modal-msg').style.display = 'flex'; }
-        function fecharMsg() { document.getElementById('modal-msg').style.display = 'none'; }
-
-        function enviarM() {
-            const m = document.getElementById('input-msg').value;
-            if(!m) return alert("Digite algo!");
-            db.ref('chamadas_ativas/' + un).update({ status: 'mensagem', msg_morador: m });
-            fecharMsg();
-            alert("MENSAGEM ENVIADA!\nAutorize no botão ABRIR.");
-            responder('mensagem-enviada');
         }
 
         function toggleBlock(vid) {
             const k = 'blk_' + vid;
             localStorage.getItem(k) ? localStorage.removeItem(k) : localStorage.setItem(k, 'true');
-            alert("Status de bloqueio alterado!");
+            location.reload();
         }
 
-        function limparHistorico() { if(confirm("Limpar tudo?")) db.ref('historico/' + un).remove(); }
+        function toggleMute() {
+            if(somOn) {
+                alert("AVISO: Não é possível silenciar por completo. O aparelho entrará obrigatoriamente em MODO VIBRAR.");
+                somOn = false;
+                document.getElementById('btn-silenciar').innerText = "🔕 MODO VIBRAR";
+                if(navigator.vibrate) navigator.vibrate(500);
+            } else {
+                somOn = true;
+                document.getElementById('btn-silenciar').innerText = "🔔 SOM ATIVO";
+            }
+        }
+
+        function mostrarMais() { mostrarDez = true; document.getElementById('btn-ver-mais').style.display = 'none'; }
+        function limparHistorico() { if(confirm("Zerar histórico?")) db.ref('historico/' + un).remove(); }
+        function abrirMsg() { document.getElementById('modal-msg').style.display = 'flex'; }
+        function fecharMsg() { document.getElementById('modal-msg').style.display = 'none'; }
+        function enviarM() {
+            const m = document.getElementById('input-msg').value;
+            if(!m) return;
+            db.ref('chamadas_ativas/' + un).update({ status: 'mensagem', msg_morador: m });
+            fecharMsg(); alert("ENVIADA! Autorize no botão ABRIR.");
+            responder('mensagem-enviada');
+        }
         function mudarTela(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-        function toggleMute() { somOn = !somOn; document.getElementById('btn-silenciar').innerText = somOn ? "🔔 SOM ATIVO" : "🔕 MODO VIBRAR"; }
+        function cancelarChamada() { responder('recusado'); }
     </script>
 </body>
 </html>
