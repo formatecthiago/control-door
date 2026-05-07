@@ -3,57 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY - MASTER ADMIN</title>
+    <title>VIRTY MASTER ADMIN</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; --blue: #007BFF; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         
-        /* Tela de Login */
-        #login-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
-        .login-box { background: #0a0a0a; border: 1px solid var(--neon); padding: 30px; border-radius: 20px; width: 100%; max-width: 320px; text-align: center; }
-        input { width: 100%; padding: 15px; margin: 15px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; text-align: center; font-size: 1rem; box-sizing: border-box; }
+        /* Login Style */
+        #login-gate { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .box { background: #0a0a0a; border: 2px solid var(--neon); padding: 30px; border-radius: 20px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 0 20px rgba(57, 255, 20, 0.2); }
+        input { width: 100%; padding: 15px; margin: 15px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; text-align: center; font-size: 1.1rem; outline: none; }
+        input:focus { border-color: var(--neon); }
         
-        /* Painel Admin */
-        .header { padding: 20px; border-bottom: 2px solid var(--gray); text-align: center; }
-        .container { padding: 20px; }
-        .card { background: #0a0a0a; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
+        /* Dashboard Style */
+        .header { padding: 20px; border-bottom: 2px solid var(--gray); text-align: center; background: #050505; }
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
         
         .btn { border: none; border-radius: 12px; padding: 15px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; }
         .btn-v { background: var(--neon); color: #000; }
         .btn-r { background: var(--red); color: #fff; padding: 8px 15px; width: auto; font-size: 0.8rem; }
         
-        .badge-pendente { color: #ffcc00; font-size: 0.8rem; font-weight: bold; }
-        .badge-ok { color: var(--neon); font-size: 0.8rem; font-weight: bold; }
+        .status-wait { color: #ffcc00; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .status-ok { color: var(--neon); font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        h3 { color: #666; font-size: 0.9rem; margin-top: 25px; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <div class="login-box">
-            <h2 style="color:var(--neon); margin:0;">VIRTY MASTER</h2>
-            <p style="color:#666; font-size:0.8rem;">Acesso Administrativo</p>
-            <input type="password" id="master-pass" placeholder="Digite a Senha Mestra">
-            <button class="btn btn-v" onclick="verificarSenha()">ACESSAR SISTEMA</button>
-            <p id="erro" style="color:var(--red); font-size:0.8rem; margin-top:10px; display:none;">Senha Incorreta!</p>
+    <div id="login-gate">
+        <div class="box">
+            <h2 style="color:var(--neon); margin-bottom:5px;">MASTER ADMIN</h2>
+            <p style="color:#555; margin-bottom:20px; font-size:0.8rem;">PROJETO VIRTY ACCESS</p>
+            <input type="password" id="pass" placeholder="SENHA MESTRA">
+            <button class="btn btn-v" onclick="acessar()">LOGAR NO SISTEMA</button>
+            <p id="msg-erro" style="color:var(--red); font-size:0.8rem; margin-top:15px; display:none;">Acesso Negado: Senha Inválida</p>
         </div>
     </div>
 
-    <div id="admin-panel" style="display:none;">
+    <div id="panel" style="display:none;">
         <div class="header">
-            <h1 style="color:var(--neon); margin:0; font-size:1.2rem;">GERENCIAMENTO DE ACESSO</h1>
-            <p style="color:#666; font-size:0.7rem;">Controle de Moradores e Validações</p>
+            <h1 style="color:var(--neon); margin:0; font-size:1.3rem;">GESTOR DE UNIDADES</h1>
         </div>
 
         <div class="container">
-            <h3 style="border-left: 3px solid var(--neon); padding-left: 10px;">Solicitações Pendentes</h3>
-            <div id="lista-pendentes">
-                </div>
+            <h3>Pendentes de Ativação</h3>
+            <div id="lista-p"></div>
 
-            <h3 style="border-left: 3px solid #666; padding-left: 10px; margin-top:30px; color:#666;">Unidades Ativas</h3>
-            <div id="lista-validados">
-                </div>
+            <h3>Unidades Validadas</h3>
+            <div id="lista-v"></div>
             
-            <button class="btn" onclick="logout()" style="background:#111; color:#fff; margin-top:30px;">SAIR DO SISTEMA</button>
+            <button class="btn" onclick="location.reload()" style="background:#111; color:#444; margin-top:40px; font-size:0.8rem;">DESCONECTAR MASTER</button>
         </div>
     </div>
 
@@ -65,74 +64,63 @@
         firebase.initializeApp(config);
         const db = firebase.database();
 
-        // A SENHA MESTRE QUE VOCÊ DEFINIU
-        const MASTER_KEY = "Virty_123quatro@#";
+        // A SENHA MESTRA QUE VOCÊ DEFINIU (PRÉ-TOKEN)
+        const MASTER_PASS = "Virty_123quatro@#";
 
-        function verificarSenha() {
-            const pass = document.getElementById('master-pass').value;
-            if(pass === MASTER_KEY) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('admin-panel').style.display = 'block';
-                carregarDados();
+        function acessar() {
+            const digitado = document.getElementById('pass').value;
+            if(digitado === MASTER_PASS) {
+                document.getElementById('login-gate').style.display = 'none';
+                document.getElementById('panel').style.display = 'block';
+                carregarListas();
             } else {
-                document.getElementById('erro').style.display = 'block';
-                document.getElementById('master-pass').value = "";
+                document.getElementById('msg-erro').style.display = 'block';
+                document.getElementById('pass').value = "";
             }
         }
 
-        function carregarDados() {
-            // Monitora Moradores Pendentes
-            db.ref('solicitacoes_cadastro').on('value', s => {
-                const cont = document.getElementById('lista-pendentes');
-                cont.innerHTML = "";
-                s.forEach(item => {
+        function carregarListas() {
+            // Escuta Solicitações
+            db.ref('solicitacoes_cadastro').on('value', snap => {
+                const div = document.getElementById('lista-p');
+                div.innerHTML = snap.exists() ? "" : "<p style='color:#333'>Nenhuma pendência.</p>";
+                snap.forEach(item => {
                     const d = item.val();
-                    cont.innerHTML += `
+                    div.innerHTML += `
                         <div class="card">
-                            <div>
-                                <b>Unidade ${d.unidade}</b><br>
-                                <span class="badge-pendente">AGUARDANDO APROVAÇÃO</span>
-                            </div>
-                            <div style="display:flex; gap:5px;">
-                                <button class="btn btn-v" style="padding:8px 12px;" onclick="aprovar('${item.key}', '${d.unidade}')">Aprovar</button>
-                                <button class="btn btn-r" onclick="excluir('solicitacoes_cadastro', '${item.key}')">✖</button>
+                            <div><b>CASA ${d.unidade}</b><br><span class="status-wait">Aguardando...</span></div>
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn-v" style="padding:8px 15px; border-radius:10px; font-weight:bold; cursor:pointer;" onclick="aprovar('${item.key}', '${d.unidade}')">ATIVAR</button>
+                                <button class="btn-r" onclick="apagar('solicitacoes_cadastro', '${item.key}')">✖</button>
                             </div>
                         </div>`;
                 });
             });
 
-            // Monitora Moradores Ativos
-            db.ref('moradores_validados').on('value', s => {
-                const cont = document.getElementById('lista-validados');
-                cont.innerHTML = "";
-                s.forEach(item => {
+            // Escuta Validados
+            db.ref('moradores_validados').on('value', snap => {
+                const div = document.getElementById('lista-v');
+                div.innerHTML = snap.exists() ? "" : "<p style='color:#333'>Nenhum morador ativo.</p>";
+                snap.forEach(item => {
                     const d = item.val();
-                    cont.innerHTML += `
+                    div.innerHTML += `
                         <div class="card">
-                            <div>
-                                <b>Unidade ${d.unidade}</b><br>
-                                <span class="badge-ok">VALIDADO</span>
-                            </div>
-                            <button class="btn btn-r" onclick="excluir('moradores_validados', '${item.key}')">Remover</button>
+                            <div><b>CASA ${d.unidade}</b><br><span class="status-ok">Sistema Ativo</span></div>
+                            <button class="btn-r" onclick="apagar('moradores_validados', '${item.key}')">REMOVER</button>
                         </div>`;
                 });
             });
         }
 
-        function aprovar(id, unidade) {
-            db.ref('moradores_validados').push({ unidade: unidade, ts: Date.now() });
-            db.ref('solicitacoes_cadastro/' + id).remove();
-            alert("Unidade " + unidade + " ativada com sucesso!");
+        function aprovar(key, unidade) {
+            db.ref('moradores_validados').push({ unidade: unidade, ativo_desde: Date.now() });
+            db.ref('solicitacoes_cadastro/' + key).remove();
         }
 
-        function excluir(path, id) {
-            if(confirm("Tem certeza que deseja excluir este registro?")) {
-                db.ref(path + '/' + id).remove();
+        function apagar(path, key) {
+            if(confirm("Confirmar exclusão definitiva?")) {
+                db.ref(path + '/' + key).remove();
             }
-        }
-
-        function logout() {
-            location.reload();
         }
     </script>
 </body>
