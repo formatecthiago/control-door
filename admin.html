@@ -3,16 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MASTER ADMIN</title>
+    <title>VIRTY MASTER ADMIN - ACESSO DIRETO</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; --blue: #007BFF; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        
-        /* Login Style */
-        #login-gate { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .box { background: #0a0a0a; border: 2px solid var(--neon); padding: 30px; border-radius: 20px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 0 20px rgba(57, 255, 20, 0.2); }
-        input { width: 100%; padding: 15px; margin: 15px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; text-align: center; font-size: 1.1rem; outline: none; }
-        input:focus { border-color: var(--neon); }
         
         /* Dashboard Style */
         .header { padding: 20px; border-bottom: 2px solid var(--gray); text-align: center; background: #050505; }
@@ -30,29 +24,24 @@
 </head>
 <body>
 
-    <div id="login-gate">
-        <div class="box">
-            <h2 style="color:var(--neon); margin-bottom:5px;">MASTER ADMIN</h2>
-            <p style="color:#555; margin-bottom:20px; font-size:0.8rem;">PROJETO VIRTY ACCESS</p>
-            <input type="password" id="pass" placeholder="SENHA MESTRA">
-            <button class="btn btn-v" onclick="acessar()">LOGAR NO SISTEMA</button>
-            <p id="msg-erro" style="color:var(--red); font-size:0.8rem; margin-top:15px; display:none;">Acesso Negado: Senha Inválida</p>
-        </div>
-    </div>
-
-    <div id="panel" style="display:none;">
+    <div id="panel">
         <div class="header">
             <h1 style="color:var(--neon); margin:0; font-size:1.3rem;">GESTOR DE UNIDADES</h1>
+            <p style="color:#444; font-size:0.7rem; margin-top:5px;">PAINEL ADMINISTRATIVO VIRTY</p>
         </div>
 
         <div class="container">
             <h3>Pendentes de Ativação</h3>
-            <div id="lista-p"></div>
+            <div id="lista-p">
+                <p style="color:#222">Carregando dados...</p>
+            </div>
 
             <h3>Unidades Validadas</h3>
-            <div id="lista-v"></div>
+            <div id="lista-v">
+                <p style="color:#222">Carregando dados...</p>
+            </div>
             
-            <button class="btn" onclick="location.reload()" style="background:#111; color:#444; margin-top:40px; font-size:0.8rem;">DESCONECTAR MASTER</button>
+            <button class="btn" onclick="location.reload()" style="background:#111; color:#444; margin-top:40px; font-size:0.8rem;">ATUALIZAR LISTAS</button>
         </div>
     </div>
 
@@ -60,35 +49,30 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
+        // Configuração do Firebase
+        const config = { 
+            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
+            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
+        };
         firebase.initializeApp(config);
         const db = firebase.database();
 
-        // A SENHA MESTRA QUE VOCÊ DEFINIU (PRÉ-TOKEN)
-        const MASTER_PASS = "Virty_123quatro@#";
-
-        function acessar() {
-            const digitado = document.getElementById('pass').value;
-            if(digitado === MASTER_PASS) {
-                document.getElementById('login-gate').style.display = 'none';
-                document.getElementById('panel').style.display = 'block';
-                carregarListas();
-            } else {
-                document.getElementById('msg-erro').style.display = 'block';
-                document.getElementById('pass').value = "";
-            }
-        }
+        // Inicia o carregamento automático das listas
+        window.onload = carregarListas;
 
         function carregarListas() {
-            // Escuta Solicitações
+            // Escuta Solicitações de Cadastro (Pendentes)
             db.ref('solicitacoes_cadastro').on('value', snap => {
                 const div = document.getElementById('lista-p');
-                div.innerHTML = snap.exists() ? "" : "<p style='color:#333'>Nenhuma pendência.</p>";
+                div.innerHTML = snap.exists() ? "" : "<p style='color:#333'>Nenhuma solicitação no momento.</p>";
                 snap.forEach(item => {
                     const d = item.val();
                     div.innerHTML += `
                         <div class="card">
-                            <div><b>CASA ${d.unidade}</b><br><span class="status-wait">Aguardando...</span></div>
+                            <div>
+                                <b>CASA ${d.unidade}</b><br>
+                                <span class="status-wait">Aguardando...</span>
+                            </div>
                             <div style="display:flex; gap:8px;">
                                 <button class="btn-v" style="padding:8px 15px; border-radius:10px; font-weight:bold; cursor:pointer;" onclick="aprovar('${item.key}', '${d.unidade}')">ATIVAR</button>
                                 <button class="btn-r" onclick="apagar('solicitacoes_cadastro', '${item.key}')">✖</button>
@@ -97,15 +81,18 @@
                 });
             });
 
-            // Escuta Validados
+            // Escuta Unidades Validadas (Moradores Ativos)
             db.ref('moradores_validados').on('value', snap => {
                 const div = document.getElementById('lista-v');
-                div.innerHTML = snap.exists() ? "" : "<p style='color:#333'>Nenhum morador ativo.</p>";
+                div.innerHTML = snap.exists() ? "" : "<p style='color:#333'>Nenhum morador ativado.</p>";
                 snap.forEach(item => {
                     const d = item.val();
                     div.innerHTML += `
                         <div class="card">
-                            <div><b>CASA ${d.unidade}</b><br><span class="status-ok">Sistema Ativo</span></div>
+                            <div>
+                                <b>CASA ${d.unidade}</b><br>
+                                <span class="status-ok">Sistema Ativo</span>
+                            </div>
                             <button class="btn-r" onclick="apagar('moradores_validados', '${item.key}')">REMOVER</button>
                         </div>`;
                 });
@@ -113,12 +100,17 @@
         }
 
         function aprovar(key, unidade) {
-            db.ref('moradores_validados').push({ unidade: unidade, ativo_desde: Date.now() });
+            // Move do nó de solicitações para o nó de validados
+            db.ref('moradores_validados').push({ 
+                unidade: unidade, 
+                ativo_desde: Date.now() 
+            });
             db.ref('solicitacoes_cadastro/' + key).remove();
+            console.log("Unidade " + unidade + " aprovada.");
         }
 
         function apagar(path, key) {
-            if(confirm("Confirmar exclusão definitiva?")) {
+            if(confirm("Confirmar exclusão definitiva deste registro?")) {
                 db.ref(path + '/' + key).remove();
             }
         }
