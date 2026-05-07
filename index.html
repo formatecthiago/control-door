@@ -1,172 +1,27 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Virty Access - Visitante v10.9</title>
-    <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
-        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 25px; text-align: center; box-sizing: border-box; }
-        .active { display: flex; }
-        
-        /* Câmera Circular */
-        .video-box { width: 260px; height: 260px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; position: relative; background: #111; }
-        video, canvas { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* Inputs e Botões Estilizados */
-        input { width: 100%; padding: 18px; margin: 8px 0; border-radius: 15px; border: 1px solid #333; background: #0a0a0a; color: white; font-size: 1.1rem; text-align: center; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--neon); }
-        
-        .btn { width: 100%; padding: 20px; border-radius: 40px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; transition: 0.3s; }
-        .btn-green { background: var(--neon); color: black; }
-        .btn-red { background: var(--red); color: white; }
-        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+// --- LOGICA DE IDENTIFICAÇÃO ÚNICA (ADICIONE ISSO) ---
+let v_id = localStorage.getItem('virty_visitor_id');
+if (!v_id) {
+    // Gera um ID fixo para este celular/navegador
+    v_id = 'ID-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    localStorage.setItem('virty_visitor_id', v_id);
+}
 
-        /* Pop-up de Status */
-        #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#050505; border:2px solid var(--neon); padding:30px; border-radius:25px; width:85%; z-index:1000; box-shadow: 0 0 30px rgba(57, 255, 20, 0.2); }
-    </style>
-</head>
-<body>
+// --- DENTRO DA FUNÇÃO chamar(), ALTERE O SET DO FIREBASE ---
+window.chamar = () => {
+    const un = document.getElementById('un').value;
+    if (!un) { alert("Informe a unidade!"); return; }
 
-    <div id="t0" class="screen active">
-        <h1 style="color:var(--neon); margin-top:60px; letter-spacing: 2px;">VIRTY ACCESS</h1>
-        <p style="color:#888; margin-bottom:40px;">Bem-vindo! Para iniciar sua visita, toque no botão abaixo.</p>
-        <div style="font-size: 5rem; margin-bottom: 40px;">🏢</div>
-        <button class="btn btn-green" onclick="solicitarPermissoes()">INICIAR ACESSO</button>
-    </div>
+    document.getElementById('view-un').innerText = un;
+    mudarTela('t2');
+    document.getElementById('som').play();
 
-    <div id="t1" class="screen">
-        <h2 style="color:var(--neon); margin:0;">IDENTIFICAÇÃO</h2>
-        <div class="video-box">
-            <video id="v" autoplay playsinline muted></video>
-            <canvas id="c-snap" style="display:none;"></canvas>
-        </div>
-        <button id="btn-snap" class="btn" style="background:#fff;" onclick="tirarFoto()">📸 TIRAR SELFIE</button>
-        
-        <input type="number" id="un" placeholder="Número da Unidade (Ex: 10)" inputmode="numeric">
-        <input type="text" id="msg" placeholder="Mensagem (Máx 50 chars)" maxlength="50">
-        
-        <button id="btn-go" class="btn btn-green" onclick="chamar()" disabled>CHAMAR MORADOR</button>
-    </div>
-
-    <div id="t2" class="screen">
-        <h1 id="timer" style="font-size: 6rem; color: var(--neon); margin: 40px 0 10px 0;">60</h1>
-        <p style="letter-spacing: 1px;">CHAMANDO UNIDADE <b id="view-un" style="color:var(--neon)"></b></p>
-        <div style="margin: 30px 0;">
-            <div class="pulse-ring"></div>
-            <p id="status-txt" style="color:#666; font-size: 0.9rem;">Aguardando resposta...</p>
-        </div>
-        <button class="btn btn-red" onclick="location.reload()">CANCELAR</button>
-    </div>
-
-    <div id="popup">
-        <h2 id="pop-t" style="color:var(--neon); margin-top:0;"></h2>
-        <p id="pop-m" style="font-size: 1.2rem; line-height: 1.5;"></p>
-        <button id="btn-pop-action" class="btn btn-green" onclick="location.reload()">OK, ENTENDI</button>
-    </div>
-
-    <audio id="som" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-    const app = initializeApp(config);
-    const db = getDatabase(app);
-
-    let b64 = "";
-    let contagem;
-    const v = document.getElementById('v'), c = document.getElementById('c-snap');
-
-    // TELA 0 -> TELA 1 (Permissões)
-    window.solicitarPermissoes = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
-            v.srcObject = stream;
-            mudarTela('t1');
-        } catch (err) {
-            alert("Erro: Para usar o interfone, você precisa permitir câmera e áudio.");
-        }
-    };
-
-    // SELFIE OBRIGATÓRIA
-    window.tirarFoto = () => {
-        c.width = v.videoWidth; c.height = v.videoHeight;
-        c.getContext('2d').drawImage(v, 0, 0);
-        b64 = c.toDataURL('image/jpeg', 0.5);
-        c.style.display = "block"; 
-        v.style.display = "none";
-        document.getElementById('btn-snap').innerText = "🔄 TIRAR OUTRA";
-        document.getElementById('btn-snap').style.background = "#333";
-        document.getElementById('btn-snap').style.color = "#fff";
-        document.getElementById('btn-go').disabled = false;
-    };
-
-    // GATILHO DE CHAMADA
-    window.chamar = () => {
-        const un = document.getElementById('un').value;
-        if (!un) { alert("Informe a unidade!"); return; }
-
-        document.getElementById('view-un').innerText = un;
-        mudarTela('t2');
-        document.getElementById('som').play();
-
-        const chamRef = ref(db, `chamadas_ativas/${un}`);
-        
-        // Criando a chamada conforme a visão (Regra de Ouro)
-        set(chamRef, {
-            status: "chamando",
-            foto: b64,
-            texto: document.getElementById('msg').value,
-            ts: Date.now(),
-            v_id: "visitante_" + Math.floor(Math.random() * 1000) // ID Temporário para teste
-        });
-
-        // Limpa se o visitante fechar a aba
-        onDisconnect(chamRef).remove();
-
-        // Ouvindo Resposta do Morador
-        onValue(chamRef, snap => {
-            const d = snap.val();
-            if (!d) return;
-
-            if (d.status === "liberado") {
-                showPop("ACESSO LIBERADO", "Portão abrindo... Seja bem-vindo!", true);
-            } else if (d.status === "recusado") {
-                showPop("CHAMADA ENCERRADA", "O morador não pode atender no momento.", false);
-            } else if (d.status === "mensagem") {
-                showPop("MENSAGEM RECEBIDA", d.msg_morador, false);
-            }
-        });
-
-        // TIMER DE 60 SEGUNDOS
-        let tempo = 60;
-        contagem = setInterval(() => {
-            tempo--;
-            document.getElementById('timer').innerText = tempo;
-            if (tempo <= 0) {
-                clearInterval(contagem);
-                document.getElementById('som').pause();
-                showPop("TEMPO ESGOTADO", "O morador não atendeu. Deseja tentar novamente?", false);
-                document.getElementById('btn-pop-action').innerText = "TENTAR NOVAMENTE";
-            }
-        }, 1000);
-    };
-
-    function mudarTela(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    function showPop(t, m, autoClose) {
-        clearInterval(contagem);
-        document.getElementById('som').pause();
-        document.getElementById('pop-t').innerText = t;
-        document.getElementById('pop-m').innerText = m;
-        document.getElementById('popup').style.display = "block";
-    }
-</script>
-</body>
-</html>
+    const chamRef = ref(db, `chamadas_ativas/${un}`);
+    
+    set(chamRef, {
+        status: "chamando",
+        foto: b64,
+        texto: document.getElementById('msg').value,
+        ts: Date.now(),
+        v_id: v_id // <--- AGORA USA O ID FIXO E PERSISTENTE
+    });
+    // ... resto do código
