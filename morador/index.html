@@ -3,57 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY ACCESS DOOR v10.7</title>
+    <title>VIRTY ACCESS DOOR v10.8</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --blue: #007BFF; --red: #FF3131; --gray: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
-
-        /* Header Estilo New 10 */
         .header-main { text-align: center; border-bottom: 2px solid var(--gray); padding-bottom: 15px; margin-bottom: 15px; }
         .virty-title { color: var(--neon); font-size: 1.1rem; font-weight: 900; letter-spacing: 2px; margin: 0; }
         .user-info { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.85rem; }
         .unidade-box { background: var(--neon); color: #000; padding: 3px 10px; border-radius: 5px; font-weight: bold; }
-
-        /* Histórico e Cards */
         #lista-hist { flex: 1; overflow-y: auto; }
         .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; }
         .hist-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 12px; }
-        .hist-info { flex: 1; }
-        .btn-status { font-size: 1.4rem; cursor: pointer; padding: 5px; border-radius: 10px; transition: 0.2s; }
-        .status-blocked { color: var(--red); background: rgba(255,0,0,0.1); border: 1px solid var(--red); }
-        .status-free { color: var(--neon); }
-
-        /* Botões */
+        .btn-status { font-size: 1.4rem; cursor: pointer; padding: 5px; }
         .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: 0.2s; }
         .btn-v { background: var(--neon); color: #000; }
         .btn-a { background: var(--blue); color: #fff; }
         .btn-r { background: var(--red); color: #fff; }
-
-        /* Modais */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: #111; border: 1px solid var(--neon); padding: 25px; border-radius: 20px; width: 100%; text-align: center; position: relative; }
-        .close-x { position: absolute; right: 15px; top: 10px; font-size: 1.8rem; color: var(--red); cursor: pointer; font-weight: bold; }
-
         #bloqueio-inicio { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
 <body>
 
     <div id="bloqueio-inicio">
-        <h1 style="color:var(--neon)">VIRTY ACCESS</h1>
-        <p style="color:#666; margin-bottom:25px;">Sincronizando Sistema v10.7...</p>
-        <button class="btn btn-v" onclick="entrarApp()" style="width:250px;">ENTRAR AGORA</button>
+        <h1 style="color:var(--neon)">VIRTY ACCESS DOOR</h1>
+        <p style="color:#666">v10.8 Sincronizada</p><br>
+        <button class="btn btn-v" onclick="ligar()" style="width:250px;">ENTRAR NO PAINEL</button>
     </div>
 
     <div id="s-home" class="screen">
         <div class="header-main">
-            <h1 class="virty-title">VIRTY ACCESS DOOR <span style="font-size:0.6rem; color:#666">v10.7</span></h1>
+            <h1 class="virty-title">VIRTY ACCESS DOOR <span style="font-size:0.6rem; color:#666">v10.8</span></h1>
             <div class="user-info">
-                <span id="txt-nome">Thiago Vieira</span>
-                <span class="unidade-box">CASA <span id="txt-un">10</span></span>
+                <span>Thiago Vieira</span>
+                <span class="unidade-box">CASA <span id="u-exibir">10</span></span>
             </div>
             <button class="btn" id="btn-silenciar" onclick="toggleMute()" style="background:#111; color:#fff; border:1px solid #333; padding:10px; font-size:0.75rem; margin-top:10px;">🔔 SOM ATIVO</button>
         </div>
@@ -67,41 +53,31 @@
     <div id="s-call" class="screen">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <span onclick="mudarTela('s-home')" style="font-size:2rem; cursor:pointer;">🏠</span>
-            <b style="color:var(--neon)">VISITANTE AO VIVO</b>
-            <span id="timer" style="color:var(--red); font-weight:bold; font-size:1.2rem;">--s</span>
+            <b style="color:var(--neon)">AO VIVO</b>
+            <span id="timer" style="color:var(--red); font-weight:bold; font-size:1.2rem;">60s</span>
         </div>
         <img id="img-vis" src="" style="width:100%; height:320px; border-radius:25px; object-fit:cover; margin:20px 0; border:2px solid var(--neon);">
         <div style="display:grid; gap:10px;">
             <button class="btn btn-v" onclick="responder('liberado')">✔️ ABRIR</button>
-            <button class="btn btn-a" onclick="abrirMsg()">💬 ACEITAR / MENSAGEM</button>
+            <button class="btn btn-a" onclick="abrirMsg()">💬 MENSAGEM</button>
             <button class="btn btn-r" onclick="responder('recusado')">✖️ RECUSAR</button>
         </div>
     </div>
 
     <div id="modal-msg" class="modal">
         <div class="modal-content">
-            <span class="close-x" onclick="fecharMsg()">X</span>
             <h3 style="color:var(--blue)">MENSAGEM AO VISITANTE</h3>
-            <input type="text" id="input-msg" maxlength="60" placeholder="Ex: Aguarde um momento..." style="width:100%; padding:15px; border-radius:10px; margin-bottom:15px; background:#000; color:#fff; border:1px solid var(--blue);">
-            <button class="btn btn-a" onclick="enviarMensagem()">ENVIAR E ENCERRAR</button>
+            <input type="text" id="input-msg" maxlength="60" placeholder="Aguarde um momento..." style="width:100%; padding:15px; border-radius:10px; margin-bottom:15px; background:#000; color:#fff; border:1px solid var(--blue);">
+            <button class="btn btn-a" onclick="enviarM()">ENVIAR E ENCERRAR</button>
+            <p onclick="fecharMsg()" style="color:var(--red); margin-top:10px; cursor:pointer;">CANCELAR</p>
         </div>
     </div>
 
     <div id="modal-info" class="modal">
         <div class="modal-content">
-            <span class="close-x" onclick="document.getElementById('modal-info').style.display='none'">X</span>
             <h3 style="color:var(--neon)">AVISO</h3>
-            <p>Mensagem enviada com sucesso!<br><b>Para liberar a entrada, você deve clicar no botão verde ABRIR.</b></p>
-        </div>
-    </div>
-
-    <div id="modal-limpar" class="modal">
-        <div class="modal-content">
-            <h3 style="color:var(--red)">LIMPAR TUDO?</h3>
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="btn btn-r" onclick="limparConfirmado()">SIM, APAGAR</button>
-                <button class="btn" style="background:#333; color:#fff;" onclick="popLimpar(false)">NÃO</button>
-            </div>
+            <p>Mensagem enviada!<br><b>A liberação deve ser feita no botão ABRIR.</b></p>
+            <button class="btn btn-v" onclick="document.getElementById('modal-info').style.display='none'">FECHAR (X)</button>
         </div>
     </div>
 
@@ -112,129 +88,106 @@
         const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
         firebase.initializeApp(config);
         const db = firebase.database();
-        
-        let audioCtx, loopSom, crono, meuId = "1778000704147", unAtiva = "10", somOn = true;
-        let blacklist = JSON.parse(localStorage.getItem('v_black_107') || '[]');
+        let audioCtx, loopSom, crono, un = "10", somOn = true;
+        let blacklist = JSON.parse(localStorage.getItem('virty_black_108') || '[]');
 
-        function entrarApp() {
+        function ligar() {
             try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
             document.getElementById('bloqueio-inicio').style.display = 'none';
             mudarTela('s-home');
-            setTimeout(inicializar, 500); // Carregamento progressivo para evitar tela preta
+            inicializar();
         }
 
         function toggleMute() {
             somOn = !somOn;
-            if(!somOn) alert("Modo Silencioso Ativo: O aparelho irá vibrar para as chamadas. Não é permitido silenciar totalmente.");
-            const b = document.getElementById('btn-silenciar');
-            b.innerText = somOn ? "🔔 SOM ATIVO" : "🔕 SILENCIADO (VIBRAR)";
-            b.style.color = somOn ? "#fff" : "var(--red)";
+            if(!somOn) alert("MODO VIBRAR ATIVO. O aparelho irá vibrar nas chamadas.");
+            document.getElementById('btn-silenciar').innerText = somOn ? "🔔 SOM ATIVO" : "🔕 SILENCIADO (VIBRAR)";
+            document.getElementById('btn-silenciar').style.color = somOn ? "#fff" : "var(--red)";
         }
 
         function playSom(on) {
             clearInterval(loopSom);
             if(!on) return;
             loopSom = setInterval(() => {
-                if(!somOn) { if(navigator.vibrate) navigator.vibrate([300, 150, 300]); return; }
+                if(!somOn) { if(navigator.vibrate) navigator.vibrate([400, 200, 400]); return; }
                 const t = audioCtx.currentTime;
-                [0, 0.15].forEach(d => {
+                [0, 0.2].forEach(d => {
                     const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
                     o.connect(g); g.connect(audioCtx.destination);
-                    o.type = 'sine'; o.frequency.setValueAtTime(1100, t + d);
+                    o.type = 'sine'; o.frequency.setValueAtTime(1000, t + d);
                     g.gain.setValueAtTime(0.1, t + d);
-                    g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.12);
-                    o.start(t + d); o.stop(t + d + 0.12);
+                    g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.15);
+                    o.start(t + d); o.stop(t + d + 0.15);
                 });
-            }, 2500); // Intervalo de 2 segundos de silêncio real
+            }, 2500);
         }
 
         function inicializar() {
-            db.ref('moradores_validados/'+meuId).on('value', s => {
-                if(s.exists()){
-                    unAtiva = s.val().unidade;
-                    document.getElementById('txt-un').innerText = unAtiva;
-                    escutar();
-                }
-            });
-        }
-
-        function escutar() {
-            db.ref('chamadas_ativas/'+unAtiva).on('value', s => {
+            // Escutar Chamada
+            db.ref('chamadas_ativas/'+un).on('value', s => {
                 const d = s.val();
                 if(d && d.status === 'chamando') {
                     if(blacklist.includes(d.v_id)) return;
                     document.getElementById('img-vis').src = d.foto;
-                    sincronizarTimer(d.ts);
                     mudarTela('s-call');
                     playSom(true);
-                } else { finalizarChamada(); }
+                    clearInterval(crono);
+                    crono = setInterval(() => {
+                        const rest = 60 - Math.floor((Date.now() - d.ts) / 1000);
+                        document.getElementById('timer').innerText = rest + "s";
+                        if(rest <= 0) responder('expirado');
+                    }, 1000);
+                } else {
+                    if(document.querySelector('.screen.active').id === 's-call') mudarTela('s-home');
+                    playSom(false); clearInterval(crono);
+                }
             });
 
-            db.ref('historico/'+unAtiva).on('value', snap => {
-                let items = []; snap.forEach(i => { items.unshift(i.val()); });
+            // Histórico com Agrupamento
+            db.ref('historico/'+un).on('value', s => {
+                const cont = document.getElementById('lista-hist');
+                cont.innerHTML = "";
+                let raw = []; s.forEach(i => { raw.unshift(i.val()); });
                 let ag = [];
-                items.forEach(it => {
+                raw.forEach(it => {
                     let last = ag[ag.length-1];
                     if(last && last.v_id === it.v_id && (it.ts - last.ts < 3600000)) { last.qtd = (last.qtd || 1) + 1; }
                     else { ag.push({...it, qtd: 1}); }
                 });
-                renderHist(ag);
-            });
-        }
-
-        function sincronizarTimer(ts) {
-            clearInterval(crono);
-            crono = setInterval(() => {
-                const r = 60 - Math.floor((Date.now() - ts) / 1000);
-                document.getElementById('timer').innerText = r + "s";
-                if(r <= 0) responder('expirado');
-            }, 1000);
-        }
-
-        function finalizarChamada() {
-            if(document.querySelector('.screen.active').id === 's-call') mudarTela('s-home');
-            playSom(false); clearInterval(crono);
-        }
-
-        function renderHist(lista) {
-            const cont = document.getElementById('lista-hist'); cont.innerHTML = "";
-            lista.slice(0,10).forEach(h => {
-                const b = blacklist.includes(h.v_id);
-                cont.innerHTML += `<div class="hist-card">
-                    <img src="${h.foto}" class="hist-img">
-                    <div class="hist-info"><b>VISITANTE ${h.qtd>1?h.qtd+'x':''}</b><br><small>${h.hora}</small></div>
-                    <div class="btn-status ${b?'status-blocked':'status-free'}" onclick="toggleB('${h.v_id}')">${b?'🚫':'🟢'}</div>
-                </div>`;
+                ag.slice(0,12).forEach(h => {
+                    const isB = blacklist.includes(h.v_id);
+                    cont.innerHTML += `<div class="hist-card">
+                        <img src="${h.foto}" class="hist-img">
+                        <div style="flex:1"><b>VISITANTE ${h.qtd>1?h.qtd+'x':''}</b><br><small>${h.hora}</small></div>
+                        <div class="btn-status" onclick="toggleB('${h.v_id}')">${isB?'🚫':'🟢'}</div>
+                    </div>`;
+                });
             });
         }
 
         function toggleB(id) {
             if(!id || id === 'anon') return;
             blacklist.includes(id) ? (blacklist = blacklist.filter(i => i !== id)) : blacklist.push(id);
-            localStorage.setItem('v_black_107', JSON.stringify(blacklist));
-            inicializar();
+            localStorage.setItem('virty_black_108', JSON.stringify(blacklist));
+            location.reload(); // Recarrega para aplicar visual
         }
 
-        function responder(tipo) {
-            db.ref('chamadas_ativas/'+unAtiva).update({ status: tipo });
-            setTimeout(() => { db.ref('chamadas_ativas/'+unAtiva).remove(); }, 500);
+        function responder(t) {
+            db.ref('chamadas_ativas/'+un).update({ status: t });
+            setTimeout(() => { db.ref('chamadas_ativas/'+un).remove(); }, 600);
         }
 
         function abrirMsg() { document.getElementById('modal-msg').style.display='flex'; }
         function fecharMsg() { document.getElementById('modal-msg').style.display='none'; }
         
-        function enviarMensagem() {
+        function enviarM() {
             const m = document.getElementById('input-msg').value;
             if(!m) return;
-            db.ref('chamadas_ativas/'+unAtiva).update({ status: 'mensagem', msg_morador: m });
+            db.ref('chamadas_ativas/'+un).update({ status: 'mensagem', msg_morador: m });
             fecharMsg();
             document.getElementById('modal-info').style.display='flex';
-            // REGRA IRREVOGÁVEL: Encerra e volta para home
-            setTimeout(() => { db.ref('chamadas_ativas/'+unAtiva).remove(); mudarTela('s-home'); }, 800);
+            setTimeout(() => { db.ref('chamadas_ativas/'+un).remove(); mudarTela('s-home'); }, 1000);
         }
-
-        function popLimpar(v) { document.getElementById('modal-limpar').style.display = v ? 'flex' : 'none'; }
-        function limparConfirmado() { db.ref('historico/'+unAtiva).remove(); popLimpar(false); }
 
         function mudarTela(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
