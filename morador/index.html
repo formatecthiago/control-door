@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v11.0</title>
+    <title>VIRTY MORADOR v11.1</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
@@ -98,7 +98,7 @@
         firebase.initializeApp(config);
         const db = firebase.database();
         
-        let audioCtx, un = "", b64_cad = "", somOn = true, crono, loopCampainha, mostrarDez = false;
+        let audioCtx, un = "", b64_cad = "", somOn = true, crono, loopChamada, mostrarDez = false;
 
         function entrarApp() {
             try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
@@ -112,25 +112,49 @@
             } else { mudarTela('s-cadastro'); iniciarCamera(); }
         }
 
-        // --- SISTEMA DE SOM (CAMPAINHA DIGITAL) ---
-        function ringtone() {
-            if(!somOn || !audioCtx) return;
-            const playPulse = () => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(660, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+        // --- SISTEMA DE CAMPAINHA DOORBELL E VIBRAÇÃO PULSANTE ---
+        function startAlert() {
+            if(!audioCtx) return;
+
+            const dingDong = () => {
+                // Som Ding (Agudo)
+                if(somOn) {
+                    const osc1 = audioCtx.createOscillator();
+                    const g1 = audioCtx.createGain();
+                    osc1.type = 'sine';
+                    osc1.frequency.setValueAtTime(660, audioCtx.currentTime);
+                    g1.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    g1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+                    osc1.connect(g1); g1.connect(audioCtx.destination);
+                    osc1.start(); osc1.stop(audioCtx.currentTime + 1);
+
+                    // Som Dong (Grave) após 0.4s
+                    setTimeout(() => {
+                        const osc2 = audioCtx.createOscillator();
+                        const g2 = audioCtx.createGain();
+                        osc2.type = 'sine';
+                        osc2.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                        g2.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.2);
+                        osc2.connect(g2); g2.connect(audioCtx.destination);
+                        osc2.start(); osc2.stop(audioCtx.currentTime + 1.2);
+                    }, 400);
+                }
+
+                // Vibração Pulsante (Independente do som estar ligado ou não, se o navegador permitir)
+                if(navigator.vibrate) {
+                    navigator.vibrate([500, 300, 500, 300]); // Vibra, pausa, vibra, pausa
+                }
             };
-            playPulse();
-            loopCampainha = setInterval(playPulse, 1500); // Toca, pausa 1s aprox, toca de novo
+
+            dingDong();
+            loopChamada = setInterval(dingDong, 3000); // Repete o ciclo a cada 3 segundos
         }
 
-        function stopRingtone() { clearInterval(loopCampainha); }
+        function stopAlert() {
+            clearInterval(loopChamada);
+            if(navigator.vibrate) navigator.vibrate(0); // Para a vibração imediatamente
+        }
 
         function iniciarCamera() {
             navigator.mediaDevices.getUserMedia({video: true}).then(s => document.getElementById('v-cad').srcObject = s);
@@ -155,122 +179,4 @@
         }
 
         function iniciarMonitor() {
-            // Monitor de Chamadas
-            db.ref('chamadas_ativas/' + un).on('value', s => {
-                const d = s.val();
-                if(d && d.status === 'chamando') {
-                    // VERIFICA BLOQUEIO INSTANTÂNEO
-                    if(localStorage.getItem('blk_' + d.v_id)) {
-                        db.ref('chamadas_ativas/' + un).update({ status: 'bloqueado' });
-                        setTimeout(() => db.ref('chamadas_ativas/' + un).remove(), 500);
-                        return;
-                    }
-                    
-                    document.getElementById('img-vis').src = d.foto;
-                    document.getElementById('box-msg-vis').innerText = d.texto || "";
-                    mudarTela('s-call');
-                    ringtone();
-                    if(!somOn && navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
-                    iniciarTimer(d.ts);
-                } else if(document.getElementById('s-call').classList.contains('active')) {
-                    mudarTela('s-home'); stopRingtone(); clearInterval(crono);
-                }
-            });
-
-            // Monitor de Histórico (Super Agrupamento 60min)
-            db.ref('historico/' + un).on('value', s => {
-                const cont = document.getElementById('lista-hist');
-                cont.innerHTML = "";
-                let raw = [];
-                s.forEach(c => { raw.push(c.val()); });
-                raw.reverse();
-
-                let agrupado = [];
-                raw.forEach(item => {
-                    let ultimo = agrupado[agrupado.length - 1];
-                    let diff = ultimo ? (ultimo.ts - item.ts) / 1000 / 60 : 999;
-                    if(ultimo && ultimo.v_id === item.v_id && diff < 60) {
-                        ultimo.count = (ultimo.count || 1) + 1;
-                    } else {
-                        item.count = 1;
-                        agrupado.push(item);
-                    }
-                });
-
-                const limite = mostrarDez ? 10 : 5;
-                if(agrupado.length > 5 && !mostrarDez) document.getElementById('btn-ver-mais').style.display = 'block';
-
-                agrupado.slice(0, limite).forEach(h => {
-                    const isBlk = localStorage.getItem('blk_' + h.v_id);
-                    cont.innerHTML += `
-                        <div class="hist-card">
-                            ${h.count > 1 ? `<div class="badge-count">${h.count}x</div>` : ''}
-                            <div style="display:flex; align-items:center;">
-                                <img src="${h.foto}" class="hist-img">
-                                <div><b>VISITANTE</b><br><small>${h.hora} - ${h.data}</small></div>
-                            </div>
-                            <button onclick="toggleBlock('${h.v_id}')" style="background:none; border:1px solid ${isBlk ? 'var(--red)' : '#444'}; color:${isBlk ? 'var(--red)' : '#666'}; padding:8px; border-radius:10px;">${isBlk ? '🚫' : '🟢'}</button>
-                        </div>`;
-                });
-            });
-        }
-
-        function iniciarTimer(ts) {
-            clearInterval(crono);
-            crono = setInterval(() => {
-                const seg = 60 - Math.floor((Date.now() - (ts || Date.now())) / 1000);
-                document.getElementById('timer').innerText = seg + "s";
-                if(seg <= 0) responder('expirado');
-            }, 1000);
-        }
-
-        function responder(status) {
-            db.ref('chamadas_ativas/' + un).once('value', s => {
-                const d = s.val();
-                if(d && status !== 'expirado') {
-                    const agora = new Date();
-                    db.ref('historico/' + un).push({
-                        foto: d.foto, v_id: d.v_id || 'anonimo', ts: Date.now(),
-                        hora: agora.getHours() + ":" + agora.getMinutes().toString().padStart(2, '0'),
-                        data: agora.toLocaleDateString('pt-BR')
-                    });
-                }
-                db.ref('chamadas_ativas/' + un).update({ status: status });
-                setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); mudarTela('s-home'); stopRingtone(); }, 500);
-            });
-        }
-
-        function toggleBlock(vid) {
-            const k = 'blk_' + vid;
-            localStorage.getItem(k) ? localStorage.removeItem(k) : localStorage.setItem(k, 'true');
-            location.reload();
-        }
-
-        function toggleMute() {
-            if(somOn) {
-                alert("AVISO: Não é possível silenciar por completo. O aparelho entrará obrigatoriamente em MODO VIBRAR.");
-                somOn = false;
-                document.getElementById('btn-silenciar').innerText = "🔕 MODO VIBRAR";
-                if(navigator.vibrate) navigator.vibrate(500);
-            } else {
-                somOn = true;
-                document.getElementById('btn-silenciar').innerText = "🔔 SOM ATIVO";
-            }
-        }
-
-        function mostrarMais() { mostrarDez = true; document.getElementById('btn-ver-mais').style.display = 'none'; }
-        function limparHistorico() { if(confirm("Zerar histórico?")) db.ref('historico/' + un).remove(); }
-        function abrirMsg() { document.getElementById('modal-msg').style.display = 'flex'; }
-        function fecharMsg() { document.getElementById('modal-msg').style.display = 'none'; }
-        function enviarM() {
-            const m = document.getElementById('input-msg').value;
-            if(!m) return;
-            db.ref('chamadas_ativas/' + un).update({ status: 'mensagem', msg_morador: m });
-            fecharMsg(); alert("ENVIADA! Autorize no botão ABRIR.");
-            responder('mensagem-enviada');
-        }
-        function mudarTela(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-        function cancelarChamada() { responder('recusado'); }
-    </script>
-</body>
-</html>
+            db.ref('chamadas_ativas/' + un).on
