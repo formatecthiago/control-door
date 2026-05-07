@@ -6,71 +6,93 @@
     <title>VIRTY MORADOR v10.9</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
         
-        /* Estilo do seu código antigo que funciona */
+        /* Cabeçalho */
         .header-main { text-align: center; border-bottom: 2px solid var(--gray); padding-bottom: 15px; margin-bottom: 15px; }
         .virty-title { color: var(--neon); font-size: 1.1rem; font-weight: 900; letter-spacing: 2px; margin: 0; }
         .unidade-box { background: var(--neon); color: #000; padding: 3px 10px; border-radius: 5px; font-weight: bold; }
         
-        /* Novos Cards com Foto e Bloqueio */
+        /* Histórico */
         .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
-        .hist-img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 12px; }
+        .hist-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 12px; }
         
-        .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: 0.2s; }
+        /* Botões */
+        .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: 0.2s; text-transform: uppercase; }
         .btn-v { background: var(--neon); color: #000; }
         .btn-r { background: var(--red); color: #fff; }
-        
+        .btn-a { background: var(--blue); color: #fff; }
+
         input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; background: #111; border: 1px solid #333; color: #fff; text-align: center; box-sizing: border-box; }
+        
+        /* Telas Especiais */
         #bloqueio-inicio { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 20px; }
+        
+        /* Modal de Mensagem */
+        #modal-msg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index: 10000; align-items:center; justify-content:center; padding:20px; }
+        .modal-content { background:#111; border:1px solid var(--blue); padding:25px; border-radius:20px; width:100%; max-width:400px; text-align:center; position:relative; }
     </style>
 </head>
 <body>
 
     <div id="bloqueio-inicio">
-        <h1 style="color:var(--neon)">VIRTY ACCESS</h1>
-        <p style="color:#666">Painel Morador v10.9</p><br>
+        <h1 style="color:var(--neon); margin:0;">VIRTY ACCESS</h1>
+        <p style="color:#666; margin-top:5px;">Painel Morador v10.9</p><br>
         <button class="btn btn-v" onclick="entrarApp()" style="width:250px;">ENTRAR NO PAINEL</button>
     </div>
 
     <div id="s-cadastro" class="screen">
-        <h2 style="color:var(--neon)">CADASTRO</h2>
-        <video id="v-cad" autoplay playsinline style="width:150px; height:150px; border-radius:50%; margin: 10px auto; border:2px solid var(--neon); object-fit:cover;"></video>
-        <button class="btn" style="background:#fff; padding:10px;" onclick="tirarFotoCad()">📸 TIRAR SELFIE</button>
+        <h2 style="color:var(--neon); text-align:center;">CADASTRO</h2>
+        <div style="width:150px; height:150px; border-radius:50%; margin: 10px auto; border:2px solid var(--neon); overflow:hidden; background:#111;">
+            <video id="v-cad" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+            <canvas id="c-snap" style="display:none;"></canvas>
+        </div>
+        <button class="btn" style="background:#fff; padding:10px; margin-bottom:15px;" onclick="tirarFotoCad()">📸 TIRAR SELFIE</button>
         <input type="text" id="cad-nome" placeholder="Nome Completo">
         <input type="number" id="cad-cpf" placeholder="CPF (Somente números)">
         <input type="number" id="cad-un" placeholder="Nº da Unidade">
-        <button class="btn btn-v" onclick="solicitarCadastro()">SOLICITAR ACESSO</button>
+        <button class="btn btn-v" onclick="solicitarCadastro()">CADASTRAR E ENVIAR</button>
     </div>
 
     <div id="s-home" class="screen">
         <div class="header-main">
             <h1 class="virty-title">VIRTY ACCESS DOOR v1</h1>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                <span id="nome-exibir">Thiago Vieira</span>
+                <span id="nome-exibir" style="font-weight:bold;">---</span>
                 <span class="unidade-box">CASA <span id="u-txt">--</span></span>
             </div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn" id="btn-silenciar" onclick="toggleMute()" style="background:#111; color:#fff; border:1px solid #333; padding:10px; font-size:0.75rem;">🔔 SOM ATIVO</button>
-                <button class="btn" onclick="limparHistorico()" style="background:#111; color:var(--red); border:1px solid var(--red); padding:10px; font-size:0.75rem;">🗑️ LIMPAR</button>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn" id="btn-silenciar" onclick="toggleMute()" style="background:#111; color:#fff; border:1px solid #333; padding:10px; font-size:0.75rem; flex:1;">🔔 SOM ATIVO</button>
+                <button class="btn" onclick="limparHistorico()" style="background:#111; color:var(--red); border:1px solid var(--red); padding:10px; font-size:0.75rem; flex:1;">🗑️ LIMPAR HISTÓRICO</button>
             </div>
         </div>
-        <div id="lista-hist"></div>
+        <div id="lista-hist" style="flex:1; overflow-y:auto;"></div>
     </div>
 
     <div id="s-call" class="screen">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span onclick="mudarTela('s-home')" style="cursor:pointer;">🏠 VOLTAR</span>
+            <span onclick="mudarTela('s-home')" style="cursor:pointer; color:#888;">🏠 VOLTAR</span>
             <b style="color:var(--neon)">AO VIVO</b>
-            <span id="timer" style="color:var(--red); font-weight:bold;">60s</span>
+            <span id="timer" style="color:var(--red); font-weight:bold; font-size:1.2rem;">60s</span>
         </div>
         <img id="img-vis" src="" style="width:100%; height:320px; border-radius:25px; object-fit:cover; margin:20px 0; border:2px solid var(--neon);">
+        <div id="box-msg-visitante" style="background:#111; padding:10px; border-radius:10px; margin-bottom:15px; color:#aaa; font-style:italic; text-align:center; display:none;"></div>
+        
         <div style="display:grid; gap:10px;">
             <button class="btn btn-v" onclick="responder('liberado')">✔️ ABRIR</button>
-            <button class="btn" style="background:var(--blue); color:#fff;" onclick="abrirMsg()">💬 MENSAGEM</button>
+            <button class="btn btn-a" onclick="abrirMsg()">💬 MENSAGEM</button>
             <button class="btn btn-r" onclick="responder('recusado')">✖️ RECUSAR</button>
+        </div>
+    </div>
+
+    <div id="modal-msg">
+        <div class="modal-content">
+            <span onclick="fecharMsg()" style="position:absolute; top:10px; right:15px; color:var(--red); font-size:1.5rem; cursor:pointer; font-weight:bold;">×</span>
+            <h3 style="color:var(--blue); margin-top:0;">ENVIAR RESPOSTA</h3>
+            <input type="text" id="input-msg" maxlength="50" placeholder="Escreva até 50 caracteres...">
+            <button class="btn btn-a" onclick="enviarM()">ENVIAR E ENCERRAR</button>
         </div>
     </div>
 
@@ -82,14 +104,12 @@
         firebase.initializeApp(config);
         const db = firebase.database();
         
-        let audioCtx, loopSom, un = "", b64_cad = "", somOn = true;
+        let audioCtx, loopSom, un = "", b64_cad = "", somOn = true, crono;
 
-        // Função de entrada igual ao seu código antigo
         function entrarApp() {
             try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
             document.getElementById('bloqueio-inicio').style.display = 'none';
             
-            // Verifica se já tem cadastro local
             const salvo = localStorage.getItem('virty_user');
             if(salvo) {
                 const user = JSON.parse(salvo);
@@ -106,46 +126,51 @@
 
         function iniciarCamera() {
             const v = document.getElementById('v-cad');
-            navigator.mediaDevices.getUserMedia({video: {facingMode: "user"}}).then(s => v.srcObject = s);
+            navigator.mediaDevices.getUserMedia({video: {facingMode: "user"}}).then(s => v.srcObject = s).catch(e => alert("Câmera bloqueada!"));
         }
 
         function tirarFotoCad() {
             const v = document.getElementById('v-cad');
-            const c = document.createElement('canvas');
+            const c = document.getElementById('c-snap');
             c.width = v.videoWidth; c.height = v.videoHeight;
             c.getContext('2d').drawImage(v, 0, 0);
             b64_cad = c.toDataURL('image/jpeg', 0.5);
-            alert("Foto capturada!");
+            alert("Selfie capturada com sucesso!");
         }
 
         function solicitarCadastro() {
             const nome = document.getElementById('cad-nome').value;
             const cpf = document.getElementById('cad-cpf').value;
             const unidade = document.getElementById('cad-un').value;
-            if(!nome || !cpf || !unidade) return alert("Preencha tudo!");
+            if(!nome || !cpf || !unidade || !b64_cad) return alert("Preencha Nome, CPF, Unidade e tire a Selfie!");
 
-            const dados = { nome, cpf, unidade, foto: b64_cad };
+            const dados = { nome, cpf, unidade, foto: b64_cad, status: 'pendente' };
             db.ref('solicitacoes_cadastro/' + cpf).set(dados);
             
-            // Salva provisório e avisa
             localStorage.setItem('virty_user', JSON.stringify(dados));
-            alert("Cadastro enviado! Peça ao Admin para autorizar.");
+            alert("Solicitação enviada! Aguarde a aprovação do Admin.");
             location.reload();
         }
 
         function iniciarMonitor() {
-            // Escuta chamadas
+            // Monitorar chamadas
             db.ref('chamadas_ativas/' + un).on('value', s => {
                 const d = s.val();
                 if(d && d.status === 'chamando') {
                     document.getElementById('img-vis').src = d.foto;
+                    const boxMsg = document.getElementById('box-msg-visitante');
+                    if(d.texto) { boxMsg.innerText = '"' + d.texto + '"'; boxMsg.style.display = 'block'; }
+                    else { boxMsg.style.display = 'none'; }
+                    
                     mudarTela('s-call');
+                    iniciarTimer(d.ts);
                 } else if(document.getElementById('s-call').classList.contains('active')) {
                     mudarTela('s-home');
+                    clearInterval(crono);
                 }
             });
 
-            // Histórico com agrupamento simples
+            // Histórico com Selfie, Data e Bloqueio
             db.ref('historico/' + un).limitToLast(10).on('value', s => {
                 const cont = document.getElementById('lista-hist');
                 cont.innerHTML = "";
@@ -153,24 +178,76 @@
                 s.forEach(child => { lista.unshift(child.val()); });
 
                 lista.forEach(h => {
+                    const isBlk = localStorage.getItem('blk_' + h.v_id);
                     cont.innerHTML += `
                         <div class="hist-card">
-                            <img src="${h.foto}" class="hist-img">
-                            <div><b>VISITANTE</b><br><small>${h.hora}</small></div>
-                            <button class="btn" style="width:auto; padding:5px 10px; font-size:0.6rem; background:#222; color:#fff;">BLOQUEAR</button>
+                            <div style="display:flex; align-items:center;">
+                                <img src="${h.foto}" class="hist-img">
+                                <div>
+                                    <b style="font-size:0.85rem;">VISITANTE</b><br>
+                                    <small style="color:#777;">${h.hora} - ${h.data || ''}</small>
+                                </div>
+                            </div>
+                            <button onclick="toggleBlock('${h.v_id}')" 
+                                    style="background:none; border:1px solid ${isBlk ? 'var(--red)' : '#444'}; 
+                                    color:${isBlk ? 'var(--red)' : '#666'}; padding:6px 12px; border-radius:12px; font-size:0.65rem; font-weight:bold;">
+                                ${isBlk ? '🚫 BLOQUEADO' : '🟢 BLOQUEAR'}
+                            </button>
                         </div>`;
                 });
             });
         }
 
+        function iniciarTimer(ts) {
+            clearInterval(crono);
+            crono = setInterval(() => {
+                const segundos = 60 - Math.floor((Date.now() - ts) / 1000);
+                document.getElementById('timer').innerText = segundos + "s";
+                if(segundos <= 0) { responder('expirado'); clearInterval(crono); }
+            }, 1000);
+        }
+
         function responder(status) {
             db.ref('chamadas_ativas/' + un).update({ status: status });
-            if(status === 'liberado') alert("AUTORIZE NO BOTÃO ABRIR");
-            setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); }, 500);
+            setTimeout(() => { 
+                db.ref('chamadas_ativas/' + un).remove(); 
+                mudarTela('s-home');
+            }, 500);
+        }
+
+        function abrirMsg() { document.getElementById('modal-msg').style.display = 'flex'; }
+        function fecharMsg() { document.getElementById('modal-msg').style.display = 'none'; }
+
+        function enviarM() {
+            const msg = document.getElementById('input-msg').value;
+            if(!msg) return alert("Digite uma mensagem!");
+            
+            db.ref('chamadas_ativas/' + un).update({ status: 'mensagem', msg_morador: msg });
+            fecharMsg();
+            
+            alert("MENSAGEM ENVIADA! \n\nAutorize a entrada física no botão ABRIR.");
+            
+            setTimeout(() => { 
+                db.ref('chamadas_ativas/' + un).remove(); 
+                mudarTela('s-home');
+            }, 1000);
+        }
+
+        function toggleBlock(vid) {
+            const key = 'blk_' + vid;
+            if(localStorage.getItem(key)) {
+                localStorage.removeItem(key);
+                alert("Visitante Desbloqueado!");
+            } else {
+                localStorage.setItem(key, 'true');
+                alert("Visitante Bloqueado!");
+            }
         }
 
         function limparHistorico() {
-            if(confirm("Zerar histórico?")) db.ref('historico/' + un).remove();
+            if(confirm("Deseja ZERAR todo o histórico de chamadas?")) {
+                db.ref('historico/' + un).remove();
+            }
         }
 
         function mudarTela(id) {
@@ -181,6 +258,7 @@
         function toggleMute() {
             somOn = !somOn;
             document.getElementById('btn-silenciar').innerText = somOn ? "🔔 SOM ATIVO" : "🔕 MODO VIBRAR";
+            if(!somOn) alert("MODO VIBRAR: O aparelho vibrará nas chamadas e o volume será reduzido.");
         }
     </script>
 </body>
