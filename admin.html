@@ -3,117 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MASTER ADMIN - ACESSO DIRETO</title>
+    <title>VIRTY MASTER ADMIN v1.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; --blue: #007BFF; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         
-        /* Dashboard Style */
-        .header { padding: 20px; border-bottom: 2px solid var(--gray); text-align: center; background: #050505; }
-        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
-        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+        .header { padding: 20px; border-bottom: 2px solid var(--gray); background: #050505; text-align: center; }
+        .admin-info { font-size: 0.75rem; color: #666; margin-top: 10px; line-height: 1.4; }
         
-        .btn { border: none; border-radius: 12px; padding: 15px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; }
-        .btn-v { background: var(--neon); color: #000; }
-        .btn-r { background: var(--red); color: #fff; padding: 8px 15px; width: auto; font-size: 0.8rem; }
-        
-        .status-wait { color: #ffcc00; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
-        .status-ok { color: var(--neon); font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
-        h3 { color: #666; font-size: 0.9rem; margin-top: 25px; text-transform: uppercase; letter-spacing: 1px; }
+        .container { padding: 20px; max-width: 800px; margin: 0 auto; }
+        h3 { color: #444; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; margin-top: 30px; border-left: 3px solid var(--neon); padding-left: 10px; }
+
+        /* Estilização dos Cards */
+        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 20px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
+        .user-data { display: flex; align-items: center; gap: 15px; }
+        .user-photo { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; }
+        .info-text b { color: var(--neon); font-size: 1.1rem; }
+        .info-text p { margin: 2px 0; font-size: 0.85rem; color: #aaa; }
+
+        /* Botões */
+        .btn-group { display: flex; gap: 10px; }
+        .btn { border: none; border-radius: 12px; padding: 10px 20px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.8rem; }
+        .btn-ok { background: var(--neon); color: #000; }
+        .btn-del { background: transparent; border: 1px solid var(--red); color: var(--red); }
+        .btn-edit { background: transparent; border: 1px solid var(--blue); color: var(--blue); }
+
+        /* Alerta de Limite */
+        .limit-alert { color: var(--red); font-size: 0.7rem; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="panel">
-        <div class="header">
-            <h1 style="color:var(--neon); margin:0; font-size:1.3rem;">GESTOR DE UNIDADES</h1>
-            <p style="color:#444; font-size:0.7rem; margin-top:5px;">PAINEL ADMINISTRATIVO VIRTY</p>
-        </div>
-
-        <div class="container">
-            <h3>Pendentes de Ativação</h3>
-            <div id="lista-p">
-                <p style="color:#222">Carregando dados...</p>
-            </div>
-
-            <h3>Unidades Validadas</h3>
-            <div id="lista-v">
-                <p style="color:#222">Carregando dados...</p>
-            </div>
-            
-            <button class="btn" onclick="location.reload()" style="background:#111; color:#444; margin-top:40px; font-size:0.8rem;">ATUALIZAR LISTAS</button>
+    <div class="header">
+        <h1 style="color:var(--neon); margin:0; font-size:1.5rem; letter-spacing:3px;">VIRTY ACCESS DOOR v1</h1>
+        <div class="admin-info">
+            <span id="adm-nome">Thiago Rodrigo N. Vieira</span> | <span id="adm-cpf">000.000.000-00</span><br>
+            <span id="data-hora"></span>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <div class="container">
+        <h3>Solicitações Pendentes</h3>
+        <div id="lista-pendentes">
+            <p style="color:#222; padding:20px;">Nenhuma solicitação aguardando...</p>
+        </div>
 
-    <script>
-        // Configuração do Firebase
-        const config = { 
-            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
-            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
-        };
-        firebase.initializeApp(config);
-        const db = firebase.database();
+        <h3>Unidades Autorizadas</h3>
+        <div id="lista-autorizados">
+            <p style="color:#222; padding:20px;">Nenhum morador ativo...</p>
+        </div>
+    </div>
 
-        // Inicia o carregamento automático das listas
-        window.onload = carregarListas;
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        function carregarListas() {
-            // Escuta Solicitações de Cadastro (Pendentes)
-            db.ref('solicitacoes_cadastro').on('value', snap => {
-                const div = document.getElementById('lista-p');
-                div.innerHTML = snap.exists() ? "" : "<p style='color:#333'>Nenhuma solicitação no momento.</p>";
-                snap.forEach(item => {
-                    const d = item.val();
-                    div.innerHTML += `
-                        <div class="card">
-                            <div>
-                                <b>CASA ${d.unidade}</b><br>
-                                <span class="status-wait">Aguardando...</span>
+    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
+    const app = initializeApp(config);
+    const db = getDatabase(app);
+
+    // Atualiza Data/Hora no topo
+    setInterval(() => {
+        const agora = new Date();
+        document.getElementById('data-hora').innerText = agora.toLocaleString('pt-BR');
+    }, 1000);
+
+    // Variável para controle do limite de 5 cadastros
+    let contagemUnidades = {};
+
+    function carregarDados() {
+        // 1. Escuta Moradores Validados para calcular limites
+        onValue(ref(db, 'moradores_validados'), snap => {
+            contagemUnidades = {};
+            const divAutorizados = document.getElementById('lista-autorizados');
+            divAutorizados.innerHTML = "";
+
+            snap.forEach(child => {
+                const d = child.val();
+                const key = child.key;
+                
+                // Contabiliza moradores por unidade
+                contagemUnidades[d.unidade] = (contagemUnidades[d.unidade] || 0) + 1;
+
+                divAutorizados.innerHTML += `
+                    <div class="card">
+                        <div class="user-data">
+                            <img src="${d.foto}" class="user-photo">
+                            <div class="info-text">
+                                <b>CASA ${d.unidade}</b>
+                                <p>${d.nome}</p>
+                                <p>CPF: ${d.cpf}</p>
                             </div>
-                            <div style="display:flex; gap:8px;">
-                                <button class="btn-v" style="padding:8px 15px; border-radius:10px; font-weight:bold; cursor:pointer;" onclick="aprovar('${item.key}', '${d.unidade}')">ATIVAR</button>
-                                <button class="btn-r" onclick="apagar('solicitacoes_cadastro', '${item.key}')">✖</button>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-edit" onclick="editar('${key}')">EDITAR</button>
+                            <button class="btn btn-del" onclick="remover('moradores_validados', '${key}')">DELETAR</button>
+                        </div>
+                    </div>`;
+            });
+        });
+
+        // 2. Escuta Pendentes
+        onValue(ref(db, 'solicitacoes_cadastro'), snap => {
+            const divPendentes = document.getElementById('lista-pendentes');
+            divPendentes.innerHTML = snap.exists() ? "" : "<p style='color:#333'>Nenhuma solicitação no momento.</p>";
+
+            snap.forEach(child => {
+                const d = child.val();
+                const key = child.key;
+                const totalNaUnidade = contagemUnidades[d.unidade] || 0;
+                const limiteAtingido = totalNaUnidade >= 5;
+
+                divPendentes.innerHTML += `
+                    <div class="card" style="border-color: ${limiteAtingido ? '#300' : '#222'}">
+                        <div class="user-data">
+                            <img src="${d.foto}" class="user-photo">
+                            <div class="info-text">
+                                <b>CASA ${d.unidade}</b>
+                                <p>${d.nome}</p>
+                                <p>CPF: ${d.cpf}</p>
+                                ${limiteAtingido ? '<span class="limit-alert">LIMITE DE 5 PESSOAS ATINGIDO</span>' : ''}
                             </div>
-                        </div>`;
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-ok" onclick="aprovar('${key}')" ${limiteAtingido ? 'disabled style="opacity:0.2"' : ''}>ACEITAR</button>
+                            <button class="btn btn-del" onclick="remover('solicitacoes_cadastro', '${key}')">RECUSAR</button>
+                        </div>
+                    </div>`;
+            });
+        });
+    }
+
+    // FUNÇÕES DE AÇÃO
+    window.aprovar = (key) => {
+        onValue(ref(db, 'solicitacoes_cadastro/' + key), snap => {
+            const dados = snap.val();
+            if(dados) {
+                // Adiciona aos validados
+                push(ref(db, 'moradores_validados'), {
+                    ...dados,
+                    data_aprovacao: Date.now()
+                }).then(() => {
+                    // Remove dos pendentes
+                    remove(ref(db, 'solicitacoes_cadastro/' + key));
                 });
-            });
-
-            // Escuta Unidades Validadas (Moradores Ativos)
-            db.ref('moradores_validados').on('value', snap => {
-                const div = document.getElementById('lista-v');
-                div.innerHTML = snap.exists() ? "" : "<p style='color:#333'>Nenhum morador ativado.</p>";
-                snap.forEach(item => {
-                    const d = item.val();
-                    div.innerHTML += `
-                        <div class="card">
-                            <div>
-                                <b>CASA ${d.unidade}</b><br>
-                                <span class="status-ok">Sistema Ativo</span>
-                            </div>
-                            <button class="btn-r" onclick="apagar('moradores_validados', '${item.key}')">REMOVER</button>
-                        </div>`;
-                });
-            });
-        }
-
-        function aprovar(key, unidade) {
-            // Move do nó de solicitações para o nó de validados
-            db.ref('moradores_validados').push({ 
-                unidade: unidade, 
-                ativo_desde: Date.now() 
-            });
-            db.ref('solicitacoes_cadastro/' + key).remove();
-            console.log("Unidade " + unidade + " aprovada.");
-        }
-
-        function apagar(path, key) {
-            if(confirm("Confirmar exclusão definitiva deste registro?")) {
-                db.ref(path + '/' + key).remove();
             }
+        }, { onlyOnce: true });
+    };
+
+    window.remover = (path, key) => {
+        if(confirm("Tem certeza que deseja remover este cadastro permanentemente?")) {
+            remove(ref(db, path + '/' + key));
         }
-    </script>
+    };
+
+    window.editar = (key) => {
+        const novoNome = prompt("Digite o novo nome para este morador:");
+        if(novoNome) {
+            set(ref(db, 'moradores_validados/' + key + '/nome'), novoNome);
+        }
+    };
+
+    // Inicia a carga de dados
+    carregarDados();
+
+</script>
 </body>
 </html>
