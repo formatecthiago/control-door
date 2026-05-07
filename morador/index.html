@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v11.4</title>
+    <title>VIRTY MORADOR v11.5</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
@@ -14,7 +14,7 @@
         .virty-title { color: var(--neon); font-size: 1.1rem; font-weight: 900; letter-spacing: 2px; margin: 0; }
         .unidade-box { background: var(--neon); color: #000; padding: 3px 10px; border-radius: 5px; font-weight: bold; }
         
-        .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; position: relative; }
+        .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; position: relative; transition: 0.3s; }
         .hist-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 12px; }
         .badge-count { position: absolute; top: 5px; left: 45px; background: var(--red); color: white; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: 900; border: 2px solid #000; z-index: 10; }
         
@@ -34,8 +34,8 @@
 
     <div id="bloqueio-inicio">
         <h1 style="color:var(--neon); margin:0; letter-spacing:3px;">VIRTY ACCESS</h1>
-        <p style="color:#666; margin-top:10px;">Toque para ativar áudio e histórico</p><br>
-        <button class="btn btn-v" onclick="entrarApp()" style="width:260px;">ENTRAR NO PAINEL</button>
+        <p style="color:#666; margin-top:10px;">Clique para iniciar o painel de controle</p><br>
+        <button class="btn btn-v" onclick="entrarApp()" style="width:260px;">ENTRAR</button>
     </div>
 
     <div id="s-home" class="screen">
@@ -51,20 +51,20 @@
             </div>
         </div>
         <div id="lista-hist" style="flex:1; overflow-y:auto; padding-bottom: 10px;"></div>
-        <button id="btn-ver-mais" onclick="mostrarMais()">VER MAIS CHAMADAS</button>
+        <button id="btn-ver-mais" onclick="mostrarMais()">EXIBIR MAIS CHAMADAS</button>
     </div>
 
     <div id="s-call" class="screen">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <span onclick="responder('recusado')" style="cursor:pointer; color:#888;">✖ VOLTAR</span>
-            <b style="color:var(--neon)">AO VIVO</b>
+            <b style="color:var(--neon)">CHAMADA EM CURSO</b>
             <span id="timer" style="color:var(--red); font-weight:bold; font-size:1.3rem;">60s</span>
         </div>
         <img id="img-vis" src="" style="width:100%; height:320px; border-radius:25px; object-fit:cover; margin:20px 0; border:2px solid var(--neon);">
         <div id="box-msg-vis" style="background:rgba(57,255,20,0.1); padding:12px; border-radius:12px; margin-bottom:15px; color:var(--neon); text-align:center;"></div>
         <div style="display:grid; gap:12px;">
-            <button class="btn btn-v" onclick="responder('liberado')">✔️ LIBERAR</button>
-            <button class="btn btn-a" onclick="abrirMsg()">💬 MENSAGEM</button>
+            <button class="btn btn-v" onclick="responder('liberado')">✔️ LIBERAR ACESSO</button>
+            <button class="btn btn-a" onclick="abrirMsg()">💬 ENVIAR MSG</button>
             <button class="btn btn-r" onclick="responder('recusado')">✖️ RECUSAR</button>
         </div>
     </div>
@@ -73,8 +73,8 @@
         <div class="modal-content">
             <span onclick="fecharMsg()" style="position:absolute; top:10px; right:15px; color:var(--red); font-size:1.8rem; cursor:pointer;">×</span>
             <h3>RESPOSTA RÁPIDA</h3>
-            <input type="text" id="input-msg" maxlength="50" placeholder="Ex: Já estou descendo...">
-            <button class="btn btn-a" onclick="enviarM()">ENVIAR E ENCERRAR</button>
+            <input type="text" id="input-msg" maxlength="50" placeholder="Ex: Já estou chegando!">
+            <button class="btn btn-a" onclick="enviarM()">ENVIAR RESPOSTA</button>
         </div>
     </div>
 
@@ -104,14 +104,14 @@
             }
         }
 
-        // --- DING DONG +5dB (GANHO 0.8) ---
+        // --- DING DONG AJUSTADO (-3dB em relação ao anterior, Ganho 0.5) ---
         function startAlert() {
             if(!audioCtx) return;
             const playCycle = () => {
                 const t = audioCtx.currentTime;
                 if(somOn) {
                     const g = audioCtx.createGain();
-                    g.gain.setValueAtTime(0.8, t); // Volume aumentado
+                    g.gain.setValueAtTime(0.5, t); // Volume moderado e nítido
                     g.connect(audioCtx.destination);
 
                     const osc1 = audioCtx.createOscillator();
@@ -133,19 +133,19 @@
         function stopAlert() { clearInterval(loopAlerta); if(navigator.vibrate) navigator.vibrate(0); }
 
         function iniciarMonitor() {
-            // 1. MONITOR DE CHAMADAS COM BLOQUEIO INSTANTÂNEO
+            // MONITOR DE CHAMADAS
             db.ref('chamadas_ativas/' + un).on('value', s => {
                 const d = s.val();
                 if(d && d.status === 'chamando') {
-                    // BLOQUEIO CIRÚRGICO: Se o ID estiver na lista, mata a chamada antes de qualquer alerta
-                    if(localStorage.getItem('blk_' + d.v_id)) {
-                        db.ref('chamadas_ativas/' + un).update({ status: 'bloqueado' });
+                    // SE O V_ID EXISTIR E ESTIVER BLOQUEADO
+                    if(d.v_id && localStorage.getItem('blk_' + d.v_id)) {
+                        db.ref('chamadas_ativas/' + un).update({ status: 'bloqueado_pelo_morador' });
                         setTimeout(() => db.ref('chamadas_ativas/' + un).remove(), 200);
                         return;
                     }
                     
                     document.getElementById('img-vis').src = d.foto;
-                    document.getElementById('box-msg-vis').innerText = d.texto || "Chamada de visitante";
+                    document.getElementById('box-msg-vis').innerText = d.texto || "Visitante aguardando...";
                     mudarTela('s-call');
                     startAlert();
                     iniciarTimer(d.ts);
@@ -154,8 +154,8 @@
                 }
             });
 
-            // 2. HISTÓRICO COM ACÚMULO (60 MIN) E BOTÃO VER MAIS
-            db.ref('historico/' + un).limitToLast(30).on('value', s => {
+            // HISTÓRICO COM ACÚMULO E BLOQUEIO
+            db.ref('historico/' + un).limitToLast(40).on('value', s => {
                 const cont = document.getElementById('lista-hist');
                 cont.innerHTML = "";
                 let raw = [];
@@ -167,7 +167,8 @@
                     let ultimo = agrupado[agrupado.length - 1];
                     let diffMin = ultimo ? (ultimo.ts - item.ts) / 1000 / 60 : 999;
                     
-                    if(ultimo && ultimo.v_id === item.v_id && diffMin < 60) {
+                    // Só agrupa se tiver o mesmo v_id E tempo menor que 60 min
+                    if(ultimo && item.v_id && ultimo.v_id === item.v_id && diffMin < 60) {
                         ultimo.count = (ultimo.count || 1) + 1;
                     } else {
                         item.count = 1;
@@ -175,28 +176,37 @@
                     }
                 });
 
-                const totalItems = agrupado.length;
                 const limite = mostrarDez ? 10 : 5;
-                
-                if(totalItems > 5 && !mostrarDez) document.getElementById('btn-ver-mais').style.display = 'block';
+                if(agrupado.length > 5 && !mostrarDez) document.getElementById('btn-ver-mais').style.display = 'block';
                 else document.getElementById('btn-ver-mais').style.display = 'none';
 
                 agrupado.slice(0, limite).forEach(h => {
-                    const isBlk = localStorage.getItem('blk_' + h.v_id);
+                    const isBlk = h.v_id ? localStorage.getItem('blk_' + h.v_id) : false;
                     cont.innerHTML += `
-                        <div class="hist-card" style="border-left: 4px solid ${isBlk ? 'var(--red)' : 'var(--neon)'}">
+                        <div class="hist-card" style="border-left: 5px solid ${isBlk ? 'var(--red)' : 'var(--neon)'}">
                             ${h.count > 1 ? `<div class="badge-count">${h.count}x</div>` : ''}
                             <div style="display:flex; align-items:center;">
                                 <img src="${h.foto}" class="hist-img">
-                                <div><b>VISITANTE</b><br><small>${h.hora} - ${h.data}</small></div>
+                                <div><b style="font-size:0.8rem">VISITANTE</b><br><small style="color:#777">${h.hora} - ${h.data}</small></div>
                             </div>
                             <button onclick="toggleBlock('${h.v_id}')" 
-                                style="background:${isBlk ? 'var(--red)' : '#111'}; color:${isBlk ? '#fff' : '#666'}; border:1px solid #444; padding:8px 12px; border-radius:10px; font-size:0.7rem; font-weight:bold;">
+                                style="background:${isBlk ? 'var(--red)' : '#111'}; color:${isBlk ? '#fff' : '#666'}; border:1px solid #333; padding:10px; border-radius:12px; font-size:0.65rem; font-weight:bold;">
                                 ${isBlk ? 'DESBLOQUEAR' : 'BLOQUEAR'}
                             </button>
                         </div>`;
                 });
             });
+        }
+
+        function toggleBlock(vid) {
+            if(!vid || vid === 'undefined' || vid === 'null') {
+                alert("Erro: Este visitante não gerou um ID válido para bloqueio.");
+                return;
+            }
+            const k = 'blk_' + vid;
+            if(localStorage.getItem(k)) localStorage.removeItem(k);
+            else localStorage.setItem(k, 'true');
+            // O monitor do histórico já vai atualizar a cor do botão sozinho
         }
 
         function iniciarTimer(ts) {
@@ -214,7 +224,7 @@
                 if(d && status !== 'expirado' && status !== 'recusado') {
                     const agora = new Date();
                     db.ref('historico/' + un).push({
-                        foto: d.foto, v_id: d.v_id, ts: Date.now(),
+                        foto: d.foto, v_id: d.v_id || 'anonimo', ts: Date.now(),
                         hora: agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0'),
                         data: agora.toLocaleDateString('pt-BR')
                     });
@@ -224,16 +234,9 @@
             });
         }
 
-        function toggleBlock(vid) {
-            const k = 'blk_' + vid;
-            if(localStorage.getItem(k)) localStorage.removeItem(k);
-            else localStorage.setItem(k, 'true');
-            alert("Alteração realizada! O histórico atualizará o status.");
-        }
-
         function toggleMute() {
             if(somOn) {
-                alert("AVISO: O sistema agora operará apenas no modo VIBRAR PULSANTE CONSTANTE.");
+                alert("PONTO DE ATENÇÃO: O som foi desligado. O modo VIBRAR PULSANTE continuará ativo durante as chamadas.");
                 somOn = false;
                 document.getElementById('btn-silenciar').innerText = "🔕 MODO VIBRAR";
             } else {
@@ -243,7 +246,7 @@
         }
 
         function mostrarMais() { mostrarDez = true; }
-        function limparHistorico() { if(confirm("Deseja zerar o histórico?")) db.ref('historico/' + un).remove(); }
+        function limparHistorico() { if(confirm("Deseja apagar o histórico de chamadas?")) db.ref('historico/' + un).remove(); }
         function abrirMsg() { document.getElementById('modal-msg').style.display = 'flex'; }
         function fecharMsg() { document.getElementById('modal-msg').style.display = 'none'; }
         function enviarM() {
