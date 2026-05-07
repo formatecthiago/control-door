@@ -3,24 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY ACCESS DOOR v10.5</title>
+    <title>VIRTY ACCESS DOOR v10.6</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --blue: #007BFF; --red: #FF3131; --gray: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
         
-        /* Layout New 10 */
+        /* Header New 10 */
         .header-main { text-align: center; border-bottom: 2px solid var(--gray); padding-bottom: 15px; margin-bottom: 15px; }
         .virty-title { color: var(--neon); font-size: 1.1rem; font-weight: 900; letter-spacing: 2px; margin: 0; }
         .user-info { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.85rem; }
         .unidade-box { background: var(--neon); color: #000; padding: 3px 10px; border-radius: 5px; font-weight: bold; }
 
-        /* Histórico */
-        #lista-hist { flex: 1; overflow-y: auto; padding-bottom: 20px; }
         .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; }
         .hist-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 12px; }
-        .hist-info { flex: 1; }
         .btn-status { font-size: 1.4rem; cursor: pointer; padding: 5px; }
 
         .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: 0.2s; }
@@ -37,16 +34,16 @@
 <body>
 
     <div id="bloqueio-inicio">
-        <h1 style="color:var(--neon)">VIRTY NEW 10.5</h1>
-        <button class="btn btn-v" onclick="conectar()" style="width:250px;">ATIVAR SISTEMA</button>
+        <h1 style="color:var(--neon)">VIRTY NEW 10.6</h1>
+        <button class="btn btn-v" onclick="entrar()" style="width:250px;">ENTRAR NO PAINEL</button>
     </div>
 
     <div id="s-home" class="screen">
         <div class="header-main">
-            <h1 class="virty-title">VIRTY ACCESS DOOR <span style="font-size:0.6rem; color:#666">v10.5</span></h1>
+            <h1 class="virty-title">VIRTY ACCESS DOOR <span style="font-size:0.6rem; color:#666">v10.6</span></h1>
             <div class="user-info">
-                <span id="nome-m">Thiago Vieira</span>
-                <span class="unidade-box">CASA <span id="un-m">10</span></span>
+                <span>Thiago Vieira</span>
+                <span class="unidade-box">CASA <span id="txt-un">10</span></span>
             </div>
             <button class="btn" id="btn-silenciar" onclick="toggleMute()" style="background:#111; color:#fff; border:1px solid #333; padding:10px; font-size:0.75rem; margin-top:10px;">🔔 SOM ATIVO</button>
         </div>
@@ -60,13 +57,13 @@
     <div id="s-call" class="screen">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <span onclick="mudarTela('s-home')" style="font-size:1.8rem; cursor:pointer;">🏠</span>
-            <b style="color:var(--neon)">CHAMADA SINCRONIZADA</b>
-            <span id="timer" style="color:var(--red); font-weight:bold; font-size:1.2rem;">--s</span>
+            <b style="color:var(--neon)">CHAMADA AO VIVO</b>
+            <span id="timer" style="color:var(--red); font-weight:bold;">--s</span>
         </div>
         <img id="img-vis" src="" style="width:100%; height:320px; border-radius:25px; object-fit:cover; margin:20px 0; border:2px solid var(--neon);">
         <div style="display:grid; gap:10px;">
             <button class="btn btn-v" onclick="responder('liberado')">✔️ ABRIR</button>
-            <button class="btn btn-a" onclick="document.getElementById('modal-msg').style.display='flex'">💬 ACEITAR / MENSAGEM</button>
+            <button class="btn btn-a" onclick="document.getElementById('modal-msg').style.display='flex'">💬 MENSAGEM</button>
             <button class="btn btn-r" onclick="responder('recusado')">✖️ RECUSAR</button>
         </div>
     </div>
@@ -82,9 +79,9 @@
 
     <div id="modal-limpar" class="modal">
         <div class="modal-content">
-            <h3 style="color:var(--red)">APAGAR HISTÓRICO?</h3>
+            <h3 style="color:var(--red)">LIMPAR LISTA?</h3>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="btn btn-r" onclick="limparHistorico()">SIM</button>
+                <button class="btn btn-r" onclick="limparConfirmado()">SIM</button>
                 <button class="btn" style="background:#333; color:#fff;" onclick="popLimpar(false)">NÃO</button>
             </div>
         </div>
@@ -99,9 +96,9 @@
         const db = firebase.database();
         
         let audioCtx, loopSom, cronometro, meuId = "1778000704147", unAtiva = "10", somOn = true;
-        let blacklist = JSON.parse(localStorage.getItem('virty_black_105') || '[]');
+        let blacklist = JSON.parse(localStorage.getItem('virty_black_106') || '[]');
 
-        function conectar() {
+        function entrar() {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             document.getElementById('bloqueio-inicio').style.display = 'none';
             inicializar();
@@ -113,28 +110,28 @@
             document.getElementById('btn-silenciar').style.color = somOn ? "#fff" : "var(--red)";
         }
 
-        function playSom(on) {
+        function somChamada(status) {
             clearInterval(loopSom);
-            if(!on) return;
+            if(!status) return;
             loopSom = setInterval(() => {
-                if(!somOn) { if(navigator.vibrate) navigator.vibrate([200, 100, 200]); return; }
+                if(!somOn) { if(navigator.vibrate) navigator.vibrate([200, 100]); return; }
                 const t = audioCtx.currentTime;
-                [0, 0.15].forEach(delay => {
+                [0, 0.2].forEach(d => {
                     const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
                     o.connect(g); g.connect(audioCtx.destination);
-                    o.type = 'sine'; o.frequency.setValueAtTime(1200, t + delay);
-                    g.gain.setValueAtTime(0.1, t + delay);
-                    g.gain.exponentialRampToValueAtTime(0.00001, t + delay + 0.1);
-                    o.start(t + delay); o.stop(t + delay + 0.1);
+                    o.type = 'sine'; o.frequency.setValueAtTime(1000, t + d);
+                    g.gain.setValueAtTime(0.1, t + d);
+                    g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.15);
+                    o.start(t + d); o.stop(t + d + 0.15);
                 });
-            }, 2000); // INTERVALO DE 2 SEGUNDOS
+            }, 2500); // 2.5s para garantir os 2s de silêncio reais
         }
 
         function inicializar() {
             db.ref('moradores_validados/'+meuId).on('value', s => {
                 if(s.exists()){
                     unAtiva = s.val().unidade;
-                    document.getElementById('un-m').innerText = unAtiva;
+                    document.getElementById('txt-un').innerText = unAtiva;
                     escutar();
                 }
             });
@@ -146,48 +143,45 @@
                 if(d && d.status === 'chamando') {
                     if(blacklist.includes(d.v_id)) return;
                     document.getElementById('img-vis').src = d.foto;
-                    sincronizarTimer(d.ts);
+                    sincTimer(d.ts);
                     mudarTela('s-call');
-                    playSom(true);
-                } else {
-                    fecharChamada();
-                }
+                    somChamada(true);
+                } else { encerrar(); }
             });
 
             db.ref('historico/'+unAtiva).on('value', snap => {
                 let items = []; snap.forEach(i => { items.unshift(i.val()); });
-                let agrupado = [];
+                let ag = [];
                 items.forEach(it => {
-                    let last = agrupado[agrupado.length-1];
+                    let last = ag[ag.length-1];
                     if(last && last.v_id === it.v_id && (it.ts - last.ts < 3600000)) { last.qtd = (last.qtd || 1) + 1; }
-                    else { agrupado.push({...it, qtd: 1}); }
+                    else { ag.push({...it, qtd: 1}); }
                 });
-                renderHist(agrupado);
+                render(ag);
             });
         }
 
-        function sincronizarTimer(tsCriacao) {
+        function sincTimer(ts) {
             clearInterval(cronometro);
             cronometro = setInterval(() => {
-                const decorrido = Math.floor((Date.now() - tsCriacao) / 1000);
-                const restante = 60 - decorrido;
-                if(restante <= 0) { responder('expirado'); }
-                document.getElementById('timer').innerText = restante + "s";
+                const rest = 60 - Math.floor((Date.now() - ts) / 1000);
+                if(rest <= 0) responder('expirado');
+                document.getElementById('timer').innerText = rest + "s";
             }, 1000);
         }
 
-        function fecharChamada() {
+        function encerrar() {
             if(document.querySelector('.screen.active').id === 's-call') mudarTela('s-home');
-            playSom(false); clearInterval(cronometro);
+            somChamada(false); clearInterval(cronometro);
         }
 
-        function renderHist(lista) {
+        function render(l) {
             const cont = document.getElementById('lista-hist'); cont.innerHTML = "";
-            lista.slice(0,10).forEach(h => {
+            l.slice(0,10).forEach(h => {
                 const b = blacklist.includes(h.v_id);
                 cont.innerHTML += `<div class="hist-card">
                     <img src="${h.foto}" class="hist-img">
-                    <div class="hist-info"><b>VISITANTE ${h.qtd>1?h.qtd+'x':''}</b><small>${h.hora}</small></div>
+                    <div style="flex:1"><b>VISITANTE ${h.qtd>1?h.qtd+'x':''}</b><br><small>${h.hora}</small></div>
                     <div class="btn-status" onclick="toggleB('${h.v_id}')">${b?'🚫':'🟢'}</div>
                 </div>`;
             });
@@ -195,9 +189,8 @@
 
         function toggleB(id) {
             if(!id || id === 'anon') return;
-            if(blacklist.includes(id)) blacklist = blacklist.filter(i => i !== id);
-            else blacklist.push(id);
-            localStorage.setItem('virty_black_105', JSON.stringify(blacklist));
+            blacklist.includes(id) ? (blacklist = blacklist.filter(i => i !== id)) : blacklist.push(id);
+            localStorage.setItem('virty_black_106', JSON.stringify(blacklist));
             inicializar();
         }
 
@@ -207,16 +200,15 @@
         }
 
         function enviarMensagem() {
-            const msg = document.getElementById('input-msg').value;
-            if(!msg) return;
-            db.ref('chamadas_ativas/'+unAtiva).update({ status: 'mensagem', msg_morador: msg });
+            const m = document.getElementById('input-msg').value;
+            if(!m) return;
+            db.ref('chamadas_ativas/'+unAtiva).update({ status: 'mensagem', msg_morador: m });
             document.getElementById('modal-msg').style.display='none';
-            // REGRA IRREVOGÁVEL: Encerra e volta para home
             setTimeout(() => { db.ref('chamadas_ativas/'+unAtiva).remove(); mudarTela('s-home'); }, 800);
         }
 
         function popLimpar(v) { document.getElementById('modal-limpar').style.display = v ? 'flex' : 'none'; }
-        function limparHistorico() { db.ref('historico/'+unAtiva).remove(); popLimpar(false); }
+        function limparConfirmado() { db.ref('historico/'+unAtiva).remove(); popLimpar(false); }
 
         function mudarTela(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
