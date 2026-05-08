@@ -3,41 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY - MASTER CONTROL</title>
+    <title>VIRTY MASTER v2.1</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .card { background: #111; border: 1px solid var(--neon); padding: 20px; border-radius: 15px; margin-bottom: 20px; }
-        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
-        .btn-master { background: var(--neon); color: #000; }
-        input { width: 90%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 8px; text-align: center; }
-        #status-shield { font-size: 0.8rem; color: #555; margin-top: 10px; }
-        .hw-id { font-family: monospace; color: var(--neon); font-size: 0.7rem; background: #050505; padding: 5px; border-radius: 5px; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --orange: #FF8C00; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .card { background: #0a0a0a; border: 1px solid #222; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
+        .virty-title { color: var(--neon); text-align: center; letter-spacing: 2px; margin-bottom: 20px; }
+        .btn { padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; text-transform: uppercase; font-size: 0.75rem; }
+        .btn-v { background: var(--neon); color: #000; }
+        .btn-r { background: var(--red); color: #fff; }
+        .btn-a { background: var(--blue); color: #fff; }
+        .btn-edit { background: var(--orange); color: #000; }
+        .solicitacao-card { border-left: 4px solid var(--neon); background: #111; padding: 12px; margin-top: 10px; border-radius: 0 10px 10px 0; }
+        .selfie-preview { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; border: 1px solid #333; }
+        .badge { font-size: 0.7rem; background: #222; padding: 3px 8px; border-radius: 5px; color: var(--neon); }
+        .flex-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <h1 style="color:var(--neon); letter-spacing: 2px;">VIRTY MASTER</h1>
-    
-    <div id="login-area" class="card">
-        <p style="margin-bottom: 5px;">DIGITAL DO DISPOSITIVO:</p>
-        <div id="hw-display" class="hw-id">Detectando Hardware...</div>
-        
-        <input type="password" id="pass-master" placeholder="Senha Master (minúsculo)">
-        <button class="btn btn-master" onclick="autenticarMaster()">VINCULAR MEU APARELHO</button>
-        
-        <div id="status-shield">🔒 Hardware não identificado</div>
+    <h1 class="virty-title">VIRTY MASTER v2.1</h1>
+
+    <div class="card" style="text-align: center; border-color: var(--neon);">
+        <span class="badge">DISPOSITIVO MASTER ATIVO ✔️</span>
+        <p style="font-size: 0.7rem; color: #666; margin-top: 8px;">ID: <span id="my-id">...</span></p>
     </div>
 
-    <div id="painel-master" class="card" style="display:none;">
-        <h3 style="color:var(--neon)">ACESSO MASTER LIBERADO</h3>
-        <p style="font-size: 0.9rem;">Este aparelho agora é a chave mestra do sistema.</p>
-        <hr style="border: 0; border-top: 1px solid #222; margin: 15px 0;">
-        
-        <div id="admin-tools">
-            <p style="color: #888; font-size: 0.8rem;">Status do Firebase: <b>CONECTADO</b></p>
-            <button class="btn" style="background:#222; color:#fff;" onclick="window.location.reload()">ATUALIZAR PAINEL</button>
-        </div>
+    <div class="card">
+        <h3 style="margin-top:0; font-size: 1rem;">⏳ SOLICITAÇÕES / MORADORES</h3>
+        <div id="lista-solicitacoes">Carregando dados...</div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0; font-size: 1rem;">🛡️ AUTORIZAR ADMIN</h3>
+        <input type="text" id="new-admin-id" placeholder="ID de Hardware do Amigo" style="width:100%; padding:10px; border-radius:8px; background:#000; border:1px solid #333; color:#fff; box-sizing:border-box;">
+        <button class="btn btn-a" onclick="autorizarAdmin()">DAR ACESSO ADMIN</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -45,57 +45,97 @@
     <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 
     <script>
-        const config = { 
-            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
-            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
-        };
+        const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
         firebase.initializeApp(config);
         const db = firebase.database();
-
         let hardwareID = "";
-        // SENHA CORRIGIDA PARA MINÚSCULO
-        const SENHA_MESTRA_DEFINIDA = "virty@1728#"; 
 
         async function init() {
             const fp = await FingerprintJS.load();
             const result = await fp.get();
             hardwareID = result.visitorId;
-            document.getElementById('hw-display').innerText = hardwareID;
-            verificarSeJaEhMaster();
-        }
-
-        function verificarSeJaEhMaster() {
-            db.ref('credenciais_admin/' + hardwareID).on('value', s => {
+            document.getElementById('my-id').innerText = hardwareID;
+            
+            db.ref('credenciais_admin/' + hardwareID).once('value', s => {
                 if(s.exists() && s.val().nivel === 'master') {
-                    mostrarPainel();
+                    carregarSolicitacoes();
+                } else {
+                    document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:50px;'>ACESSO NÃO AUTORIZADO</h1>";
                 }
             });
         }
 
-        function autenticarMaster() {
-            const campoSenha = document.getElementById('pass-master').value;
-            
-            if(campoSenha === SENHA_MESTRA_DEFINIDA) {
-                db.ref('credenciais_admin/' + hardwareID).set({
-                    nivel: 'master',
-                    proprietario: 'Thiago Master',
-                    data_registro: new Date().toLocaleString(),
-                    ts: Date.now()
-                }).then(() => {
-                    alert("SUCESSO! Este aparelho agora é o MASTER oficial.");
-                    mostrarPainel();
-                }).catch(error => {
-                    alert("Erro ao registrar. Verifique as Rules no Firebase.");
+        function carregarSolicitacoes() {
+            db.ref('solicitacoes_cadastro').on('value', s => {
+                const cont = document.getElementById('lista-solicitacoes');
+                cont.innerHTML = "";
+                if(!s.exists()) { cont.innerHTML = "<p style='color:#555;'>Nenhuma solicitação pendente.</p>"; return; }
+
+                s.forEach(item => {
+                    const d = item.val();
+                    const key = item.key;
+                    cont.innerHTML += `
+                        <div class="solicitacao-card">
+                            <img src="${d.foto}" class="selfie-preview">
+                            <b>${d.nome}</b><br>
+                            <small>Unid: ${d.unidade} | CPF: ${d.cpf}</small>
+                            <div class="flex-btns">
+                                <button class="btn btn-v" onclick="aprovarMorador('${key}')">OK</button>
+                                <button class="btn btn-edit" onclick="editarSolicitacao('${key}', '${d.nome}', '${d.unidade}')">EDIT</button>
+                                <button class="btn btn-r" onclick="recusarMorador('${key}')">SAIR</button>
+                            </div>
+                        </div>`;
                 });
-            } else {
-                alert("SENHA INCORRETA!");
+            });
+        }
+
+        function editarSolicitacao(key, nomeAtual, unidadeAtual) {
+            const novoNome = prompt("Novo nome do morador:", nomeAtual);
+            const novaUnidade = prompt("Nova unidade:", unidadeAtual);
+            
+            if (novoNome !== null && novaUnidade !== null) {
+                db.ref('solicitacoes_cadastro/' + key).update({
+                    nome: novoNome,
+                    unidade: novaUnidade
+                }).then(() => {
+                    alert("Dados atualizados!");
+                });
             }
         }
 
-        function mostrarPainel() {
-            document.getElementById('login-area').style.display = 'none';
-            document.getElementById('painel-master').style.display = 'block';
-            document.getElementById('status-shield').innerText = "🛡️ PROTEÇÃO POR HARDWARE ATIVA";
+        function aprovarMorador(key) {
+            db.ref('solicitacoes_cadastro/' + key).once('value', s => {
+                const dados = s.val();
+                dados.v_id_admin = hardwareID;
+                
+                db.ref('moradores_validados').push(dados).then(() => {
+                    db.ref('solicitacoes_cadastro/' + key).remove();
+                    alert("Morador aprovado!");
+                });
+            });
+        }
+
+        function recusarMorador(key) {
+            // IMPLEMENTAÇÃO DO POP-UP DE CONFIRMAÇÃO
+            if(confirm("Deseja realmente EXCLUIR esta solicitação? Esta ação não pode ser desfeita.")) {
+                db.ref('solicitacoes_cadastro/' + key).remove().then(() => {
+                    alert("Excluído com sucesso.");
+                });
+            }
+        }
+
+        function autorizarAdmin() {
+            const newID = document.getElementById('new-admin-id').value;
+            if(!newID) return alert("Insira o ID do aparelho!");
+            
+            db.ref('credenciais_admin/' + newID).set({
+                nivel: 'autorizado',
+                v_id_master: hardwareID,
+                ts: Date.now()
+            }).then(() => {
+                alert("Novo Admin autorizado!");
+                document.getElementById('new-admin-id').value = "";
+            });
         }
 
         init();
