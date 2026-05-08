@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v13.1</title>
+    <title>VIRTY MORADOR v13.2</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
@@ -36,18 +36,17 @@
             <div id="cam-box"><video id="v-selfie" autoplay playsinline></video></div>
             <input type="text" id="reg-nome" placeholder="Nome Completo" style="width:260px; padding:12px; margin:5px; border-radius:10px; border:1px solid #333; background:#111; color:#fff;">
             <input type="text" id="reg-cpf" placeholder="CPF" style="width:260px; padding:12px; margin:5px; border-radius:10px; border:1px solid #333; background:#111; color:#fff;">
-            <input type="text" id="reg-un" placeholder="Unidade (CASA)" style="width:260px; padding:12px; margin:5px; border-radius:10px; border:1px solid #333; background:#111; color:#fff;">
-            <button class="btn btn-v" onclick="finalizarCadastro()" style="width:260px; margin-top:10px;">ENVIAR CADASTRO</button>
+            <input type="text" id="reg-un" placeholder="Unidade" style="width:260px; padding:12px; margin:5px; border-radius:10px; border:1px solid #333; background:#111; color:#fff;">
+            <button class="btn btn-v" onclick="finalizarCadastro()" style="width:260px; margin-top:10px;">ENVIAR</button>
         </div>
         <div id="area-login">
-            <p id="status-entrar" style="color:#555; margin-bottom:20px;">Sistema de Identificação</p>
             <button class="btn btn-v" onclick="entrarApp()" style="width:260px;">ENTRAR NO PAINEL</button>
         </div>
     </div>
 
     <div id="s-home" class="screen">
         <div class="header-main">
-            <h1 class="virty-title">VIRTY DOOR v13.1</h1>
+            <h1 class="virty-title">VIRTY DOOR v13.2</h1>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
                 <span id="nome-exibir" style="font-weight:bold; color:#bbb;">---</span>
                 <span class="unidade-box">CASA <span id="u-txt">--</span></span>
@@ -65,10 +64,10 @@
             <b style="color:var(--neon)">CHAMADA AO VIVO</b>
             <span id="timer" style="color:var(--red); font-weight:bold; font-size:1.3rem;">60s</span>
         </div>
-        <img id="img-vis" src="" style="width:100%; height:300px; border-radius:25px; object-fit:cover; margin:15px 0; border:2px solid var(--neon);">
-        <div id="box-msg-visitante" style="background:#111; border-left:4px solid var(--blue); padding:10px; margin-bottom:15px; border-radius:8px;">
-            <small style="color:var(--blue); font-weight:bold;">MENSAGEM DO VISITANTE:</small>
-            <p id="txt-vis" style="margin:5px 0; font-size:0.9rem; color:#eee;">Carregando...</p>
+        <img id="img-vis" src="" style="width:100%; height:280px; border-radius:25px; object-fit:cover; margin:15px 0; border:2px solid var(--neon);">
+        <div style="background:#111; border-left:4px solid var(--blue); padding:10px; margin-bottom:10px;">
+            <small style="color:var(--blue);">MENSAGEM:</small>
+            <p id="txt-vis" style="margin:2px 0; font-size:0.9rem; color:#eee;">...</p>
         </div>
         <div style="display:grid; gap:8px;">
             <button class="btn btn-v" onclick="responder('liberado')">✔️ LIBERAR</button>
@@ -80,8 +79,8 @@
     <div id="modal-msg" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; align-items:center; justify-content:center; padding:20px;">
         <div style="background:#111; border:1px solid var(--blue); padding:25px; border-radius:20px; width:100%; max-width:400px; text-align:center;">
             <input type="text" id="input-msg" placeholder="Ex: Já estou descendo!" style="width:100%; padding:15px; margin-bottom:15px; border-radius:10px; background:#000; border:1px solid #333; color:#fff; text-align:center;">
-            <button class="btn btn-a" onclick="enviarMensagemDireta()">ENVIAR AGORA</button>
-            <button class="btn" onclick="document.getElementById('modal-msg').style.display='none'" style="background:none; color:#555; margin-top:10px;">CANCELAR</button>
+            <button class="btn btn-a" onclick="enviarMensagemDireta()">ENVIAR</button>
+            <button class="btn" onclick="document.getElementById('modal-msg').style.display='none'" style="background:none; color:#555;">VOLTAR</button>
         </div>
     </div>
 
@@ -92,7 +91,7 @@
         const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
         firebase.initializeApp(config);
         const db = firebase.database();
-        let audioCtx, un = "", somOn = true, loopAlerta, selfieB64 = "";
+        let audioCtx, un = "", somOn = true, loopAlerta;
 
         async function entrarApp() {
             try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
@@ -111,9 +110,7 @@
             } else {
                 document.getElementById('area-login').style.display = 'none';
                 document.getElementById('area-cadastro').style.display = 'flex';
-                navigator.mediaDevices.getUserMedia({ video: true }).then(st => {
-                    document.getElementById('v-selfie').srcObject = st;
-                }).catch(e => alert("Câmera não disponível. Verifique as permissões."));
+                navigator.mediaDevices.getUserMedia({ video: true }).then(st => { document.getElementById('v-selfie').srcObject = st; });
             }
         }
 
@@ -122,36 +119,25 @@
             const canvas = document.createElement('canvas');
             canvas.width = vid.videoWidth; canvas.height = vid.videoHeight;
             canvas.getContext('2d').drawImage(vid, 0, 0);
-            selfieB64 = canvas.toDataURL('image/jpeg', 0.5);
-            const nome = document.getElementById('reg-nome').value;
-            const cpf = document.getElementById('reg-cpf').value;
-            const unidad = document.getElementById('reg-un').value;
-            if(!nome || !cpf || !unidad) return alert("Preencha todos os campos!");
-            const novo = { nome, cpf, unidade: unidad, foto: selfieB64, ts: Date.now() };
+            const foto = canvas.toDataURL('image/jpeg', 0.5);
+            const novo = { nome: document.getElementById('reg-nome').value, cpf: document.getElementById('reg-cpf').value, unidade: document.getElementById('reg-un').value, foto: foto, ts: Date.now() };
             db.ref('solicitacoes_cadastro').push(novo).then(() => {
                 localStorage.setItem('virty_user', JSON.stringify(novo));
-                alert("Cadastro enviado! Peça ao Master para autorizar.");
-                location.reload();
+                alert("Cadastro enviado!"); location.reload();
             });
         }
 
         function toggleMute() {
             somOn = !somOn;
-            const btn = document.getElementById('btn-silenciar');
-            btn.innerText = somOn ? "🔔 SOM ATIVO" : "🔕 MODO VIBRAR";
-            if(!somOn && navigator.vibrate) navigator.vibrate([200, 100, 200]);
+            document.getElementById('btn-silenciar').innerText = somOn ? "🔔 SOM ATIVO" : "🔕 MODO VIBRAR";
         }
 
         function startAlert() {
             const playCycle = () => {
                 if(somOn && audioCtx) {
-                    const now = audioCtx.currentTime;
                     const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.frequency.setValueAtTime(660, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 1);
-                    osc.connect(gain); gain.connect(audioCtx.destination);
-                    osc.start(); osc.stop(now + 1);
+                    osc.connect(audioCtx.destination);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
                 }
                 if(navigator.vibrate) navigator.vibrate([500, 300, 500]);
             };
@@ -166,52 +152,67 @@
                     document.getElementById('img-vis').src = d.foto;
                     document.getElementById('txt-vis').innerText = d.texto || "Sem mensagem.";
                     mudarTela('s-call'); startAlert();
-                } else {
-                    mudarTela('s-home'); clearInterval(loopAlerta);
-                }
+                } else { mudarTela('s-home'); clearInterval(loopAlerta); }
             });
 
-            db.ref('historico/' + un).limitToLast(30).on('value', s => {
+            // HISTÓRICO COM BALÕES E BLOQUEIO CORRIGIDO
+            db.ref('historico/' + un).limitToLast(20).on('value', s => {
                 const cont = document.getElementById('lista-hist');
                 cont.innerHTML = "";
                 let raw = []; s.forEach(c => { raw.push(c.val()); });
                 raw.reverse();
                 let agrupado = [];
                 raw.forEach(item => {
-                    let u = agrupado.find(x => x.v_id === item.v_id && (item.ts - x.ts_first) < 3600000);
+                    let u = agrupado.find(x => x.v_id === item.v_id);
                     if(u) {
                         if(item.acao === 'liberado') u.c_v++;
                         if(item.acao === 'recusado') u.c_r++;
                         if(item.acao === 'mensagem') u.c_a++;
                         u.ultima_acao = item.acao;
-                        u.hora = item.hora;
                     } else {
                         item.c_v = item.acao === 'liberado' ? 1 : 0;
                         item.c_r = item.acao === 'recusado' ? 1 : 0;
                         item.c_a = item.acao === 'mensagem' ? 1 : 0;
-                        item.ts_first = item.ts;
                         item.ultima_acao = item.acao;
                         agrupado.push(item);
                     }
                 });
-                agrupado.slice(0, 15).forEach(h => {
-                    cont.innerHTML += `<div class="hist-card">
-                        <div class="badges-container">
-                            ${h.c_v > 0 ? `<div class="b-count bc-green">${h.c_v}</div>` : ''}
-                            ${h.c_r > 0 ? `<div class="b-count bc-red">${h.c_r}</div>` : ''}
-                            ${h.c_a > 0 ? `<div class="b-count bc-blue">${h.c_a}</div>` : ''}
-                        </div>
-                        <div style="display:flex; align-items:center;">
-                            <img src="${h.foto}" class="hist-img">
-                            <div>
-                                <b style="font-size:0.7rem">VISITANTE</b><br>
-                                <small style="color:#555">${h.hora}</small><br>
-                                <span style="font-size:0.6rem; color:var(--neon); font-weight:bold;">${h.ultima_acao.toUpperCase()}</span>
-                            </div>
-                        </div>
-                        <button onclick="bloquear('${h.v_id}')" style="background:#111; color:var(--red); border:1px solid #222; padding:8px; border-radius:10px; font-size:0.6rem;">BLOQUEAR</button>
-                    </div>`;
+
+                agrupado.forEach(h => {
+                    db.ref('banidos/' + h.v_id).once('value', banSnap => {
+                        const estaBanido = banSnap.exists();
+                        const cardId = `btn-ban-${h.v_id}`;
+                        const cardHtml = `
+                            <div class="hist-card">
+                                <div class="badges-container">
+                                    ${h.c_v > 0 ? `<div class="b-count bc-green">${h.c_v}</div>` : ''}
+                                    ${h.c_r > 0 ? `<div class="b-count bc-red">${h.c_r}</div>` : ''}
+                                    ${h.c_a > 0 ? `<div class="b-count bc-blue">${h.c_a}</div>` : ''}
+                                </div>
+                                <div style="display:flex; align-items:center;">
+                                    <img src="${h.foto}" class="hist-img">
+                                    <div>
+                                        <b style="font-size:0.7rem">VISITANTE</b><br>
+                                        <span style="font-size:0.6rem; color:var(--neon); font-weight:bold;">${h.ultima_acao.toUpperCase()}</span>
+                                    </div>
+                                </div>
+                                <button id="${cardId}" onclick="alternarBanido('${h.v_id}')" style="background:${estaBanido ? 'var(--red)' : '#111'}; color:#fff; border:1px solid #333; padding:8px; border-radius:10px; font-size:0.6rem; min-width:80px;">
+                                    ${estaBanido ? 'DESBLOQUEAR' : 'BLOQUEAR'}
+                                </button>
+                            </div>`;
+                        cont.innerHTML += cardHtml;
+                    });
                 });
+            });
+        }
+
+        function alternarBanido(vid) {
+            db.ref('banidos/' + vid).once('value', s => {
+                if(s.exists()) {
+                    db.ref('banidos/' + vid).remove();
+                } else {
+                    db.ref('banidos/' + vid).set(true);
+                }
             });
         }
 
@@ -221,7 +222,7 @@
                 const h = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
                 db.ref('historico/' + un).push({ foto: d.foto, v_id: d.v_id, ts: Date.now(), hora: h, acao: status });
                 db.ref('chamadas_ativas/' + un).update({ status: status, msg_morador: txt });
-                setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); mudarTela('s-home'); }, 500);
+                setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); }, 500);
             });
         }
 
@@ -230,10 +231,9 @@
             document.getElementById('modal-msg').style.display='none';
         }
 
-        function bloquear(vid) { alert("Visitante " + vid + " bloqueado."); }
-        function mudarTela(id) { 
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
-            document.getElementById(id).classList.add('active'); 
+        function mudarTela(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
         }
     </script>
 </body>
