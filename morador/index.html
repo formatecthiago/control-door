@@ -39,14 +39,14 @@
 <body>
 
     <div id="bloqueio-inicio" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:20px;">
-        <h1 style="color:var(--neon); letter-spacing:3px;">VIRTY ACCESS</h1>
-        <p id="status-entrar" style="color:#555; margin-bottom:20px;">Clique para verificar acesso</p>
+        <h1 style="color:var(--neon); letter-spacing:3px; font-size: 2rem; margin-bottom: 10px;">VIRTY ACCESS</h1>
+        <p id="status-entrar" style="color:#555; margin-bottom:30px; font-size: 0.9rem;">Sistema de Portaria Digital</p>
         <button class="btn btn-v" onclick="entrarApp()" style="width:260px;">ENTRAR NO PAINEL</button>
     </div>
 
     <div id="s-home" class="screen">
         <div class="header-main">
-            <h1 class="virty-title">VIRTY DOOR v1.9</h1>
+            <h1 class="virty-title">VIRTY DOOR v12.0</h1>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
                 <span id="nome-exibir" style="font-weight:bold; color:#bbb;">---</span>
                 <span class="unidade-box">CASA <span id="u-txt">--</span></span>
@@ -93,21 +93,20 @@
         
         let audioCtx, un = "", somOn = true, crono, loopAlerta;
 
-        // --- A CIRURGIA ESTÁ AQUI ---
+        // FUNÇÃO DE ENTRADA COM VALIDAÇÃO MASTER
         async function entrarApp() {
             try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
             
-            // Verificamos se existe um morador salvo localmente
             const salvo = localStorage.getItem('virty_user');
             
             if(salvo) {
                 const user = JSON.parse(salvo);
-                document.getElementById('status-entrar').innerText = "Validando acesso...";
+                document.getElementById('status-entrar').innerText = "Validando seu acesso...";
 
-                // BUSCA NO NOVO NÓ DO ADMIN: moradores_validados
+                // Busca se o CPF do morador está na lista de validados pelo Admin
                 db.ref('moradores_validados').orderByChild('cpf').equalTo(user.cpf).once('value', snapshot => {
                     if(snapshot.exists()) {
-                        // Encontrou! Acesso permitido.
+                        // Encontrou! Carrega as informações e entra
                         un = user.unidade;
                         document.getElementById('u-txt').innerText = un;
                         document.getElementById('nome-exibir').innerText = user.nome;
@@ -115,18 +114,33 @@
                         mudarTela('s-home'); 
                         iniciarMonitor();
                     } else {
-                        // Não encontrou no Admin
-                        alert("ACESSO NEGADO: Seu cadastro não foi encontrado ou foi removido pelo Administrador.");
-                        document.getElementById('status-entrar').innerText = "Acesso não autorizado.";
+                        // Não está na lista de validados (Pode estar em solicitações ou foi removido)
+                        alert("ACESSO PENDENTE: Aguarde o Administrador autorizar seu cadastro ou realize um novo pedido.");
+                        document.getElementById('status-entrar').innerText = "Aguardando autorização...";
                     }
                 });
             } else {
-                // Se não tiver nada no localStorage, ele precisa de um link de cadastro ou ser inserido pelo admin
-                alert("Nenhum cadastro encontrado neste aparelho.");
+                // PRIMEIRO ACESSO: Solicita os dados para o Admin
+                const nome = prompt("Nome Completo:");
+                const cpf = prompt("Seu CPF:");
+                const unidade = prompt("Número da Unidade (Casa):");
+
+                if(nome && cpf && unidade) {
+                    const novoCadastro = { nome, cpf, unidade, ts: Date.now(), foto: "https://via.placeholder.com/150" };
+                    
+                    // Envia para o Admin aceitar (nó de solicitações)
+                    db.ref('solicitacoes_cadastro').push(novoCadastro).then(() => {
+                        localStorage.setItem('virty_user', JSON.stringify(novoCadastro));
+                        alert("Solicitação enviada com sucesso! O Administrador master precisa autorizar seu login.");
+                        location.reload(); 
+                    });
+                } else {
+                    alert("Por favor, preencha todos os campos.");
+                }
             }
         }
 
-        // --- TODO O RESTO DO SEU CÓDIGO (SOM, MONITOR, HISTÓRICO) CONTINUA ABAIXO SEM MUDANÇAS ---
+        // --- SISTEMA DE SOM E ALERTAS ---
         function playBell(freq, startTime, duration) {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
@@ -159,6 +173,7 @@
 
         function stopAlert() { clearInterval(loopAlerta); if(navigator.vibrate) navigator.vibrate(0); }
 
+        // --- MONITORAMENTO EM TEMPO REAL ---
         function iniciarMonitor() {
             db.ref('chamadas_ativas/' + un).on('value', s => {
                 const d = s.val();
@@ -177,6 +192,7 @@
                 }
             });
 
+            // HISTÓRICO COM ACÚMULO
             db.ref('historico/' + un).limitToLast(30).on('value', s => {
                 const cont = document.getElementById('lista-hist');
                 cont.innerHTML = "";
@@ -222,6 +238,7 @@
             });
         }
 
+        // --- AÇÕES DO MORADOR ---
         window.uiToggleBlock = function(vid) {
             const k = 'blk_' + vid;
             const btn = document.getElementById('btn-blk-' + vid);
@@ -236,6 +253,7 @@
 
         function abrirModalMsg() { document.getElementById('modal-msg').style.display = 'flex'; }
         function fecharModalMsg() { document.getElementById('modal-msg').style.display = 'none'; }
+        
         function enviarMensagemDireta() {
             const txt = document.getElementById('input-msg').value || "O morador enviou uma mensagem.";
             responder('mensagem', txt);
