@@ -3,170 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MASTER ADMIN v1.0</title>
+    <title>VIRTY MASTER ADMIN v2.1</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; --blue: #007BFF; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         
-        .header { padding: 20px; border-bottom: 2px solid var(--gray); background: #050505; text-align: center; }
-        .admin-info { font-size: 0.75rem; color: #666; margin-top: 10px; line-height: 1.4; }
+        .screen { display: none; padding: 20px; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        .active { display: flex; }
+
+        .login-box { background: #0d0d0d; padding: 30px; border-radius: 25px; border: 1px solid var(--neon); width: 100%; max-width: 350px; text-align: center; margin-top: 50px; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #000; border: 1px solid #333; color: #fff; text-align: center; box-sizing: border-box; }
         
-        .container { padding: 20px; max-width: 800px; margin: 0 auto; }
-        h3 { color: #444; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; margin-top: 30px; border-left: 3px solid var(--neon); padding-left: 10px; }
-
-        /* Estilização dos Cards */
-        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 20px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
-        .user-data { display: flex; align-items: center; gap: 15px; }
-        .user-photo { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; }
-        .info-text b { color: var(--neon); font-size: 1.1rem; }
-        .info-text p { margin: 2px 0; font-size: 0.85rem; color: #aaa; }
-
-        /* Botões */
-        .btn-group { display: flex; gap: 10px; }
-        .btn { border: none; border-radius: 12px; padding: 10px 20px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.8rem; }
-        .btn-ok { background: var(--neon); color: #000; }
+        .header { width: 100%; padding: 20px; border-bottom: 2px solid var(--gray); background: #050505; text-align: center; }
+        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 20px; margin-bottom: 10px; width: 100%; max-width: 800px; display: flex; align-items: center; justify-content: space-between; }
+        
+        .btn { border: none; border-radius: 12px; padding: 12px 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn-green { background: var(--neon); color: #000; width: 100%; }
         .btn-del { background: transparent; border: 1px solid var(--red); color: var(--red); }
-        .btn-edit { background: transparent; border: 1px solid var(--blue); color: var(--blue); }
-
-        /* Alerta de Limite */
-        .limit-alert { color: var(--red); font-size: 0.7rem; font-weight: bold; margin-top: 5px; }
+        .btn-disabled { opacity: 0.15; cursor: not-allowed; pointer-events: none; }
+        
+        .audit-tag { font-size: 0.6rem; color: #555; display: block; margin-top: 5px; }
+        .user-photo { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 15px; }
+        h3 { color: #444; width: 100%; max-width: 800px; font-size: 0.8rem; letter-spacing: 2px; margin-top: 25px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1 style="color:var(--neon); margin:0; font-size:1.5rem; letter-spacing:3px;">VIRTY ACCESS DOOR v1</h1>
-        <div class="admin-info">
-            <span id="adm-nome">Thiago Rodrigo N. Vieira</span> | <span id="adm-cpf">000.000.000-00</span><br>
-            <span id="data-hora"></span>
+    <div id="s-login" class="screen active">
+        <h1 style="color:var(--neon); letter-spacing:3px;">VIRTY ACCESS</h1>
+        <div class="login-box">
+            <p style="color:#777; font-size:0.8rem;">LOGIN MASTER / OPERADOR</p>
+            <input type="password" id="pass-field" placeholder="DIGITE A SENHA">
+            <button class="btn btn-green" onclick="fazerLogin()">ENTRAR NO PAINEL</button>
+            <hr style="border:0; border-top:1px solid #222; margin:20px 0;">
+            <button class="btn" style="background:#111; color:#fff; width:100%; font-size:0.7rem;" onclick="mudarTela('s-solicitar')">SOLICITAR NOVO ACESSO</button>
         </div>
     </div>
 
-    <div class="container">
-        <h3>Solicitações Pendentes</h3>
-        <div id="lista-pendentes">
-            <p style="color:#222; padding:20px;">Nenhuma solicitação aguardando...</p>
+    <div id="s-solicitar" class="screen">
+        <h2 style="color:var(--neon)">NOVO ADMIN</h2>
+        <div class="login-box">
+            <input type="text" id="sol-nome" placeholder="Nome Completo">
+            <input type="text" id="sol-cpf" placeholder="CPF">
+            <button class="btn btn-green" onclick="enviarPedidoAdmin()">SOLICITAR AUTORIZAÇÃO</button>
+            <button class="btn" onclick="mudarTela('s-login')" style="margin-top:10px; background:none; color:#555;">VOLTAR</button>
+        </div>
+    </div>
+
+    <div id="s-wait" class="screen">
+        <h2 style="color:var(--neon); margin-top:100px;">AGUARDANDO...</h2>
+        <p style="color:#777; text-align:center; padding:20px;">Seu cadastro foi enviado ao Master.<br>Aguarde a liberação para logar.</p>
+        <button class="btn btn-green" onclick="location.reload()" style="width:200px;">JÁ FUI LIBERADO</button>
+    </div>
+
+    <div id="s-main" class="screen">
+        <div class="header">
+            <h2 id="perfil-txt" style="color:var(--neon); margin:0;">PAINEL</h2>
+            <span id="admin-atual-nome" style="font-size:0.7rem; color:#555;"></span>
         </div>
 
-        <h3>Unidades Autorizadas</h3>
-        <div id="lista-autorizados">
-            <p style="color:#222; padding:20px;">Nenhum morador ativo...</p>
+        <div style="width:100%; max-width:800px;">
+            <div id="area-master" style="display:none;">
+                <h3>ADMINS AGUARDANDO AUTORIZAÇÃO</h3>
+                <div id="lista-admins-pendentes"></div>
+            </div>
+
+            <h3>SOLICITAÇÕES DE MORADORES</h3>
+            <div id="lista-moradores-pendentes"></div>
+
+            <h3>MORADORES VALIDADOS</h3>
+            <div id="lista-moradores-ativos"></div>
         </div>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, set, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     const app = initializeApp(config);
     const db = getDatabase(app);
 
-    // Atualiza Data/Hora no topo
-    setInterval(() => {
-        const agora = new Date();
-        document.getElementById('data-hora').innerText = agora.toLocaleString('pt-BR');
-    }, 1000);
+    const SENHA_COMUM = "123456789";
+    let isMaster = false;
+    let dadosAdminLogado = null;
+    let myID = localStorage.getItem('virty_admin_id') || 'ADM-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    localStorage.setItem('virty_admin_id', myID);
 
-    // Variável para controle do limite de 5 cadastros
-    let contagemUnidades = {};
+    // --- LOGIN ---
+    window.fazerLogin = async () => {
+        const pass = document.getElementById('pass-field').value;
+        const snapMaster = await get(ref(db, 'config/admin_master_pass'));
+        const senhaMaster = snapMaster.exists() ? snapMaster.val() : "virty123@#";
 
-    function carregarDados() {
-        // 1. Escuta Moradores Validados para calcular limites
-        onValue(ref(db, 'moradores_validados'), snap => {
-            contagemUnidades = {};
-            const divAutorizados = document.getElementById('lista-autorizados');
-            divAutorizados.innerHTML = "";
+        if(pass === senhaMaster) {
+            isMaster = true;
+            dadosAdminLogado = { nome: "ADMIN MASTER", cpf: "MASTER" };
+            iniciarPainel();
+        } else if(pass === SENHA_COMUM) {
+            const snapAuto = await get(ref(db, 'admins_autorizados/' + myID));
+            if(snapAuto.exists()) {
+                isMaster = false;
+                dadosAdminLogado = snapAuto.val();
+                iniciarPainel();
+            } else {
+                alert("Acesso Operador não autorizado pelo Master.");
+            }
+        } else {
+            alert("Senha incorreta.");
+        }
+    };
 
-            snap.forEach(child => {
-                const d = child.val();
-                const key = child.key;
-                
-                // Contabiliza moradores por unidade
-                contagemUnidades[d.unidade] = (contagemUnidades[d.unidade] || 0) + 1;
+    window.enviarPedidoAdmin = () => {
+        const nome = document.getElementById('sol-nome').value;
+        const cpf = document.getElementById('sol-cpf').value;
+        if(!nome || !cpf) return alert("Preencha tudo.");
+        set(ref(db, 'admins_solicitacoes/' + myID), { nome, cpf, ts: Date.now() });
+        mudarTela('s-wait');
+    };
 
-                divAutorizados.innerHTML += `
-                    <div class="card">
-                        <div class="user-data">
-                            <img src="${d.foto}" class="user-photo">
-                            <div class="info-text">
-                                <b>CASA ${d.unidade}</b>
-                                <p>${d.nome}</p>
-                                <p>CPF: ${d.cpf}</p>
-                            </div>
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn btn-edit" onclick="editar('${key}')">EDITAR</button>
-                            <button class="btn btn-del" onclick="remover('moradores_validados', '${key}')">DELETAR</button>
-                        </div>
+    // --- PAINEL ---
+    function iniciarPainel() {
+        mudarTela('s-main');
+        document.getElementById('perfil-txt').innerText = isMaster ? "MASTER PANEL" : "OPERADOR PANEL";
+        document.getElementById('admin-atual-nome').innerText = `Logado como: ${dadosAdminLogado.nome}`;
+        
+        if(isMaster) document.getElementById('area-master').style.display = 'block';
+
+        // Listeners
+        if(isMaster) {
+            onValue(ref(db, 'admins_solicitacoes'), s => {
+                const cont = document.getElementById('lista-admins-pendentes');
+                cont.innerHTML = "";
+                s.forEach(c => {
+                    const d = c.val();
+                    cont.innerHTML += `<div class="card">
+                        <div><b>${d.nome}</b><br><small>${d.cpf}</small></div>
+                        <button class="btn btn-green" style="width:auto" onclick="autorizarAdmin('${c.key}')">AUTORIZAR</button>
                     </div>`;
+                });
+            });
+        }
+
+        onValue(ref(db, 'solicitacoes_cadastro'), s => {
+            const cont = document.getElementById('lista-moradores-pendentes');
+            cont.innerHTML = "";
+            s.forEach(c => {
+                const d = c.val();
+                cont.innerHTML += `<div class="card">
+                    <div style="display:flex; align-items:center;">
+                        <img src="${d.foto}" class="user-photo">
+                        <div><b>CASA ${d.unidade}</b><br><small>${d.nome}</small></div>
+                    </div>
+                    <button class="btn btn-green" style="width:auto" onclick="aprovarMorador('${c.key}')">ACEITAR</button>
+                </div>`;
             });
         });
 
-        // 2. Escuta Pendentes
-        onValue(ref(db, 'solicitacoes_cadastro'), snap => {
-            const divPendentes = document.getElementById('lista-pendentes');
-            divPendentes.innerHTML = snap.exists() ? "" : "<p style='color:#333'>Nenhuma solicitação no momento.</p>";
-
-            snap.forEach(child => {
-                const d = child.val();
-                const key = child.key;
-                const totalNaUnidade = contagemUnidades[d.unidade] || 0;
-                const limiteAtingido = totalNaUnidade >= 5;
-
-                divPendentes.innerHTML += `
-                    <div class="card" style="border-color: ${limiteAtingido ? '#300' : '#222'}">
-                        <div class="user-data">
-                            <img src="${d.foto}" class="user-photo">
-                            <div class="info-text">
-                                <b>CASA ${d.unidade}</b>
-                                <p>${d.nome}</p>
-                                <p>CPF: ${d.cpf}</p>
-                                ${limiteAtingido ? '<span class="limit-alert">LIMITE DE 5 PESSOAS ATINGIDO</span>' : ''}
-                            </div>
+        onValue(ref(db, 'moradores_validados'), s => {
+            const cont = document.getElementById('lista-moradores-ativos');
+            cont.innerHTML = "";
+            s.forEach(c => {
+                const d = c.val();
+                cont.innerHTML += `<div class="card">
+                    <div style="display:flex; align-items:center;">
+                        <img src="${d.foto}" class="user-photo">
+                        <div>
+                            <b>CASA ${d.unidade}</b><br><small>${d.nome}</small>
+                            <span class="audit-tag">ACEITO POR: ${d.autorizado_por_nome || 'Sistema'}</span>
                         </div>
-                        <div class="btn-group">
-                            <button class="btn btn-ok" onclick="aprovar('${key}')" ${limiteAtingido ? 'disabled style="opacity:0.2"' : ''}>ACEITAR</button>
-                            <button class="btn btn-del" onclick="remover('solicitacoes_cadastro', '${key}')">RECUSAR</button>
-                        </div>
-                    </div>`;
+                    </div>
+                    <button class="btn btn-del ${!isMaster ? 'btn-disabled' : ''}" onclick="removerMorador('${c.key}')">DELETAR</button>
+                </div>`;
             });
         });
     }
 
-    // FUNÇÕES DE AÇÃO
-    window.aprovar = (key) => {
-        onValue(ref(db, 'solicitacoes_cadastro/' + key), snap => {
-            const dados = snap.val();
-            if(dados) {
-                // Adiciona aos validados
-                push(ref(db, 'moradores_validados'), {
-                    ...dados,
-                    data_aprovacao: Date.now()
-                }).then(() => {
-                    // Remove dos pendentes
-                    remove(ref(db, 'solicitacoes_cadastro/' + key));
-                });
-            }
-        }, { onlyOnce: true });
+    // --- AÇÕES ---
+    window.autorizarAdmin = (id) => {
+        get(ref(db, 'admins_solicitacoes/' + id)).then(s => {
+            set(ref(db, 'admins_autorizados/' + id), s.val());
+            remove(ref(db, 'admins_solicitacoes/' + id));
+        });
     };
 
-    window.remover = (path, key) => {
-        if(confirm("Tem certeza que deseja remover este cadastro permanentemente?")) {
-            remove(ref(db, path + '/' + key));
-        }
+    window.aprovarMorador = (key) => {
+        get(ref(db, 'solicitacoes_cadastro/' + key)).then(s => {
+            const dados = s.val();
+            set(ref(db, 'moradores_validados/' + key), {
+                ...dados,
+                autorizado_por_nome: dadosAdminLogado.nome,
+                autorizado_por_cpf: dadosAdminLogado.cpf,
+                data_v: Date.now()
+            });
+            remove(ref(db, 'solicitacoes_cadastro/' + key));
+        });
     };
 
-    window.editar = (key) => {
-        const novoNome = prompt("Digite o novo nome para este morador:");
-        if(novoNome) {
-            set(ref(db, 'moradores_validados/' + key + '/nome'), novoNome);
-        }
+    window.removerMorador = (key) => {
+        if(isMaster && confirm("Excluir definitivamente?")) remove(ref(db, 'moradores_validados/' + key));
     };
 
-    // Inicia a carga de dados
-    carregarDados();
-
+    window.mudarTela = (id) => {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    };
 </script>
 </body>
 </html>
