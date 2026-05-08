@@ -2,212 +2,103 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MASTER ADMIN v2.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIRTY - MASTER CONTROL</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; --blue: #007BFF; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        
-        .screen { display: none; padding: 20px; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
-        .active { display: flex; }
-
-        .login-box { background: #0d0d0d; padding: 30px; border-radius: 25px; border: 1px solid var(--neon); width: 100%; max-width: 350px; text-align: center; margin-top: 50px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #000; border: 1px solid #333; color: #fff; text-align: center; box-sizing: border-box; }
-        
-        .header { width: 100%; padding: 20px; border-bottom: 2px solid var(--gray); background: #050505; text-align: center; }
-        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 20px; margin-bottom: 10px; width: 100%; max-width: 800px; display: flex; align-items: center; justify-content: space-between; }
-        
-        .btn { border: none; border-radius: 12px; padding: 12px 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-green { background: var(--neon); color: #000; width: 100%; }
-        .btn-del { background: transparent; border: 1px solid var(--red); color: var(--red); }
-        .btn-disabled { opacity: 0.15; cursor: not-allowed; pointer-events: none; }
-        
-        .audit-tag { font-size: 0.6rem; color: #555; display: block; margin-top: 5px; }
-        .user-photo { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 15px; }
-        h3 { color: #444; width: 100%; max-width: 800px; font-size: 0.8rem; letter-spacing: 2px; margin-top: 25px; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .card { background: #111; border: 1px solid var(--neon); padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
+        .btn-master { background: var(--neon); color: #000; }
+        input { width: 90%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 8px; text-align: center; }
+        #status-shield { font-size: 0.8rem; color: #555; margin-top: 10px; }
+        .hw-id { font-family: monospace; color: var(--neon); font-size: 0.7rem; background: #050505; padding: 5px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="s-login" class="screen active">
-        <h1 style="color:var(--neon); letter-spacing:3px;">VIRTY ACCESS</h1>
-        <div class="login-box">
-            <p style="color:#777; font-size:0.8rem;">LOGIN MASTER / OPERADOR</p>
-            <input type="password" id="pass-field" placeholder="DIGITE A SENHA">
-            <button class="btn btn-green" onclick="fazerLogin()">ENTRAR NO PAINEL</button>
-            <hr style="border:0; border-top:1px solid #222; margin:20px 0;">
-            <button class="btn" style="background:#111; color:#fff; width:100%; font-size:0.7rem;" onclick="mudarTela('s-solicitar')">SOLICITAR NOVO ACESSO</button>
-        </div>
-    </div>
-
-    <div id="s-solicitar" class="screen">
-        <h2 style="color:var(--neon)">NOVO ADMIN</h2>
-        <div class="login-box">
-            <input type="text" id="sol-nome" placeholder="Nome Completo">
-            <input type="text" id="sol-cpf" placeholder="CPF">
-            <button class="btn btn-green" onclick="enviarPedidoAdmin()">SOLICITAR AUTORIZAÇÃO</button>
-            <button class="btn" onclick="mudarTela('s-login')" style="margin-top:10px; background:none; color:#555;">VOLTAR</button>
-        </div>
-    </div>
-
-    <div id="s-wait" class="screen">
-        <h2 style="color:var(--neon); margin-top:100px;">AGUARDANDO...</h2>
-        <p style="color:#777; text-align:center; padding:20px;">Seu cadastro foi enviado ao Master.<br>Aguarde a liberação para logar.</p>
-        <button class="btn btn-green" onclick="location.reload()" style="width:200px;">JÁ FUI LIBERADO</button>
-    </div>
-
-    <div id="s-main" class="screen">
-        <div class="header">
-            <h2 id="perfil-txt" style="color:var(--neon); margin:0;">PAINEL</h2>
-            <span id="admin-atual-nome" style="font-size:0.7rem; color:#555;"></span>
-        </div>
-
-        <div style="width:100%; max-width:800px;">
-            <div id="area-master" style="display:none;">
-                <h3>ADMINS AGUARDANDO AUTORIZAÇÃO</h3>
-                <div id="lista-admins-pendentes"></div>
-            </div>
-
-            <h3>SOLICITAÇÕES DE MORADORES</h3>
-            <div id="lista-moradores-pendentes"></div>
-
-            <h3>MORADORES VALIDADOS</h3>
-            <div id="lista-moradores-ativos"></div>
-        </div>
-    </div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-    const app = initializeApp(config);
-    const db = getDatabase(app);
-
-    const SENHA_COMUM = "123456789";
-    let isMaster = false;
-    let dadosAdminLogado = null;
-    let myID = localStorage.getItem('virty_admin_id') || 'ADM-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-    localStorage.setItem('virty_admin_id', myID);
-
-    // --- LOGIN ---
-    window.fazerLogin = async () => {
-        const pass = document.getElementById('pass-field').value;
-        const snapMaster = await get(ref(db, 'config/admin_master_pass'));
-        const senhaMaster = snapMaster.exists() ? snapMaster.val() : "virty123@#";
-
-        if(pass === senhaMaster) {
-            isMaster = true;
-            dadosAdminLogado = { nome: "ADMIN MASTER", cpf: "MASTER" };
-            iniciarPainel();
-        } else if(pass === SENHA_COMUM) {
-            const snapAuto = await get(ref(db, 'admins_autorizados/' + myID));
-            if(snapAuto.exists()) {
-                isMaster = false;
-                dadosAdminLogado = snapAuto.val();
-                iniciarPainel();
-            } else {
-                alert("Acesso Operador não autorizado pelo Master.");
-            }
-        } else {
-            alert("Senha incorreta.");
-        }
-    };
-
-    window.enviarPedidoAdmin = () => {
-        const nome = document.getElementById('sol-nome').value;
-        const cpf = document.getElementById('sol-cpf').value;
-        if(!nome || !cpf) return alert("Preencha tudo.");
-        set(ref(db, 'admins_solicitacoes/' + myID), { nome, cpf, ts: Date.now() });
-        mudarTela('s-wait');
-    };
-
-    // --- PAINEL ---
-    function iniciarPainel() {
-        mudarTela('s-main');
-        document.getElementById('perfil-txt').innerText = isMaster ? "MASTER PANEL" : "OPERADOR PANEL";
-        document.getElementById('admin-atual-nome').innerText = `Logado como: ${dadosAdminLogado.nome}`;
+    <h1 style="color:var(--neon); letter-spacing: 2px;">VIRTY MASTER</h1>
+    
+    <div id="login-area" class="card">
+        <p style="margin-bottom: 5px;">DIGITAL DO DISPOSITIVO:</p>
+        <div id="hw-display" class="hw-id">Detectando Hardware...</div>
         
-        if(isMaster) document.getElementById('area-master').style.display = 'block';
+        <input type="password" id="pass-master" placeholder="Senha Master (minúsculo)">
+        <button class="btn btn-master" onclick="autenticarMaster()">VINCULAR MEU APARELHO</button>
+        
+        <div id="status-shield">🔒 Hardware não identificado</div>
+    </div>
 
-        // Listeners
-        if(isMaster) {
-            onValue(ref(db, 'admins_solicitacoes'), s => {
-                const cont = document.getElementById('lista-admins-pendentes');
-                cont.innerHTML = "";
-                s.forEach(c => {
-                    const d = c.val();
-                    cont.innerHTML += `<div class="card">
-                        <div><b>${d.nome}</b><br><small>${d.cpf}</small></div>
-                        <button class="btn btn-green" style="width:auto" onclick="autorizarAdmin('${c.key}')">AUTORIZAR</button>
-                    </div>`;
-                });
+    <div id="painel-master" class="card" style="display:none;">
+        <h3 style="color:var(--neon)">ACESSO MASTER LIBERADO</h3>
+        <p style="font-size: 0.9rem;">Este aparelho agora é a chave mestra do sistema.</p>
+        <hr style="border: 0; border-top: 1px solid #222; margin: 15px 0;">
+        
+        <div id="admin-tools">
+            <p style="color: #888; font-size: 0.8rem;">Status do Firebase: <b>CONECTADO</b></p>
+            <button class="btn" style="background:#222; color:#fff;" onclick="window.location.reload()">ATUALIZAR PAINEL</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+
+    <script>
+        const config = { 
+            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
+            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
+        };
+        firebase.initializeApp(config);
+        const db = firebase.database();
+
+        let hardwareID = "";
+        // SENHA CORRIGIDA PARA MINÚSCULO
+        const SENHA_MESTRA_DEFINIDA = "virty@1728#"; 
+
+        async function init() {
+            const fp = await FingerprintJS.load();
+            const result = await fp.get();
+            hardwareID = result.visitorId;
+            document.getElementById('hw-display').innerText = hardwareID;
+            verificarSeJaEhMaster();
+        }
+
+        function verificarSeJaEhMaster() {
+            db.ref('credenciais_admin/' + hardwareID).on('value', s => {
+                if(s.exists() && s.val().nivel === 'master') {
+                    mostrarPainel();
+                }
             });
         }
 
-        onValue(ref(db, 'solicitacoes_cadastro'), s => {
-            const cont = document.getElementById('lista-moradores-pendentes');
-            cont.innerHTML = "";
-            s.forEach(c => {
-                const d = c.val();
-                cont.innerHTML += `<div class="card">
-                    <div style="display:flex; align-items:center;">
-                        <img src="${d.foto}" class="user-photo">
-                        <div><b>CASA ${d.unidade}</b><br><small>${d.nome}</small></div>
-                    </div>
-                    <button class="btn btn-green" style="width:auto" onclick="aprovarMorador('${c.key}')">ACEITAR</button>
-                </div>`;
-            });
-        });
+        function autenticarMaster() {
+            const campoSenha = document.getElementById('pass-master').value;
+            
+            if(campoSenha === SENHA_MESTRA_DEFINIDA) {
+                db.ref('credenciais_admin/' + hardwareID).set({
+                    nivel: 'master',
+                    proprietario: 'Thiago Master',
+                    data_registro: new Date().toLocaleString(),
+                    ts: Date.now()
+                }).then(() => {
+                    alert("SUCESSO! Este aparelho agora é o MASTER oficial.");
+                    mostrarPainel();
+                }).catch(error => {
+                    alert("Erro ao registrar. Verifique as Rules no Firebase.");
+                });
+            } else {
+                alert("SENHA INCORRETA!");
+            }
+        }
 
-        onValue(ref(db, 'moradores_validados'), s => {
-            const cont = document.getElementById('lista-moradores-ativos');
-            cont.innerHTML = "";
-            s.forEach(c => {
-                const d = c.val();
-                cont.innerHTML += `<div class="card">
-                    <div style="display:flex; align-items:center;">
-                        <img src="${d.foto}" class="user-photo">
-                        <div>
-                            <b>CASA ${d.unidade}</b><br><small>${d.nome}</small>
-                            <span class="audit-tag">ACEITO POR: ${d.autorizado_por_nome || 'Sistema'}</span>
-                        </div>
-                    </div>
-                    <button class="btn btn-del ${!isMaster ? 'btn-disabled' : ''}" onclick="removerMorador('${c.key}')">DELETAR</button>
-                </div>`;
-            });
-        });
-    }
+        function mostrarPainel() {
+            document.getElementById('login-area').style.display = 'none';
+            document.getElementById('painel-master').style.display = 'block';
+            document.getElementById('status-shield').innerText = "🛡️ PROTEÇÃO POR HARDWARE ATIVA";
+        }
 
-    // --- AÇÕES ---
-    window.autorizarAdmin = (id) => {
-        get(ref(db, 'admins_solicitacoes/' + id)).then(s => {
-            set(ref(db, 'admins_autorizados/' + id), s.val());
-            remove(ref(db, 'admins_solicitacoes/' + id));
-        });
-    };
-
-    window.aprovarMorador = (key) => {
-        get(ref(db, 'solicitacoes_cadastro/' + key)).then(s => {
-            const dados = s.val();
-            set(ref(db, 'moradores_validados/' + key), {
-                ...dados,
-                autorizado_por_nome: dadosAdminLogado.nome,
-                autorizado_por_cpf: dadosAdminLogado.cpf,
-                data_v: Date.now()
-            });
-            remove(ref(db, 'solicitacoes_cadastro/' + key));
-        });
-    };
-
-    window.removerMorador = (key) => {
-        if(isMaster && confirm("Excluir definitivamente?")) remove(ref(db, 'moradores_validados/' + key));
-    };
-
-    window.mudarTela = (id) => {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    };
-</script>
+        init();
+    </script>
 </body>
 </html>
