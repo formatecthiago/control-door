@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY ADMIN v17.0</title>
+    <title>VIRTY ADMIN v17.5</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --orange: #FF8C00; }
         body { background: #000; color: #fff; font-family: sans-serif; padding: 15px; margin: 0; }
-        .card-mini { background: #0a0a0a; border: 1px solid #222; border-left: 4px solid var(--neon); padding: 8px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+        .card { background: #0a0a0a; border: 1px solid #222; border-left: 4px solid var(--neon); padding: 10px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
         .thumb { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid #333; }
         .info { flex: 1; min-width: 0; }
-        .info b { color: var(--neon); font-size: 0.75rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .info b { color: var(--neon); font-size: 0.8rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .info span { font-size: 0.6rem; color: #666; display: block; }
-        .btn-group { display: flex; gap: 3px; }
-        .btn-s { border: none; padding: 6px 8px; border-radius: 5px; font-weight: bold; font-size: 0.6rem; cursor: pointer; text-transform: uppercase; }
+        .btn-group { display: flex; gap: 5px; }
+        .btn-s { border: none; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 0.65rem; cursor: pointer; }
         .ok { background: var(--neon); color: #000; }
         .edit { background: var(--orange); color: #fff; }
         .sair { background: var(--red); color: #fff; }
@@ -21,12 +21,12 @@
 </head>
 <body>
 
-    <h4 style="color:var(--neon); text-align:center; margin-bottom:15px; letter-spacing:1px;">VIRTY ADMIN MASTER</h4>
+    <h3 style="color:var(--neon); text-align:center;">VIRTY MASTER CONTROL</h3>
 
-    <p style="font-size:0.6rem; color:#444; font-weight:bold;">PENDENTES PARA APROVAÇÃO</p>
+    <p style="font-size:0.7rem; color:#444;">SOLICITAÇÕES PENDENTES</p>
     <div id="lista-pendentes"></div>
 
-    <p style="font-size:0.6rem; color:#444; font-weight:bold; margin-top:20px;">LISTA DE MORADORES</p>
+    <p style="font-size:0.7rem; color:#444; margin-top:20px;">MORADORES ATIVOS</p>
     <div id="lista-ativos"></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -35,15 +35,15 @@
         const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
         firebase.initializeApp(config); const db = firebase.database();
 
-        // ATUALIZAÇÃO EM TEMPO REAL DAS SOLICITAÇÕES
+        // MONITOR PENDENTES
         db.ref('solicitacoes_cadastro').on('value', s => {
             const cont = document.getElementById('lista-pendentes'); cont.innerHTML = "";
             s.forEach(item => {
                 const d = item.val(); const key = item.key;
                 cont.innerHTML += `
-                    <div class="card-mini">
+                    <div class="card">
                         <img src="${d.foto}" class="thumb">
-                        <div class="info"><b>${d.nome}</b><span>Unidade: ${d.unidade} | CPF: ${d.cpf}</span></div>
+                        <div class="info"><b>${d.nome}</b><span>Casa: ${d.unidade} | CPF: ${d.cpf}</span></div>
                         <div class="btn-group">
                             <button class="btn-s ok" onclick="btnAprovar('${key}')">OK</button>
                             <button class="btn-s sair" onclick="btnRecusar('${key}')">SAIR</button>
@@ -52,15 +52,15 @@
             });
         });
 
-        // ATUALIZAÇÃO EM TEMPO REAL DOS MORADORES
+        // MONITOR ATIVOS
         db.ref('moradores_validados').on('value', s => {
             const cont = document.getElementById('lista-ativos'); cont.innerHTML = "";
             s.forEach(item => {
                 const d = item.val(); const key = item.key;
                 cont.innerHTML += `
-                    <div class="card-mini" style="border-left-color:var(--blue)">
+                    <div class="card" style="border-left-color:var(--blue)">
                         <img src="${d.foto}" class="thumb">
-                        <div class="info"><b>${d.nome}</b><span>Unidade: ${d.unidade} | Tel: ${d.telefone || '--'}</span></div>
+                        <div class="info"><b>${d.nome}</b><span>Casa: ${d.unidade} | Tel: ${d.telefone}</span></div>
                         <div class="btn-group">
                             <button class="btn-s edit" onclick="btnEditar('${key}')">EDIT</button>
                             <button class="btn-s sair" onclick="btnRemover('${key}')">SAIR</button>
@@ -69,21 +69,23 @@
             });
         });
 
-        function btnAprovar(key) {
+        // FUNÇÕES GLOBAIS DE AÇÃO (Blindadas)
+        window.btnAprovar = function(key) {
             db.ref('solicitacoes_cadastro/' + key).once('value', s => {
-                if(!s.exists()) return;
-                db.ref('moradores_validados').push(s.val()).then(() => {
-                    db.ref('solicitacoes_cadastro/' + key).remove();
-                });
+                if(s.exists()) {
+                    db.ref('moradores_validados').push(s.val()).then(() => {
+                        db.ref('solicitacoes_cadastro/' + key).remove();
+                    });
+                }
             });
-        }
+        };
 
-        function btnRecusar(key) { if(confirm("Deseja deletar esta solicitação?")) db.ref('solicitacoes_cadastro/' + key).remove(); }
-        function btnRemover(key) { if(confirm("Remover este morador do sistema?")) db.ref('moradores_validados/' + key).remove(); }
-        function btnEditar(key) { 
-            const n = prompt("Novo nome:"); 
-            if(n) db.ref('moradores_validados/' + key).update({ nome: n }); 
-        }
+        window.btnRecusar = function(key) { if(confirm("Deletar solicitação?")) db.ref('solicitacoes_cadastro/' + key).remove(); };
+        window.btnRemover = function(key) { if(confirm("Remover morador?")) db.ref('moradores_validados/' + key).remove(); };
+        window.btnEditar = function(key) { 
+            const n = prompt("Novo nome:");
+            if(n) db.ref('moradores_validados/' + key).update({ nome: n });
+        };
     </script>
 </body>
 </html>
