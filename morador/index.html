@@ -3,26 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v15.3</title>
+    <title>VIRTY MORADOR v16.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; }
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
         .virty-header { text-align: center; border-bottom: 2px solid var(--gray); padding-bottom: 10px; margin-bottom: 15px; }
-        
-        /* Formulário de Cadastro */
         #area-cadastro input { width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; }
         #cam-box { width: 100%; height: 200px; background: #050505; border: 2px dashed #333; border-radius: 15px; margin: 10px 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: cover; display: none; }
-        
-        /* Botões */
         .btn { border: none; border-radius: 12px; padding: 16px; font-weight: bold; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 10px; }
         .btn-v { background: var(--neon); color: #000; }
         .btn-b { background: var(--blue); color: #fff; }
+        .btn-r { background: var(--red); color: #fff; font-size: 0.7rem; padding: 8px; margin: 0; width: auto; }
         .btn-clave { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 10px; border-radius: 12px; flex: 1; display: flex; flex-direction: column; align-items: center; }
-        
-        /* Histórico Compacto */
         .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 10px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; position: relative; }
         .hist-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #333; }
         .b-count { position: absolute; top: 5px; left: 35px; background: var(--neon); color: #000; font-size: 0.6rem; padding: 2px 5px; border-radius: 5px; font-weight: 900; }
@@ -30,30 +25,23 @@
 </head>
 <body>
 
-    <!-- TELA INICIAL / CADASTRO -->
     <div id="bloqueio-inicio" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
         <h2 style="color:var(--neon); letter-spacing:2px;">VIRTY ACCESS</h2>
-        
         <div id="area-cadastro" style="display:none; width:100%;">
-            <div id="cam-box">
-                <span id="cam-msg" style="color:#555; font-size:0.8rem;">Câmera Desativada</span>
-                <video id="v-selfie" autoplay playsinline></video>
-            </div>
-            <button class="btn btn-b" id="btn-cam" onclick="ativarCam()">1. ATIVAR CÂMERA</button>
+            <div id="cam-box"><video id="v-selfie" autoplay playsinline></video></div>
+            <button class="btn btn-b" onclick="ativarCam()">1. ATIVAR CÂMERA</button>
             <input type="text" id="reg-nome" placeholder="Nome Completo">
             <input type="text" id="reg-cpf" placeholder="CPF">
             <input type="text" id="reg-un" placeholder="Unidade (Casa)">
             <input type="text" id="reg-tel" placeholder="Telefone (WhatsApp)">
             <button class="btn btn-v" onclick="finalizarCadastro()">2. FINALIZAR REGISTRO</button>
         </div>
-
         <div id="area-login">
-            <button id="btn-entrar" class="btn btn-v" onclick="entrarApp()">ENTRAR NO PAINEL</button>
-            <p id="status-msg" style="display:none; color:orange; font-size:0.9rem; margin-top:20px; text-align:center;">Solicitação em análise...<br><small style="color:#555">O Master precisa autorizar seu acesso.</small></p>
+            <button class="btn btn-v" onclick="entrarApp()">ENTRAR NO PAINEL</button>
+            <p id="status-msg" style="display:none; color:orange; font-size:0.9rem; margin-top:20px; text-align:center;">Solicitação em análise...</p>
         </div>
     </div>
 
-    <!-- PAINEL HOME -->
     <div id="s-home" class="screen">
         <div class="virty-header">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -68,138 +56,78 @@
                 <button onclick="toggleMute()" id="btn-silenciar" style="flex:1; background:#111; color:#fff; border:1px solid #333; border-radius:12px;">🔔 SOM ATIVO</button>
             </div>
         </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <small style="color:#444; font-weight:bold;">HISTÓRICO RECENTE</small>
+            <button class="btn-r" onclick="limparTudo()">LIMPAR TUDO</button>
+        </div>
         <div id="lista-hist" style="flex:1; overflow-y:auto;"></div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
     <script>
         const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-        firebase.initializeApp(config);
-        const db = firebase.database();
-        let audioCtx, un = "", somOn = true, somIdx = localStorage.getItem('v_som') || 0;
+        firebase.initializeApp(config); const db = firebase.database();
+        let audioCtx, un = "", somIdx = localStorage.getItem('v_som') || 0;
 
-        // BIBLIOTECA 2: Frequências Otimizadas (Sem impacto seco)
         const bibliotecaSons = [
-            { n: "Suave Sine", f: [880, 1109], d: 0.6 },
-            { n: "Ding-Dong High", f: [1046, 783], d: 0.8 },
-            { n: "Chime Cristal", f: [1567, 1318, 1046], d: 0.4 },
-            { n: "Alerta Médio", f: [932, 932], d: 0.3 },
-            { n: "Pulsar Zen", f: [659], d: 1.2 },
-            { n: "Digital Soft", f: [1174, 1567], d: 0.2 },
-            { n: "Echo Bell", f: [880, 440], d: 1.0 },
-            { n: "Harmônico", f: [523, 659, 783], d: 0.5 },
-            { n: "Bip Fino", f: [2093], d: 0.1 },
-            { n: "Residencial 2", f: [987, 783], d: 0.6 }
+            { n: "Suave Sine", f: [880, 1109], d: 0.6 }, { n: "Ding-Dong High", f: [1046, 783], d: 0.8 },
+            { n: "Chime Cristal", f: [1567, 1318, 1046], d: 0.4 }, { n: "Alerta Médio", f: [932, 932], d: 0.3 },
+            { n: "Pulsar Zen", f: [659], d: 1.2 }, { n: "Digital Soft", f: [1174, 1567], d: 0.2 },
+            { n: "Echo Bell", f: [880, 440], d: 1.0 }, { n: "Harmônico", f: [523, 659, 783], d: 0.5 },
+            { n: "Bip Fino", f: [2093], d: 0.1 }, { n: "Residencial 2", f: [987, 783], d: 0.6 }
         ];
 
         function tocarSom(idx) {
             if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const s = bibliotecaSons[idx];
-            let t = audioCtx.currentTime;
+            const s = bibliotecaSons[idx]; let t = audioCtx.currentTime;
             s.f.forEach((freq, i) => {
-                const osc = audioCtx.createOscillator();
-                const g = audioCtx.createGain();
+                const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
                 osc.connect(g); g.connect(audioCtx.destination);
                 osc.frequency.setValueAtTime(freq, t);
-                // FADE-IN: Começa em 0 e sobe em 50ms para proteger o alto-falante
-                g.gain.setValueAtTime(0, t);
-                g.gain.linearRampToValueAtTime(0.2, t + 0.05);
+                g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.2, t + 0.05);
                 g.gain.exponentialRampToValueAtTime(0.01, t + s.d);
-                osc.start(t); osc.stop(t + s.d);
-                t += s.d * 0.5;
+                osc.start(t); osc.stop(t + s.d); t += s.d * 0.5;
             });
             document.getElementById('nome-som').innerText = "SOM: " + s.n;
         }
 
-        function proximoSom() {
-            somIdx = (parseInt(somIdx) + 1) % bibliotecaSons.length;
-            localStorage.setItem('v_som', somIdx);
-            tocarSom(somIdx);
-        }
-
-        function ativarCam() {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => {
-                const v = document.getElementById('v-selfie');
-                v.srcObject = s; v.style.display = 'block';
-                document.getElementById('cam-msg').style.display = 'none';
-                document.getElementById('btn-cam').style.display = 'none';
-            }).catch(() => alert("Erro ao abrir câmera. Verifique as permissões."));
-        }
-
+        function proximoSom() { somIdx = (parseInt(somIdx) + 1) % bibliotecaSons.length; localStorage.setItem('v_som', somIdx); tocarSom(somIdx); }
+        function ativarCam() { navigator.mediaDevices.getUserMedia({ video: true }).then(s => { const v = document.getElementById('v-selfie'); v.srcObject = s; v.style.display = 'block'; }); }
+        
         function finalizarCadastro() {
-            const v = document.getElementById('v-selfie');
-            const canvas = document.createElement('canvas');
-            canvas.width = v.videoWidth; canvas.height = v.videoHeight;
-            canvas.getContext('2d').drawImage(v, 0, 0);
-            const dados = {
-                nome: document.getElementById('reg-nome').value,
-                cpf: document.getElementById('reg-cpf').value,
-                unidade: document.getElementById('reg-un').value,
-                telefone: document.getElementById('reg-tel').value,
-                foto: canvas.toDataURL('image/jpeg', 0.5),
-                ts: Date.now()
-            };
-            if(!dados.nome || !dados.cpf) return alert("Preencha todos os campos!");
-            db.ref('solicitacoes_cadastro').push(dados).then(() => {
-                localStorage.setItem('virty_user', JSON.stringify(dados));
-                location.reload();
-            });
+            const v = document.getElementById('v-selfie'); const canvas = document.createElement('canvas');
+            canvas.width = v.videoWidth; canvas.height = v.videoHeight; canvas.getContext('2d').drawImage(v, 0, 0);
+            const dados = { nome: document.getElementById('reg-nome').value, cpf: document.getElementById('reg-cpf').value, unidade: document.getElementById('reg-un').value, telefone: document.getElementById('reg-tel').value, foto: canvas.toDataURL('image/jpeg', 0.5), ts: Date.now() };
+            db.ref('solicitacoes_cadastro').push(dados).then(() => { localStorage.setItem('virty_user', JSON.stringify(dados)); location.reload(); });
         }
 
-        async function entrarApp() {
-            const salvo = localStorage.getItem('virty_user');
-            if(!salvo) {
-                document.getElementById('area-login').style.display = 'none';
-                document.getElementById('area-cadastro').style.display = 'block';
-                return;
-            }
-            const user = JSON.parse(salvo);
-            db.ref('moradores_validados').orderByChild('cpf').equalTo(user.cpf).on('value', s => {
-                if(s.exists()) {
-                    un = user.unidade;
-                    document.getElementById('nome-exibir').innerText = user.nome;
-                    document.getElementById('u-txt').innerText = un;
-                    document.getElementById('bloqueio-inicio').style.display = 'none';
-                    mudarTela('s-home'); iniciarMonitor();
-                } else {
-                    document.getElementById('btn-entrar').style.display = 'none';
-                    document.getElementById('status-msg').style.display = 'block';
-                }
+        function entrarApp() {
+            const salvo = localStorage.getItem('virty_user'); if(!salvo) { document.getElementById('area-login').style.display = 'none'; document.getElementById('area-cadastro').style.display = 'block'; return; }
+            const u = JSON.parse(salvo);
+            db.ref('moradores_validados').orderByChild('cpf').equalTo(u.cpf).on('value', s => {
+                if(s.exists()) { un = u.unidade; document.getElementById('nome-exibir').innerText = u.nome; document.getElementById('u-txt').innerText = un; document.getElementById('bloqueio-inicio').style.display = 'none'; mudarTela('s-home'); iniciarMonitor(); }
+                else { document.getElementById('status-msg').style.display = 'block'; }
             });
         }
 
         function iniciarMonitor() {
             db.ref('historico/' + un).on('value', s => {
-                const cont = document.getElementById('lista-hist');
-                cont.innerHTML = "";
-                let itens = []; s.forEach(c => itens.push(c.val()));
-                itens.reverse();
-                
+                const cont = document.getElementById('lista-hist'); cont.innerHTML = "";
+                let itens = []; s.forEach(c => itens.push(c.val())); itens.reverse();
                 let agrupados = [];
                 itens.forEach(it => {
                     let jaTem = agrupados.find(x => x.v_id === it.v_id);
-                    if(jaTem) { jaTem.qtd++; jaTem.acao = it.acao; }
-                    else { it.qtd = 1; agrupados.push(it); }
+                    if(jaTem) { jaTem.qtd++; } else { it.qtd = 1; agrupados.push(it); }
                 });
-
                 agrupados.forEach(h => {
-                    cont.innerHTML += `
-                        <div class="hist-card">
-                            <img src="${h.foto}" class="hist-img">
-                            ${h.qtd > 1 ? `<div class="b-count">${h.qtd}</div>` : ''}
-                            <div style="flex:1"><b>VISITANTE</b><br><small style="color:#555">${h.acao.toUpperCase()}</small></div>
-                        </div>`;
+                    cont.innerHTML += `<div class="hist-card"><img src="${h.foto}" class="hist-img">${h.qtd > 1 ? `<div class="b-count">${h.qtd}</div>` : ''}<div style="flex:1"><b>VISITANTE</b><br><small style="color:#555">${h.acao.toUpperCase()}</small></div></div>`;
                 });
             });
         }
 
-        function mudarTela(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-
+        function limparTudo() { if(confirm("Deseja limpar TODO o seu histórico?")) db.ref('historico/' + un).remove(); }
+        function mudarTela(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
         document.getElementById('nome-som').innerText = "SOM: " + bibliotecaSons[somIdx].n;
     </script>
 </body>
