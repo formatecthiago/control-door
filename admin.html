@@ -3,142 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY MASTER v2.1</title>
+    <title>VIRTY ADMIN v15.2</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --orange: #FF8C00; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        .card { background: #0a0a0a; border: 1px solid #222; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
-        .virty-title { color: var(--neon); text-align: center; letter-spacing: 2px; margin-bottom: 20px; }
-        .btn { padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; text-transform: uppercase; font-size: 0.75rem; }
-        .btn-v { background: var(--neon); color: #000; }
-        .btn-r { background: var(--red); color: #fff; }
-        .btn-a { background: var(--blue); color: #fff; }
-        .btn-edit { background: var(--orange); color: #000; }
-        .solicitacao-card { border-left: 4px solid var(--neon); background: #111; padding: 12px; margin-top: 10px; border-radius: 0 10px 10px 0; }
-        .selfie-preview { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; border: 1px solid #333; }
-        .badge { font-size: 0.7rem; background: #222; padding: 3px 8px; border-radius: 5px; color: var(--neon); }
-        .flex-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; padding: 15px; margin: 0; }
+        .card-mini { background: #0a0a0a; border: 1px solid #222; border-left: 4px solid var(--neon); padding: 8px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+        .thumb-mini { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #333; margin-right: 10px; }
+        .info { flex: 1; }
+        .info b { font-size: 0.85rem; color: var(--neon); display: block; }
+        .info span { font-size: 0.7rem; color: #888; }
+        .btn-group { display: flex; gap: 5px; }
+        .btn-s { border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; cursor: pointer; }
+        .ok { background: var(--neon); color: #000; }
+        .sair { background: var(--red); color: #fff; }
+        input { width: 100%; padding: 12px; background: #111; border: 1px solid #333; color: #fff; border-radius: 8px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <h1 class="virty-title">VIRTY MASTER v2.1</h1>
+    <h2 style="color:var(--neon); text-align:center;">VIRTY MASTER</h2>
 
-    <div class="card" style="text-align: center; border-color: var(--neon);">
-        <span class="badge">DISPOSITIVO MASTER ATIVO ✔️</span>
-        <p style="font-size: 0.7rem; color: #666; margin-top: 8px;">ID: <span id="my-id">...</span></p>
-    </div>
+    <p style="font-size:0.7rem; color:#555;">SOLICITAÇÕES PENDENTES</p>
+    <div id="lista-pendentes"></div>
 
-    <div class="card">
-        <h3 style="margin-top:0; font-size: 1rem;">⏳ SOLICITAÇÕES / MORADORES</h3>
-        <div id="lista-solicitacoes">Carregando dados...</div>
-    </div>
-
-    <div class="card">
-        <h3 style="margin-top:0; font-size: 1rem;">🛡️ AUTORIZAR ADMIN</h3>
-        <input type="text" id="new-admin-id" placeholder="ID de Hardware do Amigo" style="width:100%; padding:10px; border-radius:8px; background:#000; border:1px solid #333; color:#fff; box-sizing:border-box;">
-        <button class="btn btn-a" onclick="autorizarAdmin()">DAR ACESSO ADMIN</button>
-    </div>
+    <p style="font-size:0.7rem; color:#555; margin-top:20px;">MORADORES ATIVOS</p>
+    <input type="text" id="busca" oninput="filtrar()" placeholder="Buscar nome ou casa...">
+    <div id="lista-autorizados"></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 
     <script>
         const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
         firebase.initializeApp(config);
         const db = firebase.database();
-        let hardwareID = "";
 
-        async function init() {
-            const fp = await FingerprintJS.load();
-            const result = await fp.get();
-            hardwareID = result.visitorId;
-            document.getElementById('my-id').innerText = hardwareID;
-            
-            db.ref('credenciais_admin/' + hardwareID).once('value', s => {
-                if(s.exists() && s.val().nivel === 'master') {
-                    carregarSolicitacoes();
-                } else {
-                    document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:50px;'>ACESSO NÃO AUTORIZADO</h1>";
-                }
+        // LISTA PENDENTE EM TEMPO REAL
+        db.ref('solicitacoes_cadastro').on('value', s => {
+            const cont = document.getElementById('lista-pendentes');
+            cont.innerHTML = "";
+            s.forEach(item => {
+                const d = item.val();
+                cont.innerHTML += `
+                    <div class="card-mini">
+                        <img src="${d.foto}" class="thumb-mini">
+                        <div class="info"><b>${d.nome}</b><span>Unidade: ${d.unidade}</span></div>
+                        <div class="btn-group">
+                            <button class="btn-s ok" onclick="aprovar('${item.key}')">OK</button>
+                            <button class="btn-s sair" onclick="rejeitar('${item.key}')">SAIR</button>
+                        </div>
+                    </div>`;
             });
-        }
+        });
 
-        function carregarSolicitacoes() {
-            db.ref('solicitacoes_cadastro').on('value', s => {
-                const cont = document.getElementById('lista-solicitacoes');
-                cont.innerHTML = "";
-                if(!s.exists()) { cont.innerHTML = "<p style='color:#555;'>Nenhuma solicitação pendente.</p>"; return; }
-
-                s.forEach(item => {
-                    const d = item.val();
-                    const key = item.key;
-                    cont.innerHTML += `
-                        <div class="solicitacao-card">
-                            <img src="${d.foto}" class="selfie-preview">
-                            <b>${d.nome}</b><br>
-                            <small>Unid: ${d.unidade} | CPF: ${d.cpf}</small>
-                            <div class="flex-btns">
-                                <button class="btn btn-v" onclick="aprovarMorador('${key}')">OK</button>
-                                <button class="btn btn-edit" onclick="editarSolicitacao('${key}', '${d.nome}', '${d.unidade}')">EDIT</button>
-                                <button class="btn btn-r" onclick="recusarMorador('${key}')">SAIR</button>
-                            </div>
-                        </div>`;
-                });
+        // LISTA AUTORIZADA EM TEMPO REAL
+        db.ref('moradores_validados').on('value', s => {
+            const cont = document.getElementById('lista-autorizados');
+            cont.innerHTML = "";
+            s.forEach(item => {
+                const d = item.val();
+                cont.innerHTML += `
+                    <div class="card-mini" style="border-left-color:var(--blue)">
+                        <img src="${d.foto}" class="thumb-mini">
+                        <div class="info"><b>${d.nome}</b><span>Casa: ${d.unidade} | Tel: ${d.telefone || '--'}</span></div>
+                        <button class="btn-s sair" onclick="remover('${item.key}')">SAIR</button>
+                    </div>`;
             });
-        }
+        });
 
-        function editarSolicitacao(key, nomeAtual, unidadeAtual) {
-            const novoNome = prompt("Novo nome do morador:", nomeAtual);
-            const novaUnidade = prompt("Nova unidade:", unidadeAtual);
-            
-            if (novoNome !== null && novaUnidade !== null) {
-                db.ref('solicitacoes_cadastro/' + key).update({
-                    nome: novoNome,
-                    unidade: novaUnidade
-                }).then(() => {
-                    alert("Dados atualizados!");
-                });
-            }
-        }
-
-        function aprovarMorador(key) {
+        function aprovar(key) {
             db.ref('solicitacoes_cadastro/' + key).once('value', s => {
-                const dados = s.val();
-                dados.v_id_admin = hardwareID;
-                
-                db.ref('moradores_validados').push(dados).then(() => {
+                db.ref('moradores_validados').push(s.val()).then(() => {
                     db.ref('solicitacoes_cadastro/' + key).remove();
-                    alert("Morador aprovado!");
                 });
             });
         }
 
-        function recusarMorador(key) {
-            // IMPLEMENTAÇÃO DO POP-UP DE CONFIRMAÇÃO
-            if(confirm("Deseja realmente EXCLUIR esta solicitação? Esta ação não pode ser desfeita.")) {
-                db.ref('solicitacoes_cadastro/' + key).remove().then(() => {
-                    alert("Excluído com sucesso.");
-                });
-            }
-        }
+        function rejeitar(key) { if(confirm("Recusar?")) db.ref('solicitacoes_cadastro/' + key).remove(); }
+        function remover(key) { if(confirm("Remover morador?")) db.ref('moradores_validados/' + key).remove(); }
 
-        function autorizarAdmin() {
-            const newID = document.getElementById('new-admin-id').value;
-            if(!newID) return alert("Insira o ID do aparelho!");
-            
-            db.ref('credenciais_admin/' + newID).set({
-                nivel: 'autorizado',
-                v_id_master: hardwareID,
-                ts: Date.now()
-            }).then(() => {
-                alert("Novo Admin autorizado!");
-                document.getElementById('new-admin-id').value = "";
+        function filtrar() {
+            const b = document.getElementById('busca').value.toLowerCase();
+            document.querySelectorAll('#lista-autorizados .card-mini').forEach(card => {
+                card.style.display = card.innerText.toLowerCase().includes(b) ? "flex" : "none";
             });
         }
-
-        init();
     </script>
 </body>
 </html>
