@@ -3,108 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR - OFICIAL</title>
+    <title>VIRTY MORADOR v11.9</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; }
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
-        .virty-header { text-align: center; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px; margin-bottom: 15px; }
-        #cam-box { width: 100%; height: 180px; background: #050505; border: 2px dashed #333; border-radius: 15px; margin: 10px 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        video { width: 100%; height: 100%; object-fit: cover; display: none; }
-        input { width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; }
-        .btn { border: none; border-radius: 12px; padding: 16px; font-weight: bold; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 10px; }
+        .header-main { text-align: center; border-bottom: 2px solid var(--gray); padding-bottom: 15px; margin-bottom: 15px; }
+        .unidade-box { background: var(--neon); color: #000; padding: 3px 10px; border-radius: 5px; font-weight: bold; }
+        .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; position: relative; }
+        .hist-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 12px; }
+        .badge-count { position: absolute; top: 5px; left: 45px; background: var(--red); color: white; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: 900; }
+        .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; text-transform: uppercase; }
         .btn-v { background: var(--neon); color: #000; }
-        .btn-b { background: var(--blue); color: #fff; }
-        .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 8px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; position: relative; }
-        .hist-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #333; }
-        .b-count { position: absolute; top: 2px; left: 35px; background: var(--neon); color: #000; font-size: 0.6rem; padding: 1px 5px; border-radius: 5px; font-weight: 900; }
+        .btn-r { background: var(--red); color: #fff; }
+        .btn-a { background: var(--blue); color: #fff; }
+        #modal-msg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
-
     <div id="bloqueio-inicio" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
-        <h2 style="color:var(--neon); letter-spacing:2px;">VIRTY ACCESS</h2>
-        <div id="area-cadastro" style="display:none; width:100%;">
-            <div id="cam-box"><video id="v-selfie" autoplay playsinline></video></div>
-            <button class="btn btn-b" onclick="ativarCam()">1. ATIVAR CÂMERA</button>
-            <input type="text" id="reg-nome" placeholder="Nome Completo">
-            <input type="text" id="reg-un" placeholder="Unidade (Casa)">
-            <input type="text" id="reg-cpf" placeholder="CPF">
-            <button class="btn btn-v" onclick="finalizarCadastro()">2. ENVIAR REGISTRO</button>
-        </div>
-        <div id="area-login">
-            <button class="btn btn-v" onclick="entrarApp()">ENTRAR NO PAINEL</button>
-            <p id="status-msg" style="display:none; color:orange; font-size:0.9rem; margin-top:20px; text-align:center;">Aguardando aprovação do Admin...</p>
-        </div>
+        <h1 style="color:var(--neon);">VIRTY MORADOR</h1>
+        <button class="btn btn-v" onclick="entrarApp()">ABRIR PAINEL</button>
     </div>
 
     <div id="s-home" class="screen">
-        <div class="virty-header">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <b id="nome-exibir" style="color:var(--neon)">---</b>
-                <span style="background:var(--neon); color:#000; padding:2px 8px; border-radius:5px; font-weight:bold;">CASA <span id="u-txt">--</span></span>
+        <div class="header-main">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <b id="nome-exibir">---</b>
+                <span class="unidade-box">CASA <span id="u-txt">--</span></span>
             </div>
-            <button onclick="tocarAlerta()" style="margin-top:15px; width:100%; background:#111; color:var(--neon); border:1px solid var(--neon); padding:10px; border-radius:12px; font-weight:bold;">🔔 TESTAR ALERTA</button>
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <small style="color:#444; font-weight:bold;">HISTÓRICO DE VISITAS</small>
-            <button onclick="limparHist()" style="background:var(--red); color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:0.6rem;">LIMPAR</button>
+            <button class="btn" onclick="limparHistorico()" style="background:#111; color:var(--red); border:1px solid var(--red); padding:10px; font-size:0.75rem;">🗑️ LIMPAR HISTÓRICO</button>
         </div>
         <div id="lista-hist" style="flex:1; overflow-y:auto;"></div>
     </div>
+
+    <div id="s-call" class="screen">
+        <div style="display:flex; justify-content:space-between;"><b style="color:var(--neon)">AO VIVO</b><span id="timer" style="color:var(--red)">60s</span></div>
+        <img id="img-vis" src="" style="width:100%; height:320px; border-radius:25px; object-fit:cover; margin:20px 0; border:2px solid var(--neon);">
+        <button class="btn btn-v" onclick="responder('liberado')">✔️ LIBERAR PORTÃO</button>
+        <button class="btn btn-a" onclick="abrirModalMsg()">💬 MENSAGEM</button>
+        <button class="btn btn-r" onclick="responder('recusado')">✖️ RECUSAR</button>
+    </div>
+
+    <div id="modal-msg"><div style="background:#111; padding:25px; border-radius:20px; width:80%; text-align:center;">
+        <input type="text" id="input-msg" placeholder="Sua mensagem..." style="width:100%; padding:15px; margin-bottom:15px; border-radius:10px; background:#000; color:#fff; border:1px solid #333;">
+        <button class="btn btn-a" onclick="enviarMensagemDireta()">ENVIAR AGORA</button>
+        <button class="btn" onclick="fecharModalMsg()" style="background:#222; color:#fff;">FECHAR</button>
+    </div></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
         const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
         firebase.initializeApp(config); const db = firebase.database();
-        let un = "";
+        let audioCtx, un = "", loopAlerta;
 
-        function ativarCam() { navigator.mediaDevices.getUserMedia({ video: true }).then(s => { const v = document.getElementById('v-selfie'); v.srcObject = s; v.style.display = 'block'; }); }
-        
-        function finalizarCadastro() {
-            const v = document.getElementById('v-selfie'); const canvas = document.createElement('canvas');
-            canvas.width = v.videoWidth; canvas.height = v.videoHeight; canvas.getContext('2d').drawImage(v, 0, 0);
-            const dados = { nome: document.getElementById('reg-nome').value, unidade: document.getElementById('reg-un').value, cpf: document.getElementById('reg-cpf').value, foto: canvas.toDataURL('image/jpeg', 0.5), ts: Date.now() };
-            db.ref('solicitacoes_cadastro').push(dados).then(() => { localStorage.setItem('virty_local', JSON.stringify(dados)); location.reload(); });
+        async function entrarApp() {
+            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+            const salvo = localStorage.getItem('virty_local') || localStorage.getItem('virty_user');
+            if(salvo) {
+                const u = JSON.parse(salvo); un = u.unidade;
+                document.getElementById('u-txt').innerText = un; document.getElementById('nome-exibir').innerText = u.nome;
+                document.getElementById('bloqueio-inicio').style.display = 'none'; mudarTela('s-home'); iniciarMonitor();
+            } else alert("Faça o cadastro primeiro!");
         }
 
-        function entrarApp() {
-            const salvo = localStorage.getItem('virty_local'); if(!salvo) { document.getElementById('area-login').style.display = 'none'; document.getElementById('area-cadastro').style.display = 'block'; return; }
-            const u = JSON.parse(salvo);
-            db.ref('moradores_validados').orderByChild('cpf').equalTo(u.cpf).on('value', s => {
-                if(s.exists()) {
-                    un = u.unidade; document.getElementById('nome-exibir').innerText = u.nome; document.getElementById('u-txt').innerText = un;
-                    document.getElementById('bloqueio-inicio').style.display = 'none'; document.getElementById('s-home').classList.add('active');
-                    iniciarMonitor();
-                } else { document.getElementById('status-msg').style.display = 'block'; }
-            });
+        function playBell(freq, start, dur) {
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.frequency.setValueAtTime(freq, start); g.gain.setValueAtTime(0.4, start);
+            g.gain.exponentialRampToValueAtTime(0.01, start + dur);
+            o.connect(g); g.connect(audioCtx.destination); o.start(start); o.stop(start + dur);
+        }
+
+        function startAlert() { 
+            const cycle = () => { const n = audioCtx.currentTime; playBell(659, n, 1.5); playBell(523, n + 0.5, 2); };
+            cycle(); loopAlerta = setInterval(cycle, 4000);
         }
 
         function iniciarMonitor() {
-            db.ref('historico/' + un).on('value', s => {
+            db.ref('chamadas_ativas/' + un).on('value', s => {
+                const d = s.val();
+                if(d && d.status === 'chamando') {
+                    if(localStorage.getItem('blk_'+d.v_id)) { db.ref('chamadas_ativas/'+un).update({status:'bloqueado'}); return; }
+                    document.getElementById('img-vis').src = d.foto; mudarTela('s-call'); startAlert();
+                } else { mudarTela('s-home'); clearInterval(loopAlerta); }
+            });
+            db.ref('historico/' + un).limitToLast(10).on('value', s => {
                 const cont = document.getElementById('lista-hist'); cont.innerHTML = "";
-                let itens = []; s.forEach(c => { let val = c.val(); val.id = c.key; itens.push(val); });
-                itens.reverse().forEach(h => {
-                    cont.innerHTML += `<div class="hist-card"><img src="${h.foto}" class="hist-img"><div style="flex:1"><b>VISITANTE</b><br><small style="color:#555">Interfone tocado</small></div></div>`;
+                s.forEach(c => {
+                    const h = c.val();
+                    cont.innerHTML += `<div class="hist-card"><img src="${h.foto}" class="hist-img"><div><b>VISITANTE</b><br><small>${h.hora || ''}</small></div><button onclick="uiToggleBlock('${h.v_id}')" style="background:#111; color:red; border:1px solid #333; padding:5px; border-radius:5px; font-size:0.6rem;">${localStorage.getItem('blk_'+h.v_id)?'OK':'BLOCK'}</button></div>`;
                 });
-                if(s.exists()) tocarAlerta();
             });
         }
 
-        function tocarAlerta() {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator(); const g = ctx.createGain();
-            osc.connect(g); g.connect(ctx.destination);
-            osc.frequency.setValueAtTime(880, ctx.currentTime);
-            g.gain.setValueAtTime(0, ctx.currentTime);
-            g.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.1);
-            g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
-            osc.start(); osc.stop(ctx.currentTime + 1);
+        function responder(status, txt = null) {
+            const agora = new Date(); const horaF = agora.getHours().toString().padStart(2,'0')+":"+agora.getMinutes().toString().padStart(2,'0');
+            db.ref('chamadas_ativas/'+un).once('value', s => {
+                const d = s.val(); if(!d) return;
+                db.ref('historico/'+un).push({ foto:d.foto, v_id:d.v_id, ts:Date.now(), hora:horaF, acao:status });
+                db.ref('chamadas_ativas/'+un).update({ status: status, msg_morador: txt });
+                setTimeout(()=>db.ref('chamadas_ativas/'+un).remove(), 500);
+            });
         }
-
-        function limparHist() { if(confirm("Limpar histórico?")) db.ref('historico/' + un).remove(); }
+        function uiToggleBlock(vid) { const k='blk_'+vid; localStorage.getItem(k)?localStorage.removeItem(k):localStorage.setItem(k,'t'); location.reload(); }
+        function abrirModalMsg() { document.getElementById('modal-msg').style.display = 'flex'; }
+        function fecharModalMsg() { document.getElementById('modal-msg').style.display = 'none'; }
+        function enviarMensagemDireta() { responder('mensagem', document.getElementById('input-msg').value); fecharModalMsg(); }
+        function mudarTela(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
     </script>
 </body>
 </html>
