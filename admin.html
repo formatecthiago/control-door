@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY ADMIN v15.3</title>
+    <title>VIRTY ADMIN v16.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --orange: #FF8C00; }
         body { background: #000; color: #fff; font-family: sans-serif; padding: 15px; margin: 0; }
@@ -21,85 +21,69 @@
 </head>
 <body>
 
-    <h3 style="color:var(--neon); text-align:center; margin-bottom:20px;">VIRTY CONTROL MASTER</h3>
+    <h3 style="color:var(--neon); text-align:center;">VIRTY MASTER v16.0</h3>
 
-    <div id="secao-pendentes">
-        <p style="font-size:0.7rem; color:#444;">SOLICITAÇÕES (PENDENTES)</p>
-        <div id="lista-pendentes"></div>
-    </div>
+    <p style="font-size:0.7rem; color:#444;">AGUARDANDO APROVAÇÃO</p>
+    <div id="lista-pendentes"></div>
 
-    <div id="secao-ativos" style="margin-top:25px;">
-        <p style="font-size:0.7rem; color:#444;">MORADORES (ATIVOS)</p>
-        <div id="lista-ativos"></div>
-    </div>
+    <p style="font-size:0.7rem; color:#444; margin-top:25px;">MORADORES CADASTRADOS</p>
+    <div id="lista-ativos"></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
     <script>
         const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-        firebase.initializeApp(config);
-        const db = firebase.database();
+        firebase.initializeApp(config); const db = firebase.database();
 
-        // MASTER CHECK: Se não for você, esconde funções Master
-        const masterID = "SEU_HARDWARE_ID_AQUI"; // Coloque seu ID aqui para ser o Master
-        const hardwareID = navigator.userAgent.replace(/\D/g, "").slice(-8);
-
-        // LISTA DE ESPERA
+        // MONITORAMENTO DE SOLICITAÇÕES
         db.ref('solicitacoes_cadastro').on('value', s => {
-            const cont = document.getElementById('lista-pendentes');
-            cont.innerHTML = "";
+            const cont = document.getElementById('lista-pendentes'); cont.innerHTML = "";
             s.forEach(item => {
-                const d = item.val();
+                const d = item.val(); const key = item.key;
                 cont.innerHTML += `
                     <div class="card-mini">
                         <img src="${d.foto}" class="thumb">
-                        <div class="info">
-                            <b>${d.nome}</b>
-                            <span>Casa: ${d.unidade} | CPF: ${d.cpf}</span>
-                        </div>
+                        <div class="info"><b>${d.nome}</b><span>Casa: ${d.unidade} | CPF: ${d.cpf}</span></div>
                         <div class="btn-group">
-                            <button class="btn-s ok" onclick="aprovar('${item.key}')">OK</button>
-                            <button class="btn-s sair" onclick="recusar('${item.key}')">SAIR</button>
+                            <button class="btn-s ok" onclick="acaoAprovar('${key}')">OK</button>
+                            <button class="btn-s sair" onclick="acaoRecusar('${key}')">SAIR</button>
                         </div>
                     </div>`;
             });
         });
 
-        // LISTA DE MORADORES ATIVOS
+        // MONITORAMENTO DE ATIVOS
         db.ref('moradores_validados').on('value', s => {
-            const cont = document.getElementById('lista-ativos');
-            cont.innerHTML = "";
+            const cont = document.getElementById('lista-ativos'); cont.innerHTML = "";
             s.forEach(item => {
-                const d = item.val();
+                const d = item.val(); const key = item.key;
                 cont.innerHTML += `
                     <div class="card-mini" style="border-left-color:var(--blue)">
                         <img src="${d.foto}" class="thumb">
-                        <div class="info">
-                            <b>${d.nome}</b>
-                            <span>Casa: ${d.unidade} | Tel: ${d.telefone || '--'}</span>
-                        </div>
+                        <div class="info"><b>${d.nome}</b><span>Casa: ${d.unidade} | Tel: ${d.telefone || '--'}</span></div>
                         <div class="btn-group">
-                            <button class="btn-s edit" onclick="editar('${item.key}')">EDIT</button>
-                            <button class="btn-s sair" onclick="remover('${item.key}')">SAIR</button>
+                            <button class="btn-s edit" onclick="acaoEditar('${key}')">EDIT</button>
+                            <button class="btn-s sair" onclick="acaoRemover('${key}')">SAIR</button>
                         </div>
                     </div>`;
             });
         });
 
-        function aprovar(key) {
+        function acaoAprovar(key) {
             db.ref('solicitacoes_cadastro/' + key).once('value', s => {
+                if(!s.exists()) return;
                 db.ref('moradores_validados').push(s.val()).then(() => {
                     db.ref('solicitacoes_cadastro/' + key).remove();
                 });
             });
         }
 
-        function recusar(key) { if(confirm("Recusar cadastro?")) db.ref('solicitacoes_cadastro/' + key).remove(); }
-        function remover(key) { if(confirm("Remover este morador?")) db.ref('moradores_validados/' + key).remove(); }
-        function editar(key) { 
-            const novoNome = prompt("Novo Nome:");
-            if(novoNome) db.ref('moradores_validados/' + key).update({ nome: novoNome });
+        function acaoRecusar(key) { if(confirm("Recusar cadastro?")) db.ref('solicitacoes_cadastro/' + key).remove(); }
+        function acaoRemover(key) { if(confirm("Remover morador permanentemente?")) db.ref('moradores_validados/' + key).remove(); }
+        
+        function acaoEditar(key) { 
+            const n = prompt("Novo nome para este morador:");
+            if(n) db.ref('moradores_validados/' + key).update({ nome: n });
         }
     </script>
 </body>
