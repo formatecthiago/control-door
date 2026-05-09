@@ -3,59 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v17.5</title>
+    <title>VIRTY MORADOR v15.2</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; }
-        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
-        .active { display: flex; }
-        .virty-header { text-align: center; border-bottom: 2px solid var(--gray); padding-bottom: 10px; margin-bottom: 15px; }
-        input { width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; }
-        #cam-box { width: 100%; height: 180px; background: #050505; border: 2px dashed #333; border-radius: 15px; margin: 10px 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 20px; box-sizing: border-box; }
+        .virty-header { text-align: center; border-bottom: 2px solid #1a1a1a; padding-bottom: 15px; margin-bottom: 20px; }
+        #cam-box { width: 100%; height: 200px; background: #050505; border: 2px dashed #333; border-radius: 15px; margin: 10px 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: cover; display: none; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; }
         .btn { border: none; border-radius: 12px; padding: 16px; font-weight: bold; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 10px; }
         .btn-v { background: var(--neon); color: #000; }
         .btn-b { background: var(--blue); color: #fff; }
-        .btn-limpar { background: var(--red); color: #fff; font-size: 0.65rem; padding: 5px 10px; border-radius: 5px; border:none; cursor:pointer; }
-        .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 8px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; position: relative; }
-        .hist-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #333; }
-        .b-count { position: absolute; top: 2px; left: 30px; background: var(--neon); color: #000; font-size: 0.55rem; padding: 1px 4px; border-radius: 4px; font-weight: 900; }
+        .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; }
+        .hist-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 1px solid #333; }
     </style>
 </head>
 <body>
 
-    <div id="bloqueio-inicio" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
-        <h2 style="color:var(--neon); letter-spacing:2px;">VIRTY ACCESS</h2>
-        <div id="area-cadastro" style="display:none; width:100%;">
+    <div id="setup-login">
+        <h2 style="color:var(--neon); text-align:center;">VIRTY ACCESS</h2>
+        <div id="form-cadastro" style="display:none;">
             <div id="cam-box"><video id="v-selfie" autoplay playsinline></video></div>
-            <button class="btn btn-b" onclick="ativarCam()">1. ATIVAR CÂMERA</button>
-            <input type="text" id="reg-nome" placeholder="Nome Completo">
-            <input type="text" id="reg-cpf" placeholder="CPF">
-            <input type="text" id="reg-un" placeholder="Unidade (Casa)">
-            <input type="text" id="reg-tel" placeholder="Telefone">
-            <button class="btn btn-v" onclick="finalizarCadastro()">2. ENVIAR REGISTRO</button>
+            <button class="btn btn-b" onclick="ativarCamera()">ATIVAR CÂMERA</button>
+            <input type="text" id="nome" placeholder="Nome Completo">
+            <input type="text" id="casa" placeholder="Número da Casa">
+            <input type="text" id="cpf" placeholder="CPF">
+            <button class="btn btn-v" onclick="registrar()">CONCLUIR CADASTRO</button>
         </div>
-        <div id="area-login">
-            <button class="btn btn-v" onclick="entrarApp()">ENTRAR NO PAINEL</button>
-            <p id="status-msg" style="display:none; color:orange; font-size:0.9rem; margin-top:20px; text-align:center;">Aguardando aprovação do Master...</p>
+        <div id="area-entrada">
+            <button class="btn btn-v" onclick="verificarAcesso()">ACESSAR MEU PAINEL</button>
+            <p id="msg-espera" style="display:none; color:orange; text-align:center; margin-top:20px;">Aguardando liberação do administrador...</p>
         </div>
     </div>
 
-    <div id="s-home" class="screen">
+    <div id="painel-morador" style="display:none;">
         <div class="virty-header">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <b id="nome-exibir" style="color:var(--neon)">---</b>
-                <span style="background:var(--neon); color:#000; padding:2px 8px; border-radius:5px; font-weight:bold;">CASA <span id="u-txt">--</span></span>
-            </div>
-            <button onclick="proximoSom()" style="margin-top:15px; width:100%; background:#111; color:var(--neon); border:1px solid var(--neon); padding:10px; border-radius:12px;">
-                🎼 TROCAR SOM: <span id="nome-som">SINE SOFT</span>
-            </button>
+            <b id="user-nome" style="color:var(--neon)">---</b> | CASA <b id="user-casa">--</b>
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <small style="color:#444; font-weight:bold;">HISTÓRICO</small>
-            <button class="btn-limpar" onclick="limparTudo()">LIMPAR TUDO</button>
-        </div>
-        <div id="lista-hist" style="flex:1; overflow-y:auto;"></div>
+        <button class="btn" style="background:#111; color:var(--neon); border:1px solid var(--neon);" onclick="tocarAlerta()">TESTAR SOM DE ALERTA</button>
+        <h4 style="margin-top:25px; color:#444;">HISTÓRICO DE CHAMADAS</h4>
+        <div id="lista-chamadas"></div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -63,64 +50,56 @@
     <script>
         const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
         firebase.initializeApp(config); const db = firebase.database();
-        let audioCtx, un = "", somIdx = localStorage.getItem('v_som') || 0;
+        let meuPerfil = JSON.parse(localStorage.getItem('virty_perfil'));
 
-        const bibliotecaSons = [
-            { n: "Sine Soft", f: [880, 1109], d: 0.6 }, { n: "Ding-Dong 1", f: [1046, 783], d: 0.8 },
-            { n: "Cristal", f: [1567, 1318], d: 0.4 }, { n: "Alert", f: [932], d: 0.3 }
-        ];
-
-        function tocarSom(idx) {
-            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const s = bibliotecaSons[idx]; let t = audioCtx.currentTime;
-            s.f.forEach((freq) => {
-                const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-                osc.connect(g); g.connect(audioCtx.destination);
-                osc.frequency.setValueAtTime(freq, t);
-                g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.2, t + 0.05);
-                g.gain.exponentialRampToValueAtTime(0.01, t + s.d);
-                osc.start(t); osc.stop(t + s.d); t += s.d * 0.5;
+        function ativarCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true }).then(s => {
+                const v = document.getElementById('v-selfie'); v.srcObject = s; v.style.display = 'block';
             });
-            document.getElementById('nome-som').innerText = s.n;
         }
 
-        function proximoSom() { somIdx = (parseInt(somIdx) + 1) % bibliotecaSons.length; localStorage.setItem('v_som', somIdx); tocarSom(somIdx); }
-        function ativarCam() { navigator.mediaDevices.getUserMedia({ video: true }).then(s => { const v = document.getElementById('v-selfie'); v.srcObject = s; v.style.display = 'block'; }); }
-        
-        function finalizarCadastro() {
+        function registrar() {
             const v = document.getElementById('v-selfie'); const canvas = document.createElement('canvas');
             canvas.width = v.videoWidth; canvas.height = v.videoHeight; canvas.getContext('2d').drawImage(v, 0, 0);
-            const dados = { nome: document.getElementById('reg-nome').value, cpf: document.getElementById('reg-cpf').value, unidade: document.getElementById('reg-un').value, telefone: document.getElementById('reg-tel').value, foto: canvas.toDataURL('image/jpeg', 0.5), ts: Date.now() };
-            db.ref('solicitacoes_cadastro').push(dados).then(() => { localStorage.setItem('virty_user', JSON.stringify(dados)); location.reload(); });
+            const dados = { nome: document.getElementById('nome').value, casa: document.getElementById('casa').value, cpf: document.getElementById('cpf').value, foto: canvas.toDataURL('image/jpeg', 0.5) };
+            db.ref('solicitacoes').push(dados).then(() => { localStorage.setItem('virty_perfil', JSON.stringify(dados)); location.reload(); });
         }
 
-        function entrarApp() {
-            const salvo = localStorage.getItem('virty_user'); if(!salvo) { document.getElementById('area-login').style.display = 'none'; document.getElementById('area-cadastro').style.display = 'block'; return; }
-            const u = JSON.parse(salvo);
-            db.ref('moradores_validados').orderByChild('cpf').equalTo(u.cpf).on('value', s => {
-                if(s.exists()) { un = u.unidade; document.getElementById('nome-exibir').innerText = u.nome; document.getElementById('u-txt').innerText = un; document.getElementById('bloqueio-inicio').style.display = 'none'; document.getElementById('s-home').classList.add('active'); iniciarMonitor(); }
-                else { document.getElementById('status-msg').style.display = 'block'; }
+        function verificarAcesso() {
+            if(!meuPerfil) { document.getElementById('area-entrada').style.display='none'; document.getElementById('form-cadastro').style.display='block'; return; }
+            db.ref('moradores').orderByChild('cpf').equalTo(meuPerfil.cpf).once('value', s => {
+                if(s.exists()) {
+                    document.getElementById('setup-login').style.display='none';
+                    document.getElementById('painel-morador').style.display='block';
+                    const data = Object.values(s.val())[0];
+                    document.getElementById('user-nome').innerText = data.nome;
+                    document.getElementById('user-casa').innerText = data.casa;
+                    monitorarChamadas(data.casa);
+                } else { document.getElementById('msg-espera').style.display='block'; }
             });
         }
 
-        function iniciarMonitor() {
-            db.ref('historico/' + un).on('value', s => {
-                const cont = document.getElementById('lista-hist'); cont.innerHTML = "";
-                let itens = []; s.forEach(c => { let val = c.val(); val.id = c.key; itens.push(val); });
-                itens.reverse();
-                let agrupados = [];
-                itens.forEach(it => {
-                    let jaTem = agrupados.find(x => x.v_id === it.v_id);
-                    if(jaTem) { jaTem.qtd++; } else { it.qtd = 1; agrupados.push(it); }
+        function monitorarChamadas(numCasa) {
+            db.ref('historico/' + numCasa).on('value', s => {
+                const cont = document.getElementById('lista-chamadas'); cont.innerHTML = "";
+                s.forEach(item => {
+                    const d = item.val();
+                    cont.innerHTML += `<div class="hist-card"><img src="${d.foto}" class="hist-img"><div><b>VISITANTE</b><br><small>Chamando...</small></div></div>`;
                 });
-                agrupados.forEach(h => {
-                    cont.innerHTML += `<div class="hist-card"><img src="${h.foto}" class="hist-img">${h.qtd > 1 ? `<div class="b-count">${h.qtd}</div>` : ''}<div style="flex:1"><b>VISITANTE</b><br><small style="color:#555">${h.acao ? h.acao.toUpperCase() : 'CHAMANDO'}</small></div></div>`;
-                });
+                if(s.exists()) tocarAlerta();
             });
         }
 
-        function limparTudo() { if(confirm("Limpar todo o histórico desta casa?")) db.ref('historico/' + un).remove(); }
-        document.getElementById('nome-som').innerText = bibliotecaSons[somIdx].n;
+        function tocarAlerta() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator(); const g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            g.gain.setValueAtTime(0, ctx.currentTime);
+            g.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.1);
+            g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+            osc.start(); osc.stop(ctx.currentTime + 1);
+        }
     </script>
 </body>
 </html>
