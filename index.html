@@ -2,119 +2,119 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY MASTER ADMIN v2.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Virty Access - Visitante</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; --blue: #007BFF; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
-        .screen { display: none; padding: 20px; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 25px; text-align: center; box-sizing: border-box; }
         .active { display: flex; }
-        .login-box { background: #0d0d0d; padding: 30px; border-radius: 25px; border: 1px solid var(--neon); width: 100%; max-width: 350px; text-align: center; margin-top: 50px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #000; border: 1px solid #333; color: #fff; text-align: center; box-sizing: border-box; }
-        .header { width: 100%; padding: 20px; border-bottom: 2px solid var(--gray); background: #050505; text-align: center; }
-        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 20px; margin-bottom: 10px; width: 100%; max-width: 800px; display: flex; align-items: center; justify-content: space-between; }
-        .btn { border: none; border-radius: 12px; padding: 12px 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-green { background: var(--neon); color: #000; width: 100%; }
-        .btn-del { background: transparent; border: 1px solid var(--red); color: var(--red); }
-        .btn-disabled { opacity: 0.15; cursor: not-allowed; pointer-events: none; }
-        .user-photo { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 15px; }
-        h3 { color: #444; width: 100%; max-width: 800px; font-size: 0.8rem; letter-spacing: 2px; margin-top: 25px; }
+        .video-box { width: 250px; height: 250px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; }
+        video, canvas { width: 100%; height: 100%; object-fit: cover; }
+        input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; font-size: 1rem; text-align: center; box-sizing: border-box; }
+        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
+        .btn-green { background: var(--neon); color: black; }
+        .btn-red { background: var(--red); color: white; }
+        #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0a0a0a; border:2px solid var(--neon); padding:25px; border-radius:20px; width:80%; z-index:1000; text-align:center; }
     </style>
 </head>
 <body>
-    <div id="s-login" class="screen active">
-        <h1 style="color:var(--neon); letter-spacing:3px;">VIRTY ACCESS</h1>
-        <div class="login-box">
-            <input type="password" id="pass-field" placeholder="DIGITE A SENHA">
-            <button class="btn btn-green" onclick="fazerLogin()">ENTRAR NO PAINEL</button>
-            <button class="btn" style="background:#111; color:#fff; width:100%; margin-top:10px; font-size:0.7rem;" onclick="mudarTela('s-solicitar')">SOLICITAR NOVO ACESSO</button>
-        </div>
+    <div id="t0" class="screen active">
+        <h1 style="color:var(--neon); margin-top:50px;">VIRTY ACCESS</h1>
+        <p style="color:#888;">Toque para iniciar sua identificação</p>
+        <div style="font-size: 4rem; margin: 30px;">🏠</div>
+        <button class="btn btn-green" onclick="solicitarPermissoes()">INICIAR</button>
     </div>
-
-    <div id="s-solicitar" class="screen">
-        <h2 style="color:var(--neon)">NOVO ADMIN</h2>
-        <div class="login-box">
-            <input type="text" id="sol-nome" placeholder="Nome Completo">
-            <input type="text" id="sol-cpf" placeholder="CPF">
-            <button class="btn btn-green" onclick="enviarPedidoAdmin()">SOLICITAR AUTORIZAÇÃO</button>
-            <button class="btn" onclick="mudarTela('s-login')" style="margin-top:10px; background:none; color:#555;">VOLTAR</button>
+    <div id="t1" class="screen">
+        <h2 style="color:var(--neon);">IDENTIFICAÇÃO</h2>
+        <div class="video-box">
+            <video id="v" autoplay playsinline muted></video>
+            <canvas id="c-snap" style="display:none;"></canvas>
         </div>
+        <button id="btn-snap" class="btn" style="background:#eee;" onclick="tirarFoto()">📸 TIRAR FOTO</button>
+        <input type="number" id="un" placeholder="Nº da Unidade (Ex: 10)">
+        <input type="text" id="msg" placeholder="Mensagem (Opcional)">
+        <button id="btn-go" class="btn btn-green" onclick="chamar()" disabled>TOCAR CAMPAINHA</button>
     </div>
-
-    <div id="s-main" class="screen">
-        <div class="header"><h2 id="perfil-txt" style="color:var(--neon); margin:0;">PAINEL</h2></div>
-        <div style="width:100%; max-width:800px;">
-            <div id="area-master" style="display:none;">
-                <h3>ADMINS PENDENTES</h3><div id="lista-admins-pendentes"></div>
-            </div>
-            <h3>MORADORES PENDENTES</h3><div id="lista-moradores-pendentes"></div>
-            <h3>MORADORES VALIDADOS</h3><div id="lista-moradores-ativos"></div>
-        </div>
+    <div id="t2" class="screen">
+        <h1 id="timer" style="font-size: 5rem; color: var(--neon); margin: 30px 0;">60</h1>
+        <p>CHAMANDO UNIDADE <b id="view-un" style="color:var(--neon)"></b></p>
+        <button class="btn btn-red" onclick="location.reload()">CANCELAR</button>
     </div>
+    <div id="popup">
+        <h2 id="pop-t" style="color:var(--neon);"></h2>
+        <p id="pop-m"></p>
+        <button class="btn btn-green" onclick="location.reload()">OK</button>
+    </div>
+    <audio id="som" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-    const app = initializeApp(config); const db = getDatabase(app);
-    const SENHA_COMUM = "123456789"; let isMaster = false, dadosAdminLogado = null;
-    let myID = localStorage.getItem('virty_admin_id') || 'ADM-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-    localStorage.setItem('virty_admin_id', myID);
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let b64 = "", contagem;
+        const video = document.getElementById('v'), canvas = document.getElementById('c-snap');
+        let v_id = localStorage.getItem('virty_visitor_id') || 'ID-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        localStorage.setItem('virty_visitor_id', v_id);
 
-    window.fazerLogin = async () => {
-        const pass = document.getElementById('pass-field').value;
-        const snapMaster = await get(ref(db, 'config/admin_master_pass'));
-        const senhaMaster = snapMaster.exists() ? snapMaster.val() : "virty123@#";
-        if(pass === senhaMaster) { isMaster = true; dadosAdminLogado = { nome: "ADMIN MASTER", cpf: "MASTER" }; iniciarPainel(); }
-        else if(pass === SENHA_COMUM) {
-            const snapAuto = await get(ref(db, 'admins_autorizados/' + myID));
-            if(snapAuto.exists()) { isMaster = false; dadosAdminLogado = snapAuto.val(); iniciarPainel(); }
-            else alert("Não autorizado.");
-        } else alert("Senha incorreta.");
-    };
-
-    window.enviarPedidoAdmin = () => {
-        const nome = document.getElementById('sol-nome').value, cpf = document.getElementById('sol-cpf').value;
-        if(!nome || !cpf) return alert("Preencha tudo.");
-        set(ref(db, 'admins_solicitacoes/' + myID), { nome, cpf, ts: Date.now() });
-        alert("Pedido enviado!"); mudarTela('s-login');
-    };
-
-    function iniciarPainel() {
-        mudarTela('s-main'); if(isMaster) document.getElementById('area-master').style.display = 'block';
-        onValue(ref(db, 'solicitacoes_cadastro'), s => {
-            const cont = document.getElementById('lista-moradores-pendentes'); cont.innerHTML = "";
-            s.forEach(c => {
-                const d = c.val();
-                cont.innerHTML += `<div class="card"><div style="display:flex; align-items:center;"><img src="${d.foto}" class="user-photo"><div><b>CASA ${d.unidade}</b><br><small>${d.nome}</small></div></div><button class="btn btn-green" style="width:auto" onclick="aprovarMorador('${c.key}')">ACEITAR</button></div>`;
-            });
-        });
-        onValue(ref(db, 'moradores_validados'), s => {
-            const cont = document.getElementById('lista-moradores-ativos'); cont.innerHTML = "";
-            s.forEach(c => {
-                const d = c.val();
-                cont.innerHTML += `<div class="card"><div style="display:flex; align-items:center;"><img src="${d.foto}" class="user-photo"><div><b>CASA ${d.unidade}</b><br><small>${d.nome}</small></div></div><button class="btn btn-del ${!isMaster ? 'btn-disabled' : ''}" onclick="removerMorador('${c.key}')">EXCLUIR</button></div>`;
-            });
-        });
-        if(isMaster) {
-            onValue(ref(db, 'admins_solicitacoes'), s => {
-                const cont = document.getElementById('lista-admins-pendentes'); cont.innerHTML = "";
-                s.forEach(c => {
-                    cont.innerHTML += `<div class="card"><div><b>${c.val().nome}</b></div><button class="btn btn-green" style="width:auto" onclick="autorizarAdmin('${c.key}')">OK</button></div>`;
-                });
-            });
+        async function solicitarPermissoes() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                mudarTela('t1');
+            } catch (err) { alert("Permissão de câmera negada."); }
         }
-    }
 
-    window.aprovarMorador = (key) => {
-        get(ref(db, 'solicitacoes_cadastro/' + key)).then(s => {
-            set(ref(db, 'moradores_validados/' + key), { ...s.val(), autorizado_por: dadosAdminLogado.nome, data_v: Date.now() });
-            remove(ref(db, 'solicitacoes_cadastro/' + key));
-        });
-    };
-    window.removerMorador = (key) => { if(isMaster && confirm("Excluir?")) remove(ref(db, 'moradores_validados/' + key)); };
-    window.autorizarAdmin = (id) => { get(ref(db, 'admins_solicitacoes/' + id)).then(s => { set(ref(db, 'admins_autorizados/' + id), s.val()); remove(ref(db, 'admins_solicitacoes/' + id)); }); };
-    window.mudarTela = (id) => { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); };
-</script>
+        function tirarFoto() {
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            b64 = canvas.toDataURL('image/jpeg', 0.5);
+            canvas.style.display = "block"; video.style.display = "none";
+            document.getElementById('btn-snap').innerText = "🔄 TIRAR OUTRA";
+            document.getElementById('btn-go').disabled = false;
+        }
+
+        function chamar() {
+            const unVal = document.getElementById('un').value;
+            if (!unVal) return alert("Digite a unidade!");
+            document.getElementById('view-un').innerText = unVal;
+            mudarTela('t2');
+            document.getElementById('som').play();
+            const refChamada = db.ref('chamadas_ativas/' + unVal);
+            refChamada.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value || "", ts: Date.now(), v_id: v_id });
+            refChamada.onDisconnect().remove();
+
+            refChamada.on('value', snap => {
+                const d = snap.val();
+                if (!d) return;
+                if (d.status === "liberado") showPop("LIBERADO", "Seja bem-vindo!");
+                if (d.status === "recusado") showPop("INDISPONÍVEL", "O morador não pode atender.");
+                if (d.status === "bloqueado") showPop("ERRO", "Chamada não permitida.");
+                if (d.status === "mensagem") showPop("RECADO", d.msg_morador);
+            });
+
+            let tempo = 60;
+            contagem = setInterval(() => {
+                tempo--;
+                document.getElementById('timer').innerText = tempo;
+                if (tempo <= 0) { clearInterval(contagem); refChamada.remove(); showPop("FIM", "Tempo esgotado."); }
+            }, 1000);
+        }
+
+        function mudarTela(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function showPop(t, m) {
+            clearInterval(contagem);
+            document.getElementById('som').pause();
+            document.getElementById('pop-t').innerText = t;
+            document.getElementById('pop-m').innerText = m;
+            document.getElementById('popup').style.display = "block";
+        }
+    </script>
 </body>
 </html>
