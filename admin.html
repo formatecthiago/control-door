@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY ADMIN v15.2</title>
+    <title>VIRTY ADMIN - OFICIAL</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; }
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
-        .card { background: #0a0a0a; border: 1px solid #222; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
-        .thumb { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 1px solid #333; }
-        .btn-ok { background: var(--neon); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-del { background: var(--red); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 15px; margin: 0; }
+        .card { background: #0a0a0a; border: 1px solid #222; border-left: 4px solid var(--neon); padding: 12px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .thumb { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #333; }
+        .btn-ok { background: var(--neon); color: #000; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-del { background: var(--red); color: #fff; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h2 style="color:var(--neon); text-align:center;">CONTROLE MASTER</h2>
+    <h2 style="color:var(--neon); text-align:center;">MASTER CONTROL</h2>
 
-    <p style="color:#444;">SOLICITAÇÕES DE ACESSO</p>
-    <div id="lista-solicitacoes"></div>
+    <p style="font-size:0.7rem; color:#444;">PENDENTES</p>
+    <div id="lista-pendentes"></div>
 
-    <p style="color:#444; margin-top:30px;">MORADORES ATIVOS</p>
-    <div id="lista-moradores"></div>
+    <p style="font-size:0.7rem; color:#444; margin-top:25px;">MORADORES ATIVOS</p>
+    <div id="lista-ativos"></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -29,47 +29,29 @@
         const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
         firebase.initializeApp(config); const db = firebase.database();
 
-        // MONITORAR SOLICITAÇÕES
-        db.ref('solicitacoes').on('value', s => {
-            const cont = document.getElementById('lista-solicitacoes'); cont.innerHTML = "";
+        db.ref('solicitacoes_cadastro').on('value', s => {
+            const cont = document.getElementById('lista-pendentes'); cont.innerHTML = "";
             s.forEach(item => {
                 const d = item.val();
-                cont.innerHTML += `
-                    <div class="card">
-                        <div style="display:flex; align-items:center;">
-                            <img src="${d.foto}" class="thumb">
-                            <div><b>${d.nome}</b><br><small>Casa: ${d.casa}</small></div>
-                        </div>
-                        <button class="btn-ok" onclick="aprovar('${item.key}')">LIBERAR</button>
-                    </div>`;
+                cont.innerHTML += `<div class="card"><img src="${d.foto}" class="thumb"><div style="flex:1"><b>${d.nome}</b><br><small>Casa: ${d.unidade}</small></div><button class="btn-ok" onclick="aprovar('${item.key}')">OK</button></div>`;
             });
         });
 
-        // MONITORAR MORADORES
-        db.ref('moradores').on('value', s => {
-            const cont = document.getElementById('lista-moradores'); cont.innerHTML = "";
+        db.ref('moradores_validados').on('value', s => {
+            const cont = document.getElementById('lista-ativos'); cont.innerHTML = "";
             s.forEach(item => {
                 const d = item.val();
-                cont.innerHTML += `
-                    <div class="card">
-                        <div style="display:flex; align-items:center;">
-                            <img src="${d.foto}" class="thumb">
-                            <div><b>${d.nome}</b><br><small>Casa: ${d.casa}</small></div>
-                        </div>
-                        <button class="btn-del" onclick="remover('${item.key}')">REMOVER</button>
-                    </div>`;
+                cont.innerHTML += `<div class="card" style="border-left-color:var(--blue)"><img src="${d.foto}" class="thumb"><div style="flex:1"><b>${d.nome}</b><br><small>Casa: ${d.unidade}</small></div><button class="btn-del" onclick="remover('${item.key}')">SAIR</button></div>`;
             });
         });
 
         function aprovar(key) {
-            db.ref('solicitacoes/' + key).once('value', s => {
-                db.ref('moradores').push(s.val()).then(() => {
-                    db.ref('solicitacoes/' + key).remove();
-                });
+            db.ref('solicitacoes_cadastro/' + key).once('value', s => {
+                db.ref('moradores_validados').push(s.val()).then(() => { db.ref('solicitacoes_cadastro/' + key).remove(); });
             });
         }
 
-        function remover(key) { if(confirm("Remover morador?")) db.ref('moradores/' + key).remove(); }
+        function remover(key) { if(confirm("Remover morador?")) db.ref('moradores_validados/' + key).remove(); }
     </script>
 </body>
 </html>
