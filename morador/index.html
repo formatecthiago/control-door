@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v13.2</title>
+    <title>VIRTY MORADOR v14.0</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; --dark-gray: #555; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
@@ -19,12 +19,14 @@
         .bc-green { background: var(--neon); color: #000; }
         .bc-red { background: var(--red); }
         .bc-blue { background: var(--blue); }
+        .bc-gray { background: var(--dark-gray); } /* Balão de perdidas */
         .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; text-transform: uppercase; }
         .btn-v { background: var(--neon); color: #000; }
         .btn-r { background: var(--red); color: #fff; }
         .btn-a { background: var(--blue); color: #fff; }
         #cam-box { width: 100%; max-width: 300px; height: 200px; background: #111; border: 2px solid var(--neon); border-radius: 15px; margin: 10px 0; overflow: hidden; }
         video#v-selfie { width: 100%; height: 100%; object-fit: cover; }
+        .ver-mais { background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 10px; border-radius: 10px; margin: 10px 0; cursor: pointer; font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -46,7 +48,7 @@
 
     <div id="s-home" class="screen">
         <div class="header-main">
-            <h1 class="virty-title">VIRTY DOOR v13.2</h1>
+            <h1 class="virty-title">VIRTY DOOR v14.0</h1>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
                 <span id="nome-exibir" style="font-weight:bold; color:#bbb;">---</span>
                 <span class="unidade-box">CASA <span id="u-txt">--</span></span>
@@ -62,7 +64,7 @@
     <div id="s-call" class="screen">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <b style="color:var(--neon)">CHAMADA AO VIVO</b>
-            <span id="timer" style="color:var(--red); font-weight:bold; font-size:1.3rem;">60s</span>
+            <span id="timer" style="color:var(--red); font-weight:bold; font-size:1.3rem;">90s</span>
         </div>
         <img id="img-vis" src="" style="width:100%; height:280px; border-radius:25px; object-fit:cover; margin:15px 0; border:2px solid var(--neon);">
         <div style="background:#111; border-left:4px solid var(--blue); padding:10px; margin-bottom:10px;">
@@ -91,7 +93,7 @@
         const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
         firebase.initializeApp(config);
         const db = firebase.database();
-        let audioCtx, un = "", somOn = true, loopAlerta;
+        let audioCtx, un = "", somOn = true, loopAlerta, limitHist = 5, timerVal = 90, countdown;
 
         async function entrarApp() {
             try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
@@ -132,17 +134,38 @@
             document.getElementById('btn-silenciar').innerText = somOn ? "🔔 SOM ATIVO" : "🔕 MODO VIBRAR";
         }
 
-        function startAlert() {
-            const playCycle = () => {
-                if(somOn && audioCtx) {
-                    const osc = audioCtx.createOscillator();
-                    osc.connect(audioCtx.destination);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-                }
-                if(navigator.vibrate) navigator.vibrate([500, 300, 500]);
+        // --- CAMPANHA DING DONG ---
+        function playDingDong() {
+            if(!somOn || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            const playTone = (freq, start, duration) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(freq, start);
+                gain.gain.setValueAtTime(0.3, start);
+                gain.gain.exponentialRampToValueAtTime(0.01, start + duration);
+                osc.start(start); osc.stop(start + duration);
             };
-            playCycle();
-            loopAlerta = setInterval(playCycle, 3000);
+            playTone(660, now, 0.6); // DING
+            playTone(520, now + 0.4, 0.8); // DONG
+        }
+
+        function startAlert() {
+            playDingDong();
+            loopAlerta = setInterval(playDingDong, 4000);
+            
+            timerVal = 90;
+            document.getElementById('timer').innerText = timerVal + "s";
+            clearInterval(countdown);
+            countdown = setInterval(() => {
+                timerVal--;
+                document.getElementById('timer').innerText = timerVal + "s";
+                if(timerVal <= 0) {
+                    clearInterval(countdown);
+                    responder('perdida'); // Se acabar o tempo, vira chamada perdida
+                }
+            }, 1000);
         }
 
         function iniciarMonitor() {
@@ -152,67 +175,92 @@
                     document.getElementById('img-vis').src = d.foto;
                     document.getElementById('txt-vis').innerText = d.texto || "Sem mensagem.";
                     mudarTela('s-call'); startAlert();
-                } else { mudarTela('s-home'); clearInterval(loopAlerta); }
+                } else { 
+                    mudarTela('s-home'); 
+                    clearInterval(loopAlerta); 
+                    clearInterval(countdown);
+                }
             });
 
-            // HISTÓRICO COM BALÕES E BLOQUEIO CORRIGIDO
-            db.ref('historico/' + un).limitToLast(20).on('value', s => {
+            // HISTÓRICO COM AGRUPAMENTO 24H E STATUS DINÂMICO
+            db.ref('historico/' + un).on('value', s => {
                 const cont = document.getElementById('lista-hist');
                 cont.innerHTML = "";
                 let raw = []; s.forEach(c => { raw.push(c.val()); });
                 raw.reverse();
+
                 let agrupado = [];
+                const VINTE_QUATRO_HORAS = 24 * 60 * 60 * 1000;
+
                 raw.forEach(item => {
-                    let u = agrupado.find(x => x.v_id === item.v_id);
+                    // Agrupa por v_id dentro de uma janela de 24 horas
+                    let u = agrupado.find(x => x.v_id === item.v_id && (item.ts - x.ts) < VINTE_QUATRO_HORAS);
+                    
                     if(u) {
                         if(item.acao === 'liberado') u.c_v++;
                         if(item.acao === 'recusado') u.c_r++;
                         if(item.acao === 'mensagem') u.c_a++;
+                        if(item.acao === 'perdida') u.c_p++;
                         u.ultima_acao = item.acao;
                     } else {
                         item.c_v = item.acao === 'liberado' ? 1 : 0;
                         item.c_r = item.acao === 'recusado' ? 1 : 0;
                         item.c_a = item.acao === 'mensagem' ? 1 : 0;
+                        item.c_p = item.acao === 'perdida' ? 1 : 0;
                         item.ultima_acao = item.acao;
                         agrupado.push(item);
                     }
                 });
 
-                agrupado.forEach(h => {
+                // PAGINAÇÃO: Exibe os primeiros 5 (ou 10 se clicar)
+                agrupado.slice(0, limitHist).forEach(h => {
                     db.ref('banidos/' + h.v_id).once('value', banSnap => {
                         const estaBanido = banSnap.exists();
-                        const cardId = `btn-ban-${h.v_id}`;
+                        
+                        // Definição de Cores Dinâmicas do Status
+                        let statusCor = "var(--neon)";
+                        if(h.ultima_acao === 'recusado') statusCor = "var(--red)";
+                        if(h.ultima_acao === 'mensagem') statusCor = "var(--blue)";
+                        if(h.ultima_acao === 'perdida') statusCor = "#888";
+
                         const cardHtml = `
                             <div class="hist-card">
                                 <div class="badges-container">
                                     ${h.c_v > 0 ? `<div class="b-count bc-green">${h.c_v}</div>` : ''}
                                     ${h.c_r > 0 ? `<div class="b-count bc-red">${h.c_r}</div>` : ''}
                                     ${h.c_a > 0 ? `<div class="b-count bc-blue">${h.c_a}</div>` : ''}
+                                    ${h.c_p > 0 ? `<div class="b-count bc-gray">${h.c_p}</div>` : ''}
                                 </div>
                                 <div style="display:flex; align-items:center;">
                                     <img src="${h.foto}" class="hist-img">
                                     <div>
                                         <b style="font-size:0.7rem">VISITANTE</b><br>
-                                        <span style="font-size:0.6rem; color:var(--neon); font-weight:bold;">${h.ultima_acao.toUpperCase()}</span>
+                                        <span style="font-size:0.6rem; color:${statusCor}; font-weight:bold;">${h.ultima_acao.toUpperCase()}</span>
                                     </div>
                                 </div>
-                                <button id="${cardId}" onclick="alternarBanido('${h.v_id}')" style="background:${estaBanido ? 'var(--red)' : '#111'}; color:#fff; border:1px solid #333; padding:8px; border-radius:10px; font-size:0.6rem; min-width:80px;">
+                                <button onclick="alternarBanido('${h.v_id}')" style="background:${estaBanido ? 'var(--red)' : '#111'}; color:#fff; border:1px solid #333; padding:8px; border-radius:10px; font-size:0.6rem; min-width:80px;">
                                     ${estaBanido ? 'DESBLOQUEAR' : 'BLOQUEAR'}
                                 </button>
                             </div>`;
                         cont.innerHTML += cardHtml;
                     });
                 });
+
+                if(agrupado.length > limitHist && limitHist < 10) {
+                    cont.innerHTML += `<center><button class="ver-mais" onclick="expandirHist()">VER MAIS</button></center>`;
+                }
             });
+        }
+
+        function expandirHist() {
+            limitHist = 10;
+            // O Firebase 'on value' atualizará a tela sozinho
         }
 
         function alternarBanido(vid) {
             db.ref('banidos/' + vid).once('value', s => {
-                if(s.exists()) {
-                    db.ref('banidos/' + vid).remove();
-                } else {
-                    db.ref('banidos/' + vid).set(true);
-                }
+                if(s.exists()) { db.ref('banidos/' + vid).remove(); } 
+                else { db.ref('banidos/' + vid).set(true); }
             });
         }
 
@@ -220,7 +268,13 @@
             db.ref('chamadas_ativas/' + un).once('value', s => {
                 const d = s.val(); if(!d) return;
                 const h = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                db.ref('historico/' + un).push({ foto: d.foto, v_id: d.v_id, ts: Date.now(), hora: h, acao: status });
+                db.ref('historico/' + un).push({ 
+                    foto: d.foto, 
+                    v_id: d.v_id, 
+                    ts: Date.now(), 
+                    hora: h, 
+                    acao: status 
+                });
                 db.ref('chamadas_ativas/' + un).update({ status: status, msg_morador: txt });
                 setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); }, 500);
             });
@@ -234,6 +288,12 @@
         function mudarTela(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+        }
+
+        function limparHistorico() {
+            if(confirm("Deseja limpar todo o histórico desta unidade?")) {
+                db.ref('historico/' + un).remove();
+            }
         }
     </script>
 </body>
