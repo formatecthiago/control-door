@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v14.1</title>
+    <title>VIRTY MORADOR v14.2 - REVISADO</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; --dark-gray: #555; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
@@ -26,13 +26,13 @@
         .btn-a { background: var(--blue); color: #fff; }
         #cam-box { width: 100%; max-width: 300px; height: 200px; background: #111; border: 2px solid var(--neon); border-radius: 15px; margin: 10px 0; overflow: hidden; }
         video#v-selfie { width: 100%; height: 100%; object-fit: cover; }
-        .ver-mais { background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 12px; border-radius: 10px; margin: 10px 0; cursor: pointer; width: 100%; }
+        .ver-mais { background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 12px; border-radius: 10px; margin: 10px 0; cursor: pointer; width: 100%; font-weight: bold; }
         #status-analise { color: #FFCC00; font-weight: bold; margin-top: 20px; display: none; }
     </style>
 </head>
 <body>
 
-    <!-- TELA DE BLOQUEIO / CADASTRO -->
+    <!-- BLOQUEIO INICIAL / CADASTRO -->
     <div id="bloqueio-inicio" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:20px;">
         <h1 style="color:var(--neon); letter-spacing:3px;">VIRTY ACCESS</h1>
         
@@ -47,14 +47,14 @@
 
         <div id="area-login">
             <button id="btn-entrar" class="btn btn-v" onclick="entrarApp()" style="width:260px;">ENTRAR NO PAINEL</button>
-            <div id="status-analise">Sua solicitação está em análise...</div>
+            <div id="status-analise">Sua solicitação está em análise pelo Master...</div>
         </div>
     </div>
 
-    <!-- TELA HOME (HISTÓRICO) -->
+    <!-- PAINEL HOME -->
     <div id="s-home" class="screen">
         <div class="header-main">
-            <h1 class="virty-title">VIRTY DOOR v14.1</h1>
+            <h1 class="virty-title">VIRTY DOOR v14.2</h1>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
                 <span id="nome-exibir" style="font-weight:bold; color:#bbb;">---</span>
                 <span class="unidade-box">CASA <span id="u-txt">--</span></span>
@@ -109,15 +109,18 @@
             
             if(salvo) {
                 const user = JSON.parse(salvo);
-                // ESCUTA CONSTANTE: Só libera quando o Master Aprovar
                 db.ref('moradores_validados').orderByChild('cpf').equalTo(user.cpf).on('value', s => {
                     if(s.exists()) {
-                        un = user.unidade;
+                        // SÓ ENTRA SE ESTIVER APROVADO
+                        const data = Object.values(s.val())[0];
+                        un = data.unidade;
                         document.getElementById('u-txt').innerText = un;
-                        document.getElementById('nome-exibir').innerText = user.nome;
+                        document.getElementById('nome-exibir').innerText = data.nome;
                         document.getElementById('bloqueio-inicio').style.display = 'none';
-                        mudarTela('s-home'); iniciarMonitor();
+                        mudarTela('s-home'); 
+                        iniciarMonitor();
                     } else {
+                        // EXIBE MENSAGEM DE ANÁLISE
                         document.getElementById('btn-entrar').style.display = 'none';
                         document.getElementById('status-analise').style.display = 'block';
                     }
@@ -134,12 +137,12 @@
             const canvas = document.createElement('canvas');
             canvas.width = vid.videoWidth; canvas.height = vid.videoHeight;
             canvas.getContext('2d').drawImage(vid, 0, 0);
-            const foto = canvas.toDataURL('image/jpeg', 0.5);
+            const foto = canvas.toDataURL('image/jpeg', 0.4);
             const novo = { nome: document.getElementById('reg-nome').value, cpf: document.getElementById('reg-cpf').value, unidade: document.getElementById('reg-un').value, foto: foto, ts: Date.now() };
             
             db.ref('solicitacoes_cadastro').push(novo).then(() => {
                 localStorage.setItem('virty_user', JSON.stringify(novo));
-                alert("Solicitação enviada! Aguarde a aprovação do Master.");
+                alert("Cadastro enviado! Aguarde o Master liberar.");
                 location.reload();
             });
         }
@@ -165,36 +168,49 @@
             playTone(520, now + 0.4, 0.8);
         }
 
-        function startAlert() {
-            playDingDong();
-            loopAlerta = setInterval(playDingDong, 4000);
-            timerVal = 90;
-            document.getElementById('timer').innerText = timerVal + "s";
+        function stopAlert() {
+            clearInterval(loopAlerta);
             clearInterval(countdown);
-            countdown = setInterval(() => {
-                timerVal--;
-                document.getElementById('timer').innerText = timerVal + "s";
-                if(timerVal <= 0) { responder('perdida'); }
-            }, 1000);
+            loopAlerta = null;
+            countdown = null;
         }
 
         function iniciarMonitor() {
+            if(!un) return;
+
+            // VIGIA CHAMADAS (COM FILTRO DE "FANTASMA")
             db.ref('chamadas_ativas/' + un).on('value', s => {
                 const d = s.val();
                 if(d && d.status === 'chamando') {
+                    // TRAVA DE SEGURANÇA: Se a chamada for mais velha que 30s, ignorar e apagar
+                    const agora = Date.now();
+                    if(agora - d.ts > 30000) {
+                        db.ref('chamadas_ativas/' + un).remove();
+                        return;
+                    }
+
                     document.getElementById('img-vis').src = d.foto;
-                    document.getElementById('txt-vis').innerText = d.texto || "Sem mensagem.";
-                    mudarTela('s-call'); startAlert();
-                } else { 
-                    mudarTela('s-home'); 
-                    clearInterval(loopAlerta); 
-                    clearInterval(countdown);
+                    document.getElementById('txt-vis').innerText = d.texto || "Chamando...";
+                    mudarTela('s-call');
+                    
+                    if(!loopAlerta) {
+                        playDingDong();
+                        loopAlerta = setInterval(playDingDong, 4000);
+                        timerVal = 90;
+                        countdown = setInterval(() => {
+                            timerVal--;
+                            document.getElementById('timer').innerText = timerVal + "s";
+                            if(timerVal <= 0) responder('perdida');
+                        }, 1000);
+                    }
+                } else {
+                    mudarTela('s-home');
+                    stopAlert();
                 }
             });
 
-            db.ref('historico/' + un).on('value', s => {
-                renderizarLista(s);
-            });
+            // VIGIA HISTÓRICO
+            db.ref('historico/' + un).on('value', s => renderizarLista(s));
         }
 
         function renderizarLista(s) {
@@ -204,16 +220,17 @@
             raw.reverse();
 
             let agrupado = [];
-            const VINTE_QUATRO_HORAS = 24 * 60 * 60 * 1000;
+            const DIA_MS = 24 * 60 * 60 * 1000;
 
             raw.forEach(item => {
-                let u = agrupado.find(x => x.v_id === item.v_id && (item.ts - x.ts) < VINTE_QUATRO_HORAS);
+                let u = agrupado.find(x => x.v_id === item.v_id && (item.ts - x.ts) < DIA_MS);
                 if(u) {
                     if(item.acao === 'liberado') u.c_v++;
                     if(item.acao === 'recusado') u.c_r++;
                     if(item.acao === 'mensagem') u.c_a++;
                     if(item.acao === 'perdida') u.c_p++;
                     u.ultima_acao = item.acao;
+                    u.ts = item.ts; // Atualiza para o mais recente do grupo
                 } else {
                     item.c_v = item.acao === 'liberado' ? 1 : 0;
                     item.c_r = item.acao === 'recusado' ? 1 : 0;
@@ -232,7 +249,7 @@
                     if(h.ultima_acao === 'mensagem') statusCor = "var(--blue)";
                     if(h.ultima_acao === 'perdida') statusCor = "#888";
 
-                    cont.innerHTML += `
+                    const htmlCard = `
                         <div class="hist-card">
                             <div class="badges-container">
                                 ${h.c_v > 0 ? `<div class="b-count bc-green">${h.c_v}</div>` : ''}
@@ -251,41 +268,52 @@
                                 ${estaBanido ? 'DESBLOQUEAR' : 'BLOQUEAR'}
                             </button>
                         </div>`;
+                    cont.insertAdjacentHTML('beforeend', htmlCard);
                 });
             });
 
-            if(agrupado.length > limitHist && limitHist < 10) {
-                cont.innerHTML += `<button class="ver-mais" onclick="limitHist=10; this.remove();">VER MAIS</button>`;
+            if(agrupado.length > limitHist) {
+                const btnMais = document.createElement('button');
+                btnMais.className = 'ver-mais';
+                btnMais.innerText = 'VER MAIS';
+                btnMais.onclick = () => { limitHist += 5; renderizarLista(s); };
+                cont.appendChild(btnMais);
             }
         }
 
         function alternarBanido(vid) {
             db.ref('banidos/' + vid).once('value', s => {
-                if(s.exists()) { db.ref('banidos/' + vid).remove(); } 
-                else { db.ref('banidos/' + vid).set(true); }
+                if(s.exists()) db.ref('banidos/' + vid).remove(); 
+                else db.ref('banidos/' + vid).set(true);
             });
         }
 
         function responder(status, txt = null) {
+            stopAlert();
             db.ref('chamadas_ativas/' + un).once('value', s => {
                 const d = s.val(); if(!d) return;
                 const h = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                db.ref('historico/' + un).push({ foto: d.foto, v_id: d.v_id, ts: Date.now(), hora: h, acao: status });
-                db.ref('chamadas_ativas/' + un).update({ status: status, msg_morador: txt });
-                setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); }, 500);
+                
+                db.ref('historico/' + un).push({ 
+                    foto: d.foto, v_id: d.v_id, ts: Date.now(), hora: h, acao: status 
+                }).then(() => {
+                    db.ref('chamadas_ativas/' + un).update({ status: status, msg_morador: txt });
+                    setTimeout(() => db.ref('chamadas_ativas/' + un).remove(), 1000);
+                });
             });
         }
 
         function enviarMensagemDireta() {
-            responder('mensagem', document.getElementById('input-msg').value);
+            const msg = document.getElementById('input-msg').value;
+            if(!msg) return;
+            responder('mensagem', msg);
             document.getElementById('modal-msg').style.display='none';
+            document.getElementById('input-msg').value = "";
         }
 
         function limparHistorico() {
-            if(confirm("Limpar todo o histórico?")) {
-                db.ref('historico/' + un).remove().then(() => {
-                    document.getElementById('lista-hist').innerHTML = "";
-                });
+            if(confirm("Deseja apagar permanentemente o histórico desta unidade?")) {
+                db.ref('historico/' + un).remove();
             }
         }
 
@@ -294,7 +322,8 @@
             document.getElementById(id).classList.add('active');
         }
 
-        entrarApp(); // Inicia o monitoramento de segurança
+        // AUTO-START
+        window.onload = entrarApp;
     </script>
 </body>
 </html>
