@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v12.2</title>
+    <title>VIRTY MORADOR v12.3</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
@@ -16,8 +16,11 @@
         input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; box-sizing: border-box; }
         .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; text-transform: uppercase; }
         .btn-v { background: var(--neon); color: #000; }
-        .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
-        .hist-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid var(--neon); }
+        
+        /* Estilo da Chamada Recebida */
+        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:1000; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
+        .foto-visitante { width: 250px; height: 250px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 20px; }
+        .btn-acao { width: 80%; padding: 20px; margin: 10px; border-radius: 40px; border: none; font-weight: bold; font-size: 1.1rem; }
     </style>
 </head>
 <body>
@@ -44,19 +47,34 @@
     <div id="s-home" class="screen">
         <div class="header-main">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span>VIRTY v12.2 | <span id="clock">00:00</span></span>
+                <span>VIRTY v12.3 | <span id="clock">00:00</span></span>
                 <span class="unidade-box">CASA <span id="u-txt">--</span></span>
             </div>
             <p id="nome-exibir" style="margin: 5px 0 0 0; color: var(--neon);"></p>
         </div>
-        <div id="lista-hist" style="flex:1; overflow-y:auto;"></div>
+        <div id="lista-hist" style="flex:1; overflow-y:auto; text-align:center;">
+            <p style="color:#444; margin-top:50px;">Aguardando chamadas...</p>
+        </div>
     </div>
+
+    <div id="painel-chamada">
+        <h2 style="color:var(--neon)">VISITANTE NA PORTA!</h2>
+        <img id="foto-v" class="foto-visitante" src="">
+        <p id="msg-v" style="color:#aaa; font-style:italic;"></p>
+        <button class="btn-acao" style="background:var(--neon); color:#000;" onclick="responder('liberado')">ABRIR PORTÃO</button>
+        <button class="btn-acao" style="background:var(--red); color:#fff;" onclick="responder('recusado')">RECUSAR</button>
+        <button class="btn-acao" style="background:#222; color:#fff;" onclick="responder('fechar')">FECHAR</button>
+    </div>
+
+    <audio id="toque" src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
         const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-        firebase.initializeApp(config); const db = firebase.database();
+        if (!firebase.apps.length) firebase.initializeApp(config);
+        const db = firebase.database();
+        
         let video = document.getElementById('video'), canvas = document.getElementById('canvas');
         let b64 = "", un = "";
 
@@ -95,13 +113,40 @@
                     document.getElementById('u-txt').innerText = un;
                     document.getElementById('nome-exibir').innerText = user.nome;
                     mudarTela('s-home');
+                    iniciarMonitoramento(); // ESSA É A FUNÇÃO QUE FALTAVA!
                 } else if(pendente) {
                     mudarTela('s-aguarde');
                 } else {
                     localStorage.removeItem('virty_user');
-                    location.reload(); // Reset cirúrgico: volta para cadastro
+                    location.reload();
                 }
             });
+        }
+
+        // --- FUNÇÃO DE CONVERSA COM O VISITANTE ---
+        function iniciarMonitoramento() {
+            db.ref('chamadas_ativas/' + un).on('value', snap => {
+                const d = snap.val();
+                if(d && d.status === "chamando") {
+                    document.getElementById('foto-v').src = d.foto;
+                    document.getElementById('msg-v').innerText = d.texto || "Sem mensagem";
+                    document.getElementById('painel-chamada').style.display = "flex";
+                    document.getElementById('toque').play();
+                } else {
+                    document.getElementById('painel-chamada').style.display = "none";
+                    document.getElementById('toque').pause();
+                }
+            });
+        }
+
+        function responder(status) {
+            if(status === 'fechar') {
+                document.getElementById('painel-chamada').style.display = "none";
+                return;
+            }
+            db.ref('chamadas_ativas/' + un).update({ status: status });
+            // Remove a chamada após 2 segundos da resposta para limpar o painel
+            setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); }, 2000);
         }
 
         function mudarTela(id) {
