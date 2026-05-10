@@ -1,120 +1,137 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Virty Access - Visitante</title>
-    <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 25px; text-align: center; box-sizing: border-box; }
-        .active { display: flex; }
-        .video-box { width: 250px; height: 250px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; }
-        video, canvas { width: 100%; height: 100%; object-fit: cover; }
-        input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; font-size: 1rem; text-align: center; box-sizing: border-box; }
-        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
-        .btn-green { background: var(--neon); color: black; }
-        .btn-red { background: var(--red); color: white; }
-        #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0a0a0a; border:2px solid var(--neon); padding:25px; border-radius:20px; width:80%; z-index:1000; text-align:center; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Virty Access - Visitante</title>
+    <style>
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 25px; text-align: center; box-sizing: border-box; }
+        .active { display: flex; }
+        .video-box { width: 250px; height: 250px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; }
+        video, canvas { width: 100%; height: 100%; object-fit: cover; }
+        input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; font-size: 1rem; text-align: center; box-sizing: border-box; }
+        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
+        .btn-green { background: var(--neon); color: black; }
+        .btn-red { background: var(--red); color: white; }
+        #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0a0a0a; border:2px solid var(--neon); padding:25px; border-radius:20px; width:80%; z-index:1000; text-align:center; }
+    </style>
 </head>
 <body>
-    <div id="t0" class="screen active">
-        <h1 style="color:var(--neon); margin-top:50px;">VIRTY ACCESS</h1>
-        <p style="color:#888;">Toque para iniciar sua identificação</p>
-        <div style="font-size: 4rem; margin: 30px;">🏠</div>
-        <button class="btn btn-green" onclick="solicitarPermissoes()">INICIAR</button>
-    </div>
-    <div id="t1" class="screen">
-        <h2 style="color:var(--neon);">IDENTIFICAÇÃO</h2>
-        <div class="video-box">
-            <video id="v" autoplay playsinline muted></video>
-            <canvas id="c-snap" style="display:none;"></canvas>
-        </div>
-        <button id="btn-snap" class="btn" style="background:#eee;" onclick="tirarFoto()">📸 TIRAR FOTO</button>
-        <input type="number" id="un" placeholder="Nº da Unidade (Ex: 10)">
-        <input type="text" id="msg" placeholder="Mensagem (Opcional)">
-        <button id="btn-go" class="btn btn-green" onclick="chamar()" disabled>TOCAR CAMPAINHA</button>
-    </div>
-    <div id="t2" class="screen">
-        <h1 id="timer" style="font-size: 5rem; color: var(--neon); margin: 30px 0;">60</h1>
-        <p>CHAMANDO UNIDADE <b id="view-un" style="color:var(--neon)"></b></p>
-        <button class="btn btn-red" onclick="location.reload()">CANCELAR</button>
-    </div>
-    <div id="popup">
-        <h2 id="pop-t" style="color:var(--neon);"></h2>
-        <p id="pop-m"></p>
-        <button class="btn btn-green" onclick="location.reload()">OK</button>
-    </div>
-    <audio id="som" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script>
-        const firebaseConfig = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        let b64 = "", contagem;
-        const video = document.getElementById('v'), canvas = document.getElementById('c-snap');
-        let v_id = localStorage.getItem('virty_visitor_id') || 'ID-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-        localStorage.setItem('virty_visitor_id', v_id);
-
-        async function solicitarPermissoes() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-                mudarTela('t1');
-            } catch (err) { alert("Permissão de câmera negada."); }
-        }
-
-        function tirarFoto() {
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            b64 = canvas.toDataURL('image/jpeg', 0.5);
-            canvas.style.display = "block"; video.style.display = "none";
-            document.getElementById('btn-snap').innerText = "🔄 TIRAR OUTRA";
-            document.getElementById('btn-go').disabled = false;
-        }
-
-        function chamar() {
-            const unVal = document.getElementById('un').value;
-            if (!unVal) return alert("Digite a unidade!");
-            document.getElementById('view-un').innerText = unVal;
-            mudarTela('t2');
-            document.getElementById('som').play();
-            const refChamada = db.ref('chamadas_ativas/' + unVal);
-            refChamada.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value || "", ts: Date.now(), v_id: v_id });
-            refChamada.onDisconnect().remove();
-
-            refChamada.on('value', snap => {
-                const d = snap.val();
-                if (!d) return;
-                if (d.status === "liberado") showPop("LIBERADO", "Seja bem-vindo!");
-                if (d.status === "recusado") showPop("INDISPONÍVEL", "O morador não pode atender.");
-                if (d.status === "bloqueado") showPop("ERRO", "Chamada não permitida.");
-                if (d.status === "mensagem") showPop("RECADO", d.msg_morador);
-            });
-
-            let tempo = 60;
-            contagem = setInterval(() => {
-                tempo--;
-                document.getElementById('timer').innerText = tempo;
-                if (tempo <= 0) { clearInterval(contagem); refChamada.remove(); showPop("FIM", "Tempo esgotado."); }
-            }, 1000);
-        }
-
-        function mudarTela(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-
-        function showPop(t, m) {
-            clearInterval(contagem);
-            document.getElementById('som').pause();
-            document.getElementById('pop-t').innerText = t;
-            document.getElementById('pop-m').innerText = m;
-            document.getElementById('popup').style.display = "block";
-        }
-    </script>
+    <div id="t0" class="screen active">
+        <h1 style="color:var(--neon); margin-top:50px;">VIRTY ACCESS</h1>
+        <p style="color:#888;">Toque para iniciar sua identificação</p>
+        <div style="font-size: 4rem; margin: 30px;">🏠</div>
+        <button class="btn btn-green" onclick="solicitarPermissoes()">INICIAR</button>
+    </div>
+    <div id="t1" class="screen">
+        <h2 style="color:var(--neon);">IDENTIFICAÇÃO</h2>
+        <div class="video-box">
+            <video id="v" autoplay playsinline muted></video>
+            <canvas id="c-snap" style="display:none;"></canvas>
+        </div>
+        <button id="btn-snap" class="btn" style="background:#eee;" onclick="tirarFoto()">📸 TIRAR FOTO</button>
+        <input type="number" id="un" placeholder="Nº da Unidade (Ex: 10)">
+        <input type="text" id="msg" placeholder="Mensagem (Opcional)">
+        <button id="btn-go" class="btn btn-green" onclick="chamar()" disabled>TOCAR CAMPAINHA</button>
+    </div>
+    <div id="t2" class="screen">
+        <h1 id="timer" style="font-size: 5rem; color: var(--neon); margin: 30px 0;">60</h1>
+        <p>CHAMANDO UNIDADE <b id="view-un" style="color:var(--neon)"></b></p>
+        <button class="btn btn-red" onclick="location.reload()">CANCELAR</button>
+    </div>
+    <div id="popup">
+        <h2 id="pop-t" style="color:var(--neon);"></h2>
+        <p id="pop-m"></p>
+        <button class="btn btn-green" onclick="location.reload()">OK</button>
+    </div>
+    <audio id="som" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        // Configuração
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
+            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let b64 = "";
+        let contagem;
+        const video = document.getElementById('v');
+        const canvas = document.getElementById('c-snap');
+        // GERAR ID FIXO (RG DO VISITANTE)
+        let v_id = localStorage.getItem('virty_visitor_id');
+        if (!v_id) {
+            v_id = 'ID-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            localStorage.setItem('virty_visitor_id', v_id);
+        }
+        async function solicitarPermissoes() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                mudarTela('t1');
+            } catch (err) {
+                alert("Permissão de câmera negada.");
+            }
+        }
+        function tirarFoto() {
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            b64 = canvas.toDataURL('image/jpeg', 0.5);
+            canvas.style.display = "block"; video.style.display = "none";
+            document.getElementById('btn-snap').innerText = "🔄 TIRAR OUTRA";
+            document.getElementById('btn-go').disabled = false;
+        }
+        function chamar() {
+            const unVal = document.getElementById('un').value;
+            if (!unVal) return alert("Digite a unidade!");
+            document.getElementById('view-un').innerText = unVal;
+            mudarTela('t2');
+            document.getElementById('som').play();
+            const refChamada = db.ref('chamadas_ativas/' + unVal);
+            
+            // Grava no Firebase com o ID Fixo
+            refChamada.set({
+                status: "chamando",
+                foto: b64,
+                texto: document.getElementById('msg').value || "",
+                ts: Date.now(),
+                v_id: v_id 
+            });
+            refChamada.onDisconnect().remove();
+            // OUVIR RESPOSTA
+            refChamada.on('value', snap => {
+                const d = snap.val();
+                if (!d) return;
+                if (d.status === "liberado") showPop("LIBERADO", "Seja bem-vindo!");
+                if (d.status === "recusado") showPop("INDISPONÍVEL", "O morador não pode atender.");
+                if (d.status === "bloqueado") showPop("ERRO", "Chamada não permitida.");
+                if (d.status === "mensagem") showPop("RECADO", d.msg_morador);
+            });
+            let tempo = 60;
+            contagem = setInterval(() => {
+                tempo--;
+                document.getElementById('timer').innerText = tempo;
+                if (tempo <= 0) {
+                    clearInterval(contagem);
+                    refChamada.remove();
+                    showPop("FIM", "Tempo esgotado.");
+                }
+            }, 1000);
+        }
+        function mudarTela(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+        function showPop(t, m) {
+            clearInterval(contagem);
+            document.getElementById('som').pause();
+            document.getElementById('pop-t').innerText = t;
+            document.getElementById('pop-m').innerText = m;
+            document.getElementById('popup').style.display = "block";
+        }
+    </script>
 </body>
 </html>
