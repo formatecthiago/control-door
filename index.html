@@ -1,32 +1,110 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Virty Access - Visitante</title>
-    <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 25px; text-align: center; box-sizing: border-box; }
-        .active { display: flex; }
-        .video-box { width: 250px; height: 250px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; }
-        video, canvas { width: 100%; height: 100%; object-fit: cover; }
-        input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; font-size: 1rem; text-align: center; box-sizing: border-box; }
-        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
-        .btn-green { background: var(--neon); color: black; }
-        .btn-red { background: var(--red); color: white; }
-        #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0a0a0a; border:2px solid var(--neon); padding:25px; border-radius:20px; width:80%; z-index:1000; text-align:center; }
-    </style>
-</head>
-<body>
-    <div id="t0" class="screen active">
-        <h1 style="color:var(--neon); margin-top:50px;">VIRTY ACCESS</h1>
-        <p style="color:#888;">Toque para iniciar sua identificação</p>
-        <div style="font-size: 4rem; margin: 30px;">🏠</div>
-        <button class="btn btn-green" onclick="solicitarPermissoes()">INICIAR</button>
-    </div>
-    <div id="t1" class="screen">
-        <h2 style="color:var(--neon);">IDENTIFICAÇÃO</h2>
-        <div class="video-box">
-            <video id="v" autoplay playsinline muted></video>
-            <canvas id="
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let b64 = "", contagem;
+        const video = document.getElementById('v'), canvas = document.getElementById('c-snap');
+        let v_id = localStorage.getItem('virty_visitor_id') || 'ID-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        localStorage.setItem('virty_visitor_id', v_id);
+
+        async function solicitarPermissoes() {
+            console.log("Tentando acessar a câmera...");
+            
+            // Verifica se o navegador suporta câmera
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert("Seu navegador não suporta acesso à câmera. Use o Chrome ou Safari atualizado.");
+                mudarTela('t1'); // Força a ida para a tela mesmo sem câmera para não travar o app
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "user" }, // Tenta abrir a câmera frontal
+                    audio: false 
+                });
+                video.srcObject = stream;
+                console.log("Câmera liberada!");
+                mudarTela('t1'); // SÓ MUDA DE TELA SE TUDO DER CERTO
+            } catch (err) { 
+                console.error("Erro na câmera: ", err);
+                alert("Erro ao abrir câmera: " + err.message + "\n\nO sistema irá para a tela de dados, mas a foto pode não funcionar.");
+                mudarTela('t1'); // FORÇA A MUDANÇA para você não ficar preso na tela inicial
+            }
+        }
+
+        function tirarFoto() {
+            try {
+                canvas.width = video.videoWidth; 
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                b64 = canvas.toDataURL('image/jpeg', 0.5);
+                canvas.style.display = "block"; 
+                video.style.display = "none";
+                document.getElementById('btn-snap').innerText = "🔄 TIRAR OUTRA";
+                document.getElementById('btn-go').disabled = false;
+            } catch (e) {
+                alert("Erro ao capturar foto. Tente novamente.");
+            }
+        }
+
+        function chamar() {
+            const unVal = document.getElementById('un').value;
+            if (!unVal) return alert("Digite a unidade!");
+
+            // Trava de segurança: consulta se o morador existe
+            db.ref('moradores_validados/' + unVal).once('value', snap => {
+                if (!snap.exists()) {
+                    alert("Unidade não habilitada ou inexistente.");
+                    return;
+                }
+
+                document.getElementById('view-un').innerText = unVal;
+                mudarTela('t2');
+                document.getElementById('som').play();
+                
+                const refChamada = db.ref('chamadas_ativas/' + unVal);
+                refChamada.set({ 
+                    status: "chamando", 
+                    foto: b64, 
+                    texto: document.getElementById('msg').value || "", 
+                    ts: Date.now(), 
+                    v_id: v_id 
+                });
+                
+                refChamada.onDisconnect().remove();
+
+                refChamada.on('value', snapCall => {
+                    const d = snapCall.val();
+                    if (!d) return;
+                    if (d.status === "liberado") showPop("LIBERADO", "Seja bem-vindo!");
+                    if (d.status === "recusado") showPop("INDISPONÍVEL", "O morador não pode atender.");
+                    if (d.status === "mensagem") showPop("RECADO", d.msg_morador);
+                });
+
+                let tempo = 60;
+                contagem = setInterval(() => {
+                    tempo--;
+                    document.getElementById('timer').innerText = tempo;
+                    if (tempo <= 0) { 
+                        clearInterval(contagem); 
+                        refChamada.remove(); 
+                        showPop("FIM", "Tempo esgotado."); 
+                    }
+                }, 1000);
+            });
+        }
+
+        function mudarTela(id) {
+            console.log("Mudando para tela: " + id);
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function showPop(t, m) {
+            clearInterval(contagem);
+            document.getElementById('som').pause();
+            document.getElementById('pop-t').innerText = t;
+            document.getElementById('pop-m').innerText = m;
+            document.getElementById('popup').style.display = "block";
+        }
+    </script>
