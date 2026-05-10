@@ -3,157 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY MASTER ADMIN v12.0</title>
+    <title>VIRTY MASTER ADMIN v12.2</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; --blue: #007BFF; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
         .screen { display: none; padding: 20px; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
         .active { display: flex; }
-        
         .header { width: 100%; padding: 20px; border-bottom: 2px solid var(--gray); background: #050505; text-align: center; position: sticky; top: 0; z-index: 100; }
-        .login-box { background: #0d0d0d; padding: 30px; border-radius: 25px; border: 1px solid var(--neon); width: 100%; max-width: 350px; text-align: center; margin-top: 50px; }
-        
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #000; border: 1px solid #333; color: #fff; text-align: center; box-sizing: border-box; }
-        
-        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 20px; margin-bottom: 12px; width: 100%; max-width: 600px; display: flex; align-items: center; justify-content: space-between; }
-        .info-user { display: flex; align-items: center; gap: 15px; }
-        .user-photo { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; }
-        
-        .btn { border: none; border-radius: 12px; padding: 12px 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; }
+        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 20px; margin-bottom: 12px; width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 10px; }
+        .row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-photo { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; }
+        .details { font-size: 0.85rem; color: #aaa; line-height: 1.4; }
+        .btn-group { display: flex; gap: 8px; margin-top: 10px; }
+        .btn { border: none; border-radius: 8px; padding: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; flex: 1; }
         .btn-green { background: var(--neon); color: #000; }
+        .btn-edit { background: #333; color: #fff; border: 1px solid #555; }
         .btn-del { background: transparent; border: 1px solid var(--red); color: var(--red); }
-        
-        h3 { color: var(--neon); width: 100%; max-width: 600px; font-size: 0.9rem; letter-spacing: 2px; margin: 30px 0 15px 0; border-left: 4px solid var(--neon); padding-left: 10px; }
-        .count { background: #333; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; vertical-align: middle; }
+        h3 { color: var(--neon); width: 100%; max-width: 650px; font-size: 0.9rem; letter-spacing: 2px; margin: 25px 0 10px 0; border-left: 4px solid var(--neon); padding-left: 10px; }
+        input[type="password"] { width: 250px; padding: 15px; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="s-login" class="screen active">
-        <h1 style="color:var(--neon); letter-spacing:3px;">VIRTY ACCESS</h1>
-        <div class="login-box">
-            <input type="password" id="pass-field" placeholder="SENHA MASTER">
-            <button class="btn btn-green" style="width:100%" onclick="fazerLogin()">ACESSAR PAINEL</button>
-        </div>
+        <h1 style="color:var(--neon); letter-spacing: 3px;">VIRTY MASTER</h1>
+        <input type="password" id="pass-field" placeholder="SENHA MASTER">
+        <button class="btn btn-green" style="width:250px; margin-top:15px;" onclick="fazerLogin()">ENTRAR NO PAINEL</button>
     </div>
 
     <div id="s-main" class="screen">
-        <div class="header">
-            <h2 style="color:var(--neon); margin:0; font-size: 1.2rem;">GERENCIAMENTO DE ACESSO</h2>
-        </div>
+        <div class="header"><h2 style="color:var(--neon); margin:0;">GERENCIAMENTO DE MORADORES</h2></div>
+        
+        <h3>SOLICITAÇÕES PENDENTES</h3>
+        <div id="lista-pendentes" style="width:100%; max-width:650px;"></div>
 
-        <div style="width:100%; display:flex; flex-direction:column; align-items:center;">
-            
-            <h3>PENDENTES <span id="qtd-p" class="count">0</span></h3>
-            <div id="lista-pendentes" style="width:100%; display:flex; flex-direction:column; align-items:center;">
-                </div>
-
-            <h3>HABILITADOS <span id="qtd-h" class="count">0</span></h3>
-            <div id="lista-habilitados" style="width:100%; display:flex; flex-direction:column; align-items:center;">
-                </div>
-
-        </div>
+        <h3>MORADORES HABILITADOS</h3>
+        <div id="lista-habilitados" style="width:100%; max-width:650px;"></div>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, set, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const config = { 
-        apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
-        databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
-    };
-    const app = initializeApp(config); 
-    const db = getDatabase(app);
+    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
+    const app = initializeApp(config); const db = getDatabase(app);
 
-    // Login Simples
     window.fazerLogin = () => {
         if(document.getElementById('pass-field').value === "virty123@#") {
             document.getElementById('s-login').classList.remove('active');
             document.getElementById('s-main').classList.add('active');
             iniciarEscuta();
-        } else {
-            alert("Senha incorreta!");
-        }
+        } else alert("Senha incorreta");
     };
 
     function iniciarEscuta() {
-        // Monitorar Pendentes
-        onValue(ref(db, 'solicitacoes_cadastro'), (snapshot) => {
-            const container = document.getElementById('lista-pendentes');
-            container.innerHTML = "";
-            let count = 0;
-            
-            snapshot.forEach((child) => {
-                count++;
-                const d = child.val();
-                container.innerHTML += `
-                    <div class="card">
-                        <div class="info-user">
-                            <img src="${d.foto}" class="user-photo">
-                            <div>
-                                <b>CASA ${d.unidade}</b><br>
-                                <small>${d.nome}</small>
-                            </div>
-                        </div>
-                        <button class="btn btn-green" onclick="aprovar('${child.key}')">APROVAR</button>
-                    </div>
-                `;
-            });
-            document.getElementById('qtd-p').innerText = count;
-            if(count === 0) container.innerHTML = "<p style='color:#444'>Nenhuma solicitação pendente.</p>";
+        // PENDENTES (Lendo da pasta correta: solicitacoes_cadastro)
+        onValue(ref(db, 'solicitacoes_cadastro'), (s) => {
+            const cont = document.getElementById('lista-pendentes'); cont.innerHTML = "";
+            if(!s.exists()) cont.innerHTML = "<p style='color:#444; text-align:center;'>Nenhuma solicitação no momento.</p>";
+            s.forEach((c) => cont.innerHTML += renderCard(c.key, c.val(), true));
         });
 
-        // Monitorar Habilitados
-        onValue(ref(db, 'moradores_validados'), (snapshot) => {
-            const container = document.getElementById('lista-habilitados');
-            container.innerHTML = "";
-            let count = 0;
-
-            snapshot.forEach((child) => {
-                count++;
-                const d = child.val();
-                container.innerHTML += `
-                    <div class="card">
-                        <div class="info-user">
-                            <img src="${d.foto}" class="user-photo">
-                            <div>
-                                <b>CASA ${d.unidade}</b><br>
-                                <small>${d.nome}</small>
-                            </div>
-                        </div>
-                        <button class="btn btn-del" onclick="remover('${child.key}')">REMOVER</button>
-                    </div>
-                `;
-            });
-            document.getElementById('qtd-h').innerText = count;
+        // HABILITADOS
+        onValue(ref(db, 'moradores_validados'), (s) => {
+            const cont = document.getElementById('lista-habilitados'); cont.innerHTML = "";
+            s.forEach((c) => cont.innerHTML += renderCard(c.key, c.val(), false));
         });
     }
 
-    // Ações do Admin
-    window.aprovar = (id) => {
-        const pathOrigem = ref(db, 'solicitacoes_cadastro/' + id);
-        const pathDestino = ref(db, 'moradores_validados/' + id);
+    function renderCard(id, d, isPendente) {
+        return `
+            <div class="card">
+                <div class="row">
+                    <div class="user-info">
+                        <img src="${d.foto}" class="user-photo">
+                        <div class="details">
+                            <b style="color:#fff; font-size:1.1rem;">CASA ${d.unidade}</b><br>
+                            Nome: ${d.nome}<br>
+                            CPF: ${d.cpf || '---'}<br>
+                            Tel: ${d.telefone || '---'}
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    ${isPendente ? `<button class="btn btn-green" onclick="acao('aprovar','${id}')">APROVAR</button>` : ''}
+                    <button class="btn btn-edit" onclick="acao('editar','${id}')">EDITAR</button>
+                    <button class="btn btn-del" onclick="acao('excluir','${id}')">EXCLUIR</button>
+                </div>
+            </div>
+        `;
+    }
 
-        get(pathOrigem).then((snap) => {
-            if (snap.exists()) {
-                set(pathDestino, {
-                    ...snap.val(),
-                    data_aprovacao: Date.now(),
-                    autorizado: true
-                }).then(() => {
-                    remove(pathOrigem);
-                });
+    window.acao = async (tipo, id) => {
+        if(tipo === 'aprovar') {
+            const snap = await get(ref(db, 'solicitacoes_cadastro/' + id));
+            if(snap.exists()){
+                await set(ref(db, 'moradores_validados/' + id), snap.val());
+                await remove(ref(db, 'solicitacoes_cadastro/' + id));
             }
-        });
-    };
-
-    window.remover = (id) => {
-        if(confirm("Deseja realmente remover este acesso? O morador será bloqueado imediatamente.")) {
-            remove(ref(db, 'moradores_validados/' + id));
+        }
+        if(tipo === 'excluir') {
+            if(confirm("Remover permanentemente? O celular do morador será resetado.")) {
+                await remove(ref(db, 'moradores_validados/' + id));
+                await remove(ref(db, 'solicitacoes_cadastro/' + id));
+            }
+        }
+        if(tipo === 'editar') {
+            const n = prompt("Novo Nome:", "");
+            const t = prompt("Novo Telefone:", "");
+            if(n || t) {
+                await update(ref(db, (isPendente ? 'solicitacoes_cadastro/' : 'moradores_validados/') + id), { nome: n, telefone: t });
+            }
         }
     };
-
 </script>
 </body>
 </html>
