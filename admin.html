@@ -3,78 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY MASTER ADMIN v2.1</title>
+    <title>VIRTY MASTER ADMIN v12.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; --blue: #007BFF; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
         .screen { display: none; padding: 20px; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
         .active { display: flex; }
+        
+        .header { width: 100%; padding: 20px; border-bottom: 2px solid var(--gray); background: #050505; text-align: center; position: sticky; top: 0; z-index: 100; }
         .login-box { background: #0d0d0d; padding: 30px; border-radius: 25px; border: 1px solid var(--neon); width: 100%; max-width: 350px; text-align: center; margin-top: 50px; }
+        
         input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #000; border: 1px solid #333; color: #fff; text-align: center; box-sizing: border-box; }
-        .header { width: 100%; padding: 20px; border-bottom: 2px solid var(--gray); background: #050505; text-align: center; }
-        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 20px; margin-bottom: 10px; width: 100%; max-width: 800px; display: flex; align-items: center; justify-content: space-between; }
-        .btn { border: none; border-radius: 12px; padding: 12px 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-green { background: var(--neon); color: #000; width: 100%; }
+        
+        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 20px; margin-bottom: 12px; width: 100%; max-width: 600px; display: flex; align-items: center; justify-content: space-between; }
+        .info-user { display: flex; align-items: center; gap: 15px; }
+        .user-photo { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; }
+        
+        .btn { border: none; border-radius: 12px; padding: 12px 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; }
+        .btn-green { background: var(--neon); color: #000; }
         .btn-del { background: transparent; border: 1px solid var(--red); color: var(--red); }
-        .user-photo { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 15px; }
-        h3 { color: #444; width: 100%; max-width: 800px; font-size: 0.8rem; letter-spacing: 2px; margin-top: 25px; }
+        
+        h3 { color: var(--neon); width: 100%; max-width: 600px; font-size: 0.9rem; letter-spacing: 2px; margin: 30px 0 15px 0; border-left: 4px solid var(--neon); padding-left: 10px; }
+        .count { background: #333; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; vertical-align: middle; }
     </style>
 </head>
 <body>
+
     <div id="s-login" class="screen active">
         <h1 style="color:var(--neon); letter-spacing:3px;">VIRTY ACCESS</h1>
         <div class="login-box">
-            <input type="password" id="pass-field" placeholder="DIGITE A SENHA MASTER">
-            <button class="btn btn-green" onclick="fazerLogin()">ENTRAR NO PAINEL</button>
+            <input type="password" id="pass-field" placeholder="SENHA MASTER">
+            <button class="btn btn-green" style="width:100%" onclick="fazerLogin()">ACESSAR PAINEL</button>
         </div>
     </div>
 
     <div id="s-main" class="screen">
-        <div class="header"><h2 style="color:var(--neon); margin:0;">PAINEL DE CONTROLE</h2></div>
-        <div style="width:100%; max-width:800px;">
-            <h3>SOLICITAÇÕES DE CADASTRO</h3>
-            <div id="lista-moradores-pendentes"></div>
-            <h3>MORADORES ATIVOS</h3>
-            <div id="lista-moradores-ativos"></div>
+        <div class="header">
+            <h2 style="color:var(--neon); margin:0; font-size: 1.2rem;">GERENCIAMENTO DE ACESSO</h2>
+        </div>
+
+        <div style="width:100%; display:flex; flex-direction:column; align-items:center;">
+            
+            <h3>PENDENTES <span id="qtd-p" class="count">0</span></h3>
+            <div id="lista-pendentes" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+                </div>
+
+            <h3>HABILITADOS <span id="qtd-h" class="count">0</span></h3>
+            <div id="lista-habilitados" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+                </div>
+
         </div>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue, set, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-    const app = initializeApp(config); const db = getDatabase(app);
 
+    const config = { 
+        apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
+        databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
+    };
+    const app = initializeApp(config); 
+    const db = getDatabase(app);
+
+    // Login Simples
     window.fazerLogin = () => {
-        if(document.getElementById('pass-field').value === "virty123@#") { mudarTela('s-main'); iniciarPainel(); }
-        else alert("Senha incorreta.");
+        if(document.getElementById('pass-field').value === "virty123@#") {
+            document.getElementById('s-login').classList.remove('active');
+            document.getElementById('s-main').classList.add('active');
+            iniciarEscuta();
+        } else {
+            alert("Senha incorreta!");
+        }
     };
 
-    function iniciarPainel() {
-        onValue(ref(db, 'solicitacoes_cadastro'), s => {
-            const cont = document.getElementById('lista-moradores-pendentes'); cont.innerHTML = "";
-            s.forEach(c => {
-                const d = c.val();
-                cont.innerHTML += `<div class="card"><div style="display:flex; align-items:center;"><img src="${d.foto}" class="user-photo"><div><b>CASA ${d.unidade}</b><br><small>${d.nome}</small></div></div><button class="btn btn-green" style="width:auto" onclick="aprovarMorador('${c.key}')">APROVAR</button></div>`;
+    function iniciarEscuta() {
+        // Monitorar Pendentes
+        onValue(ref(db, 'solicitacoes_cadastro'), (snapshot) => {
+            const container = document.getElementById('lista-pendentes');
+            container.innerHTML = "";
+            let count = 0;
+            
+            snapshot.forEach((child) => {
+                count++;
+                const d = child.val();
+                container.innerHTML += `
+                    <div class="card">
+                        <div class="info-user">
+                            <img src="${d.foto}" class="user-photo">
+                            <div>
+                                <b>CASA ${d.unidade}</b><br>
+                                <small>${d.nome}</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-green" onclick="aprovar('${child.key}')">APROVAR</button>
+                    </div>
+                `;
             });
+            document.getElementById('qtd-p').innerText = count;
+            if(count === 0) container.innerHTML = "<p style='color:#444'>Nenhuma solicitação pendente.</p>";
         });
-        onValue(ref(db, 'moradores_validados'), s => {
-            const cont = document.getElementById('lista-moradores-ativos'); cont.innerHTML = "";
-            s.forEach(c => {
-                const d = c.val();
-                cont.innerHTML += `<div class="card"><div style="display:flex; align-items:center;"><img src="${d.foto}" class="user-photo"><div><b>CASA ${d.unidade}</b><br><small>${d.nome}</small></div></div><button class="btn btn-del" onclick="removerMorador('${c.key}')">REMOVER</button></div>`;
+
+        // Monitorar Habilitados
+        onValue(ref(db, 'moradores_validados'), (snapshot) => {
+            const container = document.getElementById('lista-habilitados');
+            container.innerHTML = "";
+            let count = 0;
+
+            snapshot.forEach((child) => {
+                count++;
+                const d = child.val();
+                container.innerHTML += `
+                    <div class="card">
+                        <div class="info-user">
+                            <img src="${d.foto}" class="user-photo">
+                            <div>
+                                <b>CASA ${d.unidade}</b><br>
+                                <small>${d.nome}</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-del" onclick="remover('${child.key}')">REMOVER</button>
+                    </div>
+                `;
             });
+            document.getElementById('qtd-h').innerText = count;
         });
     }
 
-    window.aprovarMorador = (key) => {
-        get(ref(db, 'solicitacoes_cadastro/' + key)).then(s => {
-            set(ref(db, 'moradores_validados/' + key), { ...s.val(), autorizado: true });
-            remove(ref(db, 'solicitacoes_cadastro/' + key));
+    // Ações do Admin
+    window.aprovar = (id) => {
+        const pathOrigem = ref(db, 'solicitacoes_cadastro/' + id);
+        const pathDestino = ref(db, 'moradores_validados/' + id);
+
+        get(pathOrigem).then((snap) => {
+            if (snap.exists()) {
+                set(pathDestino, {
+                    ...snap.val(),
+                    data_aprovacao: Date.now(),
+                    autorizado: true
+                }).then(() => {
+                    remove(pathOrigem);
+                });
+            }
         });
     };
-    window.removerMorador = (key) => { if(confirm("Remover este morador?")) remove(ref(db, 'moradores_validados/' + key)); };
-    window.mudarTela = (id) => { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); };
+
+    window.remover = (id) => {
+        if(confirm("Deseja realmente remover este acesso? O morador será bloqueado imediatamente.")) {
+            remove(ref(db, 'moradores_validados/' + id));
+        }
+    };
+
 </script>
 </body>
 </html>
