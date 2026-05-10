@@ -1,246 +1,87 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v11.9</title>
-    <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
-        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
-        .active { display: flex; }
-        
-        .header-main { text-align: center; border-bottom: 2px solid var(--gray); padding-bottom: 15px; margin-bottom: 15px; }
-        .virty-title { color: var(--neon); font-size: 1.1rem; font-weight: 900; letter-spacing: 2px; margin: 0; }
-        .unidade-box { background: var(--neon); color: #000; padding: 3px 10px; border-radius: 5px; font-weight: bold; }
-        
-        .hist-card { background: #0a0a0a; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; position: relative; }
-        .hist-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; margin-right: 12px; }
-        .badge-count { position: absolute; top: 5px; left: 45px; background: var(--red); color: white; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: 900; border: 2px solid #000; z-index: 10; }
-        
-        .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: 0.1s; text-transform: uppercase; }
-        .btn:active { transform: scale(0.96); opacity: 0.8; }
-        
-        .btn-v { background: var(--neon); color: #000; }
-        .btn-r { background: var(--red); color: #fff; }
-        .btn-a { background: var(--blue); color: #fff; }
-        .status-tag { font-size: 0.62rem; padding: 2px 5px; border-radius: 4px; font-weight: bold; text-transform: uppercase; margin-top: 3px; display: inline-block; }
-        .tag-liberado { background: rgba(57, 255, 20, 0.2); color: var(--neon); }
-        .tag-recusado { background: rgba(255, 49, 49, 0.2); color: var(--red); }
-        .tag-mensagem { background: rgba(0, 123, 255, 0.2); color: var(--blue); }
-        .tag-expirado { background: rgba(255, 255, 255, 0.1); color: #777; }
-        /* Modal de Mensagem */
-        #modal-msg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; align-items:center; justify-content:center; padding:20px; }
-        .modal-content { background:#111; border:1px solid var(--blue); padding:25px; border-radius:20px; width:100%; max-width:400px; text-align:center; }
-        input#input-msg { width: 100%; padding: 15px; margin: 15px 0; border-radius: 10px; background: #000; border: 1px solid #333; color: #fff; text-align: center; font-size: 1rem; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VIRTY MORADOR v11.9</title>
+    <style>
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
+        .active { display: flex; }
+        .header-main { text-align: center; border-bottom: 2px solid var(--gray); padding-bottom: 15px; margin-bottom: 15px; }
+        .unidade-box { background: var(--neon); color: #000; padding: 3px 10px; border-radius: 5px; font-weight: bold; }
+        .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; text-transform: uppercase; }
+        .btn-v { background: var(--neon); color: #000; }
+        .btn-r { background: var(--red); color: #fff; }
+        .btn-a { background: var(--blue); color: #fff; }
+    </style>
 </head>
 <body>
-    <div id="bloqueio-inicio" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:20px;">
-        <h1 style="color:var(--neon); letter-spacing:3px;">VIRTY ACCESS</h1>
-        <button class="btn btn-v" onclick="entrarApp()" style="width:260px;">ENTRAR NO PAINEL</button>
-    </div>
-    <div id="s-home" class="screen">
-        <div class="header-main">
-            <h1 class="virty-title">VIRTY DOOR v1.9</h1>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-                <span id="nome-exibir" style="font-weight:bold; color:#bbb;">---</span>
-                <span class="unidade-box">CASA <span id="u-txt">--</span></span>
-            </div>
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button class="btn" id="btn-silenciar" onclick="toggleMute()" style="background:#111; color:#fff; border:1px solid #333; padding:10px; font-size:0.75rem; flex:1;">🔔 SOM ATIVO</button>
-                <button class="btn" onclick="limparHistorico()" style="background:#111; color:var(--red); border:1px solid var(--red); padding:10px; font-size:0.75rem; flex:1;">🗑️ LIMPAR</button>
-            </div>
-        </div>
-        <div id="lista-hist" style="flex:1; overflow-y:auto; padding-bottom:10px;"></div>
-    </div>
-    <div id="s-call" class="screen">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <b style="color:var(--neon)">CHAMADA AO VIVO</b>
-            <span id="timer" style="color:var(--red); font-weight:bold; font-size:1.3rem;">60s</span>
-        </div>
-        <img id="img-vis" src="" style="width:100%; height:320px; border-radius:25px; object-fit:cover; margin:20px 0; border:2px solid var(--neon);">
-        <div style="display:grid; gap:10px;">
-            <button class="btn btn-v" onclick="responder('liberado')">✔️ LIBERAR PORTÃO</button>
-            <button class="btn btn-a" onclick="abrirModalMsg()">💬 ENVIAR MENSAGEM</button>
-            <button class="btn btn-r" onclick="responder('recusado')">✖️ RECUSAR</button>
-        </div>
-    </div>
-    <div id="modal-msg">
-        <div class="modal-content">
-            <h3 style="color:var(--blue); margin-top:0;">RESPOSTA RÁPIDA</h3>
-            <input type="text" id="input-msg" placeholder="Ex: Já estou descendo!" maxlength="50">
-            <div style="display:grid; gap:10px;">
-                <button class="btn btn-a" onclick="enviarMensagemDireta()">ENVIAR AGORA</button>
-                <button class="btn" onclick="fecharModalMsg()" style="background:#222; color:#fff;">CANCELAR</button>
-            </div>
-        </div>
-    </div>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script>
-        const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-        firebase.initializeApp(config);
-        const db = firebase.database();
-        
-        let audioCtx, un = "", somOn = true, crono, loopAlerta;
-        async function entrarApp() {
-            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-            document.getElementById('bloqueio-inicio').style.display = 'none';
-            const salvo = localStorage.getItem('virty_user');
-            if(salvo) {
-                const user = JSON.parse(salvo); un = user.unidade;
-                document.getElementById('u-txt').innerText = un;
-                document.getElementById('nome-exibir').innerText = user.nome;
-                mudarTela('s-home'); 
-                iniciarMonitor();
-            }
-        }
-        // --- NOVO SOM DOORBELL REALÍSTICO ---
-        function playBell(freq, startTime, duration) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine'; 
-            osc.frequency.setValueAtTime(freq, startTime);
-            // Harmônico para dar corpo
-            const oscH = audioCtx.createOscillator();
-            oscH.frequency.setValueAtTime(freq * 2, startTime);
-            const gainH = audioCtx.createGain();
-            
-            gain.gain.setValueAtTime(0.4, startTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-            gainH.gain.setValueAtTime(0.1, startTime);
-            gainH.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-            osc.connect(gain); oscH.connect(gainH);
-            gain.connect(audioCtx.destination); gainH.connect(audioCtx.destination);
-            osc.start(startTime); osc.stop(startTime + duration);
-            oscH.start(startTime); oscH.stop(startTime + duration);
-        }
-        function startAlert() {
-            if(!audioCtx || !somOn) return;
-            const playCycle = () => {
-                const now = audioCtx.currentTime;
-                playBell(659.25, now, 1.5); // Ding (E5)
-                playBell(523.25, now + 0.5, 2.0); // Dong (C5)
-                if(navigator.vibrate) navigator.vibrate([600, 400, 600, 400]);
-            };
-            playCycle();
-            loopAlerta = setInterval(playCycle, 4000);
-        }
-        function stopAlert() { clearInterval(loopAlerta); if(navigator.vibrate) navigator.vibrate(0); }
-        function iniciarMonitor() {
-            db.ref('chamadas_ativas/' + un).on('value', s => {
-                const d = s.val();
-                if(d && d.status === 'chamando') {
-                    if(d.v_id && localStorage.getItem('blk_' + d.v_id)) {
-                        db.ref('chamadas_ativas/' + un).update({ status: 'bloqueado' });
-                        setTimeout(() => db.ref('chamadas_ativas/' + un).remove(), 100);
-                        return;
-                    }
-                    document.getElementById('img-vis').src = d.foto;
-                    mudarTela('s-call');
-                    startAlert();
-                    iniciarTimer(d.ts);
-                } else {
-                    mudarTela('s-home'); stopAlert();
-                }
-            });
-            // HISTÓRICO COM ACÚMULO REAL DE 60 MINUTOS
-            db.ref('historico/' + un).limitToLast(30).on('value', s => {
-                const cont = document.getElementById('lista-hist');
-                cont.innerHTML = "";
-                let raw = [];
-                s.forEach(c => { raw.push(c.val()); });
-                raw.reverse();
-                let agrupado = [];
-                raw.forEach(item => {
-                    let ultimo = agrupado[agrupado.length - 1];
-                    // Diferença entre a chamada ATUAL e a ÚLTIMA do mesmo ID
-                    let diffMin = ultimo ? (ultimo.ts_last - item.ts) / 1000 / 60 : 999;
-                    
-                    if(ultimo && item.v_id && ultimo.v_id === item.v_id && diffMin < 60) {
-                        ultimo.count++;
-                        ultimo.ts_last = item.ts; // Atualiza o tempo para a janela deslizar
-                        ultimo.acao = item.acao; // Sempre mostra o status da ÚLTIMA interação
-                        ultimo.hora = item.hora;
-                    } else {
-                        item.count = 1;
-                        item.ts_last = item.ts;
-                        agrupado.push(item);
-                    }
-                });
-                agrupado.slice(0, 10).forEach(h => {
-                    const isBlk = h.v_id ? localStorage.getItem('blk_' + h.v_id) : false;
-                    cont.innerHTML += `
-                        <div class="hist-card" style="border-left: 5px solid ${isBlk ? 'var(--red)' : 'var(--neon)'}">
-                            ${h.count > 1 ? `<div class="badge-count">${h.count}x</div>` : ''}
-                            <div style="display:flex; align-items:center;">
-                                <img src="${h.foto}" class="hist-img">
-                                <div>
-                                    <b style="font-size:0.8rem">VISITANTE</b><br>
-                                    <small style="color:#777">${h.hora}</small><br>
-                                    <span class="status-tag tag-${h.acao || 'expirado'}">${h.acao || 'expirado'}</span>
-                                </div>
-                            </div>
-                            <button id="btn-blk-${h.v_id}" onclick="uiToggleBlock('${h.v_id}')" 
-                                style="background:${isBlk ? 'var(--red)' : '#111'}; color:#fff; border:1px solid #333; padding:10px; border-radius:12px; font-size:0.65rem; font-weight:bold; min-width:95px;">
-                                ${isBlk ? 'DESBLOQUEAR' : 'BLOQUEAR'}
-                            </button>
-                        </div>`;
-                });
-            });
-        }
-        window.uiToggleBlock = function(vid) {
-            const k = 'blk_' + vid;
-            const btn = document.getElementById('btn-blk-' + vid);
-            if(localStorage.getItem(k)) {
-                localStorage.removeItem(k);
-                btn.style.background = "#111"; btn.innerText = "BLOQUEAR";
-            } else {
-                localStorage.setItem(k, 'true');
-                btn.style.background = "var(--red)"; btn.innerText = "DESBLOQUEAR";
-            }
-        };
-        function abrirModalMsg() { document.getElementById('modal-msg').style.display = 'flex'; }
-        function fecharModalMsg() { document.getElementById('modal-msg').style.display = 'none'; }
-        function enviarMensagemDireta() {
-            const txt = document.getElementById('input-msg').value || "O morador enviou uma mensagem.";
-            responder('mensagem', txt);
-            fecharModalMsg();
-        }
-        function responder(status, txtPersonalizado = null) {
-            db.ref('chamadas_ativas/' + un).once('value', s => {
-                const d = s.val();
-                if(d) {
-                    const agora = new Date();
-                    const horaF = agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0');
-                    
-                    db.ref('historico/' + un).push({
-                        foto: d.foto, v_id: d.v_id || 'anonimo', ts: Date.now(),
-                        hora: horaF, acao: status
-                    });
-                    let up = { status: status };
-                    if(status === 'recusado') up.msg_morador = "No momento não posso atender.";
-                    if(status === 'mensagem') up.msg_morador = txtPersonalizado;
-                    db.ref('chamadas_ativas/' + un).update(up);
-                    setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); mudarTela('s-home'); stopAlert(); }, 300);
-                }
-            });
-        }
-        function iniciarTimer(ts) {
-            clearInterval(crono);
-            crono = setInterval(() => {
-                const seg = 60 - Math.floor((Date.now() - (ts || Date.now())) / 1000);
-                document.getElementById('timer').innerText = seg + "s";
-                if(seg <= 0) responder('expirado');
-            }, 1000);
-        }
-        function toggleMute() { somOn = !somOn; document.getElementById('btn-silenciar').innerText = somOn ? "🔔 SOM ATIVO" : "🔕 MODO VIBRAR"; }
-        function limparHistorico() { if(confirm("Apagar tudo?")) db.ref('historico/' + un).remove(); }
-        function mudarTela(id) { 
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
-            document.getElementById(id).classList.add('active'); 
-        }
-    </script>
+    <div id="bloqueio-inicio" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
+        <h1 style="color:var(--neon);">VIRTY ACCESS</h1>
+        <button class="btn btn-v" onclick="entrarApp()">ENTRAR NO PAINEL</button>
+    </div>
+
+    <div id="s-home" class="screen">
+        <div class="header-main">
+            <h1 style="color:var(--neon); font-size:1.1rem;">VIRTY DOOR v1.9</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <span id="nome-exibir">---</span>
+                <span class="unidade-box">CASA <span id="u-txt">--</span></span>
+            </div>
+        </div>
+        <div id="lista-hist" style="flex:1; overflow-y:auto;"></div>
+    </div>
+
+    <div id="s-call" class="screen">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <b style="color:var(--neon)">CHAMADA AO VIVO</b>
+            <span id="timer" style="color:var(--red); font-weight:bold;">60s</span>
+        </div>
+        <img id="img-vis" src="" style="width:100%; height:320px; border-radius:25px; object-fit:cover; margin:20px 0; border:2px solid var(--neon);">
+        <button class="btn btn-v" onclick="responder('liberado')">✔️ LIBERAR PORTÃO</button>
+        <button class="btn btn-r" onclick="responder('recusado')">✖️ RECUSAR</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(config); const db = firebase.database();
+        let un = "", loopAlerta;
+
+        async function entrarApp() {
+            const salvo = localStorage.getItem('virty_user');
+            if(salvo) {
+                const user = JSON.parse(salvo); un = user.unidade;
+                document.getElementById('u-txt').innerText = un;
+                document.getElementById('nome-exibir').innerText = user.nome;
+                document.getElementById('bloqueio-inicio').style.display = 'none';
+                mudarTela('s-home'); iniciarMonitor();
+            } else alert("Aguardando validação do administrador.");
+        }
+
+        function iniciarMonitor() {
+            db.ref('chamadas_ativas/' + un).on('value', s => {
+                const d = s.val();
+                if(d && d.status === 'chamando') {
+                    document.getElementById('img-vis').src = d.foto;
+                    mudarTela('s-call');
+                    if(navigator.vibrate) navigator.vibrate([500, 200, 500]);
+                } else { mudarTela('s-home'); }
+            });
+        }
+
+        function responder(status) {
+            db.ref('chamadas_ativas/' + un).update({ status: status });
+            setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); mudarTela('s-home'); }, 300);
+        }
+
+        function mudarTela(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+    </script>
 </body>
 </html>
