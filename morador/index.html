@@ -3,156 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v12.3</title>
+    <title>VIRTY MORADOR v13.0</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #444; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
-        .header-main { border-bottom: 2px solid var(--gray); padding-bottom: 10px; margin-bottom: 15px; font-size: 0.8rem; }
-        .unidade-box { background: var(--neon); color: #000; padding: 3px 10px; border-radius: 5px; font-weight: bold; }
-        .video-wrap { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 15px auto; background: #111; }
-        video, canvas { width: 100%; height: 100%; object-fit: cover; }
-        input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; box-sizing: border-box; }
-        .btn { border: none; border-radius: 15px; padding: 18px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; text-transform: uppercase; }
-        .btn-v { background: var(--neon); color: #000; }
+        .header-main { border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* Estilo da Chamada Recebida */
-        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:1000; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
-        .foto-visitante { width: 250px; height: 250px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 20px; }
-        .btn-acao { width: 80%; padding: 20px; margin: 10px; border-radius: 40px; border: none; font-weight: bold; font-size: 1.1rem; }
+        /* HISTÓRICO AGRUPADO */
+        .hist-card { background: #0d0d0d; border-radius: 20px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; position: relative; border: 1px solid #222; }
+        .foto-container { position: relative; width: 80px; height: 80px; }
+        .foto-hist { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--neon); }
+        
+        /* BOLINHAS CONTADORAS */
+        .dot { position: absolute; width: 22px; height: 22px; border-radius: 50%; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 2px solid #000; color: #fff; }
+        .dot-green { background: var(--neon); color: #000; top: -5px; right: -5px; }
+        .dot-red { background: var(--red); bottom: -5px; right: -5px; }
+        .dot-blue { background: var(--blue); top: -5px; left: -5px; }
+        .dot-gray { background: var(--gray); bottom: -5px; left: -5px; }
+
+        .info-hist { flex: 1; font-size: 0.85rem; }
+        .btn-block { background: transparent; border: 1px solid var(--red); color: var(--red); padding: 5px 10px; border-radius: 10px; font-size: 0.7rem; margin-top: 5px; cursor: pointer; }
+
+        /* TELA DE CHAMADA ATIVA */
+        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:1000; flex-direction:column; align-items:center; justify-content:center; }
+        .btn-acao { width: 80%; padding: 20px; margin: 10px; border-radius: 40px; border: none; font-weight: bold; font-size: 1.1rem; text-transform: uppercase; }
+        
+        /* POPUP MENSAGEM */
+        #pop-msg { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; padding:20px; border-radius:20px; border:2px solid var(--blue); width:80%; z-index:1100; text-align:center; }
     </style>
 </head>
 <body>
 
-    <div id="s-cadastro" class="screen">
-        <h2 style="color:var(--neon); text-align:center;">NOVO CADASTRO</h2>
-        <div class="video-wrap">
-            <video id="video" autoplay playsinline muted></video>
-            <canvas id="canvas" style="display:none;"></canvas>
-        </div>
-        <button class="btn" style="background:#222; color:#fff;" onclick="tirarFoto()">📸 TIRAR FOTO</button>
-        <input type="text" id="cad-nome" placeholder="Nome Completo">
-        <input type="number" id="cad-unidade" placeholder="Nº da Casa">
-        <input type="text" id="cad-tel" placeholder="Telefone">
-        <button class="btn btn-v" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
-    </div>
-
-    <div id="s-aguarde" class="screen" style="justify-content:center; text-align:center;">
-        <h1 style="color:var(--neon)">AGUARDE...</h1>
-        <p>Sua solicitação está em análise pelo administrador.</p>
-        <div style="font-size: 4rem;">⏳</div>
-    </div>
-
     <div id="s-home" class="screen">
         <div class="header-main">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span>VIRTY v12.3 | <span id="clock">00:00</span></span>
-                <span class="unidade-box">CASA <span id="u-txt">--</span></span>
-            </div>
-            <p id="nome-exibir" style="margin: 5px 0 0 0; color: var(--neon);"></p>
+            <span>VIRTY v13.0</span>
+            <span style="background:var(--neon); color:#000; padding:3px 8px; border-radius:5px; font-weight:bold;">CASA <span id="u-txt">--</span></span>
         </div>
-        <div id="lista-hist" style="flex:1; overflow-y:auto; text-align:center;">
-            <p style="color:#444; margin-top:50px;">Aguardando chamadas...</p>
-        </div>
+        <div id="lista-hist"></div>
     </div>
 
     <div id="painel-chamada">
-        <h2 style="color:var(--neon)">VISITANTE NA PORTA!</h2>
-        <img id="foto-v" class="foto-visitante" src="">
-        <p id="msg-v" style="color:#aaa; font-style:italic;"></p>
-        <button class="btn-acao" style="background:var(--neon); color:#000;" onclick="responder('liberado')">ABRIR PORTÃO</button>
+        <h2 style="color:var(--neon)">VISITANTE NA PORTA</h2>
+        <img id="foto-v" style="width:250px; height:250px; border-radius:50%; border:4px solid var(--neon); object-fit:cover;">
+        <p id="msg-v" style="color:#888; font-style:italic; margin: 20px;"></p>
+        <button class="btn-acao" style="background:var(--neon);" onclick="responder('liberado')">ABRIR PORTÃO</button>
+        <button class="btn-acao" style="background:var(--blue); color:#fff;" onclick="abrirCampoMsg()">ENVIAR MENSAGEM</button>
         <button class="btn-acao" style="background:var(--red); color:#fff;" onclick="responder('recusado')">RECUSAR</button>
-        <button class="btn-acao" style="background:#222; color:#fff;" onclick="responder('fechar')">FECHAR</button>
     </div>
 
-    <audio id="toque" src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
+    <div id="pop-msg">
+        <input type="text" id="txt-msg" placeholder="Digite o recado..." style="width:100%; padding:15px; margin-bottom:10px; border-radius:10px;">
+        <button class="btn-acao" style="background:var(--blue); color:#fff; width:100%;" onclick="enviarMensagem()">ENVIAR E FECHAR</button>
+    </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script>
-        const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-        if (!firebase.apps.length) firebase.initializeApp(config);
-        const db = firebase.database();
-        
-        let video = document.getElementById('video'), canvas = document.getElementById('canvas');
-        let b64 = "", un = "";
+    <audio id="toque" loop src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
 
-        window.onload = () => {
-            setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString().substr(0,5); }, 1000);
-            const salvo = localStorage.getItem('virty_user');
-            if(!salvo) { mudarTela('s-cadastro'); ativarCamera(); } 
-            else { verificarStatus(JSON.parse(salvo)); }
-        };
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script>
+    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
+    firebase.initializeApp(config); const db = firebase.database();
+    let un = JSON.parse(localStorage.getItem('virty_user'))?.unidade;
 
-        function ativarCamera() { navigator.mediaDevices.getUserMedia({video:true}).then(s => video.srcObject = s).catch(e => alert("Câmera bloqueada")); }
-        
-        function tirarFoto() {
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video,0,0);
-            b64 = canvas.toDataURL('image/jpeg', 0.5);
-            video.style.display="none"; canvas.style.display="block";
-        }
+    window.onload = () => { 
+        if(!un) location.href = "cadastro.html"; // Redireciona se não tiver cadastro
+        document.getElementById('u-txt').innerText = un;
+        iniciarMonitoramento(); 
+        carregarHistórico();
+    };
 
-        function enviarCadastro() {
-            const nome = document.getElementById('cad-nome').value, unidade = document.getElementById('cad-unidade').value;
-            if(!nome || !unidade || !b64) return alert("Preencha todos os campos!");
-            const dados = { nome, unidade, foto: b64, telefone: document.getElementById('cad-tel').value, ts: Date.now() };
-            db.ref('solicitacoes_cadastro/' + unidade).set(dados);
-            localStorage.setItem('virty_user', JSON.stringify(dados));
-            verificarStatus(dados);
-        }
-
-        function verificarStatus(user) {
-            un = user.unidade;
-            db.ref().on('value', snap => {
-                const pendente = snap.child('solicitacoes_cadastro/' + un).exists();
-                const aprovado = snap.child('moradores_validados/' + un).exists();
-
-                if(aprovado) {
-                    document.getElementById('u-txt').innerText = un;
-                    document.getElementById('nome-exibir').innerText = user.nome;
-                    mudarTela('s-home');
-                    iniciarMonitoramento(); // ESSA É A FUNÇÃO QUE FALTAVA!
-                } else if(pendente) {
-                    mudarTela('s-aguarde');
-                } else {
-                    localStorage.removeItem('virty_user');
-                    location.reload();
-                }
-            });
-        }
-
-        // --- FUNÇÃO DE CONVERSA COM O VISITANTE ---
-        function iniciarMonitoramento() {
-            db.ref('chamadas_ativas/' + un).on('value', snap => {
-                const d = snap.val();
-                if(d && d.status === "chamando") {
-                    document.getElementById('foto-v').src = d.foto;
-                    document.getElementById('msg-v').innerText = d.texto || "Sem mensagem";
-                    document.getElementById('painel-chamada').style.display = "flex";
-                    document.getElementById('toque').play();
-                } else {
-                    document.getElementById('painel-chamada').style.display = "none";
-                    document.getElementById('toque').pause();
-                }
-            });
-        }
-
-        function responder(status) {
-            if(status === 'fechar') {
+    function iniciarMonitoramento() {
+        db.ref('chamadas_ativas/' + un).on('value', s => {
+            const d = s.val();
+            if(d && d.status === "chamando") {
+                document.getElementById('foto-v').src = d.foto;
+                document.getElementById('msg-v').innerText = d.texto || "";
+                document.getElementById('painel-chamada').style.display = "flex";
+                document.getElementById('toque').play();
+            } else {
                 document.getElementById('painel-chamada').style.display = "none";
-                return;
+                document.getElementById('toque').pause();
             }
-            db.ref('chamadas_ativas/' + un).update({ status: status });
-            // Remove a chamada após 2 segundos da resposta para limpar o painel
-            setTimeout(() => { db.ref('chamadas_ativas/' + un).remove(); }, 2000);
-        }
+        });
+    }
 
-        function mudarTela(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+    async function responder(status) {
+        const snap = await db.ref('chamadas_ativas/' + un).once('value');
+        const d = snap.val();
+        if(d) {
+            db.ref('chamadas_ativas/' + un).update({ status: status });
+            salvarNoHistorico(d.v_id, d.foto, status);
+            setTimeout(() => db.ref('chamadas_ativas/' + un).remove(), 2000);
         }
-    </script>
+    }
+
+    function abrirCampoMsg() { document.getElementById('pop-msg').style.display = "block"; }
+
+    function enviarMensagem() {
+        const m = document.getElementById('txt-msg').value;
+        db.ref('chamadas_ativas/' + un).update({ status: "mensagem", msg_morador: m });
+        responder('mensagem');
+        document.getElementById('pop-msg').style.display = "none";
+    }
+
+    function salvarNoHistorico(vid, foto, status) {
+        const hRef = db.ref('historico_agrupado/' + un + '/' + vid);
+        hRef.once('value', s => {
+            let data = s.val() || { foto: foto, v_id: vid, verde: 0, vermelho: 0, azul: 0, cinza: 0, ts: Date.now() };
+            if(status === 'liberado') data.verde++;
+            if(status === 'recusado') data.vermelho++;
+            if(status === 'mensagem') data.azul++;
+            data.ts = Date.now();
+            hRef.set(data);
+        });
+    }
+
+    function carregarHistórico() {
+        db.ref('historico_agrupado/' + un).on('value', s => {
+            const cont = document.getElementById('lista-hist'); cont.innerHTML = "";
+            s.forEach(c => {
+                const d = c.val();
+                const data = new Date(d.ts).toLocaleString();
+                cont.innerHTML += `
+                    <div class="hist-card">
+                        <div class="foto-container">
+                            <img src="${d.foto}" class="foto-hist">
+                            <div class="dot dot-green">${d.verde}</div>
+                            <div class="dot dot-red">${d.vermelho}</div>
+                            <div class="dot dot-blue">${d.azul}</div>
+                            <div class="dot dot-gray">${d.cinza}</div>
+                        </div>
+                        <div class="info-hist">
+                            <b>Visitante ${d.v_id}</b><br>
+                            <small>${data}</small><br>
+                            <button class="btn-block" onclick="bloquear('${d.v_id}')">⛔ BLOQUEAR APARELHO</button>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+    }
+
+    function bloquear(vid) {
+        if(confirm("Deseja impedir este aparelho de fazer chamadas?")) {
+            db.ref('bloqueios/' + un + '/' + vid).set(true);
+        }
+    }
+</script>
 </body>
 </html>
