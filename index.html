@@ -3,41 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v14.2</title>
+    <title>VIRTY VISITANTE v15.1</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 25px; text-align: center; box-sizing: border-box; }
         .active { display: flex; }
-        .video-box { width: 250px; height: 250px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; }
+        .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; position: relative; }
         video, canvas { width: 100%; height: 100%; object-fit: cover; }
-        input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; box-sizing: border-box; }
-        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
+        input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; box-sizing: border-box; font-size: 1rem; }
+        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; }
         .btn-green { background: var(--neon); color: black; }
-        #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0a0a0a; border:2px solid var(--neon); padding:25px; border-radius:20px; width:80%; z-index:1000; text-align:center; }
+        
+        /* ESTILO DO TIMER */
+        #timer-display { font-size: 5rem; font-weight: bold; color: var(--neon); text-shadow: 0 0 15px rgba(57, 255, 20, 0.5); margin: 20px 0; }
+        
+        #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0a0a0a; border:2px solid var(--neon); padding:25px; border-radius:20px; width:85%; z-index:1000; text-align:center; }
     </style>
 </head>
 <body>
+
     <div id="t0" class="screen active">
         <h1 style="color:var(--neon); margin-top:50px;">VIRTY ACCESS</h1>
         <button class="btn btn-green" onclick="solicitarPermissoes()">INICIAR</button>
     </div>
 
     <div id="t1" class="screen">
-        <div class="video-box"><video id="v" autoplay playsinline muted></video><canvas id="c-snap" style="display:none;"></canvas></div>
-        <button id="btn-snap" class="btn" style="background:#eee;" onclick="tirarFoto()">📸 TIRAR FOTO</button>
-        <input type="number" id="un" placeholder="Nº da Unidade">
-        <input type="text" id="msg" placeholder="Mensagem (Opcional)">
+        <div class="video-box">
+            <video id="v" autoplay playsinline muted></video>
+            <canvas id="c-snap" style="display:none;"></canvas>
+        </div>
+        <button id="btn-snap" class="btn" style="background:#fff; color:#000;" onclick="tirarFoto()">📸 TIRAR FOTO</button>
+        <input type="number" id="un" placeholder="Número da Unidade">
+        <input type="text" id="msg" placeholder="Mensagem (opcional)">
         <button id="btn-go" class="btn btn-green" onclick="chamar()" disabled>TOCAR CAMPAINHA</button>
     </div>
 
     <div id="t2" class="screen">
-        <h1 id="timer" style="font-size: 5rem; color: var(--neon); margin: 30px 0;">60</h1>
-        <p>CHAMANDO UNIDADE <b id="view-un" style="color:var(--neon)"></b></p>
+        <div id="timer-display">60</div>
+        <p style="font-size: 1.1rem; letter-spacing: 1px;">CHAMANDO UNIDADE <b id="view-un" style="color:var(--neon)"></b></p>
+        <p style="color:#555; margin-top: 20px;">Aguarde o morador liberar...</p>
     </div>
 
-    <div id="popup"><h2 id="pop-t"></h2><p id="pop-m"></p><button class="btn btn-green" onclick="location.reload()">OK</button></div>
-    <audio id="som" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
+    <div id="popup">
+        <h2 id="pop-t" style="color:var(--neon)"></h2>
+        <p id="pop-m" style="margin: 15px 0; font-size: 1.1rem;"></p>
+        <button class="btn btn-green" onclick="location.reload()">OK</button>
+    </div>
+
+    <audio id="som-call" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -57,52 +71,8 @@
 
     let b64 = "";
     const video = document.getElementById('v'), canvas = document.getElementById('c-snap');
+    let timerInterval;
 
     async function solicitarPermissoes() {
-        try { video.srcObject = await navigator.mediaDevices.getUserMedia({video: {facingMode:"user"}}); mudarTela('t1'); } 
-        catch (e) { alert("Câmera necessária."); }
-    }
-
-    function tirarFoto() {
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        b64 = canvas.toDataURL('image/jpeg', 0.5);
-        canvas.style.display="block"; video.style.display="none";
-        document.getElementById('btn-go').disabled = false;
-    }
-
-    function chamar() {
-        const unVal = document.getElementById('un').value;
-        if(!unVal) return alert("Informe a unidade.");
-
-        // VARREDURA: Consulta trava de bloqueio antes de qualquer ação
-        db.ref('bloqueios/' + unVal + '/' + v_id).once('value', snapshot => {
-            if (snapshot.exists()) {
-                alert("ACESSO NEGADO: Este dispositivo está bloqueado pelo morador.");
-                return;
-            }
-
-            db.ref('moradores_validados/' + unVal).once('value', snapUn => {
-                if (!snapUn.exists()) return alert("Unidade não habilitada.");
-
-                mudarTela('t2'); 
-                document.getElementById('som').play();
-                const ref = db.ref('chamadas_ativas/' + unVal);
-                ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value, v_id: v_id, ts: Date.now() });
-                
-                ref.on('value', s => {
-                    const d = s.val(); if(!d) return;
-                    if(d.status === "liberado") showPop("LIBERADO", "Seja bem-vindo!");
-                    if(d.status === "recusado") showPop("RECUSADO", "Tente mais tarde.");
-                    if(d.status === "mensagem") showPop("MENSAGEM", d.msg_morador);
-                });
-                ref.onDisconnect().remove();
-            });
-        });
-    }
-
-    function mudarTela(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-    function showPop(t, m) { document.getElementById('som').pause(); document.getElementById('pop-t').innerText=t; document.getElementById('pop-m').innerText=m; document.getElementById('popup').style.display="block"; }
-</script>
-</body>
-</html>
+        try { 
+            video.srcObject = await navigator.mediaDevices.getUserMedia({video: {facingMode:"user
