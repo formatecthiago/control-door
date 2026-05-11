@@ -3,53 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v15.4</title>
+    <title>VIRTY MORADOR v16.0</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
         .screen { display: none; padding: 15px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
         
-        /* TELA DE CADASTRO */
-        .cad-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; box-sizing: border-box; font-size: 1rem; }
-        .btn-acao { width: 100%; padding: 18px; border-radius: 35px; border: none; font-weight: bold; font-size: 1rem; text-transform: uppercase; cursor: pointer; }
+        /* TELA DE CADASTRO/SELFIE */
+        .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px auto; background: #111; }
+        video, canvas { width: 100%; height: 100%; object-fit: cover; }
+        input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; box-sizing: border-box; font-size: 1rem; }
 
-        /* HEADER */
+        /* HEADER E HISTÓRICO (CÓDIGO ESTÁVEL) */
         .header-main { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #222; margin-bottom: 15px; }
-        .audio-box { display: flex; gap: 8px; }
-        .btn-audio { background: #1a1a1a; border: 1px solid #333; color: var(--neon); padding: 5px 10px; border-radius: 6px; cursor: pointer; }
-
-        /* HISTÓRICO SLIM */
         .hist-card { background: #0d0d0d; border-radius: 12px; padding: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; border: 1px solid #1a1a1a; }
-        .foto-box { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
         .foto-hist { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 1px solid var(--neon); }
-        .dots-row { position: absolute; top: -8px; left: 0; width: 100%; display: flex; justify-content: center; gap: 2px; }
-        .dot { width: 14px; height: 14px; border-radius: 50%; font-size: 8px; font-weight: bold; display: flex; align-items: center; justify-content: center; color: #fff; }
+        .dot { width: 14px; height: 14px; border-radius: 50%; font-size: 8px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 1px solid #000; color: #fff; }
+        .dot-green { background: var(--neon); color: #000; }
+        .dot-red { background: var(--red); }
+        .dot-blue { background: var(--blue); }
 
         /* PAINEL CHAMADA */
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:1000; flex-direction:column; align-items:center; justify-content:center; }
         .foto-chamada { width:220px; height:220px; border-radius:50%; border:4px solid var(--neon); object-fit:cover; margin-bottom: 20px; }
+        .btn-acao { width: 85%; padding: 18px; margin: 8px; border-radius: 35px; border: none; font-weight: bold; font-size: 1rem; text-transform: uppercase; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="s-cadastro" class="screen">
-        <div class="cad-container">
-            <h1 style="color:var(--neon)">BOAS-VINDAS</h1>
-            <p style="color:#888">Configure sua unidade para começar</p>
-            <input type="number" id="cad-un" placeholder="Número da Unidade (Ex: 8)">
-            <input type="text" id="cad-nome" placeholder="Seu Nome">
-            <button class="btn-acao" style="background:var(--neon); color:#000;" onclick="salvarCadastro()">FINALIZAR CADASTRO</button>
+        <h2 style="text-align:center; color:var(--neon)">CADASTRO MORADOR</h2>
+        <div class="video-box">
+            <video id="v-cad" autoplay playsinline muted></video>
+            <canvas id="c-cad" style="display:none;"></canvas>
         </div>
+        <button class="btn-acao" style="background:#fff; color:#000;" onclick="tirarFotoCad()">📸 TIRAR SELFIE</button>
+        <input type="number" id="cad-un" placeholder="Número da Unidade">
+        <input type="text" id="cad-nome" placeholder="Seu Nome">
+        <button id="btn-salvar" class="btn-acao" style="background:var(--neon); color:#000; margin-top:20px;" onclick="salvarMorador()" disabled>FINALIZAR CADASTRO</button>
     </div>
 
     <div id="s-home" class="screen">
         <div class="header-main">
-            <div class="audio-box">
-                <button class="btn-audio" onclick="trocarSom()">🎼 <span id="idx-som">1</span></button>
-                <button class="btn-audio" onclick="trocarModo()" id="label-modo">🔊</button>
-            </div>
+            <span style="color:var(--neon); font-weight:bold;">VIRTY v16.0</span>
             <span style="background:var(--neon); color:#000; padding:4px 10px; border-radius:5px; font-weight:bold; font-size:0.8rem;">CASA <span id="u-txt">--</span></span>
         </div>
         <div id="lista-hist"></div>
@@ -58,13 +55,13 @@
     <div id="painel-chamada">
         <h2 style="color:var(--neon)">VISITANTE NA PORTA</h2>
         <img id="foto-v" class="foto-chamada" src="">
-        <p id="msg-v" style="color:#888; margin-bottom:20px;"></p>
-        <button class="btn-acao" style="background:var(--neon); margin: 5px 0;" onclick="responder('liberado')">ABRIR PORTÃO</button>
-        <button class="btn-acao" style="background:var(--blue); color:#fff; margin: 5px 0;" onclick="abrirMensagem()">MENSAGEM</button>
-        <button class="btn-acao" style="background:var(--red); color:#fff; margin: 5px 0;" onclick="responder('recusado')">RECUSAR</button>
+        <p id="msg-v" style="color:#888; font-style:italic; margin-bottom:20px;"></p>
+        <button class="btn-acao" style="background:var(--neon); color:#000;" onclick="responder('liberado')">ABRIR PORTÃO</button>
+        <button class="btn-acao" style="background:var(--blue); color:#fff;" onclick="abrirMensagem()">ENVIAR MENSAGEM</button>
+        <button class="btn-acao" style="background:var(--red); color:#fff;" onclick="responder('recusado')">RECUSAR</button>
     </div>
 
-    <audio id="player-virty" loop></audio>
+    <audio id="toque" loop src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -72,77 +69,59 @@
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
-
-    const bibliotecaSons = [
-        "https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3",
-        "https://assets.mixkit.co/active_storage/sfx/1358/1358-preview.mp3",
-        "https://assets.mixkit.co/active_storage/sfx/1353/1353-preview.mp3"
-    ];
-
-    let somIdx = parseInt(localStorage.getItem('virty_som')) || 0;
-    let modoAudio = parseInt(localStorage.getItem('virty_modo')) || 1;
+    
     let un = "";
+    let b64_cad = "";
+    const videoCad = document.getElementById('v-cad');
 
-    window.onload = () => {
-        const user = JSON.parse(localStorage.getItem('virty_user'));
-        if(!user) {
-            mudarTela('s-cadastro');
+    window.onload = async () => {
+        const userLocal = JSON.parse(localStorage.getItem('virty_user'));
+        if(!userLocal) {
+            abrirCameraCad();
         } else {
-            un = String(user.unidade).trim();
+            un = String(userLocal.unidade).trim();
             document.getElementById('u-txt').innerText = un;
             mudarTela('s-home');
-            inicializarSistema();
+            monitorarChamadas(); 
+            renderizarHome();
         }
     };
-
-    function salvarCadastro() {
-        const nUn = document.getElementById('cad-un').value;
-        const nNome = document.getElementById('cad-nome').value;
-        if(!nUn || !nNome) return alert("Preencha todos os campos!");
-
-        const dados = { unidade: nUn, nome: nNome, ts: Date.now() };
-        
-        // Salva no Firebase para o Admin ver e no LocalStorage para o Morador funcionar
-        db.ref('moradores_validados/' + nUn).set(dados).then(() => {
-            localStorage.setItem('virty_user', JSON.stringify(dados));
-            location.reload();
-        });
-    }
-
-    function inicializarSistema() {
-        document.getElementById('idx-som').innerText = somIdx + 1;
-        atualizarIconeModo();
-        monitorarChamadas();
-        renderizarHome();
-    }
 
     function mudarTela(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    // --- LÓGICA DE ÁUDIO ---
-    function trocarSom() {
-        somIdx = (somIdx + 1) % bibliotecaSons.length;
-        localStorage.setItem('virty_som', somIdx);
-        document.getElementById('idx-som').innerText = somIdx + 1;
-        const p = document.getElementById('player-virty');
-        p.src = bibliotecaSons[somIdx];
-        p.play().then(() => setTimeout(() => p.pause(), 1500));
+    // LÓGICA DE CADASTRO
+    async function abrirCameraCad() {
+        mudarTela('s-cadastro');
+        const stream = await navigator.mediaDevices.getUserMedia({video: {facingMode:"user"}});
+        videoCad.srcObject = stream;
     }
 
-    function trocarModo() {
-        modoAudio = modoAudio === 3 ? 1 : modoAudio + 1;
-        localStorage.setItem('virty_modo', modoAudio);
-        atualizarIconeModo();
+    function tirarFotoCad() {
+        const canvas = document.getElementById('c-cad');
+        canvas.width = videoCad.videoWidth; canvas.height = videoCad.videoHeight;
+        canvas.getContext('2d').drawImage(videoCad, 0, 0);
+        b64_cad = canvas.toDataURL('image/jpeg', 0.5);
+        canvas.style.display="block"; videoCad.style.display="none";
+        document.getElementById('btn-salvar').disabled = false;
     }
 
-    function atualizarIconeModo() {
-        const btn = document.getElementById('label-modo');
-        btn.innerText = modoAudio === 1 ? "🔊" : (modoAudio === 2 ? "📳🔊" : "📳");
+    function salvarMorador() {
+        const nUn = document.getElementById('cad-un').value;
+        const nNome = document.getElementById('cad-nome').value;
+        if(!nUn || !nNome) return alert("Preencha unidade e nome!");
+
+        const dados = { unidade: nUn, nome: nNome, foto: b64_cad, ts: Date.now() };
+        
+        db.ref('moradores_validados/' + nUn).set(dados).then(() => {
+            localStorage.setItem('virty_user', JSON.stringify(dados));
+            location.reload();
+        });
     }
 
-    // --- MONITORAMENTO ---
+    // LÓGICA ESTÁVEL (SUA VERSÃO v14.3)
     function monitorarChamadas() {
         db.ref('chamadas_ativas/' + un).on('value', s => {
             const d = s.val();
@@ -150,31 +129,46 @@
                 document.getElementById('foto-v').src = d.foto;
                 document.getElementById('msg-v').innerText = d.texto || "";
                 document.getElementById('painel-chamada').style.display = "flex";
-                acionarAlerta(true);
+                document.getElementById('toque').play().catch(e => {});
             } else {
                 document.getElementById('painel-chamada').style.display = "none";
-                acionarAlerta(false);
+                document.getElementById('toque').pause();
             }
         });
     }
 
-    function acionarAlerta(ligar) {
-        const p = document.getElementById('player-virty');
-        if(ligar) {
-            if(modoAudio <= 2) { p.src = bibliotecaSons[somIdx]; p.play().catch(e=>{}); }
-            if(modoAudio >= 2 && navigator.vibrate) navigator.vibrate([400,300,400]);
-        } else {
-            p.pause();
-        }
-    }
-
     async function responder(status) {
-        db.ref('chamadas_ativas/' + un).update({ status: status });
-        // Lógica de histórico v14.3 aqui...
+        const ref = db.ref('chamadas_ativas/' + un);
+        ref.update({ status: status });
+        setTimeout(() => ref.remove(), 1500);
     }
 
     function renderizarHome() {
-        // Lógica de renderização v14.3 aqui...
+        db.ref('historico_agrupado/' + un).on('value', snapH => {
+            const lista = document.getElementById('lista-hist');
+            lista.innerHTML = "";
+            snapH.forEach(item => {
+                const d = item.val();
+                const card = document.createElement('div');
+                card.className = 'hist-card';
+                card.innerHTML = `
+                    <img src="${d.foto}" class="foto-hist">
+                    <div class="info-box">
+                        <div style="font-weight:bold; font-size:0.8rem;">Visitante ${d.v_id}</div>
+                        <div style="color:#888; font-size:0.65rem;">${new Date(d.ts).toLocaleString()}</div>
+                    </div>
+                `;
+                lista.appendChild(card);
+            });
+        });
+    }
+
+    function abrirMensagem() {
+        const m = prompt("Mensagem para o visitante:");
+        if(m) {
+            db.ref('chamadas_ativas/' + un).update({ status: "mensagem", msg_morador: m });
+            responder('mensagem');
+        }
     }
 </script>
 </body>
