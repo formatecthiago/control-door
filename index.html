@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE</title>
+    <title>VIRTY VISITANTE v14.3</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
@@ -12,23 +12,22 @@
         .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; }
         video, canvas { width: 100%; height: 100%; object-fit: cover; }
         input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; font-size: 1.1rem; }
-        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
+        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; }
         .btn-green { background: var(--neon); color: black; }
         #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; border:2px solid var(--neon); padding:20px; border-radius:15px; width:85%; z-index:1000; }
+        #timer-v { font-size: 2.5rem; color: var(--neon); font-weight: bold; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- TELA 1: BOAS-VINDAS -->
     <div id="t-welcome" class="screen active">
         <h1 style="color:var(--neon); margin-top:50px;">BEM-VINDO</h1>
-        <p style="color:#888;">Sistema de Acesso Inteligente</p>
+        <p style="color:#888;">VIRTY ACCESS DOOR</p>
         <button class="btn btn-green" style="margin-top:40px;" onclick="mudarTela('t-id')">INICIAR IDENTIFICAÇÃO</button>
     </div>
 
-    <!-- TELA 2: IDENTIFICAÇÃO (SELFIE) -->
     <div id="t-id" class="screen">
-        <h2 style="color:var(--neon)">SELFIE</h2>
+        <h2 style="color:var(--neon)">IDENTIFICAÇÃO</h2>
         <div class="video-box">
             <video id="v" autoplay playsinline muted></video>
             <canvas id="c" style="display:none;"></canvas>
@@ -39,11 +38,10 @@
         <button id="btn-chamar" class="btn btn-green" onclick="chamar()" disabled>TOCAR CAMPAINHA</button>
     </div>
 
-    <!-- TELA 3: CHAMANDO -->
     <div id="t-calling" class="screen">
-        <h2 style="color:var(--neon); margin-top:100px;">CHAMANDO...</h2>
+        <div id="timer-v">60</div>
+        <h2 style="color:var(--neon)">CHAMANDO...</h2>
         <p>Aguarde a resposta do morador.</p>
-        <div style="font-size:3rem; margin-top:30px;">⌛</div>
     </div>
 
     <div id="popup">
@@ -61,10 +59,18 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    const v_id = localStorage.getItem('v_id') || 'V-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    localStorage.setItem('v_id', v_id);
+    function gerarFingerprint() {
+        const specs = [navigator.userAgent, screen.width, screen.height, screen.colorDepth, navigator.hardwareConcurrency].join('|');
+        let hash = 0;
+        for (let i = 0; i < specs.length; i++) { hash = ((hash << 5) - hash) + specs.charCodeAt(i); hash |= 0; }
+        return 'V-' + Math.abs(hash).toString(16).toUpperCase();
+    }
+    const v_id = localStorage.getItem('virty_vid') || gerarFingerprint();
+    localStorage.setItem('virty_vid', v_id);
 
     let b64 = "";
+    let tRestante = 60;
+    let tInterval;
     const video = document.getElementById('v'), canvas = document.getElementById('c');
 
     function tirarFoto() {
@@ -77,30 +83,37 @@
 
     async function chamar() {
         const un = String(document.getElementById('un').value).trim();
-        if(!un) return alert("Informe a unidade.");
+        if(!un) return alert("Informe a unidade!");
 
-        // Verifica Bloqueio
         const block = await db.ref(`bloqueios/${un}/${v_id}`).once('value');
-        if(block.exists()) return alert("Acesso negado por esta unidade.");
+        if(block.exists()) return alert("Acesso bloqueado.");
 
-        // Verifica se existe morador habilitado
         const morador = await db.ref(`moradores_validados/${un}`).once('value');
-        if(!morador.exists()) return alert("Unidade não habilitada no sistema.");
+        if(!morador.exists()) return alert("Unidade não habilitada.");
 
         mudarTela('t-calling');
         document.getElementById('som').play();
         
+        tRestante = 60;
+        document.getElementById('timer-v').innerText = tRestante;
+        tInterval = setInterval(() => {
+            tRestante--;
+            document.getElementById('timer-v').innerText = tRestante;
+            if(tRestante <= 0) clearInterval(tInterval);
+        }, 1000);
+
         const ref = db.ref(`chamadas_ativas/${un}`);
-        ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value, v_id: v_id, ts: Date.now() });
+        ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value || "", v_id: v_id, ts: Date.now() });
 
         ref.on('value', s => {
             const d = s.val();
             if(d && d.status !== "chamando") {
+                clearInterval(tInterval);
                 document.getElementById('som').pause();
                 if(d.status === "liberado") showPop("LIBERADO", "Pode entrar!");
-                if(d.status === "recusado") showPop("RECUSADO", "Tente mais tarde.");
+                if(d.status === "recusado") showPop("RECUSADO", "Morador indisponível.");
                 if(d.status === "mensagem") showPop("MENSAGEM", d.msg_morador);
-                setTimeout(() => location.reload(), 5000);
+                if(d.status === "nao_atendida") showPop("SEM RESPOSTA", "O morador não atendeu.");
             }
         });
         ref.onDisconnect().remove();
@@ -109,7 +122,7 @@
     function mudarTela(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(id === 't-id') navigator.mediaDevices.getUserMedia({video:true}).then(s => video.srcObject = s);
+        if(id === 't-id') navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}}).then(s => video.srcObject = s);
     }
 
     function showPop(t, m) {
