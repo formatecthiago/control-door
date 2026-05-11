@@ -3,74 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v14.3</title>
+    <title>VIRTY MORADOR</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
-        .screen { display: none; padding: 15px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #444; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
+        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; }
+        .btn { width: 100%; padding: 15px; border-radius: 25px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
         
-        /* HEADER E TITULOS */
-        .header-main { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #222; margin-bottom: 15px; }
-        .section-title { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; }
-        .btn-limpar { background: var(--red); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; cursor: pointer; }
-
-        /* LISTA HORIZONTAL SLIM */
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 15px; }
         .hist-card { background: #0d0d0d; border-radius: 12px; padding: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; border: 1px solid #1a1a1a; }
-        .foto-box { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
+        .foto-box { position: relative; width: 60px; height: 60px; }
         .foto-hist { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 1px solid var(--neon); }
-        
-        /* BOLINHAS NA FOTO */
         .dots-row { position: absolute; top: -8px; left: 0; width: 100%; display: flex; justify-content: center; gap: 2px; }
-        .dot { width: 14px; height: 14px; border-radius: 50%; font-size: 8px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 1px solid #000; color: #fff; }
-        .dot-green { background: var(--neon); color: #000; }
-        .dot-red { background: var(--red); }
-        .dot-blue { background: var(--blue); }
-        .dot-gray { background: var(--gray); }
-
-        .info-box { flex: 1; min-width: 0; }
-        .info-row-top { font-size: 0.8rem; font-weight: bold; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .info-row-mid { font-size: 0.65rem; color: #888; margin: 2px 0; }
-        .status-badge { font-weight: bold; text-transform: uppercase; font-size: 0.7rem; }
-
-        /* BOTÃO BLOQUEIO ALTERNÁVEL */
-        .btn-toggle { padding: 8px; border-radius: 6px; font-size: 0.6rem; cursor: pointer; font-weight: bold; border: 1px solid transparent; min-width: 95px; text-transform: uppercase; transition: 0.3s; }
-        .state-blocked { border-color: var(--neon); color: var(--neon); background: transparent; }
-        .state-unblocked { border-color: var(--red); color: var(--red); background: transparent; }
-
-        /* PAINEL CHAMADA */
-        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:1000; flex-direction:column; align-items:center; justify-content:center; }
-        .foto-chamada { width:220px; height:220px; border-radius:50%; border:4px solid var(--neon); object-fit:cover; margin-bottom: 20px; }
-        .btn-acao { width: 85%; padding: 18px; margin: 8px; border-radius: 35px; border: none; font-weight: bold; font-size: 1rem; text-transform: uppercase; }
+        .dot { width: 14px; height: 14px; border-radius: 50%; font-size: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; }
+        
+        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
+        .foto-v { width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
     </style>
 </head>
 <body>
 
-    <div id="s-home" class="screen active">
-        <div class="header-main">
-            <span style="color:var(--neon); font-weight:bold;">VIRTY v14.3</span>
-            <span style="background:var(--neon); color:#000; padding:4px 10px; border-radius:5px; font-weight:bold; font-size:0.8rem;">CASA <span id="u-txt">--</span></span>
+    <!-- TELA 1: CADASTRO -->
+    <div id="s-cadastro" class="screen">
+        <h2 style="color:var(--neon)">CADASTRO MORADOR</h2>
+        <div id="cam-box" style="width:150px; height:150px; border-radius:50%; overflow:hidden; border:2px solid #fff; margin:0 auto 20px;">
+            <video id="v-cad" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover;"></video>
         </div>
-
-        <div class="section-title">
-            <b style="font-size: 0.9rem; color:#aaa;">REGISTRO DE CHAMADAS</b>
-            <button class="btn-limpar" onclick="limparLocal()">Limpar</button>
-        </div>
-
-        <div id="lista-hist">
-            <p style="text-align:center; color:#444; margin-top:50px;">Sincronizando banco de dados...</p>
-        </div>
+        <button class="btn" style="background:#fff" onclick="fotoCad()">CAPTURAR FOTO</button>
+        <input type="text" id="c-nome" placeholder="Nome Completo">
+        <input type="number" id="c-cpf" placeholder="CPF">
+        <input type="number" id="c-tel" placeholder="Telefone">
+        <input type="number" id="c-un" placeholder="Número da Casa">
+        <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">ENVIAR SOLICITAÇÃO</button>
     </div>
 
+    <!-- TELA 2: AGUARDANDO -->
+    <div id="s-wait" class="screen">
+        <h2 style="color:var(--neon); margin-top:100px;">SOLICITAÇÃO ENVIADA</h2>
+        <p style="color:#888;">Aguardando aprovação do administrador...</p>
+    </div>
+
+    <!-- TELA 3: HOME -->
+    <div id="s-home" class="screen">
+        <div class="header">
+            <b style="color:var(--neon)">VIRTY ACCESS DOOR v1</b>
+            <span id="txt-un" style="background:var(--neon); color:#000; padding:2px 8px; border-radius:4px; font-weight:bold;"></span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.8rem; color:#666;">LISTA DE CHAMADAS</span>
+            <button onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.7rem; font-weight:bold;">LIMPAR</button>
+        </div>
+        <div id="lista-hist" style="margin-top:15px;"></div>
+    </div>
+
+    <!-- PAINEL DE CHAMADA RECEBIDA -->
     <div id="painel-chamada">
         <h2 style="color:var(--neon)">VISITANTE NA PORTA</h2>
-        <img id="foto-v" class="foto-chamada" src="">
-        <p id="msg-v" style="color:#888; font-style:italic; margin-bottom:20px;"></p>
-        <button class="btn-acao" style="background:var(--neon); color:#000;" onclick="responder('liberado')">ABRIR PORTÃO</button>
-        <button class="btn-acao" style="background:var(--blue); color:#fff;" onclick="abrirMensagem()">ENVIAR MENSAGEM</button>
-        <button class="btn-acao" style="background:var(--red); color:#fff;" onclick="responder('recusado')">RECUSAR</button>
+        <img id="foto-v" class="foto-v">
+        <p id="msg-v" style="font-style:italic; color:#aaa; margin:15px 0;"></p>
+        <button class="btn" style="background:var(--neon); color:#000" onclick="responder('liberado')">ABRIR PORTÃO</button>
+        <button class="btn" style="background:var(--blue); color:#fff" onclick="abrirMsg()">ENVIAR MENSAGEM</button>
+        <button class="btn" style="background:var(--red); color:#fff" onclick="responder('recusado')">RECUSAR</button>
     </div>
 
+    <canvas id="c-cad" style="display:none;"></canvas>
     <audio id="toque" loop src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -79,122 +77,142 @@
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
-    
-    // GARANTIA DE TIPAGEM: Sempre tratar unidade como String
-    const userLocal = JSON.parse(localStorage.getItem('virty_user'));
-    const un = userLocal ? String(userLocal.unidade).trim() : null;
 
-    window.onload = () => { 
-        if(!un) return alert("Erro: Unidade não configurada.");
-        document.getElementById('u-txt').innerText = un;
-        monitorarChamadas(); 
-        renderizarHome();
+    let my_un = localStorage.getItem('my_un');
+    let my_foto = "";
+
+    window.onload = () => {
+        if(!my_un) mudarTela('s-cadastro');
+        else verificarStatus();
     };
 
-    function monitorarChamadas() {
-        db.ref('chamadas_ativas/' + un).on('value', s => {
+    function verificarStatus() {
+        // Verifica se já foi aprovado
+        db.ref('moradores_validados/' + my_un).on('value', s => {
+            if(s.exists()) {
+                mudarTela('s-home');
+                document.getElementById('txt-un').innerText = "CASA " + my_un;
+                escutarChamadas();
+                renderizarHist();
+            } else {
+                // Se não está validado, verifica se está pendente
+                db.ref('solicitacoes_cadastro/' + my_un).once('value', sp => {
+                    if(sp.exists()) mudarTela('s-wait');
+                    else mudarTela('s-cadastro');
+                });
+            }
+        });
+    }
+
+    function escutarChamadas() {
+        db.ref('chamadas_ativas/' + my_un).on('value', s => {
             const d = s.val();
-            if(d && d.status === "chamando") {
+            if(d && d.status === 'chamando') {
                 document.getElementById('foto-v').src = d.foto;
                 document.getElementById('msg-v').innerText = d.texto || "";
-                document.getElementById('painel-chamada').style.display = "flex";
-                document.getElementById('toque').play().catch(e => {});
+                document.getElementById('painel-chamada').style.display = 'flex';
+                document.getElementById('toque').play().catch(()=>{});
             } else {
-                document.getElementById('painel-chamada').style.display = "none";
+                document.getElementById('painel-chamada').style.display = 'none';
                 document.getElementById('toque').pause();
             }
         });
     }
 
-    async function responder(status) {
-        const ref = db.ref('chamadas_ativas/' + un);
+    async function responder(st) {
+        const ref = db.ref('chamadas_ativas/' + my_un);
         const snap = await ref.once('value');
         const d = snap.val();
         if(d) {
-            ref.update({ status: status });
-            atualizarHistorico(d.v_id, d.foto, status);
-            setTimeout(() => ref.remove(), 1500);
+            ref.update({ status: st });
+            gravarHist(d.v_id, d.foto, st);
+            setTimeout(() => ref.remove(), 1000);
         }
     }
 
-    function atualizarHistorico(vid, foto, status) {
-        const hRef = db.ref('historico_agrupado/' + un + '/' + vid);
-        hRef.once('value', s => {
-            let d = s.val() || { foto, v_id: vid, verde:0, vermelho:0, azul:0, cinza:0 };
-            if(status==='liberado') d.verde++;
-            if(status==='recusado') d.vermelho++;
-            if(status==='mensagem') d.azul++;
-            d.ultima = status; d.ts = Date.now(); d.foto = foto;
-            hRef.set(d);
+    function gravarHist(vid, foto, st) {
+        const ref = db.ref(`historico/${my_un}/${vid}`);
+        ref.once('value', s => {
+            let d = s.val() || { foto: foto, v_id: vid, verde:0, vermelho:0, azul:0, cinza:0 };
+            if(st==='liberado') d.verde++;
+            if(st==='recusado') d.vermelho++;
+            if(st==='mensagem') d.azul++;
+            d.ultima = st; d.ts = Date.now();
+            ref.set(d);
         });
     }
 
-    function renderizarHome() {
-        const lista = document.getElementById('lista-hist');
-        const cleanTS = localStorage.getItem('virty_clean_ts') || 0;
-
-        // Monitoramento duplo: Histórico + Bloqueios
-        db.ref('historico_agrupado/' + un).on('value', snapH => {
-            db.ref('bloqueios/' + un).on('value', snapB => {
+    function renderizarHist() {
+        db.ref(`historico/${my_un}`).on('value', snap => {
+            db.ref(`bloqueios/${my_un}`).on('value', snapB => {
+                const list = document.getElementById('lista-hist'); list.innerHTML = "";
                 const blocks = snapB.val() || {};
-                lista.innerHTML = "";
-                let count = 0;
-
-                snapH.forEach(item => {
+                snap.forEach(item => {
                     const d = item.val();
-                    if(d.ts < cleanTS) return;
-                    count++;
-
                     const isBlocked = blocks[d.v_id] === true;
-                    const cor = d.ultima==='liberado'?'var(--neon)':(d.ultima==='recusado'?'var(--red)':'var(--blue)');
-                    
-                    const card = document.createElement('div');
-                    card.className = 'hist-card';
-                    card.innerHTML = `
-                        <div class="foto-box">
-                            <div class="dots-row">
-                                <div class="dot dot-green">${d.verde||0}</div>
-                                <div class="dot dot-red">${d.vermelho||0}</div>
-                                <div class="dot dot-blue">${d.azul||0}</div>
-                                <div class="dot dot-gray">${d.cinza||0}</div>
+                    list.innerHTML += `
+                        <div class="hist-card">
+                            <div class="foto-box">
+                                <div class="dots-row">
+                                    <div class="dot" style="background:var(--neon); color:#000">${d.verde}</div>
+                                    <div class="dot" style="background:var(--red)">${d.vermelho}</div>
+                                    <div class="dot" style="background:var(--blue)">${d.azul}</div>
+                                    <div class="dot" style="background:#666">${d.cinza}</div>
+                                </div>
+                                <img src="${d.foto}" class="foto-hist">
                             </div>
-                            <img src="${d.foto}" class="foto-hist">
+                            <div style="flex:1">
+                                <b style="font-size:0.8rem">Visitante ${d.v_id}</b><br>
+                                <small style="color:#666">${new Date(d.ts).toLocaleString()}</small><br>
+                                <small style="color:var(--neon)">ÚLTIMA: ${d.ultima.toUpperCase()}</small>
+                            </div>
+                            <button onclick="toggleBlock('${d.v_id}', ${isBlocked})" style="background:none; border:1px solid ${isBlocked? 'var(--neon)':'var(--red)'}; color:${isBlocked?'var(--neon)':'var(--red)'}; font-size:0.6rem; padding:5px; border-radius:4px;">
+                                ${isBlocked ? 'DESBLOQUEAR' : 'BLOQUEAR'}
+                            </button>
                         </div>
-                        <div class="info-box">
-                            <div class="info-row-top">Visitante ${d.v_id}</div>
-                            <div class="info-row-mid">${new Date(d.ts).toLocaleString('pt-BR')}</div>
-                            <div class="status-badge" style="color:${cor}">ÚLTIMA: ${d.ultima||'CHAMADA'}</div>
-                        </div>
-                        <button class="btn-toggle ${isBlocked ? 'state-blocked' : 'state-unblocked'}" 
-                                onclick="toggleBlock('${d.v_id}', ${isBlocked})">
-                            ${isBlocked ? 'DESBLOQUEAR' : 'BLOQUEAR'}
-                        </button>
                     `;
-                    lista.appendChild(card);
                 });
-                if(count === 0) lista.innerHTML = "<p style='color:#333; text-align:center; margin-top:40px;'>Nenhum registro visual.</p>";
             });
         });
     }
 
-    function toggleBlock(vid, currentlyBlocked) {
-        const path = `bloqueios/${un}/${vid}`;
-        if(confirm(currentlyBlocked ? "Liberar este visitante?" : "Bloquear este visitante?")) {
-            currentlyBlocked ? db.ref(path).remove() : db.ref(path).set(true);
-        }
+    function toggleBlock(vid, current) {
+        const ref = db.ref(`bloqueios/${my_un}/${vid}`);
+        current ? ref.remove() : ref.set(true);
     }
 
-    function limparLocal() {
-        if(confirm("Deseja ocultar os registros atuais?")) {
-            localStorage.setItem('virty_clean_ts', Date.now());
-            renderizarHome();
-        }
+    function mudarTela(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id === 's-cadastro') navigator.mediaDevices.getUserMedia({video:true}).then(s => document.getElementById('v-cad').srcObject = s);
     }
 
-    function abrirMensagem() {
-        const m = prompt("Mensagem para o visitante:");
+    function fotoCad() {
+        const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        my_foto = c.toDataURL('image/jpeg', 0.5);
+        alert("Foto capturada!");
+    }
+
+    function enviarCadastro() {
+        const un = document.getElementById('c-un').value;
+        if(!my_foto || !un) return alert("Foto e Unidade obrigatórios.");
+        my_un = un; localStorage.setItem('my_un', un);
+        db.ref('solicitacoes_cadastro/' + un).set({
+            nome: document.getElementById('c-nome').value,
+            cpf: document.getElementById('c-cpf').value,
+            telefone: document.getElementById('c-tel').value,
+            unidade: un,
+            foto: my_foto,
+            ts: Date.now()
+        }).then(() => verificarStatus());
+    }
+
+    function abrirMsg() {
+        const m = prompt("Sua mensagem:");
         if(m) {
-            db.ref('chamadas_ativas/' + un).update({ status: "mensagem", msg_morador: m });
+            db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: m });
             responder('mensagem');
         }
     }
