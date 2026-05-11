@@ -3,27 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v14.1</title>
+    <title>VIRTY VISITANTE</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .screen { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; padding: 20px; text-align: center; box-sizing: border-box; }
         .active { display: flex; }
-        
-        .video-box { width: 250px; height: 250px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; }
+        .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; }
         video, canvas { width: 100%; height: 100%; object-fit: cover; }
-        
         input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; font-size: 1.1rem; }
-        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; }
+        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
         .btn-green { background: var(--neon); color: black; }
-        
-        #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; border:2px solid var(--neon); padding:20px; border-radius:15px; width:80%; z-index:1000; }
+        #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; border:2px solid var(--neon); padding:20px; border-radius:15px; width:85%; z-index:1000; }
     </style>
 </head>
 <body>
 
-    <div id="t1" class="screen active">
-        <h2 style="color:var(--neon)">IDENTIFICAÇÃO</h2>
+    <!-- TELA 1: BOAS-VINDAS -->
+    <div id="t-welcome" class="screen active">
+        <h1 style="color:var(--neon); margin-top:50px;">BEM-VINDO</h1>
+        <p style="color:#888;">Sistema de Acesso Inteligente</p>
+        <button class="btn btn-green" style="margin-top:40px;" onclick="mudarTela('t-id')">INICIAR IDENTIFICAÇÃO</button>
+    </div>
+
+    <!-- TELA 2: IDENTIFICAÇÃO (SELFIE) -->
+    <div id="t-id" class="screen">
+        <h2 style="color:var(--neon)">SELFIE</h2>
         <div class="video-box">
             <video id="v" autoplay playsinline muted></video>
             <canvas id="c" style="display:none;"></canvas>
@@ -34,10 +39,11 @@
         <button id="btn-chamar" class="btn btn-green" onclick="chamar()" disabled>TOCAR CAMPAINHA</button>
     </div>
 
-    <div id="t2" class="screen">
+    <!-- TELA 3: CHAMANDO -->
+    <div id="t-calling" class="screen">
         <h2 style="color:var(--neon); margin-top:100px;">CHAMANDO...</h2>
-        <p>Aguarde a resposta do morador na Unidade <b id="view-un"></b></p>
-        <div style="margin-top:30px;" class="loader">⌛</div>
+        <p>Aguarde a resposta do morador.</p>
+        <div style="font-size:3rem; margin-top:30px;">⌛</div>
     </div>
 
     <div id="popup">
@@ -55,75 +61,55 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    // Fingerprint para gerar o v_id estável
-    function gerarFingerprint() {
-        const specs = [navigator.userAgent, screen.width, screen.height].join('|');
-        let hash = 0;
-        for (let i = 0; i < specs.length; i++) { hash = ((hash << 5) - hash) + specs.charCodeAt(i); hash |= 0; }
-        return 'V-' + Math.abs(hash).toString(16).toUpperCase();
-    }
-    const v_id = localStorage.getItem('virty_vid') || gerarFingerprint();
-    localStorage.setItem('virty_vid', v_id);
+    const v_id = localStorage.getItem('v_id') || 'V-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    localStorage.setItem('v_id', v_id);
 
     let b64 = "";
     const video = document.getElementById('v'), canvas = document.getElementById('c');
-
-    // Iniciar câmera automaticamente
-    navigator.mediaDevices.getUserMedia({video: {facingMode:"user"}})
-        .then(s => video.srcObject = s);
 
     function tirarFoto() {
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
         b64 = canvas.toDataURL('image/jpeg', 0.5);
-        canvas.style.display="block"; video.style.display="none";
+        video.style.display = "none"; canvas.style.display = "block";
         document.getElementById('btn-chamar').disabled = false;
     }
 
-    function chamar() {
-        const unVal = String(document.getElementById('un').value).trim();
-        if(!unVal) return alert("Digite a unidade!");
+    async function chamar() {
+        const un = String(document.getElementById('un').value).trim();
+        if(!un) return alert("Informe a unidade.");
 
-        // Verifica bloqueios antes de chamar
-        db.ref('bloqueios/' + unVal + '/' + v_id).once('value', snapB => {
-            if(snapB.exists()) return alert("Acesso bloqueado por esta unidade.");
+        // Verifica Bloqueio
+        const block = await db.ref(`bloqueios/${un}/${v_id}`).once('value');
+        if(block.exists()) return alert("Acesso negado por esta unidade.");
 
-            // Verifica se o morador existe
-            db.ref('moradores_validados/' + unVal).once('value', snapM => {
-                if(!snapM.exists()) return alert("Unidade não habilitada.");
+        // Verifica se existe morador habilitado
+        const morador = await db.ref(`moradores_validados/${un}`).once('value');
+        if(!morador.exists()) return alert("Unidade não habilitada no sistema.");
 
-                document.getElementById('view-un').innerText = unVal;
-                mudarTela('t2');
-                document.getElementById('som').play();
+        mudarTela('t-calling');
+        document.getElementById('som').play();
+        
+        const ref = db.ref(`chamadas_ativas/${un}`);
+        ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value, v_id: v_id, ts: Date.now() });
 
-                const ref = db.ref('chamadas_ativas/' + unVal);
-                ref.set({
-                    status: "chamando",
-                    foto: b64,
-                    texto: document.getElementById('msg').value || "",
-                    v_id: v_id,
-                    ts: Date.now()
-                });
-
-                // Monitora resposta do Morador
-                ref.on('value', s => {
-                    const d = s.val();
-                    if(!d) return;
-                    if(d.status !== "chamando") {
-                        document.getElementById('som').pause();
-                        if(d.status === "liberado") showPop("LIBERADO", "Pode entrar!");
-                        if(d.status === "recusado") showPop("RECUSADO", "Morador indisponível.");
-                        if(d.status === "mensagem") showPop("MENSAGEM", d.msg_morador);
-                    }
-                });
-                ref.onDisconnect().remove();
-            });
+        ref.on('value', s => {
+            const d = s.val();
+            if(d && d.status !== "chamando") {
+                document.getElementById('som').pause();
+                if(d.status === "liberado") showPop("LIBERADO", "Pode entrar!");
+                if(d.status === "recusado") showPop("RECUSADO", "Tente mais tarde.");
+                if(d.status === "mensagem") showPop("MENSAGEM", d.msg_morador);
+                setTimeout(() => location.reload(), 5000);
+            }
         });
+        ref.onDisconnect().remove();
     }
 
     function mudarTela(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
+        if(id === 't-id') navigator.mediaDevices.getUserMedia({video:true}).then(s => video.srcObject = s);
     }
 
     function showPop(t, m) {
