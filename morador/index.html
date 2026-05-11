@@ -3,69 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v13.1</title>
+    <title>VIRTY MORADOR v14.0</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #444; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
-        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
+        .screen { display: none; padding: 15px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
-        .header-main { border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* HISTÓRICO AGRUPADO */
-        #lista-hist { flex: 1; overflow-y: auto; }
-        .hist-card { background: #0d0d0d; border-radius: 20px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; position: relative; border: 1px solid #222; }
-        .foto-container { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
-        .foto-hist { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--neon); }
+        /* HEADER */
+        .header-main { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #222; margin-bottom: 15px; }
+        .section-title { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; }
+        .btn-limpar { background: var(--red); color: #fff; border: none; padding: 5px 12px; border-radius: 5px; font-size: 0.7rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+
+        /* REGISTRO HORIZONTAL */
+        .hist-card { background: #0d0d0d; border-radius: 12px; padding: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; border: 1px solid #1a1a1a; }
         
-        /* BOLINHAS CONTADORAS */
-        .dot { position: absolute; width: 22px; height: 22px; border-radius: 50%; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 2px solid #000; color: #fff; z-index: 10; }
-        .dot-green { background: var(--neon); color: #000; top: -5px; right: -5px; }
-        .dot-red { background: var(--red); bottom: -5px; right: -5px; }
-        .dot-blue { background: var(--blue); top: -5px; left: -5px; }
-        .dot-gray { background: var(--gray); bottom: -5px; left: -5px; }
+        .foto-box { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
+        .foto-hist { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 1px solid var(--neon); }
+        
+        /* BOLINHAS HORIZONTAIS SOBRE A FOTO */
+        .dots-row { position: absolute; top: -8px; left: 0; width: 100%; display: flex; justify-content: center; gap: 2px; }
+        .dot { width: 14px; height: 14px; border-radius: 50%; font-size: 8px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 1px solid #000; color: #fff; }
+        .dot-green { background: var(--neon); color: #000; }
+        .dot-red { background: var(--red); }
+        .dot-blue { background: var(--blue); }
+        .dot-gray { background: var(--gray); }
 
-        .info-hist { flex: 1; font-size: 0.85rem; }
-        .btn-block { background: transparent; border: 1px solid var(--red); color: var(--red); padding: 5px 10px; border-radius: 10px; font-size: 0.7rem; margin-top: 8px; cursor: pointer; text-transform: uppercase; }
+        .info-box { flex: 1; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+        .info-row-top { font-size: 0.75rem; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .info-row-mid { font-size: 0.65rem; color: #888; margin: 2px 0; }
+        .status-badge { font-weight: bold; text-transform: uppercase; font-size: 0.7rem; }
 
-        /* PAINEL CHAMADA ATIVA */
+        .btn-block-min { background: transparent; border: 1px solid var(--red); color: var(--red); padding: 6px; border-radius: 6px; font-size: 0.6rem; cursor: pointer; font-weight: bold; }
+
+        /* PAINEL CHAMADA */
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:1000; flex-direction:column; align-items:center; justify-content:center; }
-        .foto-chamada { width:250px; height:250px; border-radius:50%; border:4px solid var(--neon); object-fit:cover; margin-bottom: 20px; }
-        .btn-acao { width: 85%; padding: 20px; margin: 10px; border-radius: 40px; border: none; font-weight: bold; font-size: 1.1rem; text-transform: uppercase; cursor: pointer; }
-        
-        /* POPUP MENSAGEM */
-        #pop-msg { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; padding:20px; border-radius:20px; border:2px solid var(--blue); width:85%; z-index:1100; text-align:center; box-sizing: border-box; }
-        #txt-msg { width:100%; padding:15px; margin-bottom:15px; border-radius:10px; border:1px solid var(--blue); background:#000; color:#fff; text-align:center; box-sizing: border-box; }
-
-        /* TELA DE CADASTRO (CASO NÃO TENHA) */
-        #s-cadastro { justify-content: center; align-items: center; }
+        .foto-chamada { width:220px; height:220px; border-radius:50%; border:4px solid var(--neon); object-fit:cover; margin-bottom: 15px; }
+        .btn-acao { width: 80%; padding: 18px; margin: 8px; border-radius: 30px; border: none; font-weight: bold; font-size: 1rem; text-transform: uppercase; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="s-home" class="screen active">
         <div class="header-main">
-            <span style="color:var(--neon); font-weight:bold;">VIRTY v13.1</span>
-            <span style="background:var(--neon); color:#000; padding:3px 10px; border-radius:5px; font-weight:bold;">CASA <span id="u-txt">--</span></span>
+            <span style="color:var(--neon); font-weight:bold;">VIRTY v14.0</span>
+            <span style="background:var(--neon); color:#000; padding:3px 8px; border-radius:5px; font-weight:bold; font-size:0.8rem;">CASA <span id="u-txt">--</span></span>
         </div>
-        <div id="lista-hist">
-            <p style="text-align:center; color:#666; margin-top:50px;">Carregando histórico...</p>
+
+        <div class="section-title">
+            <b style="font-size: 0.9rem; color:#aaa;">REGISTRO DE CHAMADAS</b>
+            <button class="btn-limpar" onclick="limparHistoricoLocal()">Limpar</button>
         </div>
+
+        <div id="lista-hist"></div>
     </div>
 
     <div id="painel-chamada">
-        <h2 style="color:var(--neon); letter-spacing: 2px;">VISITANTE NA PORTA</h2>
+        <h2 style="color:var(--neon)">VISITANTE NA PORTA</h2>
         <img id="foto-v" class="foto-chamada" src="">
-        <p id="msg-v" style="color:#aaa; font-style:italic; min-height: 20px;"></p>
+        <p id="msg-v" style="color:#888; font-style:italic;"></p>
         <button class="btn-acao" style="background:var(--neon); color:#000;" onclick="responder('liberado')">ABRIR PORTÃO</button>
-        <button class="btn-acao" style="background:var(--blue); color:#fff;" onclick="abrirCampoMsg()">ENVIAR MENSAGEM</button>
+        <button class="btn-acao" style="background:var(--blue); color:#fff;" onclick="abrirMsg()">ENVIAR MENSAGEM</button>
         <button class="btn-acao" style="background:var(--red); color:#fff;" onclick="responder('recusado')">RECUSAR</button>
-    </div>
-
-    <div id="pop-msg">
-        <h3 style="color:var(--blue); margin-top:0;">ENVIAR RECADO</h3>
-        <input type="text" id="txt-msg" placeholder="Ex: Já estou descendo...">
-        <button class="btn-acao" style="background:var(--blue); color:#fff; width:100%; margin:0;" onclick="enviarMensagem()">ENVIAR E FECHAR</button>
-        <button onclick="document.getElementById('pop-msg').style.display='none'" style="background:none; border:none; color:#666; margin-top:15px; cursor:pointer;">CANCELAR</button>
     </div>
 
     <audio id="toque" loop src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
@@ -77,110 +76,110 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
     
-    // Recupera dados do morador
-    const dadosSalvos = JSON.parse(localStorage.getItem('virty_user'));
-    const un = dadosSalvos ? dadosSalvos.unidade : null;
+    const dadosS = JSON.parse(localStorage.getItem('virty_user'));
+    const un = dadosS ? dadosS.unidade : null;
 
     window.onload = () => { 
-        if(!un) {
-            alert("Erro: Cadastro não encontrado. Voltando para tela inicial.");
-            return;
-        }
+        if(!un) return alert("Erro de cadastro.");
         document.getElementById('u-txt').innerText = un;
         iniciarMonitoramento(); 
         carregarHistórico();
     };
 
-    // Monitora chamadas em tempo real
     function iniciarMonitoramento() {
         db.ref('chamadas_ativas/' + un).on('value', s => {
             const d = s.val();
             if(d && d.status === "chamando") {
                 document.getElementById('foto-v').src = d.foto;
-                document.getElementById('msg-v').innerText = d.texto || "Sem mensagem";
+                document.getElementById('msg-v').innerText = d.texto || "";
                 document.getElementById('painel-chamada').style.display = "flex";
-                document.getElementById('toque').play().catch(e => console.log("Interação necessária para som"));
+                document.getElementById('toque').play().catch(e => {});
             } else {
                 document.getElementById('painel-chamada').style.display = "none";
                 document.getElementById('toque').pause();
-                document.getElementById('toque').currentTime = 0;
             }
         });
     }
 
-    // Resposta do Morador (Liberar ou Recusar)
-    async function responder(status) {
+    async function responder(st) {
         const snap = await db.ref('chamadas_ativas/' + un).once('value');
         const d = snap.val();
         if(d) {
-            db.ref('chamadas_ativas/' + un).update({ status: status });
-            salvarNoHistorico(d.v_id, d.foto, status);
-            // Pequeno delay para o visitante receber o sinal antes de limpar
+            db.ref('chamadas_ativas/' + un).update({ status: st });
+            salvarHist(d.v_id, d.foto, st);
             setTimeout(() => db.ref('chamadas_ativas/' + un).remove(), 2000);
         }
     }
 
-    function abrirCampoMsg() { document.getElementById('pop-msg').style.display = "block"; }
-
-    function enviarMensagem() {
-        const m = document.getElementById('txt-msg').value;
-        if(!m) return alert("Digite uma mensagem!");
-        db.ref('chamadas_ativas/' + un).update({ status: "mensagem", msg_morador: m });
-        responder('mensagem');
-        document.getElementById('pop-msg').style.display = "none";
-    }
-
-    // Lógica de Contadores Coloridos
-    function salvarNoHistorico(vid, foto, status) {
-        const hRef = db.ref('historico_agrupado/' + un + '/' + vid);
-        hRef.once('value', s => {
-            let data = s.val() || { foto: foto, v_id: vid, verde: 0, vermelho: 0, azul: 0, cinza: 0, ts: Date.now() };
-            if(status === 'liberado') data.verde++;
-            if(status === 'recusado') data.vermelho++;
-            if(status === 'mensagem') data.azul++;
-            data.ts = Date.now();
-            data.foto = foto; // Atualiza a foto para a mais recente
-            hRef.set(data);
+    function salvarHist(vid, foto, st) {
+        const ref = db.ref('historico_agrupado/' + un + '/' + vid);
+        ref.once('value', s => {
+            let o = s.val() || { foto, v_id: vid, verde:0, vermelho:0, azul:0, cinza:0 };
+            if(st === 'liberado') o.verde++;
+            if(st === 'recusado') o.vermelho++;
+            if(st === 'mensagem') o.azul++;
+            o.ultima = st;
+            o.ts = Date.now(); o.foto = foto;
+            ref.set(o);
         });
     }
 
-    // Renderiza a Home (Lista de Visitantes)
     function carregarHistórico() {
         const cont = document.getElementById('lista-hist');
+        const tempoLimpeza = localStorage.getItem('virty_clean_ts') || 0;
+
         db.ref('historico_agrupado/' + un).on('value', s => {
             cont.innerHTML = "";
-            if (!s.exists()) {
-                cont.innerHTML = `<p style="text-align:center; color:#666; margin-top:50px;">Nenhuma visita registrada.</p>`;
-                return;
-            }
+            let temVisivel = false;
 
             s.forEach(c => {
                 const d = c.val();
+                if (d.ts < tempoLimpeza) return; // Filtro de limpeza local
+                
+                temVisivel = true;
+                const corStatus = d.ultima === 'liberado' ? 'var(--neon)' : (d.ultima === 'recusado' ? 'var(--red)' : 'var(--blue)');
+                
                 const card = document.createElement('div');
                 card.className = 'hist-card';
                 card.innerHTML = `
-                    <div class="foto-container">
+                    <div class="foto-box">
+                        <div class="dots-row">
+                            <div class="dot dot-green">${d.verde||0}</div>
+                            <div class="dot dot-red">${d.vermelho||0}</div>
+                            <div class="dot dot-blue">${d.azul||0}</div>
+                            <div class="dot dot-gray">${d.cinza||0}</div>
+                        </div>
                         <img src="${d.foto}" class="foto-hist">
-                        <div class="dot dot-green" title="Liberados">${d.verde || 0}</div>
-                        <div class="dot dot-red" title="Recusados">${d.vermelho || 0}</div>
-                        <div class="dot dot-blue" title="Mensagens">${d.azul || 0}</div>
-                        <div class="dot dot-gray" title="Perdidas">${d.cinza || 0}</div>
                     </div>
-                    <div class="info-hist">
-                        <b style="color:var(--neon)">Visitante ${d.v_id}</b><br>
-                        <small style="color:#888;">${new Date(d.ts).toLocaleString('pt-BR')}</small><br>
-                        <button class="btn-block" onclick="bloquear('${d.v_id}')">⛔ BLOQUEAR</button>
+                    <div class="info-box">
+                        <div class="info-row-top"><b>Visitante ${d.v_id}</b></div>
+                        <div class="info-row-mid">${new Date(d.ts).toLocaleString('pt-BR')}</div>
+                        <div class="status-badge" style="color:${corStatus}">ÚLTIMA: ${d.ultima || 'CHAMADA'}</div>
                     </div>
+                    <button class="btn-block-min" onclick="bloquear('${d.v_id}')">BLOQUEAR</button>
                 `;
                 cont.appendChild(card);
             });
+            if(!temVisivel) cont.innerHTML = "<p style='color:#444; text-align:center; margin-top:30px;'>Sem registros recentes.</p>";
         });
     }
 
+    function limparHistoricoLocal() {
+        if(confirm("Limpar visualmente o histórico?")) {
+            localStorage.setItem('virty_clean_ts', Date.now());
+            carregarHistórico();
+        }
+    }
+
     function bloquear(vid) {
-        if(confirm("Deseja impedir permanentemente este aparelho de fazer chamadas?")) {
-            db.ref('bloqueios/' + un + '/' + vid).set(true);
-            alert("Aparelho bloqueado.");
+        if(confirm("Bloquear este dispositivo?")) db.ref('bloqueios/' + un + '/' + vid).set(true);
+    }
+    
+    function abrirMsg() {
+        let m = prompt("Digite a mensagem:");
+        if(m) {
+            db.ref('chamadas_ativas/' + un).update({ status: "mensagem", msg_morador: m });
+            responder('mensagem');
         }
     }
 </script>
