@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR</title>
+    <title>VIRTY MORADOR v1.2</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #444; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
@@ -14,55 +14,49 @@
         
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 15px; }
         .hist-card { background: #0d0d0d; border-radius: 12px; padding: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; border: 1px solid #1a1a1a; }
-        .foto-box { position: relative; width: 60px; height: 60px; }
-        .foto-hist { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 1px solid var(--neon); }
-        .dots-row { position: absolute; top: -8px; left: 0; width: 100%; display: flex; justify-content: center; gap: 2px; }
-        .dot { width: 14px; height: 14px; border-radius: 50%; font-size: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; }
+        .foto-box { position: relative; width: 65px; height: 65px; }
+        .foto-hist { width: 65px; height: 65px; border-radius: 10px; object-fit: cover; border: 1px solid var(--neon); }
+        .dots-row { position: absolute; top: -10px; left: 0; width: 100%; display: flex; justify-content: center; gap: 3px; z-index: 10; }
+        .dot { width: 16px; height: 16px; border-radius: 50%; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; }
         
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
-        .foto-v { width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
+        .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- TELA 1: CADASTRO -->
     <div id="s-cadastro" class="screen">
         <h2 style="color:var(--neon)">CADASTRO MORADOR</h2>
-        <div id="cam-box" style="width:150px; height:150px; border-radius:50%; overflow:hidden; border:2px solid #fff; margin:0 auto 20px;">
-            <video id="v-cad" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover;"></video>
-        </div>
-        <button class="btn" style="background:#fff" onclick="fotoCad()">CAPTURAR FOTO</button>
+        <video id="v-cad" autoplay playsinline muted style="width:120px; height:120px; border-radius:50%; object-fit:cover; margin:0 auto 20px; border:2px solid #fff;"></video>
+        <button class="btn" style="background:#fff" onclick="fotoCad()">CAPTURAR SELFIE</button>
         <input type="text" id="c-nome" placeholder="Nome Completo">
         <input type="number" id="c-cpf" placeholder="CPF">
         <input type="number" id="c-tel" placeholder="Telefone">
         <input type="number" id="c-un" placeholder="Número da Casa">
-        <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">ENVIAR SOLICITAÇÃO</button>
+        <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
     </div>
 
-    <!-- TELA 2: AGUARDANDO -->
     <div id="s-wait" class="screen">
-        <h2 style="color:var(--neon); margin-top:100px;">SOLICITAÇÃO ENVIADA</h2>
-        <p style="color:#888;">Aguardando aprovação do administrador...</p>
+        <h2 style="color:var(--neon); margin-top:100px;">AGUARDANDO APROVAÇÃO</h2>
+        <p style="color:#888; text-align:center;">Seu cadastro foi enviado à administração. Por favor, aguarde a liberação.</p>
     </div>
 
-    <!-- TELA 3: HOME -->
     <div id="s-home" class="screen">
         <div class="header">
             <b style="color:var(--neon)">VIRTY ACCESS DOOR v1</b>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:2px 8px; border-radius:4px; font-weight:bold;"></span>
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:0.8rem; color:#666;">LISTA DE CHAMADAS</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:0.8rem; color:#666;">CHAMADAS RECEBIDAS</span>
             <button onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.7rem; font-weight:bold;">LIMPAR</button>
         </div>
-        <div id="lista-hist" style="margin-top:15px;"></div>
+        <div id="lista-hist"></div>
     </div>
 
-    <!-- PAINEL DE CHAMADA RECEBIDA -->
     <div id="painel-chamada">
         <h2 style="color:var(--neon)">VISITANTE NA PORTA</h2>
         <img id="foto-v" class="foto-v">
-        <p id="msg-v" style="font-style:italic; color:#aaa; margin:15px 0;"></p>
+        <p id="msg-v" style="font-style:italic; color:#aaa; margin-bottom:30px;"></p>
         <button class="btn" style="background:var(--neon); color:#000" onclick="responder('liberado')">ABRIR PORTÃO</button>
         <button class="btn" style="background:var(--blue); color:#fff" onclick="abrirMsg()">ENVIAR MENSAGEM</button>
         <button class="btn" style="background:var(--red); color:#fff" onclick="responder('recusado')">RECUSAR</button>
@@ -80,6 +74,7 @@
 
     let my_un = localStorage.getItem('my_un');
     let my_foto = "";
+    let timerPerdida;
 
     window.onload = () => {
         if(!my_un) mudarTela('s-cadastro');
@@ -87,7 +82,6 @@
     };
 
     function verificarStatus() {
-        // Verifica se já foi aprovado
         db.ref('moradores_validados/' + my_un).on('value', s => {
             if(s.exists()) {
                 mudarTela('s-home');
@@ -95,10 +89,8 @@
                 escutarChamadas();
                 renderizarHist();
             } else {
-                // Se não está validado, verifica se está pendente
                 db.ref('solicitacoes_cadastro/' + my_un).once('value', sp => {
-                    if(sp.exists()) mudarTela('s-wait');
-                    else mudarTela('s-cadastro');
+                    sp.exists() ? mudarTela('s-wait') : mudarTela('s-cadastro');
                 });
             }
         });
@@ -109,12 +101,20 @@
             const d = s.val();
             if(d && d.status === 'chamando') {
                 document.getElementById('foto-v').src = d.foto;
-                document.getElementById('msg-v').innerText = d.texto || "";
+                document.getElementById('msg-v').innerText = d.texto || "Sem recado";
                 document.getElementById('painel-chamada').style.display = 'flex';
                 document.getElementById('toque').play().catch(()=>{});
+
+                // Timer de 60 segundos para BOLINHA CINZA
+                clearTimeout(timerPerdida);
+                timerPerdida = setTimeout(() => {
+                    responder('cinza');
+                    db.ref('chamadas_ativas/' + my_un).update({ status: 'nao_atendida' });
+                }, 60000);
             } else {
                 document.getElementById('painel-chamada').style.display = 'none';
                 document.getElementById('toque').pause();
+                clearTimeout(timerPerdida);
             }
         });
     }
@@ -124,9 +124,9 @@
         const snap = await ref.once('value');
         const d = snap.val();
         if(d) {
-            ref.update({ status: st });
+            if(st !== 'cinza') ref.update({ status: st });
             gravarHist(d.v_id, d.foto, st);
-            setTimeout(() => ref.remove(), 1000);
+            setTimeout(() => ref.remove(), 1500);
         }
     }
 
@@ -137,6 +137,7 @@
             if(st==='liberado') d.verde++;
             if(st==='recusado') d.vermelho++;
             if(st==='mensagem') d.azul++;
+            if(st==='cinza') d.cinza++;
             d.ultima = st; d.ts = Date.now();
             ref.set(d);
         });
@@ -157,16 +158,15 @@
                                     <div class="dot" style="background:var(--neon); color:#000">${d.verde}</div>
                                     <div class="dot" style="background:var(--red)">${d.vermelho}</div>
                                     <div class="dot" style="background:var(--blue)">${d.azul}</div>
-                                    <div class="dot" style="background:#666">${d.cinza}</div>
+                                    <div class="dot" style="background:var(--gray)">${d.cinza}</div>
                                 </div>
                                 <img src="${d.foto}" class="foto-hist">
                             </div>
                             <div style="flex:1">
-                                <b style="font-size:0.8rem">Visitante ${d.v_id}</b><br>
-                                <small style="color:#666">${new Date(d.ts).toLocaleString()}</small><br>
-                                <small style="color:var(--neon)">ÚLTIMA: ${d.ultima.toUpperCase()}</small>
+                                <b style="font-size:0.75rem">ID: ${d.v_id}</b><br>
+                                <small style="color:var(--neon)">STATUS: ${d.ultima.toUpperCase()}</small>
                             </div>
-                            <button onclick="toggleBlock('${d.v_id}', ${isBlocked})" style="background:none; border:1px solid ${isBlocked? 'var(--neon)':'var(--red)'}; color:${isBlocked?'var(--neon)':'var(--red)'}; font-size:0.6rem; padding:5px; border-radius:4px;">
+                            <button onclick="toggleBlock('${d.v_id}', ${isBlocked})" style="background:none; border:1px solid ${isBlocked? 'var(--neon)':'var(--red)'}; color:${isBlocked?'var(--neon)':'var(--red)'}; font-size:0.6rem; padding:6px; border-radius:5px;">
                                 ${isBlocked ? 'DESBLOQUEAR' : 'BLOQUEAR'}
                             </button>
                         </div>
@@ -192,30 +192,30 @@
         c.width = v.videoWidth; c.height = v.videoHeight;
         c.getContext('2d').drawImage(v, 0, 0);
         my_foto = c.toDataURL('image/jpeg', 0.5);
-        alert("Foto capturada!");
+        alert("Selfie capturada!");
     }
 
     function enviarCadastro() {
         const un = document.getElementById('c-un').value;
-        if(!my_foto || !un) return alert("Foto e Unidade obrigatórios.");
+        if(!my_foto || !un) return alert("Foto e Unidade obrigatórios!");
         my_un = un; localStorage.setItem('my_un', un);
         db.ref('solicitacoes_cadastro/' + un).set({
             nome: document.getElementById('c-nome').value,
             cpf: document.getElementById('c-cpf').value,
             telefone: document.getElementById('c-tel').value,
-            unidade: un,
-            foto: my_foto,
-            ts: Date.now()
+            unidade: un, foto: my_foto, ts: Date.now()
         }).then(() => verificarStatus());
     }
 
     function abrirMsg() {
-        const m = prompt("Sua mensagem:");
+        const m = prompt("Digite sua mensagem para o visitante:");
         if(m) {
             db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: m });
             responder('mensagem');
         }
     }
+
+    function limparHist() { if(confirm("Limpar todo histórico?")) db.ref(`historico/${my_un}`).remove(); }
 </script>
 </body>
 </html>
