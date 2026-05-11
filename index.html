@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Virty Access - Visitante</title>
+    <title>VIRTY VISITANTE v14.2</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
@@ -43,9 +43,9 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
     const firebaseConfig = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-    firebase.initializeApp(firebaseConfig); const db = firebase.database();
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
     
-    // GERAÇÃO DO DNA (Fingerprint)
     function gerarFingerprint() {
         const specs = [navigator.userAgent, screen.width, screen.height, navigator.language].join('|');
         let hash = 0;
@@ -55,7 +55,7 @@
     const v_id = localStorage.getItem('virty_vid') || gerarFingerprint();
     localStorage.setItem('virty_vid', v_id);
 
-    let b64 = "", contagem;
+    let b64 = "";
     const video = document.getElementById('v'), canvas = document.getElementById('c-snap');
 
     async function solicitarPermissoes() {
@@ -73,29 +73,36 @@
 
     function chamar() {
         const unVal = document.getElementById('un').value;
-        db.ref('moradores_validados/' + unVal).once('value', snap => {
-            if (!snap.exists()) return alert("Unidade não habilitada.");
-            
-            // Verifica Bloqueio
-            db.ref('bloqueios/' + unVal + '/' + v_id).once('value', b => {
-                if(b.exists()) return alert("Acesso não autorizado para este dispositivo.");
+        if(!unVal) return alert("Informe a unidade.");
 
-                mudarTela('t2'); document.getElementById('som').play();
+        // VARREDURA: Consulta trava de bloqueio antes de qualquer ação
+        db.ref('bloqueios/' + unVal + '/' + v_id).once('value', snapshot => {
+            if (snapshot.exists()) {
+                alert("ACESSO NEGADO: Este dispositivo está bloqueado pelo morador.");
+                return;
+            }
+
+            db.ref('moradores_validados/' + unVal).once('value', snapUn => {
+                if (!snapUn.exists()) return alert("Unidade não habilitada.");
+
+                mudarTela('t2'); 
+                document.getElementById('som').play();
                 const ref = db.ref('chamadas_ativas/' + unVal);
                 ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value, v_id: v_id, ts: Date.now() });
-                ref.onDisconnect().remove();
-
+                
                 ref.on('value', s => {
                     const d = s.val(); if(!d) return;
                     if(d.status === "liberado") showPop("LIBERADO", "Seja bem-vindo!");
                     if(d.status === "recusado") showPop("RECUSADO", "Tente mais tarde.");
                     if(d.status === "mensagem") showPop("MENSAGEM", d.msg_morador);
                 });
+                ref.onDisconnect().remove();
             });
         });
     }
+
     function mudarTela(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-    function showPop(t, m) { clearInterval(contagem); document.getElementById('som').pause(); document.getElementById('pop-t').innerText=t; document.getElementById('pop-m').innerText=m; document.getElementById('popup').style.display="block"; }
+    function showPop(t, m) { document.getElementById('som').pause(); document.getElementById('pop-t').innerText=t; document.getElementById('pop-m').innerText=m; document.getElementById('popup').style.display="block"; }
 </script>
 </body>
 </html>
