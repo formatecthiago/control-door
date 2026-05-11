@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.2</title>
+    <title>VIRTY MORADOR v1.3</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
@@ -20,7 +20,12 @@
         .dot { width: 16px; height: 16px; border-radius: 50%; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; }
         
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
-        .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 20px; }
+        .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
+        
+        /* Novos Controles */
+        .controles-alerta { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+        .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 10px; border-radius: 10px; cursor: pointer; font-size: 1.2rem; min-width: 50px; }
+        #timer-regressivo { font-size: 2rem; color: var(--red); font-weight: bold; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -38,7 +43,7 @@
 
     <div id="s-wait" class="screen">
         <h2 style="color:var(--neon); margin-top:100px;">AGUARDANDO APROVAÇÃO</h2>
-        <p style="color:#888; text-align:center;">Seu cadastro foi enviado à administração. Por favor, aguarde a liberação.</p>
+        <p style="color:#888; text-align:center;">Seu cadastro foi enviado à administração.</p>
     </div>
 
     <div id="s-home" class="screen">
@@ -46,6 +51,13 @@
             <b style="color:var(--neon)">VIRTY ACCESS DOOR v1</b>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:2px 8px; border-radius:4px; font-weight:bold;"></span>
         </div>
+
+        <!-- Controles de Som e Vibração -->
+        <div class="controles-alerta">
+            <button class="btn-mini" onclick="proximoSom()" title="Mudar Toque">🎼</button>
+            <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()" title="Modo de Alerta">🔊</button>
+        </div>
+
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <span style="font-size:0.8rem; color:#666;">CHAMADAS RECEBIDAS</span>
             <button onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.7rem; font-weight:bold;">LIMPAR</button>
@@ -54,16 +66,17 @@
     </div>
 
     <div id="painel-chamada">
+        <div id="timer-regressivo">60</div>
         <h2 style="color:var(--neon)">VISITANTE NA PORTA</h2>
         <img id="foto-v" class="foto-v">
-        <p id="msg-v" style="font-style:italic; color:#aaa; margin-bottom:30px;"></p>
+        <p id="msg-v" style="font-style:italic; color:#aaa; margin: 15px 0;"></p>
         <button class="btn" style="background:var(--neon); color:#000" onclick="responder('liberado')">ABRIR PORTÃO</button>
         <button class="btn" style="background:var(--blue); color:#fff" onclick="abrirMsg()">ENVIAR MENSAGEM</button>
         <button class="btn" style="background:var(--red); color:#fff" onclick="responder('recusado')">RECUSAR</button>
     </div>
 
     <canvas id="c-cad" style="display:none;"></canvas>
-    <audio id="toque" loop src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
+    <audio id="toque" loop></audio>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -75,11 +88,62 @@
     let my_un = localStorage.getItem('my_un');
     let my_foto = "";
     let timerPerdida;
+    let tempoRestante = 60;
+
+    // Configurações de Alerta
+    const sons = [
+        "https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3",
+        "https://assets.mixkit.co/active_storage/sfx/1358/1358-preview.mp3",
+        "https://assets.mixkit.co/active_storage/sfx/1353/1353-preview.mp3",
+        "https://assets.mixkit.co/active_storage/sfx/1344/1344-preview.mp3",
+        "https://assets.mixkit.co/active_storage/sfx/1335/1335-preview.mp3",
+        "https://assets.mixkit.co/active_storage/sfx/1332/1332-preview.mp3",
+        "https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3",
+        "https://fe80.io/lab/virty/som7.mp3", 
+        "https://fe80.io/lab/virty/som8.mp3",
+        "https://fe80.io/lab/virty/som9.mp3"
+    ];
+    let somAtual = parseInt(localStorage.getItem('virty_som')) || 0;
+    let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1; // 1:Som, 2:Som+Vibra, 3:Vibra
 
     window.onload = () => {
+        atualizarInterfaceAlerta();
         if(!my_un) mudarTela('s-cadastro');
         else verificarStatus();
     };
+
+    function proximoSom() {
+        somAtual = (somAtual + 1) % sons.length;
+        localStorage.setItem('virty_som', somAtual);
+        const t = document.getElementById('toque');
+        t.src = sons[somAtual];
+        t.play(); setTimeout(() => t.pause(), 2000);
+    }
+
+    function alternarAlerta() {
+        modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1;
+        localStorage.setItem('virty_alerta', modoAlerta);
+        atualizarInterfaceAlerta();
+    }
+
+    function atualizarInterfaceAlerta() {
+        const btn = document.getElementById('btn-alerta');
+        if(modoAlerta === 1) btn.innerText = "🔊";
+        if(modoAlerta === 2) btn.innerText = "📳🔊";
+        if(modoAlerta === 3) btn.innerText = "📳";
+    }
+
+    function gerenciarAlerta(acao) {
+        const t = document.getElementById('toque');
+        t.src = sons[somAtual];
+        if(acao === 'start') {
+            if(modoAlerta === 1 || modoAlerta === 2) t.play().catch(()=>{});
+            if(modoAlerta === 2 || modoAlerta === 3) navigator.vibrate([500, 500, 500]);
+        } else {
+            t.pause();
+            navigator.vibrate(0);
+        }
+    }
 
     function verificarStatus() {
         db.ref('moradores_validados/' + my_un).on('value', s => {
@@ -103,18 +167,25 @@
                 document.getElementById('foto-v').src = d.foto;
                 document.getElementById('msg-v').innerText = d.texto || "Sem recado";
                 document.getElementById('painel-chamada').style.display = 'flex';
-                document.getElementById('toque').play().catch(()=>{});
+                gerenciarAlerta('start');
 
-                // Timer de 60 segundos para BOLINHA CINZA
-                clearTimeout(timerPerdida);
-                timerPerdida = setTimeout(() => {
-                    responder('cinza');
-                    db.ref('chamadas_ativas/' + my_un).update({ status: 'nao_atendida' });
-                }, 60000);
+                tempoRestante = 60;
+                document.getElementById('timer-regressivo').innerText = tempoRestante;
+                
+                clearInterval(timerPerdida);
+                timerPerdida = setInterval(() => {
+                    tempoRestante--;
+                    document.getElementById('timer-regressivo').innerText = tempoRestante;
+                    if(tempoRestante <= 0) {
+                        clearInterval(timerPerdida);
+                        responder('cinza');
+                        db.ref('chamadas_ativas/' + my_un).update({ status: 'nao_atendida' });
+                    }
+                }, 1000);
             } else {
                 document.getElementById('painel-chamada').style.display = 'none';
-                document.getElementById('toque').pause();
-                clearTimeout(timerPerdida);
+                gerenciarAlerta('stop');
+                clearInterval(timerPerdida);
             }
         });
     }
@@ -208,7 +279,7 @@
     }
 
     function abrirMsg() {
-        const m = prompt("Digite sua mensagem para o visitante:");
+        const m = prompt("Mensagem para o visitante:");
         if(m) {
             db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: m });
             responder('mensagem');
