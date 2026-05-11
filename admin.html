@@ -3,120 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY MASTER ADMIN v12.2</title>
+    <title>VIRTY ADMIN</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --gray: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
-        .screen { display: none; padding: 20px; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
-        .active { display: flex; }
-        .header { width: 100%; padding: 20px; border-bottom: 2px solid var(--gray); background: #050505; text-align: center; position: sticky; top: 0; z-index: 100; }
-        .card { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 20px; margin-bottom: 12px; width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 10px; }
-        .row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-        .user-info { display: flex; align-items: center; gap: 15px; }
-        .user-photo { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; }
-        .details { font-size: 0.85rem; color: #aaa; line-height: 1.4; }
-        .btn-group { display: flex; gap: 8px; margin-top: 10px; }
-        .btn { border: none; border-radius: 8px; padding: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; flex: 1; }
-        .btn-green { background: var(--neon); color: #000; }
-        .btn-edit { background: #333; color: #fff; border: 1px solid #555; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 20px; }
+        .card { background: #0d0d0d; border: 1px solid #222; border-radius: 15px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; }
+        .foto-perfil { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; }
+        .info { flex: 1; font-size: 0.85rem; }
+        .btn-box { display: flex; flex-direction: column; gap: 5px; }
+        .btn { border: none; padding: 8px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.7rem; }
+        .btn-ok { background: var(--neon); color: #000; }
         .btn-del { background: transparent; border: 1px solid var(--red); color: var(--red); }
-        h3 { color: var(--neon); width: 100%; max-width: 650px; font-size: 0.9rem; letter-spacing: 2px; margin: 25px 0 10px 0; border-left: 4px solid var(--neon); padding-left: 10px; }
-        input[type="password"] { width: 250px; padding: 15px; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; text-align: center; }
+        h2 { border-left: 4px solid var(--neon); padding-left: 10px; font-size: 1rem; color: var(--neon); }
     </style>
 </head>
 <body>
 
-    <div id="s-login" class="screen active">
-        <h1 style="color:var(--neon); letter-spacing: 3px;">VIRTY MASTER</h1>
-        <input type="password" id="pass-field" placeholder="SENHA MASTER">
-        <button class="btn btn-green" style="width:250px; margin-top:15px;" onclick="fazerLogin()">ENTRAR NO PAINEL</button>
-    </div>
+    <h1 style="text-align:center; color:var(--neon)">VIRTY MASTER</h1>
 
-    <div id="s-main" class="screen">
-        <div class="header"><h2 style="color:var(--neon); margin:0;">GERENCIAMENTO DE MORADORES</h2></div>
-        
-        <h3>SOLICITAÇÕES PENDENTES</h3>
-        <div id="lista-pendentes" style="width:100%; max-width:650px;"></div>
+    <h2>PENDENTES</h2>
+    <div id="lista-p"></div>
 
-        <h3>MORADORES HABILITADOS</h3>
-        <div id="lista-habilitados" style="width:100%; max-width:650px;"></div>
-    </div>
+    <h2 style="margin-top:30px;">HABILITADOS</h2>
+    <div id="lista-h"></div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script>
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-    const app = initializeApp(config); const db = getDatabase(app);
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    const db = firebase.database();
 
-    window.fazerLogin = () => {
-        if(document.getElementById('pass-field').value === "virty123@#") {
-            document.getElementById('s-login').classList.remove('active');
-            document.getElementById('s-main').classList.add('active');
-            iniciarEscuta();
-        } else alert("Senha incorreta");
-    };
+    db.ref('solicitacoes_cadastro').on('value', s => {
+        const cont = document.getElementById('lista-p'); cont.innerHTML = "";
+        s.forEach(c => cont.innerHTML += renderCard(c.val(), true));
+    });
 
-    function iniciarEscuta() {
-        // PENDENTES (Lendo da pasta correta: solicitacoes_cadastro)
-        onValue(ref(db, 'solicitacoes_cadastro'), (s) => {
-            const cont = document.getElementById('lista-pendentes'); cont.innerHTML = "";
-            if(!s.exists()) cont.innerHTML = "<p style='color:#444; text-align:center;'>Nenhuma solicitação no momento.</p>";
-            s.forEach((c) => cont.innerHTML += renderCard(c.key, c.val(), true));
-        });
+    db.ref('moradores_validados').on('value', s => {
+        const cont = document.getElementById('lista-h'); cont.innerHTML = "";
+        s.forEach(c => cont.innerHTML += renderCard(c.val(), false));
+    });
 
-        // HABILITADOS
-        onValue(ref(db, 'moradores_validados'), (s) => {
-            const cont = document.getElementById('lista-habilitados'); cont.innerHTML = "";
-            s.forEach((c) => cont.innerHTML += renderCard(c.key, c.val(), false));
-        });
-    }
-
-    function renderCard(id, d, isPendente) {
+    function renderCard(d, isP) {
         return `
             <div class="card">
-                <div class="row">
-                    <div class="user-info">
-                        <img src="${d.foto}" class="user-photo">
-                        <div class="details">
-                            <b style="color:#fff; font-size:1.1rem;">CASA ${d.unidade}</b><br>
-                            Nome: ${d.nome}<br>
-                            CPF: ${d.cpf || '---'}<br>
-                            Tel: ${d.telefone || '---'}
-                        </div>
-                    </div>
+                <img src="${d.foto}" class="foto-perfil">
+                <div class="info">
+                    <b style="font-size:1rem; color:var(--neon)">CASA ${d.unidade}</b><br>
+                    ${d.nome}<br>
+                    CPF: ${d.cpf}<br>
+                    Tel: ${d.telefone}
                 </div>
-                <div class="btn-group">
-                    ${isPendente ? `<button class="btn btn-green" onclick="acao('aprovar','${id}')">APROVAR</button>` : ''}
-                    <button class="btn btn-edit" onclick="acao('editar','${id}')">EDITAR</button>
-                    <button class="btn btn-del" onclick="acao('excluir','${id}')">EXCLUIR</button>
+                <div class="btn-box">
+                    ${isP ? `<button class="btn btn-ok" onclick="aprovar('${d.unidade}')">ACEITAR</button>` : ''}
+                    <button class="btn" style="background:#333; color:#fff" onclick="editar('${d.unidade}')">EDITAR</button>
+                    <button class="btn btn-del" onclick="excluir('${d.unidade}')">EXCLUIR</button>
                 </div>
             </div>
         `;
     }
 
-    window.acao = async (tipo, id) => {
-        if(tipo === 'aprovar') {
-            const snap = await get(ref(db, 'solicitacoes_cadastro/' + id));
-            if(snap.exists()){
-                await set(ref(db, 'moradores_validados/' + id), snap.val());
-                await remove(ref(db, 'solicitacoes_cadastro/' + id));
-            }
+    function aprovar(un) {
+        db.ref('solicitacoes_cadastro/' + un).once('value', s => {
+            db.ref('moradores_validados/' + un).set(s.val());
+            db.ref('solicitacoes_cadastro/' + un).remove();
+        });
+    }
+
+    function excluir(un) {
+        if(confirm("Excluir morador?")) {
+            db.ref('moradores_validados/' + un).remove();
+            db.ref('solicitacoes_cadastro/' + un).remove();
         }
-        if(tipo === 'excluir') {
-            if(confirm("Remover permanentemente? O celular do morador será resetado.")) {
-                await remove(ref(db, 'moradores_validados/' + id));
-                await remove(ref(db, 'solicitacoes_cadastro/' + id));
-            }
-        }
-        if(tipo === 'editar') {
-            const n = prompt("Novo Nome:", "");
-            const t = prompt("Novo Telefone:", "");
-            if(n || t) {
-                await update(ref(db, (isPendente ? 'solicitacoes_cadastro/' : 'moradores_validados/') + id), { nome: n, telefone: t });
-            }
-        }
-    };
+    }
+
+    function editar(un) {
+        const n = prompt("Novo Nome:");
+        if(n) db.ref('moradores_validados/' + un).update({ nome: n });
+    }
 </script>
 </body>
 </html>
