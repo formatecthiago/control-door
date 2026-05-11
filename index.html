@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v15.1</title>
+    <title>VIRTY VISITANTE v15.2</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden; }
         .screen { display: none; width: 100%; max-width: 450px; flex-direction: column; align-items: center; padding: 25px; text-align: center; box-sizing: border-box; }
         .active { display: flex; }
         .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; position: relative; }
@@ -15,17 +15,16 @@
         .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; }
         .btn-green { background: var(--neon); color: black; }
         
-        /* ESTILO DO TIMER */
-        #timer-display { font-size: 5rem; font-weight: bold; color: var(--neon); text-shadow: 0 0 15px rgba(57, 255, 20, 0.5); margin: 20px 0; }
-        
+        #timer-display { font-size: 5.5rem; font-weight: bold; color: var(--neon); margin: 20px 0; font-variant-numeric: tabular-nums; }
         #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0a0a0a; border:2px solid var(--neon); padding:25px; border-radius:20px; width:85%; z-index:1000; text-align:center; }
     </style>
 </head>
 <body>
 
     <div id="t0" class="screen active">
-        <h1 style="color:var(--neon); margin-top:50px;">VIRTY ACCESS</h1>
-        <button class="btn btn-green" onclick="solicitarPermissoes()">INICIAR</button>
+        <h1 style="color:var(--neon); margin-top:60px; letter-spacing:2px;">VIRTY ACCESS</h1>
+        <p style="color:#555; margin-bottom:30px;">Identificação de Visitante</p>
+        <button class="btn btn-green" onclick="solicitarPermissoes()">INICIAR ACESSO</button>
     </div>
 
     <div id="t1" class="screen">
@@ -41,14 +40,14 @@
 
     <div id="t2" class="screen">
         <div id="timer-display">60</div>
-        <p style="font-size: 1.1rem; letter-spacing: 1px;">CHAMANDO UNIDADE <b id="view-un" style="color:var(--neon)"></b></p>
-        <p style="color:#555; margin-top: 20px;">Aguarde o morador liberar...</p>
+        <p style="font-size: 1.1rem;">CHAMANDO UNIDADE <b id="view-un" style="color:var(--neon)"></b></p>
+        <p style="color:#444; margin-top:20px;">Aguarde o morador...</p>
     </div>
 
     <div id="popup">
         <h2 id="pop-t" style="color:var(--neon)"></h2>
         <p id="pop-m" style="margin: 15px 0; font-size: 1.1rem;"></p>
-        <button class="btn btn-green" onclick="location.reload()">OK</button>
+        <button class="btn btn-green" onclick="location.reload()">VOLTAR AO INÍCIO</button>
     </div>
 
     <audio id="som-call" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
@@ -56,10 +55,12 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
+    // Inicialização Blindada do Firebase
     const firebaseConfig = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
+    // DNA Digital
     function gerarFingerprint() {
         const specs = [navigator.userAgent, screen.width, screen.height, navigator.language].join('|');
         let hash = 0;
@@ -70,9 +71,91 @@
     localStorage.setItem('virty_vid', v_id);
 
     let b64 = "";
+    let timerInt = null;
     const video = document.getElementById('v'), canvas = document.getElementById('c-snap');
-    let timerInterval;
 
     async function solicitarPermissoes() {
         try { 
-            video.srcObject = await navigator.mediaDevices.getUserMedia({video: {facingMode:"user
+            const stream = await navigator.mediaDevices.getUserMedia({video: {facingMode:"user"}});
+            video.srcObject = stream; 
+            mudarTela('t1'); 
+        } catch (e) { alert("Erro ao acessar câmera. Verifique as permissões."); }
+    }
+
+    function tirarFoto() {
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        b64 = canvas.toDataURL('image/jpeg', 0.5);
+        canvas.style.display="block"; video.style.display="none";
+        document.getElementById('btn-go').disabled = false;
+        document.getElementById('btn-snap').innerText = "🔄 REFAZER FOTO";
+    }
+
+    function mudarTela(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById(id).classList.add('active'); 
+    }
+
+    function chamar() {
+        const unVal = String(document.getElementById('un').value).trim();
+        if(!unVal) return alert("Digite a unidade!");
+
+        // 1. Checa Bloqueio
+        db.ref('bloqueios/' + unVal + '/' + v_id).once('value', snapshot => {
+            if (snapshot.exists()) return alert("DISPOSITIVO BLOQUEADO NESTA UNIDADE.");
+
+            // 2. Checa se morador existe
+            db.ref('moradores_validados/' + unVal).once('value', snapUn => {
+                if (!snapUn.exists()) return alert("Unidade não habilitada.");
+
+                mudarTela('t2');
+                document.getElementById('view-un').innerText = unVal;
+                document.getElementById('som-call').play().catch(e => {});
+                
+                const refCall = db.ref('chamadas_ativas/' + unVal);
+                refCall.set({ 
+                    status: "chamando", 
+                    foto: b64, 
+                    texto: document.getElementById('msg').value || "Aguardando...", 
+                    v_id: v_id, 
+                    ts: Date.now() 
+                });
+
+                // 3. Inicia Timer Regressivo Limpo
+                let t = 60;
+                if(timerInt) clearInterval(timerInt);
+                timerInt = setInterval(() => {
+                    t--;
+                    document.getElementById('timer-display').innerText = t;
+                    if(t <= 0) {
+                        clearInterval(timerInt);
+                        refCall.remove();
+                        showPop("SEM RESPOSTA", "O tempo limite de 60 segundos expirou.");
+                    }
+                }, 1000);
+
+                // 4. Escuta Resposta
+                refCall.on('value', s => {
+                    const d = s.val();
+                    if(!d) return;
+                    if(d.status !== "chamando") {
+                        clearInterval(timerInt);
+                        document.getElementById('som-call').pause();
+                        if(d.status === "liberado") showPop("LIBERADO", "Seja bem-vindo!");
+                        if(d.status === "recusado") showPop("RECUSADO", "O morador não pode atender.");
+                        if(d.status === "mensagem") showPop("MENSAGEM", d.msg_morador);
+                    }
+                });
+                refCall.onDisconnect().remove();
+            });
+        });
+    }
+
+    function showPop(t, m) { 
+        document.getElementById('pop-t').innerText = t; 
+        document.getElementById('pop-m').innerText = m; 
+        document.getElementById('popup').style.display = "block"; 
+    }
+</script>
+</body>
+</html>
