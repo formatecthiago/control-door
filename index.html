@@ -2,64 +2,146 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY VISITANTE v1.5</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VIRTY VISITANTE v14.4</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-        #timer { font-size: 4rem; color: var(--red); font-weight: bold; }
-        .status { color: var(--neon); margin: 20px; font-size: 1.2rem; }
-        #tela-final { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
-        .btn-x { position: absolute; top: 20px; right: 20px; font-size: 2rem; color: var(--red); background: none; border: 2px solid var(--red); border-radius: 50%; width: 60px; height: 60px; cursor: pointer; }
-        .box { border: 2px solid var(--neon); padding: 20px; border-radius: 15px; width: 85%; background: #111; }
+        :root { --neon: #39FF14; --bg: #000; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .screen { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; padding: 20px; text-align: center; box-sizing: border-box; }
+        .active { display: flex; }
+        .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; }
+        video, canvas { width: 100%; height: 100%; object-fit: cover; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; font-size: 1.1rem; }
+        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; }
+        .btn-green { background: var(--neon); color: black; }
+        #popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; border:2px solid var(--neon); padding:20px; border-radius:15px; width:85%; z-index:1000; }
+        #timer-v { font-size: 2.5rem; color: var(--neon); font-weight: bold; margin-bottom: 20px; }
+        /* Estilo para o status de digitação */
+        #status-msg { color: var(--neon); font-style: italic; margin-top: 5px; height: 20px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
-    <div id="timer">90</div>
-    <div id="status" class="status">AGUARDANDO MORADOR...</div>
 
-    <div id="tela-final">
-        <button class="btn-x" onclick="location.href='index.html'">X</button>
-        <div class="box">
-            <h2 style="color:var(--neon)">RESPOSTA RECEBIDA</h2>
-            <p id="txt-res" style="font-size: 1.2rem;"></p>
-            <audio id="player" controls style="width:100%; display:none; margin-top:10px;"></audio>
-        </div>
+    <div id="t-welcome" class="screen active">
+        <h1 style="color:var(--neon); margin-top:50px;">BEM-VINDO</h1>
+        <p style="color:#888;">VIRTY ACCESS DOOR</p>
+        <button class="btn btn-green" style="margin-top:40px;" onclick="mudarTela('t-id')">INICIAR IDENTIFICAÇÃO</button>
     </div>
+
+    <div id="t-id" class="screen">
+        <h2 style="color:var(--neon)">IDENTIFICAÇÃO</h2>
+        <div class="video-box">
+            <video id="v" autoplay playsinline muted></video>
+            <canvas id="c" style="display:none;"></canvas>
+        </div>
+        <button id="btn-foto" class="btn" style="background:#fff;" onclick="tirarFoto()">📸 TIRAR FOTO</button>
+        <input type="number" id="un" placeholder="Número da Unidade">
+        <input type="text" id="msg" placeholder="Recado (opcional)">
+        <button id="btn-chamar" class="btn btn-green" onclick="chamar()" disabled>TOCAR CAMPAINHA</button>
+    </div>
+
+    <div id="t-calling" class="screen">
+        <div id="timer-v">90</div>
+        <h2 style="color:var(--neon)">CHAMANDO...</h2>
+        <div id="status-msg"></div> <p>Aguarde a resposta do morador.</p>
+    </div>
+
+    <div id="popup">
+        <h2 id="pop-t" style="color:var(--neon)"></h2>
+        <p id="pop-m" style="margin:20px 0;"></p>
+        <button class="btn btn-green" onclick="location.reload()">FECHAR</button>
+    </div>
+
+    <audio id="som" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
-    const config = { databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
+    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
-    const id_sessao = new URLSearchParams(window.location.search).get('un'); 
 
-    let tempo = 90;
-    const t = setInterval(() => {
-        tempo--;
-        document.getElementById('timer').innerText = tempo;
-        if(tempo <= 0) { clearInterval(t); location.href='index.html'; }
-    }, 1000);
+    function gerarFingerprint() {
+        const specs = [navigator.userAgent, screen.width, screen.height, screen.colorDepth, navigator.hardwareConcurrency].join('|');
+        let hash = 0;
+        for (let i = 0; i < specs.length; i++) { hash = ((hash << 5) - hash) + specs.charCodeAt(i); hash |= 0; }
+        return 'V-' + Math.abs(hash).toString(16).toUpperCase();
+    }
+    const v_id = localStorage.getItem('virty_vid') || gerarFingerprint();
+    localStorage.setItem('virty_vid', v_id);
 
-    db.ref('chamadas_ativas/' + id_sessao).on('value', snap => {
-        const d = snap.val();
-        if(!d) return;
-        if(d.status === 'digitando') document.getElementById('status').innerText = "MORADOR ESCREVENDO...";
-        if(d.status === 'gravando') document.getElementById('status').innerText = "MORADOR GRAVANDO ÁUDIO...";
+    let b64 = "";
+    let tRestante = 90; // Alterado para 90
+    let tInterval;
+    const video = document.getElementById('v'), canvas = document.getElementById('c');
+
+    function tirarFoto() {
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        b64 = canvas.toDataURL('image/jpeg', 0.5);
+        video.style.display = "none"; canvas.style.display = "block";
+        document.getElementById('btn-chamar').disabled = false;
+    }
+
+    async function chamar() {
+        const un = String(document.getElementById('un').value).trim();
+        if(!un) return alert("Informe a unidade!");
+        const block = await db.ref(`bloqueios/${un}/${v_id}`).once('value');
+        if(block.exists()) return alert("Acesso bloqueado.");
+        const morador = await db.ref(`moradores_validados/${un}`).once('value');
+        if(!morador.exists()) return alert("Unidade não habilitada.");
+
+        mudarTela('t-calling');
+        document.getElementById('som').play();
         
-        if(d.status === 'finalizada_com_sucesso') {
-            clearInterval(t);
-            document.getElementById('txt-res').innerText = d.mensagem_texto || "Mensagem de áudio recebida.";
-            if(d.link_audio) { 
-                const p = document.getElementById('player'); p.src = d.link_audio; p.style.display = 'block'; 
+        tRestante = 90;
+        document.getElementById('timer-v').innerText = tRestante;
+        tInterval = setInterval(() => {
+            tRestante--;
+            document.getElementById('timer-v').innerText = tRestante;
+            if(tRestante <= 0) {
+                clearInterval(tInterval);
+                db.ref(`chamadas_ativas/${un}`).update({ status: 'nao_atendida' });
             }
-            document.getElementById('tela-final').style.display = 'flex';
-            db.ref('chamadas_ativas/' + id_sessao).off();
-            firebase.database().goOffline();
-        }
-        if(d.status === 'liberado' || d.status === 'recusado') location.href='index.html';
-    });
+        }, 1000);
+
+        const ref = db.ref(`chamadas_ativas/${un}`);
+        ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value || "", v_id: v_id, ts: Date.now() });
+
+        ref.on('value', s => {
+            const d = s.val();
+            if(!d) return;
+
+            // Lógica de status de digitação
+            if(d.status === "escrevendo") {
+                document.getElementById('status-msg').innerText = "Morador a escrever...";
+            } else {
+                document.getElementById('status-msg').innerText = "";
+            }
+
+            if(d.status !== "chamando" && d.status !== "escrevendo") {
+                clearInterval(tInterval);
+                document.getElementById('som').pause();
+                if(d.status === "liberado") showPop("LIBERADO", "Pode entrar!");
+                if(d.status === "recusado") showPop("RECUSADO", "Morador indisponível.");
+                if(d.status === "mensagem") showPop("MENSAGEM", d.msg_morador);
+                if(d.status === "nao_atendida") showPop("SEM RESPOSTA", "O morador não atendeu.");
+            }
+        });
+        ref.onDisconnect().remove();
+    }
+
+    function mudarTela(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id === 't-id') navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}}).then(s => video.srcObject = s);
+    }
+
+    function showPop(t, m) {
+        document.getElementById('pop-t').innerText = t;
+        document.getElementById('pop-m').innerText = m;
+        document.getElementById('popup').style.display = "block";
+    }
 </script>
 </body>
 </html>
