@@ -3,29 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY ADMIN v1.1</title>
+    <title>VIRTY ADMIN v1.3</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 20px; }
-        .card { background: #0d0d0d; border: 1px solid #222; border-radius: 15px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; }
-        .foto-perfil { width: 85px; height: 85px; border-radius: 12px; border: 2px solid var(--neon); object-fit: cover; }
-        .info { flex: 1; font-size: 0.85rem; line-height: 1.4; }
-        .btn-box { display: flex; flex-direction: column; gap: 6px; }
-        .btn { border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; }
-        .btn-ok { background: var(--neon); color: #000; }
-        .btn-del { background: transparent; border: 1px solid var(--red); color: var(--red); }
-        h2 { border-left: 4px solid var(--neon); padding-left: 10px; font-size: 1rem; color: var(--neon); text-transform: uppercase; margin: 25px 0 15px; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --yellow: #FFD700; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
+        
+        /* Cabeçalho de Status */
+        .stats-bar { display: flex; gap: 10px; margin-bottom: 20px; position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 100; }
+        .stat-btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; text-align: center; font-size: 0.8rem; cursor: default; }
+        .btn-cad { background: var(--neon); color: #000; }
+        .btn-pend { background: var(--yellow); color: #000; }
+
+        /* Estilo das Buscas */
+        .search-group { margin-bottom: 25px; border: 1px solid #222; padding: 10px; border-radius: 10px; }
+        .search-label { font-size: 0.7rem; color: #888; margin-bottom: 5px; display: block; text-transform: uppercase; }
+        input.search-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
+        input.search-input:focus { border-color: var(--neon); outline: none; }
+
+        /* Listas e Itens */
+        .list-container { max-height: 300px; overflow-y: auto; }
+        .item-row { background: #0a0a0a; border-bottom: 1px solid #1a1a1a; padding: 12px; cursor: pointer; transition: 0.2s; }
+        .item-row:hover { background: #151515; }
+        .item-header { display: flex; justify-content: space-between; align-items: center; }
+        .item-header b { color: var(--neon); font-size: 0.9rem; }
+        .item-header span { color: #ccc; font-size: 0.85rem; }
+
+        /* Detalhes (Escondidos por padrão) */
+        .item-details { display: none; padding-top: 15px; border-top: 1px solid #222; margin-top: 10px; animation: slideDown 0.3s ease; }
+        .item-details img { width: 120px; height: 120px; border-radius: 10px; object-fit: cover; border: 2px solid var(--neon); margin-bottom: 10px; }
+        .data-grid { font-size: 0.8rem; color: #aaa; margin-bottom: 15px; }
+        
+        .actions { display: flex; gap: 10px; }
+        .btn-action { flex: 1; padding: 8px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; font-size: 0.7rem; }
+
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <h1 style="text-align:center; color:var(--neon); margin-bottom:30px;">VIRTY ADMIN PANEL</h1>
+    <div class="stats-bar">
+        <div class="stat-btn btn-cad">CADASTRADOS: <span id="count-cad">0</span></div>
+        <div class="stat-btn btn-pend">PENDENTES: <span id="count-pend">0</span></div>
+    </div>
 
-    <h2>🔔 Pendentes de Aprovação</h2>
-    <div id="lista-p"></div>
+    <!-- SEÇÃO PENDENTES -->
+    <div class="search-group">
+        <label class="search-label">🔍 Pesquisar Solicitações (Pendentes)</label>
+        <input type="text" class="search-input" id="search-p" placeholder="Nome ou Unidade..." onkeyup="filterList('list-p', this.value)">
+        <div id="list-p" class="list-container"></div>
+    </div>
 
-    <h2>✅ Moradores Habilitados</h2>
-    <div id="lista-h"></div>
+    <!-- SEÇÃO CADASTRADOS -->
+    <div class="search-group">
+        <label class="search-label">🔍 Pesquisar Moradores (Habilitados)</label>
+        <input type="text" class="search-input" id="search-c" placeholder="Nome, Unidade ou CPF..." onkeyup="filterList('list-c', this.value)">
+        <div id="list-c" class="list-container"></div>
+    </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -34,33 +67,76 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    db.ref('solicitacoes_cadastro').on('value', s => {
-        const cont = document.getElementById('lista-p'); cont.innerHTML = "";
-        s.forEach(c => cont.innerHTML += renderCard(c.val(), true));
+    // Sincronização com Firebase
+    db.ref('solicitacoes_cadastro').on('value', snap => {
+        renderList('list-p', snap, true);
+        document.getElementById('count-pend').innerText = snap.numChildren();
     });
 
-    db.ref('moradores_validados').on('value', s => {
-        const cont = document.getElementById('lista-h'); cont.innerHTML = "";
-        s.forEach(c => cont.innerHTML += renderCard(c.val(), false));
+    db.ref('moradores_validados').on('value', snap => {
+        renderList('list-c', snap, false);
+        document.getElementById('count-cad').innerText = snap.numChildren();
     });
 
-    function renderCard(d, isP) {
-        return `
-            <div class="card">
-                <img src="${d.foto}" class="foto-perfil">
-                <div class="info">
-                    <b style="font-size:1.1rem; color:var(--neon)">CASA ${d.unidade}</b><br>
-                    <b>NOME:</b> ${d.nome}<br>
-                    <b>CPF:</b> ${d.cpf}<br>
-                    <b>TEL:</b> ${d.telefone}
+    function renderList(containerId, snap, isPendente) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+        
+        snap.forEach(s => {
+            const d = s.val();
+            const id = s.key;
+            const searchStr = `${d.nome} ${d.unidade} ${d.cpf || ''}`.toLowerCase();
+
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.setAttribute('data-search', searchStr);
+            row.onclick = (e) => toggleDetails(row, e);
+
+            row.innerHTML = `
+                <div class="item-header">
+                    <b>CASA ${d.unidade}</b>
+                    <span>${d.nome}</span>
+                    <small style="color:var(--neon)">➔</small>
                 </div>
-                <div class="btn-box">
-                    ${isP ? `<button class="btn btn-ok" onclick="aprovar('${d.unidade}')">ACEITAR</button>` : ''}
-                    <button class="btn" style="background:#333; color:#fff" onclick="editar('${d.unidade}')">EDITAR</button>
-                    <button class="btn btn-del" onclick="excluir('${d.unidade}')">EXCLUIR</button>
+                <div class="item-details">
+                    <img src="${d.foto}">
+                    <div class="data-grid">
+                        <p><strong>NOME:</strong> ${d.nome}</p>
+                        <p><strong>CPF:</strong> ${d.cpf || 'Não informado'}</p>
+                        <p><strong>TEL:</strong> ${d.telefone || 'Não informado'}</p>
+                    </div>
+                    <div class="actions">
+                        ${isPendente ? 
+                            `<button class="btn-action" style="background:var(--neon)" onclick="aprovar('${id}')">APROVAR AGORA</button>` : 
+                            `<button class="btn-action" style="background:var(--red); color:#fff" onclick="remover('${id}')">EXCLUIR MORADOR</button>`
+                        }
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    function toggleDetails(row, event) {
+        // Evita abrir se clicar no botão de ação
+        if(event.target.tagName === 'BUTTON') return;
+        
+        const details = row.querySelector('.item-details');
+        const isVisible = details.style.display === 'block';
+        
+        // Fecha outros detalhes abertos no mesmo container
+        row.parentElement.querySelectorAll('.item-details').forEach(d => d.style.display = 'none');
+        
+        details.style.display = isVisible ? 'none' : 'block';
+    }
+
+    function filterList(containerId, term) {
+        const t = term.toLowerCase();
+        const rows = document.getElementById(containerId).querySelectorAll('.item-row');
+        rows.forEach(r => {
+            const text = r.getAttribute('data-search');
+            r.style.display = text.includes(t) ? 'block' : 'none';
+        });
     }
 
     function aprovar(un) {
@@ -70,16 +146,10 @@
         });
     }
 
-    function excluir(un) {
+    function remover(un) {
         if(confirm("Deseja realmente excluir este morador?")) {
             db.ref('moradores_validados/' + un).remove();
-            db.ref('solicitacoes_cadastro/' + un).remove();
         }
-    }
-
-    function editar(un) {
-        const n = prompt("Alterar nome do morador:");
-        if(n) db.ref('moradores_validados/' + un).update({ nome: n });
     }
 </script>
 </body>
