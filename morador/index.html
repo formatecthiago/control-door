@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.3</title>
+    <!-- Meta tags para transformar em APP (PWA) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>VIRTY MORADOR v1.4</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
@@ -22,10 +25,12 @@
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
         .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
         
-        /* Novos Controles */
         .controles-alerta { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
         .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 10px; border-radius: 10px; cursor: pointer; font-size: 1.2rem; min-width: 50px; }
         #timer-regressivo { font-size: 2rem; color: var(--red); font-weight: bold; margin: 10px 0; }
+        
+        /* Badge de Notificação Visual */
+        #status-conexao { font-size: 0.6rem; text-align: center; color: #444; }
     </style>
 </head>
 <body>
@@ -48,18 +53,19 @@
 
     <div id="s-home" class="screen">
         <div class="header">
-            <b style="color:var(--neon)">VIRTY ACCESS DOOR v1</b>
+            <b style="color:var(--neon)">VIRTY CORE v1.0</b>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:2px 8px; border-radius:4px; font-weight:bold;"></span>
         </div>
 
-        <!-- Controles de Som e Vibração -->
         <div class="controles-alerta">
             <button class="btn-mini" onclick="proximoSom()" title="Mudar Toque">🎼</button>
             <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()" title="Modo de Alerta">🔊</button>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <span style="font-size:0.8rem; color:#666;">CHAMADAS RECEBIDAS</span>
+        <div id="status-conexao">SISTEMA ATIVO EM SEGUNDO PLANO</div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; margin-top: 15px;">
+            <span style="font-size:0.8rem; color:#666;">HISTÓRICO</span>
             <button onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.7rem; font-weight:bold;">LIMPAR</button>
         </div>
         <div id="lista-hist"></div>
@@ -90,26 +96,42 @@
     let timerPerdida;
     let tempoRestante = 60;
 
-    // Configurações de Alerta
+    // BIBLIOTECA DE 20 SONS (DOORBELLS E CHIMES)
     const sons = [
-        "https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3",
-        "https://assets.mixkit.co/active_storage/sfx/1358/1358-preview.mp3",
-        "https://assets.mixkit.co/active_storage/sfx/1353/1353-preview.mp3",
-        "https://assets.mixkit.co/active_storage/sfx/1344/1344-preview.mp3",
-        "https://assets.mixkit.co/active_storage/sfx/1335/1335-preview.mp3",
-        "https://assets.mixkit.co/active_storage/sfx/1332/1332-preview.mp3",
-        "https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3",
-        "https://fe80.io/lab/virty/som7.mp3", 
-        "https://fe80.io/lab/virty/som8.mp3",
-        "https://fe80.io/lab/virty/som9.mp3"
+        "https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3", // Classica 1
+        "https://assets.mixkit.co/active_storage/sfx/1358/1358-preview.mp3", // Classica 2
+        "https://assets.mixkit.co/active_storage/sfx/1353/1353-preview.mp3", // Ding Dong 1
+        "https://assets.mixkit.co/active_storage/sfx/1344/1344-preview.mp3", // Digital
+        "https://assets.mixkit.co/active_storage/sfx/1335/1335-preview.mp3", // Echo
+        "https://assets.mixkit.co/active_storage/sfx/1332/1332-preview.mp3", // Simple
+        "https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3", // Long
+        "https://cdn.pixabay.com/audio/2022/03/15/audio_73d937000e.mp3", // Church Bell
+        "https://cdn.pixabay.com/audio/2021/08/04/audio_c36399478e.mp3", // Modern 1
+        "https://cdn.pixabay.com/audio/2022/03/10/audio_511d33b5c4.mp3", // Modern 2
+        "https://www.soundjay.com/buttons/sounds/button-37a.mp3", // Soft
+        "https://www.soundjay.com/buttons/sounds/button-09a.mp3", // Sharp
+        "https://www.soundjay.com/door/sounds/doorbell-1.mp3", // Tradicional
+        "https://www.soundjay.com/door/sounds/doorbell-7.mp3", // Office
+        "https://www.soundjay.com/misc/sounds/bell-ring-01.mp3", // Ring
+        "https://cdn.pixabay.com/audio/2024/02/08/audio_2491a9f1f0.mp3", // High Tech
+        "https://cdn.pixabay.com/audio/2022/01/18/audio_d0c6ff1bdd.mp3", // Chime 1
+        "https://cdn.pixabay.com/audio/2021/11/25/audio_9671d18804.mp3", // Chime 2
+        "https://cdn.pixabay.com/audio/2022/03/15/audio_26966699a7.mp3", // Chime 3
+        "https://cdn.pixabay.com/audio/2022/03/15/audio_34685768e1.mp3"  // Melodic
     ];
+    
     let somAtual = parseInt(localStorage.getItem('virty_som')) || 0;
-    let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1; // 1:Som, 2:Som+Vibra, 3:Vibra
+    let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1; 
 
     window.onload = () => {
         atualizarInterfaceAlerta();
         if(!my_un) mudarTela('s-cadastro');
         else verificarStatus();
+        
+        // Pedir permissão de notificação para o futuro PWA
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
     };
 
     function proximoSom() {
@@ -117,7 +139,7 @@
         localStorage.setItem('virty_som', somAtual);
         const t = document.getElementById('toque');
         t.src = sons[somAtual];
-        t.play(); setTimeout(() => t.pause(), 2000);
+        t.play(); setTimeout(() => t.pause(), 3000);
     }
 
     function alternarAlerta() {
@@ -138,10 +160,16 @@
         t.src = sons[somAtual];
         if(acao === 'start') {
             if(modoAlerta === 1 || modoAlerta === 2) t.play().catch(()=>{});
-            if(modoAlerta === 2 || modoAlerta === 3) navigator.vibrate([500, 500, 500]);
+            if(modoAlerta === 2 || modoAlerta === 3) {
+                if ("vibrate" in navigator) navigator.vibrate([500, 300, 500, 300, 500]);
+            }
+            // Notificação se a tela estiver oculta
+            if (document.hidden && Notification.permission === "granted") {
+                new Notification("VIRTY: Visitante na porta!", { body: "Abra para atender.", icon: "https://cdn-icons-png.flaticon.com/512/252/252025.png" });
+            }
         } else {
             t.pause();
-            navigator.vibrate(0);
+            if ("vibrate" in navigator) navigator.vibrate(0);
         }
     }
 
@@ -263,7 +291,7 @@
         c.width = v.videoWidth; c.height = v.videoHeight;
         c.getContext('2d').drawImage(v, 0, 0);
         my_foto = c.toDataURL('image/jpeg', 0.5);
-        alert("Selfie capturada!");
+        alert("Foto salva!");
     }
 
     function enviarCadastro() {
@@ -279,14 +307,14 @@
     }
 
     function abrirMsg() {
-        const m = prompt("Mensagem para o visitante:");
+        const m = prompt("Sua mensagem:");
         if(m) {
             db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: m });
             responder('mensagem');
         }
     }
 
-    function limparHist() { if(confirm("Limpar todo histórico?")) db.ref(`historico/${my_un}`).remove(); }
+    function limparHist() { if(confirm("Limpar histórico?")) db.ref(`historico/${my_un}`).remove(); }
 </script>
 </body>
 </html>
