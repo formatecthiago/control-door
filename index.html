@@ -6,104 +6,60 @@
     <title>VIRTY VISITANTE v1.5</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; margin: 0; overflow: hidden; }
-        
-        #timer { font-size: 3rem; color: var(--red); font-weight: bold; margin-top: 20px; }
-        .status-msg { color: var(--neon); font-style: italic; margin: 20px; height: 30px; }
-        
-        /* Pontos Animados */
-        .dots:after { content: '.'; animation: dots 1.5s steps(5, end) infinite; }
-        @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60% { content: '...'; } 80%, 100% { content: ''; } }
-
-        /* Overlay de Resposta Final */
-        #tela-resposta { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .btn-fechar { 
-            position: absolute; top: 20px; right: 20px; width: 50px; height: 50px; 
-            border-radius: 50%; border: 2px solid var(--red); color: var(--red); 
-            font-size: 25px; background: none; font-weight: bold; cursor: pointer;
-        }
-        .msg-box { border: 1px solid var(--neon); padding: 20px; border-radius: 15px; width: 80%; margin-bottom: 20px; background: #111; }
-        audio { width: 100%; margin-top: 15px; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        #timer { font-size: 4rem; color: var(--red); font-weight: bold; }
+        .status { color: var(--neon); margin: 20px; font-size: 1.2rem; }
+        #tela-final { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
+        .btn-x { position: absolute; top: 20px; right: 20px; font-size: 2rem; color: var(--red); background: none; border: 2px solid var(--red); border-radius: 50%; width: 60px; height: 60px; cursor: pointer; }
+        .box { border: 2px solid var(--neon); padding: 20px; border-radius: 15px; width: 85%; background: #111; }
     </style>
 </head>
 <body>
-
     <div id="timer">90</div>
-    <div id="status" class="status-msg">AGUARDANDO MORADOR<span class="dots"></span></div>
+    <div id="status" class="status">AGUARDANDO MORADOR...</div>
 
-    <!-- TELA MORTA (APÓS RECEBER RESPOSTA) -->
-    <div id="tela-resposta">
-        <button class="btn-fechar" onclick="encerrar()">X</button>
-        <h2 style="color:var(--neon)">MENSAGEM RECEBIDA</h2>
-        <div class="msg-box">
-            <p id="texto-recebido" style="display:none;"></p>
-            <div id="audio-box" style="display:none;">
-                <p style="font-size: 0.8rem;">Toque para ouvir o áudio:</p>
-                <audio id="player" controls></audio>
-            </div>
+    <div id="tela-final">
+        <button class="btn-x" onclick="location.href='index.html'">X</button>
+        <div class="box">
+            <h2 style="color:var(--neon)">RESPOSTA RECEBIDA</h2>
+            <p id="txt-res" style="font-size: 1.2rem;"></p>
+            <audio id="player" controls style="width:100%; display:none; margin-top:10px;"></audio>
         </div>
-        <p style="font-size: 0.7rem; color: #555;">Conexão encerrada para sua segurança.</p>
     </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
     const config = { databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-    firebase.initializeApp(config);
+    if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
+    const id_sessao = new URLSearchParams(window.location.search).get('un'); 
 
-    const id_chamada = "ID_DA_SESSAO_AQUI"; // Gerado ao iniciar a chamada
     let tempo = 90;
-    
-    // Timer de 90 Segundos
-    const tInterval = setInterval(() => {
+    const t = setInterval(() => {
         tempo--;
         document.getElementById('timer').innerText = tempo;
-        if(tempo <= 0) {
-            clearInterval(tInterval);
-            encerrar();
-        }
+        if(tempo <= 0) { clearInterval(t); location.href='index.html'; }
     }, 1000);
 
-    // Escutando o Morador
-    db.ref('chamadas_ativas/' + id_chamada).on('value', async snap => {
+    db.ref('chamadas_ativas/' + id_sessao).on('value', snap => {
         const d = snap.val();
         if(!d) return;
-
-        // Feedback de Digitando/Gravando
         if(d.status === 'digitando') document.getElementById('status').innerText = "MORADOR ESCREVENDO...";
         if(d.status === 'gravando') document.getElementById('status').innerText = "MORADOR GRAVANDO ÁUDIO...";
-
-        // RECEBIMENTO FINAL (A Lógica da Tela Morta)
+        
         if(d.status === 'finalizada_com_sucesso') {
-            clearInterval(tInterval); // Para o timer
-            
-            // 1. Prepara a Interface
-            if(d.mensagem_texto) {
-                document.getElementById('texto-recebido').innerText = d.mensagem_texto;
-                document.getElementById('texto-recebido').style.display = 'block';
+            clearInterval(t);
+            document.getElementById('txt-res').innerText = d.mensagem_texto || "Mensagem de áudio recebida.";
+            if(d.link_audio) { 
+                const p = document.getElementById('player'); p.src = d.link_audio; p.style.display = 'block'; 
             }
-            if(d.link_audio) {
-                const player = document.getElementById('player');
-                player.src = d.link_audio;
-                document.getElementById('audio-box').style.display = 'block';
-            }
-
-            // 2. DESCONEXÃO TOTAL (TELA MORTA)
-            db.ref('chamadas_ativas/' + id_chamada).off(); // Mata o ouvinte
-            firebase.database().goOffline(); // Derruba a conexão do app
-            
-            // 3. Exibe a tela final
-            document.getElementById('tela-resposta').style.display = 'flex';
+            document.getElementById('tela-final').style.display = 'flex';
+            db.ref('chamadas_ativas/' + id_sessao).off();
+            firebase.database().goOffline();
         }
+        if(d.status === 'liberado' || d.status === 'recusado') location.href='index.html';
     });
-
-    function encerrar() {
-        window.location.href = "home_visitante.html";
-    }
 </script>
 </body>
 </html>
