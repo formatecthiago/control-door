@@ -3,310 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0</title>
+    <title>VIRTY MORADOR v2.1</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; overflow-x: hidden; }
-        
-        /* HEADER HOME LUXO */
-        .header { padding: 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; background: #050505; }
-        .perfil-area { display: flex; align-items: center; gap: 15px; }
-        .foto-perfil { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; }
-        .status-dots { display: flex; gap: 4px; margin-top: 5px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #333; }
-        .dot.active { background: var(--neon); box-shadow: 0 0 8px var(--neon); }
-
-        /* CONTROLES DE SOM */
-        .sound-bar { display: flex; justify-content: space-around; padding: 15px; background: #0a0a0a; border-bottom: 1px solid #222; }
-        .s-btn { background: none; border: 1px solid #444; color: #fff; padding: 8px 12px; border-radius: 10px; font-size: 0.8rem; cursor: pointer; transition: 0.3s; }
-        .s-btn.active { border-color: var(--neon); color: var(--neon); background: rgba(57, 255, 20, 0.1); }
-
-        .screen { display: none; padding: 20px; min-height: 80vh; flex-direction: column; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; --yellow: #FFD700; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
+        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
-
-        /* HISTÓRICO ORIGINAL */
-        .hist-card { background: var(--gray); border-radius: 15px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border-left: 4px solid var(--neon); position: relative; }
-        .hist-foto { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; }
-        .hist-info b { font-size: 1rem; color: var(--neon); }
-        .hist-info p { margin: 2px 0; font-size: 0.8rem; color: #aaa; }
-        .hist-time { position: absolute; right: 15px; top: 15px; font-size: 0.7rem; color: #666; }
-
-        /* PAINEL DE CHAMADA (FULLSCREEN) */
-        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:9999; flex-direction:column; align-items:center; justify-content:center; }
-        .foto-v-grande { width: 250px; height: 250px; border-radius: 50%; border: 5px solid var(--neon); object-fit: cover; box-shadow: 0 0 30px rgba(57, 255, 20, 0.3); }
-
-        /* MICROFONE ESTILO WHATSAPP CLICK ÚNICO */
-        .mic-container { position: relative; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; }
-        .btn-mic { background: var(--neon); color: #000; border-radius: 50%; width: 65px; height: 65px; font-size: 2rem; border: none; z-index: 10; cursor: pointer; }
-        .btn-mic.recording { background: var(--red) !important; color: #fff; animation: blink 1s infinite; }
-        .progress-ring { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
-        .progress-ring__circle { stroke: var(--neon); stroke-dasharray: 251.2; stroke-dashoffset: 251.2; transition: stroke-dashoffset 0.1s linear; }
-
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-        .btn-action { width: 100%; padding: 18px; border-radius: 35px; border: none; font-weight: bold; font-size: 1rem; margin: 8px 0; cursor: pointer; text-transform: uppercase; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; }
+        .btn { width: 100%; padding: 15px; border-radius: 25px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
         
-        #modal-msg { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.98); z-index:10000; flex-direction:column; align-items:center; justify-content:center; }
+        /* HEADER ORIGINAL */
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 15px; }
+        
+        /* HISTÓRICO ORIGINAL COM DOTS */
+        .hist-card { background: #0d0d0d; border-radius: 12px; padding: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; border: 1px solid #1a1a1a; }
+        .foto-box { position: relative; width: 65px; height: 65px; }
+        .foto-hist { width: 65px; height: 65px; border-radius: 10px; object-fit: cover; border: 1px solid var(--neon); }
+        .dots-row { position: absolute; top: -10px; left: 0; width: 100%; display: flex; justify-content: center; gap: 3px; z-index: 10; }
+        .dot { width: 16px; height: 16px; border-radius: 50%; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; }
+        
+        /* PAINEL CHAMADA */
+        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
+        .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
+        
+        .controles-alerta { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+        .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 10px; border-radius: 10px; cursor: pointer; font-size: 1.2rem; min-width: 50px; }
+        #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin: 10px 0; }
+
+        /* MIC PROGRESSO (NOVO PADRÃO DE CLIQUE) */
+        .mic-wrap { position: relative; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; }
+        .btn-mic { background: var(--yellow); color: #000; border-radius: 50%; width: 65px; height: 65px; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; z-index: 5; }
+        .recording { background: var(--red) !important; color: #fff; }
+        .progress-ring { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+        .progress-ring__circle { stroke: var(--yellow); stroke-dasharray: 251.2; stroke-dashoffset: 251.2; transition: stroke-dashoffset 0.1s linear; }
     </style>
 </head>
 <body>
 
-    <div id="main-header" style="display:none;">
-        <div class="header">
-            <div class="perfil-area">
-                <img src="" id="minha-foto" class="foto-perfil">
-                <div>
-                    <b id="txt-nome" style="font-size:1.1rem;">MORADOR</b><br>
-                    <span id="txt-un" style="color:var(--neon); font-size:0.9rem;">UNIDADE --</span>
-                    <div class="status-dots">
-                        <div class="dot active"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div>
-                    </div>
-                </div>
-            </div>
-            <button class="s-btn" style="border-color:var(--red); color:var(--red)" onclick="bloquear()">BLOQUEAR</button>
-        </div>
-        <div class="sound-bar">
-            <button class="s-btn active" id="btn-som" onclick="setSom('campainha')">🔔 SOM</button>
-            <button class="s-btn" id="btn-vibrar" onclick="setSom('vibrar')">📳 VIBRAR</button>
-            <button class="s-btn" id="btn-silencio" onclick="setSom('silencio')">🔇 SILÊNCIO</button>
-        </div>
+    <div id="s-cadastro" class="screen">
+        <h2 style="color:var(--neon)">CADASTRO MORADOR</h2>
+        <video id="v-cad" autoplay playsinline muted style="width:120px; height:120px; border-radius:50%; object-fit:cover; margin:0 auto 20px; border:2px solid #fff;"></video>
+        <button class="btn" style="background:#fff" onclick="fotoCad()">CAPTURAR SELFIE</button>
+        <input type="text" id="c-nome" placeholder="Nome Completo">
+        <input type="number" id="c-un" placeholder="Número da Casa">
+        <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
     </div>
 
-    <div id="s-cadastro" class="screen active">
-        <h1 style="color:var(--neon); text-align:center;">VIRTY SETUP</h1>
-        <video id="v-cad" autoplay playsinline muted style="width:180px; height:180px; border-radius:50%; object-fit:cover; margin:20px auto; border:3px solid var(--neon);"></video>
-        <button class="btn-action" style="background:#fff;" onclick="fotoCad()">📸 TIRAR FOTO PERFIL</button>
-        <input type="text" id="c-nome" placeholder="Seu Nome" style="padding:15px; background:#111; color:#fff; border:1px solid #333; border-radius:12px; margin:10px 0;">
-        <input type="number" id="c-un" placeholder="Número da Unidade" style="padding:15px; background:#111; color:#fff; border:1px solid #333; border-radius:12px; margin:10px 0;">
-        <button class="btn-action" style="background:var(--neon); color:#000;" onclick="finalizarCadastro()">SALVAR E ATIVAR</button>
+    <div id="s-wait" class="screen">
+        <h2 style="color:var(--neon); margin-top:100px; text-align:center;">AGUARDANDO APROVAÇÃO</h2>
+        <p style="color:#888; text-align:center;">Seu cadastro foi enviado à administração.</p>
     </div>
 
     <div id="s-home" class="screen">
-        <h3 style="margin-bottom:20px; color:#555;">ÚLTIMAS CHAMADAS</h3>
-        <div id="lista-hist">
-            <p style="text-align:center; color:#333; margin-top:50px;">Histórico vazio</p>
+        <div class="header">
+            <b style="color:var(--neon)">VIRTY ACCESS DOOR v2.1</b>
+            <span id="txt-un" style="background:var(--neon); color:#000; padding:2px 8px; border-radius:4px; font-weight:bold;"></span>
         </div>
+        <div class="controles-alerta">
+            <button class="btn-mini" onclick="proximoSom()">🎼</button>
+            <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()">🔊</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:0.8rem; color:#666;">CHAMADAS RECEBIDAS</span>
+            <button onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.7rem; font-weight:bold;">LIMPAR</button>
+        </div>
+        <div id="lista-hist"></div>
     </div>
 
     <div id="painel-chamada">
-        <div id="timer-box" style="font-size:3rem; color:var(--red); font-weight:bold; margin-bottom:20px;">90</div>
-        <img id="foto-v" class="foto-v-grande">
-        <h2 id="txt-visitante" style="margin:20px 0 5px;">VISITANTE</h2>
-        <p id="msg-v" style="color:#888; font-style:italic; margin-bottom:30px;"></p>
-
-        <div id="etapa-ouvir" style="display:none; width:85%;">
-            <button class="btn-action" style="background:var(--blue); color:#fff;" onclick="ouvir()">▶️ OUVIR MENSAGEM DE VOZ</button>
-        </div>
-
-        <div id="etapa-decisao" style="width:85%; display:flex; flex-direction:column; align-items:center;">
-            <button class="btn-action" style="background:var(--neon); color:#000;" onclick="decidir('liberado')">ABRIR PORTÃO</button>
-            <div style="display:flex; width:100%; gap:15px; align-items:center;">
-                <button class="btn-action" style="background:var(--blue); color:#fff; flex:1;" onclick="modalMsg(true)">MENSAGEM</button>
-                <div class="mic-container">
+        <div id="timer-regressivo">90</div>
+        <h2 style="color:var(--neon)">VISITANTE NA PORTA</h2>
+        <img id="foto-v" class="foto-v">
+        <p id="msg-v" style="font-style:italic; color:#aaa; margin: 15px 0;"></p>
+        
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 0 20px; box-sizing: border-box;">
+            <button class="btn" style="background:var(--neon); color:#000" onclick="responder('liberado')">ABRIR PORTÃO</button>
+            
+            <div style="display: flex; width: 100%; align-items: center; justify-content: center; gap: 10px;">
+                <button class="btn" style="background:var(--blue); color:#fff; flex: 1;" onclick="abrirMsg()">MENSAGEM</button>
+                <div class="mic-wrap">
                     <svg class="progress-ring" width="80" height="80"><circle class="progress-ring__circle" stroke-width="6" fill="transparent" r="35" cx="40" cy="40"/></svg>
-                    <button id="btn-mic" class="btn-mic" onclick="toggleMic()">🎤</button>
+                    <button id="btn-mic" class="btn-mic" onclick="toggleRecM()">🎤</button>
                 </div>
             </div>
-            <button class="btn-action" style="background:var(--red); color:#fff;" onclick="decidir('recusado')">RECUSAR</button>
+            
+            <button class="btn" style="background:var(--red); color:#fff" onclick="responder('recusado')">RECUSAR</button>
         </div>
     </div>
 
-    <div id="modal-msg">
-        <div style="width:85%; text-align:center;">
-            <h2 style="color:var(--neon)">RESPOSTA RÁPIDA</h2>
-            <input type="text" id="text-input" placeholder="Digite sua mensagem..." style="width:100%; padding:18px; border-radius:15px; border:none; background:#111; color:#fff; font-size:1.2rem; margin:20px 0;">
-            <button class="btn-action" style="background:var(--neon); color:#000" onclick="enviarTexto()">ENVIAR AGORA</button>
-            <button class="btn-action" style="background:none; color:var(--red)" onclick="modalMsg(false)">CANCELAR</button>
-        </div>
-    </div>
-
-    <audio id="toque" loop src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"></audio>
+    <canvas id="c-cad" style="display:none;"></canvas>
+    <audio id="toque" loop></audio>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-    firebase.initializeApp(config); const db = firebase.database();
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    const db = firebase.database();
+    
+    let my_un = localStorage.getItem('my_un');
+    let my_foto = "";
+    let timerInt, tempoRestante = 90;
+    let rec, chunks = [], isRec = false, micInt, micTime = 0;
 
-    let user = { 
-        un: localStorage.getItem('virty_un'), 
-        nome: localStorage.getItem('virty_nome'), 
-        foto: localStorage.getItem('virty_foto') 
-    };
-
-    let rec, chunks=[], isRecording=false, micInt, micTime=0, tCheck=90, tInt, audioVisitante="";
+    const sons = [
+        "https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3",
+        "https://assets.mixkit.co/active_storage/sfx/1358/1358-preview.mp3",
+        "https://assets.mixkit.co/active_storage/sfx/1353/1353-preview.mp3",
+        "https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"
+    ];
+    let somAtual = parseInt(localStorage.getItem('virty_som')) || 0;
+    let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
 
     window.onload = () => {
-        if(user.un) {
-            setupHome();
-            escutarChamadas();
-        } else {
-            mudarTela('s-cadastro');
-            navigator.mediaDevices.getUserMedia({video:true}).then(s=>document.getElementById('v-cad').srcObject=s);
-        }
+        atualizarInterfaceAlerta();
+        if(!my_un) mudarTela('s-cadastro');
+        else verificarStatus();
     };
 
-    function setupHome() {
-        document.getElementById('s-cadastro').style.display='none';
-        document.getElementById('main-header').style.display='block';
-        document.getElementById('s-home').classList.add('active');
-        document.getElementById('txt-nome').innerText = user.nome;
-        document.getElementById('txt-un').innerText = "UNIDADE " + user.un;
-        document.getElementById('minha-foto').src = user.foto;
-    }
-
-    function escutarChamadas() {
-        db.ref('chamadas_ativas/'+user.un).on('value', s => {
-            const d = s.val();
-            if(d && (d.status==='chamando' || d.status==='escrevendo' || d.status==='gravando' || d.status==='ouvindo')) {
-                abrirChamada(d);
+    function verificarStatus() {
+        db.ref('moradores_validados/' + my_un).on('value', s => {
+            if(s.exists()) {
+                mudarTela('s-home');
+                document.getElementById('txt-un').innerText = "CASA " + my_un;
+                escutarChamadas();
+                renderizarHist();
             } else {
-                fecharChamada();
+                db.ref('solicitacoes_cadastro/' + my_un).once('value', sp => {
+                    sp.exists() ? mudarTela('s-wait') : mudarTela('s-cadastro');
+                });
             }
         });
     }
 
-    function abrirChamada(d) {
-        document.getElementById('painel-chamada').style.display='flex';
-        document.getElementById('foto-v').src = d.foto;
-        document.getElementById('msg-v').innerText = d.texto || "Aguardando sua ação...";
-        audioVisitante = d.audio_v;
-
-        if(d.status==='chamando') {
-            document.getElementById('toque').play().catch(()=>{});
-            startTimer();
-        }
-
-        if(audioVisitante && d.status==='chamando') {
-            document.getElementById('etapa-ouvir').style.display='block';
-            document.getElementById('etapa-decisao').style.display='none';
-        } else {
-            document.getElementById('etapa-ouvir').style.display='none';
-            document.getElementById('etapa-decisao').style.display='flex';
-        }
+    function escutarChamadas() {
+        db.ref('chamadas_ativas/' + my_un).on('value', s => {
+            const d = s.val();
+            const painel = document.getElementById('painel-chamada');
+            if(d && (d.status === 'chamando' || d.status === 'escrevendo' || d.status === 'gravando')) {
+                document.getElementById('foto-v').src = d.foto;
+                document.getElementById('msg-v').innerText = d.texto || "Aguardando...";
+                painel.style.display = 'flex';
+                
+                if(d.status === 'chamando' && !timerInt) {
+                    gerenciarAlerta('start');
+                    tempoRestante = 90;
+                    timerInt = setInterval(() => {
+                        tempoRestante--;
+                        document.getElementById('timer-regressivo').innerText = tempoRestante;
+                        if(tempoRestante <= 0) responder('cinza');
+                    }, 1000);
+                }
+            } else {
+                painel.style.display = 'none';
+                gerenciarAlerta('stop');
+                clearInterval(timerInt); timerInt = null;
+            }
+        });
     }
 
-    function decidir(st) {
-        db.ref('chamadas_ativas/'+user.un).update({ status: st, msg_morador: (st==='liberado'?'Entrada Autorizada':'Visita Recusada') });
-        registrarNoHistorico(st, document.getElementById('foto-v').src);
-        setTimeout(() => db.ref('chamadas_ativas/'+user.un).remove(), 2500);
-    }
-
-    function registrarNoHistorico(status, fotoV) {
-        const lista = document.getElementById('lista-hist');
-        if(lista.querySelector('p')) lista.innerHTML = '';
-        
-        const card = document.createElement('div');
-        card.className = 'hist-card';
-        card.innerHTML = `
-            <img src="${fotoV}" class="hist-foto">
-            <div class="hist-info">
-                <b>${status.toUpperCase()}</b>
-                <p>Visitante atendido</p>
-            </div>
-            <div class="hist-time">${new Date().toLocaleTimeString().slice(0,5)}</div>
-        `;
-        lista.prepend(card);
-    }
-
-    function ouvir() {
-        document.getElementById('toque').pause();
-        db.ref('chamadas_ativas/'+user.un).update({status:'ouvindo'});
-        const a = new Audio(audioVisitante);
-        a.play();
-        a.onended = () => {
-            document.getElementById('etapa-ouvir').style.display='none';
-            document.getElementById('etapa-decisao').style.display='flex';
-        };
-    }
-
-    async function toggleMic() {
-        if(!isRecording) {
-            document.getElementById('toque').pause();
-            chunks=[]; micTime=0; isRecording=true;
-            const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    async function toggleRecM() {
+        if(!isRec) {
+            gerenciarAlerta('stop'); chunks = []; micTime = 0; isRec = true;
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             rec = new MediaRecorder(stream);
             rec.ondataavailable = e => chunks.push(e.data);
             rec.onstop = () => {
                 const reader = new FileReader();
-                reader.readAsDataURL(new Blob(chunks, {type:'audio/webm'}));
+                reader.readAsDataURL(new Blob(chunks, { type: 'audio/webm' }));
                 reader.onloadend = () => {
-                    db.ref('chamadas_ativas/'+user.un).update({ status: 'mensagem', audio_morador: reader.result });
-                    decidir('mensagem');
+                    db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: "Voz enviada", audio_morador: reader.result });
+                    responder('mensagem');
                 };
             };
             rec.start();
-            db.ref('chamadas_ativas/'+user.un).update({status:'gravando'});
+            db.ref('chamadas_ativas/' + my_un).update({ status: 'gravando' });
             document.getElementById('btn-mic').classList.add('recording');
             micInt = setInterval(() => {
                 micTime += 0.1;
                 let off = 251.2 - (micTime/30 * 251.2);
                 document.querySelector('.progress-ring__circle').style.strokeDashoffset = off;
-                if(micTime >= 30) toggleMic();
+                if(micTime >= 30) toggleRecM();
             }, 100);
         } else {
-            isRecording=false; clearInterval(micInt); if(rec) rec.stop();
+            isRec = false; clearInterval(micInt); if(rec) rec.stop();
             document.getElementById('btn-mic').classList.remove('recording');
             document.querySelector('.progress-ring__circle').style.strokeDashoffset = 251.2;
         }
     }
 
-    function enviarTexto() {
-        const t = document.getElementById('text-input').value;
-        db.ref('chamadas_ativas/'+user.un).update({ status: 'mensagem', msg_morador: t });
-        modalMsg(false);
-        decidir('mensagem');
-    }
-
-    function startTimer() {
-        clearInterval(tInt); tCheck=90;
-        tInt = setInterval(() => {
-            tCheck--; document.getElementById('timer-box').innerText = tCheck;
-            if(tCheck <= 0) fecharChamada();
-        }, 1000);
-    }
-
-    function fecharChamada() {
-        document.getElementById('painel-chamada').style.display='none';
-        document.getElementById('toque').pause();
-        clearInterval(tInt);
-    }
-
-    function modalMsg(abrir) {
-        document.getElementById('modal-msg').style.display = abrir ? 'flex' : 'none';
-        if(abrir) {
-            document.getElementById('toque').pause();
-            db.ref('chamadas_ativas/'+user.un).update({status:'escrevendo'});
+    function abrirMsg() {
+        gerenciarAlerta('stop');
+        db.ref('chamadas_ativas/' + my_un).update({ status: 'escrevendo' });
+        const m = prompt("Mensagem para o visitante:");
+        if(m) {
+            db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: m });
+            responder('mensagem');
+        } else {
+            db.ref('chamadas_ativas/' + my_un).update({ status: 'chamando' });
         }
     }
 
-    function fotoCad() {
-        const v=document.getElementById('v-cad'), c=document.createElement('canvas');
-        c.width=v.videoWidth; c.height=v.videoHeight;
-        c.getContext('2d').drawImage(v,0,0);
-        user.foto = c.toDataURL('image/jpeg', 0.5);
-        alert("Foto capturada!");
+    async function responder(st) {
+        const ref = db.ref('chamadas_ativas/' + my_un);
+        const snap = await ref.once('value');
+        const d = snap.val();
+        if(d) {
+            if(st !== 'cinza') ref.update({ status: st });
+            gravarHist(d.ts, d.foto, st); // Usamos o TS da chamada como ID único do histórico
+            setTimeout(() => ref.remove(), 2000);
+        }
     }
 
-    function finalizarCadastro() {
-        user.nome = document.getElementById('c-nome').value;
-        user.un = document.getElementById('c-un').value;
-        if(!user.nome || !user.un) return alert("Preencha tudo!");
-        localStorage.setItem('virty_nome', user.nome);
-        localStorage.setItem('virty_un', user.un);
-        localStorage.setItem('virty_foto', user.foto);
-        location.reload();
+    function gravarHist(id, foto, st) {
+        const ref = db.ref(`historico/${my_un}/${id}`);
+        ref.set({ foto: foto, ultima: st, ts: Date.now() });
+    }
+
+    function renderizarHist() {
+        db.ref(`historico/${my_un}`).limitToLast(20).on('value', snap => {
+            const list = document.getElementById('lista-hist'); list.innerHTML = "";
+            let histItems = [];
+            snap.forEach(item => { histItems.push(item.val()); });
+            histItems.reverse().forEach(d => {
+                list.innerHTML += `
+                    <div class="hist-card">
+                        <div class="foto-box">
+                            <img src="${d.foto}" class="foto-hist">
+                        </div>
+                        <div style="flex:1">
+                            <small style="color:var(--neon)">STATUS: ${d.ultima.toUpperCase()}</small><br>
+                            <small style="color:#444">${new Date(d.ts).toLocaleString()}</small>
+                        </div>
+                    </div>`;
+            });
+        });
     }
 
     function mudarTela(id) {
-        document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
-    
-    function setSom(modo) {
-        document.querySelectorAll('.sound-bar .s-btn').forEach(b=>b.classList.remove('active'));
-        document.getElementById('btn-'+modo).classList.add('active');
-        // Lógica de som aqui
+
+    function fotoCad() {
+        const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        my_foto = c.toDataURL('image/jpeg', 0.5);
+        alert("Foto capturada!");
     }
+
+    function enviarCadastro() {
+        const un = document.getElementById('c-un').value;
+        if(!my_foto || !un) return alert("Foto e Unidade obrigatórios!");
+        my_un = un; localStorage.setItem('my_un', un);
+        db.ref('solicitacoes_cadastro/' + un).set({
+            nome: document.getElementById('c-nome').value,
+            unidade: un, foto: my_foto, ts: Date.now()
+        }).then(() => verificarStatus());
+    }
+
+    function proximoSom() {
+        somAtual = (somAtual + 1) % sons.length;
+        localStorage.setItem('virty_som', somAtual);
+        const t = document.getElementById('toque');
+        t.src = sons[somAtual]; t.play(); setTimeout(() => t.pause(), 2000);
+    }
+
+    function alternarAlerta() {
+        modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1;
+        localStorage.setItem('virty_alerta', modoAlerta);
+        atualizarInterfaceAlerta();
+    }
+
+    function atualizarInterfaceAlerta() {
+        const btn = document.getElementById('btn-alerta');
+        const icones = ["", "🔊", "📳🔊", "📳"];
+        btn.innerText = icones[modoAlerta];
+    }
+
+    function gerenciarAlerta(acao) {
+        const t = document.getElementById('toque');
+        t.src = sons[somAtual];
+        if(acao === 'start') {
+            if(modoAlerta < 3) t.play().catch(()=>{});
+            if(modoAlerta > 1) navigator.vibrate([500, 500, 500]);
+        } else {
+            t.pause(); navigator.vibrate(0);
+        }
+    }
+
+    function limparHist() { if(confirm("Limpar todo histórico?")) db.ref(`historico/${my_un}`).remove(); }
 </script>
 </body>
 </html>
