@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.8</title>
+    <title>VIRTY MORADOR v1.9</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
-        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
+        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; }
         .active { display: flex; }
-        .btn { width: 100%; padding: 15px; border-radius: 25px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
+        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
         
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
         .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
@@ -27,50 +27,50 @@
 </head>
 <body>
 
-    <div id="s-cadastro" class="screen">
-        <h2 style="color:var(--neon)">ATIVAR MORADOR</h2>
-        <video id="v-cad" autoplay playsinline muted style="width:150px; height:150px; border-radius:50%; object-fit:cover; margin:0 auto 20px; border:2px solid #fff;"></video>
-        <button class="btn" onclick="fotoCad()">📸 CAPTURAR FOTO</button>
-        <input type="number" id="c-un" placeholder="Nº da Unidade" style="padding:15px; background:#111; color:#fff; border:1px solid #333; border-radius:10px; margin:10px 0; width:100%;">
-        <button class="btn" style="background:var(--neon); color:#000;" onclick="salvarAcesso()">ATIVAR ACESSO</button>
+    <div id="s-cadastro" class="screen active">
+        <h2 style="color:var(--neon)">CONFIGURAR UNIDADE</h2>
+        <input type="number" id="c-un" placeholder="Nº da Unidade" style="padding:15px; background:#111; color:#fff; border:1px solid #333; border-radius:10px; margin:20px 0; width:100%;">
+        <button class="btn" style="background:var(--neon); color:#000;" onclick="salvarUn()">ATIVAR</button>
     </div>
 
     <div id="s-home" class="screen">
-        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #222; padding-bottom:10px;">
-            <b style="color:var(--neon)">VIRTY v1.8</b>
-            <span id="txt-un" style="background:var(--neon); color:#000; padding:2px 8px; border-radius:5px; font-weight:bold;"></span>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #222; padding-bottom:10px;">
+            <b style="color:var(--neon); font-size:1.5rem;">VIRTY HOME</b>
+            <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 10px; border-radius:5px; font-weight:bold;"></span>
         </div>
-        <p style="color:#666; margin-top:20px;">AGUARDANDO CHAMADAS...</p>
+        <div id="lista-hist" style="margin-top:20px;">
+            <p style="color:#444;">Nenhuma chamada no histórico.</p>
+        </div>
     </div>
 
     <div id="painel-chamada">
-        <div style="font-size:2.5rem; color:var(--red); font-weight:bold; margin-bottom:10px;">CHAMADA ATIVA</div>
+        <div id="timer-m" style="font-size:3rem; color:var(--red); font-weight:bold; margin-bottom:10px;">90</div>
         <img id="foto-v" class="foto-v">
-        <p id="msg-v" style="font-style:italic; color:#aaa; margin-bottom:20px; font-size:1.4rem;"></p>
+        <p id="msg-v" style="font-style:italic; color:#aaa; margin:15px 0; font-size:1.3rem;"></p>
         
         <div id="etapa-ouvir" style="display:none; width:90%;">
-            <button class="btn" style="background:var(--blue); color:#fff; font-size:1.2rem;" onclick="ouvirAudioV()">▶️ OUVIR ÁUDIO DO VISITANTE</button>
+            <button class="btn" style="background:var(--blue); color:#fff;" onclick="ouvirVisitante()">▶️ OUVIR ÁUDIO DO VISITANTE</button>
         </div>
 
         <div id="etapa-decisao" style="width:90%; display:flex; flex-direction:column; align-items:center;">
-            <button class="btn" style="background:var(--neon); color:#000" onclick="decisao('liberado')">ABRIR PORTÃO</button>
+            <button class="btn" style="background:var(--neon); color:#000" onclick="enviarDecisao('liberado')">ABRIR PORTÃO</button>
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
-                <button class="btn" style="background:var(--blue); color:#fff; flex:1" onclick="abrirModal()">MENSAGEM</button>
+                <button class="btn" style="background:var(--blue); color:#fff; flex:1" onclick="abrirMsg()">MENSAGEM</button>
                 <div class="mic-wrap">
                     <svg class="progress-ring" width="80" height="80"><circle class="progress-ring__circle" stroke-width="6" fill="transparent" r="35" cx="40" cy="40"/></svg>
                     <button id="btn-mic" class="btn-mic" onclick="toggleRecM()">🎤</button>
                 </div>
             </div>
-            <button class="btn" style="background:var(--red); color:#fff" onclick="decisao('recusado')">RECUSAR</button>
+            <button class="btn" style="background:var(--red); color:#fff" onclick="enviarDecisao('recusado')">RECUSAR</button>
         </div>
     </div>
 
     <div id="custom-msg">
         <div class="msg-box">
-            <h2 style="color:var(--neon)">RESPONDER</h2>
+            <h2 style="color:var(--neon)">MENSAGEM</h2>
             <input type="text" id="text-input" placeholder="Escreva aqui...">
             <button class="btn" style="background:var(--neon); color:#000" onclick="enviarTexto()">ENVIAR</button>
-            <button class="btn" style="background:none; color:var(--red)" onclick="fecharModal()">CANCELAR</button>
+            <button class="btn" style="background:none; color:var(--red)" onclick="fecharMsg()">VOLTAR</button>
         </div>
     </div>
 
@@ -81,43 +81,50 @@
 <script>
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     firebase.initializeApp(config); const db = firebase.database();
-    let my_un=localStorage.getItem('my_un'), audioV="", rec, chunks=[], micInt, micTime=0, isRec=false;
+    let my_un=localStorage.getItem('my_un'), audioV="", rec, chunks=[], micInt, micTime=0, isRec=false, tM=90, intM;
 
     window.onload = () => { 
-        if(!my_un) {
-            document.getElementById('s-cadastro').classList.add('active');
-            navigator.mediaDevices.getUserMedia({video:true}).then(s=>document.getElementById('v-cad').srcObject=s);
-        } else {
+        if(my_un) {
+            document.getElementById('s-cadastro').classList.remove('active');
             document.getElementById('s-home').classList.add('active');
             document.getElementById('txt-un').innerText = "CASA " + my_un;
-            escutarChamadas();
+            escutar();
         }
     };
 
-    function escutarChamadas() {
+    function escutar() {
         db.ref('chamadas_ativas/'+my_un).on('value', s => {
-            const d=s.val(); const p=document.getElementById('painel-chamada');
+            const d=s.val(); 
             if(d && (d.status==='chamando'||d.status==='escrevendo'||d.status==='gravando'||d.status==='ouvindo')){
                 document.getElementById('foto-v').src=d.foto;
-                document.getElementById('msg-v').innerText=d.texto || "Visitante aguardando...";
-                audioV=d.audio_v; p.style.display='flex';
-                if(audioV && d.status!=='ouvindo' && d.status!=='gravando' && d.status!=='escrevendo') {
+                document.getElementById('msg-v').innerText=d.texto || "";
+                audioV=d.audio_v;
+                document.getElementById('painel-chamada').style.display='flex';
+                
+                if(d.status==='chamando') {
+                    document.getElementById('toque').play().catch(()=>{});
+                    if(!intM) { tM=90; intM=setInterval(()=>{ tM--; document.getElementById('timer-m').innerText=tM; if(tM<=0) resetar(); },1000); }
+                }
+
+                if(audioV && d.status==='chamando') {
                     document.getElementById('etapa-ouvir').style.display='block';
                     document.getElementById('etapa-decisao').style.display='none';
-                } else if(d.status!=='chamando' || !audioV) {
+                } else {
                     document.getElementById('etapa-ouvir').style.display='none';
                     document.getElementById('etapa-decisao').style.display='flex';
                 }
-                if(d.status==='chamando') document.getElementById('toque').play().catch(()=>{});
-            } else { p.style.display='none'; document.getElementById('toque').pause(); }
+            } else { resetar(); }
         });
     }
 
-    function ouvirAudioV() {
+    function ouvirVisitante() {
         document.getElementById('toque').pause();
         db.ref('chamadas_ativas/'+my_un).update({status:'ouvindo'});
         const a=new Audio(audioV); a.play();
-        a.onended=()=>{ document.getElementById('etapa-ouvir').style.display='none'; document.getElementById('etapa-decisao').style.display='flex'; };
+        a.onended=()=>{ 
+            document.getElementById('etapa-ouvir').style.display='none';
+            document.getElementById('etapa-decisao').style.display='flex';
+        };
     }
 
     async function toggleRecM() {
@@ -129,38 +136,49 @@
                 const reader=new FileReader(); reader.readAsDataURL(new Blob(chunks,{type:'audio/webm'}));
                 reader.onloadend=()=>{ 
                     db.ref('chamadas_ativas/'+my_un).update({status:'mensagem', audio_morador:reader.result});
-                    decisao('mensagem');
+                    enviarDecisao('mensagem');
                 };
             };
             rec.start(); db.ref('chamadas_ativas/'+my_un).update({status:'gravando'});
             document.getElementById('btn-mic').classList.add('recording');
             micInt=setInterval(()=>{
-                micTime+=0.1; let offset=251.2-(micTime/30*251.2);
-                document.querySelector('.progress-ring__circle').style.strokeDashoffset=offset;
+                micTime+=0.1; let off=251.2-(micTime/30*251.2);
+                document.querySelector('.progress-ring__circle').style.strokeDashoffset=off;
                 if(micTime>=30) toggleRecM();
             },100);
         } else {
-            isRec=false; clearInterval(micInt); if(rec && rec.state!=='inactive') rec.stop();
+            isRec=false; clearInterval(micInt); if(rec) rec.stop();
             document.getElementById('btn-mic').classList.remove('recording');
             document.querySelector('.progress-ring__circle').style.strokeDashoffset=251.2;
         }
     }
 
-    function abrirModal(){ document.getElementById('toque').pause(); db.ref('chamadas_ativas/'+my_un).update({status:'escrevendo'}); document.getElementById('custom-msg').style.display='flex'; }
-    function fecharModal(){ document.getElementById('custom-msg').style.display='none'; db.ref('chamadas_ativas/'+my_un).update({status:'chamando'}); }
-    function enviarTexto(){ 
-        const txt=document.getElementById('text-input').value; 
-        db.ref('chamadas_ativas/'+my_un).update({status:'mensagem', msg_morador:txt}); 
-        decisao('mensagem'); 
-    }
-
-    function decisao(st) { 
+    function enviarDecisao(st) {
         db.ref('chamadas_ativas/'+my_un).update({status:st});
-        setTimeout(()=> db.ref('chamadas_ativas/'+my_un).remove(), 2500);
+        adicionarHist(st);
+        setTimeout(()=> db.ref('chamadas_ativas/'+my_un).remove(), 3000);
     }
 
-    function fotoCad() { const v=document.getElementById('v-cad'), c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); localStorage.setItem('fTemp', c.toDataURL('image/jpeg',0.5)); alert("Foto capturada!"); }
-    function salvarAcesso() { const un=document.getElementById('c-un').value; if(!un) return; localStorage.setItem('my_un', un); location.reload(); }
+    function adicionarHist(st) {
+        const hist = document.getElementById('lista-hist');
+        const item = document.createElement('div');
+        item.innerHTML = `<div style="padding:10px; border:1px solid #222; margin-bottom:5px; border-radius:10px;">
+            <b>${new Date().toLocaleTimeString()}</b> - Status: <span style="color:var(--neon)">${st.toUpperCase()}</span>
+        </div>`;
+        if(hist.querySelector('p')) hist.innerHTML = "";
+        hist.prepend(item);
+    }
+
+    function resetar() {
+        document.getElementById('painel-chamada').style.display='none';
+        document.getElementById('toque').pause();
+        clearInterval(intM); intM=null; tM=90;
+    }
+
+    function salvarUn() { const un=document.getElementById('c-un').value; if(un){ localStorage.setItem('my_un',un); location.reload(); } }
+    function abrirMsg(){ db.ref('chamadas_ativas/'+my_un).update({status:'escrevendo'}); document.getElementById('custom-msg').style.display='flex'; }
+    function fecharMsg(){ document.getElementById('custom-msg').style.display='none'; db.ref('chamadas_ativas/'+my_un).update({status:'chamando'}); }
+    function enviarTexto(){ const txt=document.getElementById('text-input').value; db.ref('chamadas_ativas/'+my_un).update({status:'mensagem', msg_morador:txt}); enviarDecisao('mensagem'); }
 </script>
 </body>
 </html>
