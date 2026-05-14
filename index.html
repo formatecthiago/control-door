@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v14.8</title>
+    <title>VIRTY VISITANTE v14.9</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .screen { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; }
         .active { display: flex; }
-        .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; }
+        .video-box { width: 200px; height: 200px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; }
         video, canvas { width: 100%; height: 100%; object-fit: cover; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; font-size: 1.1rem; }
-        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; }
+        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
         
+        /* MIC PROGRESSO */
         .mic-wrap { position: relative; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 10px 0; }
         .btn-mic { background: var(--neon); color: #000; border-radius: 50%; width: 65px; height: 65px; font-size: 1.8rem; border: none; z-index: 5; }
         .recording { background: var(--red) !important; color: #fff; }
         .progress-ring { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
         .progress-ring__circle { stroke: var(--neon); stroke-dasharray: 251.2; stroke-dashoffset: 251.2; transition: stroke-dashoffset 0.1s linear; }
 
-        #custom-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding: 20px; text-align: center; }
-        .msg-title { color: var(--neon); font-size: 2.5rem; margin-bottom: 20px; }
-        .msg-text { color: #FFF; font-size: 1.8rem; font-weight: bold; }
+        /* MODAL RESPOSTA */
+        #modal-feedback { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding: 20px; text-align: center; }
     </style>
 </head>
 <body>
@@ -32,26 +32,25 @@
         <div class="video-box"><video id="v" autoplay playsinline muted></video><canvas id="c" style="display:none;"></canvas></div>
         <button class="btn" style="background:#fff;" onclick="tirarFoto()">📸 TIRAR FOTO</button>
         <input type="number" id="un" placeholder="Número da Unidade">
-        <input type="text" id="msg" placeholder="Mensagem (Opcional)">
+        <input type="text" id="msg" placeholder="Mensagem rápida">
         
         <div class="mic-wrap">
             <svg class="progress-ring" width="80" height="80"><circle class="progress-ring__circle" stroke-width="6" fill="transparent" r="35" cx="40" cy="40"/></svg>
             <button id="mic-v" class="btn-mic" onclick="toggleRecV()">🎤</button>
         </div>
-        
         <button id="btn-chamar" class="btn" style="background:var(--neon); color:#000" onclick="chamar()" disabled>TOCAR CAMPAINHA</button>
     </div>
 
     <div id="t-calling" class="screen">
-        <div id="timer-v" style="font-size:4rem; color:var(--neon); font-weight:bold;">90</div>
-        <h2 id="status-txt" style="color:var(--neon); text-align: center;">CHAMANDO...</h2>
+        <div id="timer-v" style="font-size:4.5rem; color:var(--neon); font-weight:bold; margin-top:50px;">90</div>
+        <h2 id="status-txt" style="color:var(--neon); margin-top:20px; text-align:center;">AGUARDANDO MORADOR...</h2>
     </div>
 
-    <div id="custom-modal">
+    <div id="modal-feedback">
         <button onclick="location.reload()" style="position:fixed; top:20px; right:20px; background:none; border:2px solid var(--red); color:var(--red); border-radius:50%; width:50px; height:50px; font-size:1.5rem;">X</button>
-        <h2 id="modal-t" class="msg-title"></h2>
-        <p id="modal-m" class="msg-text"></p>
-        <div id="audio-res" style="display:none; margin-top:30px;"><audio id="player" controls style="width:100%"></audio></div>
+        <h2 id="f-title" style="font-size:3rem; margin-bottom:20px;"></h2>
+        <p id="f-msg" style="font-size:1.8rem; font-weight:bold; color:#fff;"></p>
+        <div id="f-audio" style="display:none; margin-top:30px;"><audio id="player" controls style="width:100%"></audio></div>
     </div>
 
     <audio id="som" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
@@ -61,9 +60,9 @@
 <script>
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     firebase.initializeApp(config); const db = firebase.database();
-    let b64="", audioB64="", rec, chunks=[], micInt, micTime=0, isRec=false;
+    let b64="", audioB64="", rec, chunks=[], micInt, micTime=0, isRec=false, tV=90, intV;
 
-    window.onload = () => { navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}}).then(s=>document.getElementById('v').srcObject=s); };
+    navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}}).then(s=>document.getElementById('v').srcObject=s);
 
     function tirarFoto() {
         const v=document.getElementById('v'), c=document.getElementById('c');
@@ -83,12 +82,12 @@
             };
             rec.start(); document.getElementById('mic-v').classList.add('recording');
             micInt=setInterval(()=>{
-                micTime+=0.1; let offset=251.2-(micTime/30*251.2);
-                document.querySelector('.progress-ring__circle').style.strokeDashoffset=offset;
+                micTime+=0.1; let off=251.2-(micTime/30*251.2);
+                document.querySelector('.progress-ring__circle').style.strokeDashoffset=off;
                 if(micTime>=30) toggleRecV();
             },100);
         } else {
-            isRec=false; clearInterval(micInt); if(rec && rec.state!=='inactive') rec.stop();
+            isRec=false; clearInterval(micInt); if(rec) rec.stop();
             document.getElementById('mic-v').classList.remove('recording');
             document.querySelector('.progress-ring__circle').style.strokeDashoffset=251.2;
         }
@@ -99,19 +98,24 @@
         document.getElementById('t-id').classList.remove('active');
         document.getElementById('t-calling').classList.add('active');
         document.getElementById('som').play();
+        
+        intV = setInterval(()=>{ tV--; document.getElementById('timer-v').innerText=tV; if(tV<=0) location.reload(); },1000);
+
         const ref=db.ref(`chamadas_ativas/${un}`);
         ref.set({status:"chamando", foto:b64, texto:document.getElementById('msg').value, audio_v:audioB64, ts:Date.now()});
+        
         ref.on('value', s => {
             const d=s.val(); if(!d) return;
-            if(d.status==="escrevendo") document.getElementById('status-txt').innerText="MORADOR ESCREVENDO...";
+            if(d.status==="escrevendo") document.getElementById('status-txt').innerText="MORADOR ESTÁ ESCREVENDO...";
             else if(d.status==="gravando") document.getElementById('status-txt').innerText="MORADOR GRAVANDO ÁUDIO...";
             else if(d.status==="ouvindo") document.getElementById('status-txt').innerText="MORADOR OUVINDO SEU ÁUDIO...";
-            else if(d.status!=="chamando") {
-                document.getElementById('som').pause();
-                document.getElementById('modal-t').innerText=d.status.toUpperCase();
-                document.getElementById('modal-m').innerText=d.msg_morador || "";
-                if(d.audio_morador){ document.getElementById('player').src=d.audio_morador; document.getElementById('audio-res').style.display='block'; }
-                document.getElementById('custom-modal').style.display='flex';
+            else if(d.status==="liberado" || d.status==="recusado" || d.status==="mensagem") {
+                clearInterval(intV); document.getElementById('som').pause();
+                document.getElementById('f-title').innerText = d.status.toUpperCase();
+                document.getElementById('f-title').style.color = d.status==='liberado'?'#39FF14':'#FF3131';
+                document.getElementById('f-msg').innerText = d.msg_morador || "";
+                if(d.audio_morador){ document.getElementById('player').src=d.audio_morador; document.getElementById('f-audio').style.display='block'; }
+                document.getElementById('modal-feedback').style.display='flex';
             }
         });
     }
