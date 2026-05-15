@@ -2,39 +2,25 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v14.7</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIRTY VISITANTE</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .screen { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; padding: 20px; text-align: center; box-sizing: border-box; }
-        .active { display: flex; }
-        .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; }
-        video, canvas { width: 100%; height: 100%; object-fit: cover; }
-        input { width: 100%; padding: 16px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #111; color: white; text-align: center; }
-        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        #status-msg { color: var(--neon); font-style: italic; margin-top: 15px; height: 30px; animation: blink 1s infinite; }
-        @keyframes blink { 0%, 100% {opacity: 1;} 50% {opacity: 0.4;} }
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; }
+        .screen { display: none; padding: 20px; }
+        .active { display: block; }
+        .video-box { width: 200px; height: 200px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px auto; }
+        .btn { width: 100%; max-width: 300px; padding: 15px; border-radius: 25px; border: none; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div id="t-welcome" class="screen active">
-        <h1 style="color:var(--neon); margin-top:100px;">VIRTY ACCESS</h1>
-        <button class="btn" style="background:var(--neon); color:#000" onclick="mudarTela('t-id')">INICIAR ACESSO</button>
-    </div>
 
-    <div id="t-id" class="screen">
-        <div class="video-box"><video id="v" autoplay playsinline muted></video><canvas id="c" style="display:none;"></canvas></div>
-        <button class="btn" style="background:#fff" onclick="tirarFoto()">📸 TIRAR FOTO</button>
-        <input type="number" id="un" placeholder="Nº da Unidade">
-        <input type="text" id="msg" placeholder="Assunto (opcional)">
-        <button id="btn-chamar" class="btn" style="background:var(--neon)" onclick="chamar()" disabled>TOCAR CAMPAINHA</button>
-    </div>
-
-    <div id="t-calling" class="screen">
-        <div style="font-size:3rem; color:var(--neon); font-weight:bold;" id="timer-v">90</div>
-        <h2>CHAMANDO MORADOR...</h2>
-        <div id="status-msg"></div>
+    <div id="t-id" class="screen active">
+        <h2 style="color:var(--neon)">IDENTIFICAÇÃO</h2>
+        <div class="video-box"><video id="v" style="width:100%; height:100%; object-fit:cover;" autoplay playsinline muted></video></div>
+        <button class="btn" onclick="tirarFoto()">📸 TIRAR FOTO</button>
+        <input type="number" id="un" placeholder="Unidade" style="width:80%; padding:10px; margin:10px 0; border-radius:10px;">
+        <button id="btn-chamar" class="btn" style="background:var(--neon)" onclick="chamar()">TOCAR CAMPAINHA</button>
     </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -44,7 +30,6 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    // UUID PERSISTENTE (Resolve o problema do agrupamento)
     function getVirtyID() {
         let id = localStorage.getItem('virty_uuid');
         if(!id) {
@@ -54,40 +39,38 @@
         return id;
     }
     const v_id = getVirtyID();
-
     let b64 = "";
+
+    window.onload = () => {
+        navigator.mediaDevices.getUserMedia({video:true}).then(s => document.getElementById('v').srcObject = s);
+    }
+
     function tirarFoto() {
-        const v = document.getElementById('v'), c = document.getElementById('c');
+        const v = document.getElementById('v');
+        const c = document.createElement('canvas');
         c.width = v.videoWidth; c.height = v.videoHeight;
         c.getContext('2d').drawImage(v, 0, 0);
         b64 = c.toDataURL('image/jpeg', 0.5);
-        document.getElementById('btn-chamar').disabled = false;
+        alert("Foto capturada!");
     }
 
     async function chamar() {
         const un = document.getElementById('un').value;
-        mudarTela('t-calling');
-        const ref = db.ref(`chamadas_ativas/${un}`);
-        ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value, v_id: v_id, ts: Date.now() });
+        if(!b64 || !un) return alert("Foto e Unidade obrigatórios!");
 
-        ref.on('value', s => {
-            const d = s.val(); if(!d) return;
-            const sm = document.getElementById('status-msg');
-            if(d.status === "gravando") sm.innerText = "Morador gravando áudio...";
-            else if(d.status === "escrevendo") sm.innerText = "Morador digitando...";
-            else sm.innerText = "";
+        // VERIFICAÇÃO DE BLOQUEIO (Item 6)
+        const blockRef = db.ref(`bloqueados/${un}/${v_id}`);
+        const blockCheck = await blockRef.once('value');
+        
+        if(blockCheck.exists()) {
+            alert("Desculpe, a chamada não pôde ser completada.");
+            return;
+        }
 
-            if(["liberado", "recusado", "mensagem", "nao_atendida"].includes(d.status)) {
-                alert("RESPOSTA: " + d.status.toUpperCase());
-                location.reload();
-            }
+        db.ref(`chamadas_ativas/${un}`).set({
+            status: "chamando", foto: b64, v_id: v_id, ts: Date.now()
         });
-    }
-
-    function mudarTela(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(id === 't-id') navigator.mediaDevices.getUserMedia({video:true}).then(s => document.getElementById('v').srcObject = s);
+        alert("Chamando morador...");
     }
 </script>
 </body>
