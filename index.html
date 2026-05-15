@@ -3,51 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v14.6</title>
+    <title>VIRTY VISITANTE v14.7</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --yellow: #FFD700; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .screen { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; padding: 20px; text-align: center; box-sizing: border-box; }
         .active { display: flex; }
-        .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; background: #111; }
+        .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); margin: 20px 0; }
         video, canvas { width: 100%; height: 100%; object-fit: cover; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; }
-        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; }
-        #popup { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.98); z-index:9999; flex-direction:column; align-items:center; justify-content:center; }
-        .pop-content { border: 2px solid var(--neon); padding: 30px; border-radius: 20px; width: 85%; background: #000; }
-        #timer-v { font-size: 2.5rem; color: var(--neon); font-weight: bold; }
-        #status-msg { color: var(--yellow); font-weight: bold; margin-top: 10px; height: 25px; }
-        @keyframes pulse-text { 0% {opacity:1} 50% {opacity:0.5} 100% {opacity:1} }
+        input { width: 100%; padding: 16px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #111; color: white; text-align: center; }
+        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        #status-msg { color: var(--neon); font-style: italic; margin-top: 15px; height: 30px; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% {opacity: 1;} 50% {opacity: 0.4;} }
     </style>
 </head>
 <body>
     <div id="t-welcome" class="screen active">
-        <h1 style="color:var(--neon)">BEM-VINDO</h1>
-        <button class="btn" style="background:var(--neon)" onclick="mudarTela('t-id')">INICIAR</button>
+        <h1 style="color:var(--neon); margin-top:100px;">VIRTY ACCESS</h1>
+        <button class="btn" style="background:var(--neon); color:#000" onclick="mudarTela('t-id')">INICIAR ACESSO</button>
     </div>
+
     <div id="t-id" class="screen">
         <div class="video-box"><video id="v" autoplay playsinline muted></video><canvas id="c" style="display:none;"></canvas></div>
         <button class="btn" style="background:#fff" onclick="tirarFoto()">📸 TIRAR FOTO</button>
-        <input type="number" id="un" placeholder="Unidade">
-        <input type="text" id="msg" placeholder="Recado">
-        <button id="btn-chamar" class="btn" style="background:var(--neon)" onclick="chamar()" disabled>CHAMAR</button>
+        <input type="number" id="un" placeholder="Nº da Unidade">
+        <input type="text" id="msg" placeholder="Assunto (opcional)">
+        <button id="btn-chamar" class="btn" style="background:var(--neon)" onclick="chamar()" disabled>TOCAR CAMPAINHA</button>
     </div>
+
     <div id="t-calling" class="screen">
-        <div id="timer-v">90</div>
-        <h2 style="color:var(--neon)">CHAMANDO...</h2>
+        <div style="font-size:3rem; color:var(--neon); font-weight:bold;" id="timer-v">90</div>
+        <h2>CHAMANDO MORADOR...</h2>
         <div id="status-msg"></div>
     </div>
-    <div id="popup">
-        <div class="pop-content">
-            <h2 id="pop-t" style="color:var(--neon)"></h2>
-            <p id="pop-m"></p>
-            <div id="area-audio" style="display:none;">
-                <audio id="player-audio" controls style="width:100%"></audio>
-            </div>
-            <button class="btn" style="background:var(--red); color:#fff; margin-top:20px;" onclick="location.reload()">FECHAR</button>
-        </div>
-    </div>
-    <audio id="som" loop src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3"></audio>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -55,48 +43,45 @@
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
-    const v_id = "V-" + Math.floor(Math.random()*1000); // Simplificado para bancada
-    let b64 = "";
 
+    // UUID PERSISTENTE (Resolve o problema do agrupamento)
+    function getVirtyID() {
+        let id = localStorage.getItem('virty_uuid');
+        if(!id) {
+            id = 'ID-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            localStorage.setItem('virty_uuid', id);
+        }
+        return id;
+    }
+    const v_id = getVirtyID();
+
+    let b64 = "";
     function tirarFoto() {
-        const video = document.getElementById('v'), canvas = document.getElementById('c');
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        b64 = canvas.toDataURL('image/jpeg', 0.5);
+        const v = document.getElementById('v'), c = document.getElementById('c');
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        b64 = c.toDataURL('image/jpeg', 0.5);
         document.getElementById('btn-chamar').disabled = false;
     }
 
     async function chamar() {
         const un = document.getElementById('un').value;
-        mudarTela('t-calling'); document.getElementById('som').play();
+        mudarTela('t-calling');
         const ref = db.ref(`chamadas_ativas/${un}`);
         ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value, v_id: v_id, ts: Date.now() });
-
-        let t = 90;
-        const tint = setInterval(() => {
-            t--; document.getElementById('timer-v').innerText = t;
-            if(t <= 0) { clearInterval(tint); ref.update({status:'nao_atendida'}); }
-        }, 1000);
 
         ref.on('value', s => {
             const d = s.val(); if(!d) return;
             const sm = document.getElementById('status-msg');
-            if(d.status === "gravando") { sm.innerText = "MORADOR GRAVANDO VOZ..."; sm.style.animation = "pulse-text 1s infinite"; }
-            else if(d.status === "escrevendo") { sm.innerText = "MORADOR ESCREVENDO..."; sm.style.animation = "pulse-text 1s infinite"; }
-            else { sm.innerText = ""; sm.style.animation = "none"; }
+            if(d.status === "gravando") sm.innerText = "Morador gravando áudio...";
+            else if(d.status === "escrevendo") sm.innerText = "Morador digitando...";
+            else sm.innerText = "";
 
             if(["liberado", "recusado", "mensagem", "nao_atendida"].includes(d.status)) {
-                clearInterval(tint); document.getElementById('som').pause();
-                showPop(d.status.toUpperCase(), d.msg_morador || "", d.audio_b64);
+                alert("RESPOSTA: " + d.status.toUpperCase());
+                location.reload();
             }
         });
-    }
-
-    function showPop(t, m, audio) {
-        document.getElementById('pop-t').innerText = t;
-        document.getElementById('pop-m').innerText = m;
-        if(audio) { document.getElementById('player-audio').src = audio; document.getElementById('area-audio').style.display = "block"; }
-        document.getElementById('popup').style.display = "flex";
     }
 
     function mudarTela(id) {
