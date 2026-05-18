@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.7.3</title>
+    <title>VIRTY MORADOR v1.8.0</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -72,9 +72,7 @@
         .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 15px; box-shadow: 0 0 25px rgba(57,255,20,0.3); }
         #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; text-shadow: 0 0 10px var(--red); }
         
-        #container-digitar-texto {
-            display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
-        }
+        #container-digitar-texto { display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         #timer-flutuante-texto { font-size: 3.5rem; color: #fff; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px var(--blue); }
 
         #popup-voz { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
@@ -84,7 +82,6 @@
         #texto-timer-voz { position: absolute; font-size: 2.2rem; font-weight: bold; color: #fff; }
         
         .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
-
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; }
         .btn-voz svg { width: 30px; height: 30px; fill: #000; }
         @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
@@ -111,11 +108,19 @@
         <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
     </div>
 
+    <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
+        <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
+        <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
+        <p style="color:#aaa; font-size:1.1rem; max-width:300px; line-height:1.5;">Olá! Os seus dados foram enviados para a administração do condomínio. Aguarde a liberação do seu acesso doméstico.</p>
+        <div style="margin-top:40px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
+        <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
+    </div>
+
     <div id="s-home" class="screen">
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 1.7.3</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 1.8.0</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -195,6 +200,15 @@
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
     let somInterval = null;
 
+    // GERADOR DE FINGERPRINT INDESTRUTÍVEL PARA DISPOSITIVO DO MORADOR
+    function gerarFingerprintMorador() {
+        const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
+        let hash = 0;
+        for (let i = 0; i < meta.length; i++) { hash = (hash << 5) - hash + meta.charCodeAt(i); hash |= 0; }
+        return "M-" + Math.abs(hash).toString(16).toUpperCase();
+    }
+    const my_fingerprint = gerarFingerprintMorador();
+
     function virtyAlert(msg) {
         document.getElementById('custom-alert-msg').innerText = msg;
         document.getElementById('custom-alert').style.display = 'block';
@@ -204,13 +218,34 @@
     window.onload = () => {
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
-        if(!my_un) mudarTela('s-cadastro'); else verificarStatus();
+        verificarStatus();
     };
 
+    // MOTOR PRINCIPAL DE CHECAGEM DE ESTADOS (VALIDADO vs EM ANÁLISE vs NÃO CADASTRADO)
     function verificarStatus() {
+        if(!my_un) {
+            mudarTela('s-cadastro');
+            return;
+        }
+
+        // Primeiro escuta se o morador já foi aprovado definitivo
         db.ref('moradores_validados/' + my_un).on('value', s => {
-            if(s.exists()) { mudarTela('s-home'); document.getElementById('txt-un').innerText = "CASA " + my_un; escutarChamadas(); renderizarHist(); }
-            else { mudarTela('s-cadastro'); }
+            if(s.exists()) { 
+                mudarTela('s-home'); 
+                document.getElementById('txt-un').innerText = "CASA " + my_un; 
+                escutarChamadas(); 
+                renderizarHist(); 
+            } else { 
+                // Se não está validado, checa se a sua assinatura matemática está na fila de análise daquela unidade
+                db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).on('value', snap => {
+                    if(snap.exists()) {
+                        document.getElementById('txt-un-analise').innerText = "UNIDADE: " + my_un + " | ID HARDWARE: " + my_fingerprint;
+                        mudarTela('s-analise');
+                    } else {
+                        mudarTela('s-cadastro');
+                    }
+                });
+            }
         });
     }
 
@@ -317,10 +352,8 @@
                 texto.innerText = tempoVoz + "s";
                 let percentual = (30 - tempoVoz) / 30;
                 arco.style.strokeDashoffset = circunferencia * percentual;
-
                 if(tempoVoz <= 15 && tempoVoz > 5) arco.style.stroke = "var(--yellow)";
                 if(tempoVoz <= 5) arco.style.stroke = "var(--red)";
-
                 if(tempoVoz <= 0) stopRec();
             }, 1000);
 
@@ -420,42 +453,79 @@
         } 
     }
     
-    // IMPLEMENTAÇÃO DE CAPTURA ESTÁTICA CIRÚRGICA
     function fotoCad() { 
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad'); 
         if(!v.videoWidth) return virtyAlert("Aguarde a câmera iniciar totalmente.");
-        
         c.width = v.videoWidth; c.height = v.videoHeight; 
         c.getContext('2d').drawImage(v, 0, 0); 
         my_foto = c.toDataURL('image/jpeg', 0.5); 
-        
-        c.style.display = "block";
-        v.style.display = "none"; 
-
-        if(v.srcObject) {
-            v.srcObject.getTracks().forEach(track => track.stop());
-        }
+        c.style.display = "block"; v.style.display = "none"; 
+        if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
         virtyAlert("Selfie de cadastro capturada com sucesso!"); 
     }
     
-    // IMPLEMENTAÇÃO DE FILA DINÂMICA VIA PUSH() PARA O ADMIN
+    // A ALMA DA TRAVA AUTOMÁTICA: EXECUTA AS REGRAS EXIGIDAS NO SEU PROJETO ANTES DE SALVAR
     function enviarCadastro() { 
-        const un = document.getElementById('c-un').value, cpf = document.getElementById('c-cpf').value, nome = document.getElementById('c-nome').value; 
+        const un = document.getElementById('c-un').value, 
+              cpf = document.getElementById('c-cpf').value.trim(), 
+              nome = document.getElementById('c-nome').value.trim(); 
+              
         if(!my_foto || !un || !cpf || !nome) return virtyAlert("Preencha todos os dados e capture a Selfie!"); 
-        my_un = un; localStorage.setItem('my_un', un); 
         
-        db.ref('solicitacoes_cadastro').push({ 
-            nome: nome, 
-            cpf: cpf, 
-            unidade: un, 
-            foto: my_foto, 
-            ts: Date.now() 
-        }).then(() => { 
-            virtyAlert("Cadastro enviado com sucesso para validação!"); 
-            location.reload(); 
-        }).catch(err => {
-            virtyAlert("Erro ao salvar no banco: " + err.message);
-        }); 
+        // Entra no nó específico daquela casa para auditar a sublista existente
+        db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
+            const moradoresExistentes = snap.val() || {};
+            const chaves = Object.keys(moradoresExistentes);
+            
+            // Se o aparelho atual já estiver na lista, ele apenas atualizará (ignora as regras de limite para si mesmo)
+            const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
+            
+            if (!jaExisteEsseAparelho) {
+                // REGRA 1: Limite máximo de 5 cadastros por unidade residencial
+                if(chaves.length >= 5) {
+                    return virtyAlert("Limite atingido! Esta casa já possui o número máximo de 5 moradores cadastrados.");
+                }
+                
+                // Varre a lista em busca de CPFs ou Nomes idênticos já salvos por parentes
+                for (let k in moradoresExistentes) {
+                    let m = moradoresExistentes[k];
+                    // REGRA 2: Bloqueio de duplicidade de CPF na mesma residência
+                    if(m.cpf === cpf) {
+                        return virtyAlert("Acesso negado! Este CPF já está registrado na lista desta unidade.");
+                    }
+                    // REGRA 3: Bloqueio de duplicidade de Nome na mesma residência
+                    if(m.nome.toLowerCase() === nome.toLowerCase()) {
+                        return virtyAlert("Acesso negado! Este Nome já está registrado na lista desta unidade.");
+                    }
+                }
+            }
+            
+            // Passou em todas as validações: Grava usando o nó estruturado blindado
+            db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({ 
+                nome: nome, 
+                cpf: cpf, 
+                unidade: un, 
+                foto: my_foto, 
+                ts: Date.now() 
+            }).then(() => { 
+                my_un = un; 
+                localStorage.setItem('my_un', un); 
+                virtyAlert("Solicitação enviada com sucesso!"); 
+                verificarStatus(); // Sincroniza a tela dinamicamente sem forçar reload bruto da página
+            }).catch(err => {
+                virtyAlert("Erro no banco: " + err.message);
+            });
+        });
+    }
+
+    function cancelarSolicitacaoAtual() {
+        if(confirm("Deseja cancelar a análise atual e refazer os dados?")) {
+            db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).remove().then(() => {
+                localStorage.removeItem('my_un');
+                my_un = null;
+                verificarStatus();
+            });
+        }
     }
 
     function proximoSom() {
