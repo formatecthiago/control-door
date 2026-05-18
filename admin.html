@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY ADMIN v1.3</title>
+    <title>VIRTY ADMIN v1.4</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --yellow: #FFD700; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
@@ -46,14 +46,12 @@
         <div class="stat-btn btn-pend">PENDENTES: <span id="count-pend">0</span></div>
     </div>
 
-    <!-- SEÇÃO PENDENTES -->
     <div class="search-group">
         <label class="search-label">🔍 Pesquisar Solicitações (Pendentes)</label>
         <input type="text" class="search-input" id="search-p" placeholder="Nome ou Unidade..." onkeyup="filterList('list-p', this.value)">
         <div id="list-p" class="list-container"></div>
     </div>
 
-    <!-- SEÇÃO CADASTRADOS -->
     <div class="search-group">
         <label class="search-label">🔍 Pesquisar Moradores (Habilitados)</label>
         <input type="text" class="search-input" id="search-c" placeholder="Nome, Unidade ou CPF..." onkeyup="filterList('list-c', this.value)">
@@ -67,66 +65,118 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    // Sincronização com Firebase
+    // Sincronização em tempo real das solicitações pendentes
     db.ref('solicitacoes_cadastro').on('value', snap => {
-        renderList('list-p', snap, true);
-        document.getElementById('count-pend').innerText = snap.numChildren();
-    });
-
-    db.ref('moradores_validados').on('value', snap => {
-        renderList('list-c', snap, false);
-        document.getElementById('count-cad').innerText = snap.numChildren();
-    });
-
-    function renderList(containerId, snap, isPendente) {
-        const container = document.getElementById(containerId);
+        const container = document.getElementById('list-p');
         container.innerHTML = "";
-        
-        snap.forEach(s => {
-            const d = s.val();
-            const id = s.key;
-            const searchStr = `${d.nome} ${d.unidade} ${d.cpf || ''}`.toLowerCase();
+        let totalPendentes = 0;
 
-            const row = document.createElement('div');
-            row.className = 'item-row';
-            row.setAttribute('data-search', searchStr);
-            row.onclick = (e) => toggleDetails(row, e);
+        if (snap.exists()) {
+            snap.forEach(unidadeSnap => {
+                const un = unidadeSnap.key;
+                unidadeSnap.forEach(moradorSnap => {
+                    totalPendentes++;
+                    const d = moradorSnap.val();
+                    const fingerprint = moradorSnap.key;
+                    
+                    const searchStr = `${d.nome} ${un} ${d.cpf || ''}`.toLowerCase();
+                    const row = document.createElement('div');
+                    row.className = 'item-row';
+                    row.setAttribute('data-search', searchStr);
+                    row.onclick = (e) => toggleDetails(row, e);
 
-            row.innerHTML = `
-                <div class="item-header">
-                    <b>CASA ${d.unidade}</b>
-                    <span>${d.nome}</span>
-                    <small style="color:var(--neon)">➔</small>
+                    row.innerHTML = `
+                        <div class="item-header">
+                            <b>CASA ${un}</b>
+                            <span>${d.nome}</span>
+                            <small style="color:var(--yellow)">⏳</small>
+                        </div>
+                        <div class="item-details">
+                            <img src="${d.foto}">
+                            <div class="data-grid">
+                                <p><strong>NOME:</strong> ${d.nome}</p>
+                                <p><strong>CPF:</strong> ${d.cpf || 'Não informado'}</p>
+                                <p><strong>DISPOSITIVO:</strong> ${fingerprint}</p>
+                            </div>
+                            <div class="actions">
+                                <button class="btn-action" style="background:var(--neon); color:#000;" onclick="aprovar('${un}', '${fingerprint}')">APROVAR AGORA</button>
+                                <button class="btn-action" style="background:var(--red); color:#fff;" onclick="recusar('${un}', '${fingerprint}')">REJEITAR</button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            });
+        }
+        document.getElementById('count-pend').innerText = totalPendentes;
+    });
+
+    // Sincronização em tempo real dos moradores habilitados
+    db.ref('moradores_validados').on('value', snap => {
+        const container = document.getElementById('list-c');
+        container.innerHTML = "";
+        let totalHabilitados = 0;
+
+        if (snap.exists()) {
+            snap.forEach(unidadeSnap => {
+                const un = unidadeSnap.key;
+                
+                // Tratamento preventivo: suporta tanto a árvore antiga (objeto único) quanto a nova (múltiplos moradores por nó)
+                const dadosUnidade = unidadeSnap.val();
+                
+                if (dadosUnidade.nome) {
+                    // Registro legado/antigo do banco
+                    totalHabilitados++;
+                    renderizarLinhaHabilitado(container, un, dadosUnidade, null);
+                } else {
+                    // Estrutura moderna multigrupo
+                    unidadeSnap.forEach(moradorSnap => {
+                        totalHabilitados++;
+                        renderizarLinhaHabilitado(container, un, moradorSnap.val(), moradorSnap.key);
+                    });
+                }
+            });
+        }
+        document.getElementById('count-cad').innerText = totalHabilitados;
+    });
+
+    // Auxiliar de renderização para organização visual limpa
+    function renderizarLinhaHabilitado(container, un, d, fingerprintChave) {
+        const searchStr = `${d.nome} ${un} ${d.cpf || ''}`.toLowerCase();
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.setAttribute('data-search', searchStr);
+        row.onclick = (e) => toggleDetails(row, e);
+
+        // Chave de identificação para remoção segura
+        const parametroRemover = fingerprintChave ? `'${un}', '${fingerprintChave}'` : `'${un}', null`;
+
+        row.innerHTML = `
+            <div class="item-header">
+                <b>CASA ${un}</b>
+                <span>${d.nome}</span>
+                <small style="color:var(--neon)">✔</small>
+            </div>
+            <div class="item-details">
+                <img src="${d.foto || ''}" onerror="this.style.display='none'">
+                <div class="data-grid">
+                    <p><strong>NOME:</strong> ${d.nome}</p>
+                    <p><strong>CPF:</strong> ${d.cpf || 'Não informado'}</p>
+                    <p><strong>STATUS:</strong> Habilitado Permanente</p>
                 </div>
-                <div class="item-details">
-                    <img src="${d.foto}">
-                    <div class="data-grid">
-                        <p><strong>NOME:</strong> ${d.nome}</p>
-                        <p><strong>CPF:</strong> ${d.cpf || 'Não informado'}</p>
-                        <p><strong>TEL:</strong> ${d.telefone || 'Não informado'}</p>
-                    </div>
-                    <div class="actions">
-                        ${isPendente ? 
-                            `<button class="btn-action" style="background:var(--neon)" onclick="aprovar('${id}')">APROVAR AGORA</button>` : 
-                            `<button class="btn-action" style="background:var(--red); color:#fff" onclick="remover('${id}')">EXCLUIR MORADOR</button>`
-                        }
-                    </div>
+                <div class="actions">
+                    <button class="btn-action" style="background:var(--red); color:#fff" onclick="remover(${parametroRemover})">EXCLUIR MORADOR</button>
                 </div>
-            `;
-            container.appendChild(row);
-        });
+            </div>
+        `;
+        container.appendChild(row);
     }
 
     function toggleDetails(row, event) {
-        // Evita abrir se clicar no botão de ação
         if(event.target.tagName === 'BUTTON') return;
-        
         const details = row.querySelector('.item-details');
         const isVisible = details.style.display === 'block';
-        
-        // Fecha outros detalhes abertos no mesmo container
         row.parentElement.querySelectorAll('.item-details').forEach(d => d.style.display = 'none');
-        
         details.style.display = isVisible ? 'none' : 'block';
     }
 
@@ -139,16 +189,40 @@
         });
     }
 
-    function aprovar(un) {
-        db.ref('solicitacoes_cadastro/' + un).once('value', s => {
-            db.ref('moradores_validados/' + un).set(s.val());
-            db.ref('solicitacoes_cadastro/' + un).remove();
+    // Ações do Administrador em Perfeita Sincronia com o Novo Banco
+    function aprovar(un, fingerprint) {
+        db.ref(`solicitacoes_cadastro/${un}/${fingerprint}`).once('value', s => {
+            if(!s.exists()) return;
+            const dados = s.val();
+            
+            // Grava na lista definitiva de validados preservando o fingerprint do morador
+            db.ref(`moradores_validados/${un}/${fingerprint}`).set({
+                nome: dados.nome,
+                cpf: dados.cpf,
+                foto: dados.foto,
+                ts: Date.now()
+            }).then(() => {
+                // Remove cirurgicamente apenas esta solicitação resolvida da fila
+                db.ref(`solicitacoes_cadastro/${un}/${fingerprint}`).remove();
+            });
         });
     }
 
-    function remover(un) {
-        if(confirm("Deseja realmente excluir este morador?")) {
-            db.ref('moradores_validados/' + un).remove();
+    function recusar(un, fingerprint) {
+        if(confirm("Deseja realmente rejeitar esta solicitação de cadastro?")) {
+            db.ref(`solicitacoes_cadastro/${un}/${fingerprint}`).remove();
+        }
+    }
+
+    function remover(un, fingerprint) {
+        if(confirm("Deseja realmente revogar o acesso deste morador?")) {
+            if(fingerprint) {
+                // Remove especificamente o morador selecionado daquela casa
+                db.ref(`moradores_validados/${un}/${fingerprint}`).remove();
+            } else {
+                // Tratamento para registros antigos (limpa o nó inteiro)
+                db.ref('moradores_validados/' + un).remove();
+            }
         }
     }
 </script>
