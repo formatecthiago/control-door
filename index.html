@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v14.9</title>
+    <title>VIRTY VISITANTE v15.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -31,11 +31,8 @@
         .btn-fechar-piscando svg { width: 55px; height: 55px; fill: var(--red); filter: drop-shadow(0 0 8px var(--red)); }
         
         .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
-
-        /* PLAYER DE ÁUDIO EXCLUSIVO DA TELA MORTA */
         .btn-play-interfone { background: var(--blue); color: #fff; width: 85px; height: 85px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 0 20px rgba(0,123,255,0.5); margin: 15px 0; }
         .btn-play-interfone svg { width: 35px; height: 35px; fill: #fff; }
-
         @keyframes piscar { from { opacity: 1; transform: scale(1); } to { opacity: 0.3; transform: scale(0.92); } }
     </style>
 </head>
@@ -61,7 +58,6 @@
                 <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v3h12v-6h-2v4z"/></svg>
             </button>
         </div>
-        
         <button class="btn" style="background:#fff; color:#000" onclick="tirarFoto()">📸 CAPTURAR FACE</button>
         <input type="number" id="un" placeholder="Nº da Unidade (Casa/Apt)">
         <input type="text" id="msg" placeholder="Assunto escrito (Opcional)">
@@ -91,19 +87,10 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    // FINGERPRINT MATEMÁTICO REAL MULTIPLATAFORMA (EVITA DUPLICIDADE DE CAMADAS EM OUTROS NAVEGADORES)
     function gerarFingerprintVirty() {
-        const metadados = [
-            screen.width, screen.height, screen.devicePixelRatio,
-            navigator.hardwareConcurrency || 4,
-            navigator.language, navigator.platform
-        ].join('||');
-        
+        const metadados = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language, navigator.platform].join('||');
         let hash = 0;
-        for (let i = 0; i < metadados.length; i++) {
-            hash = (hash << 5) - hash + metadados.charCodeAt(i);
-            hash |= 0;
-        }
+        for (let i = 0; i < metadados.length; i++) { hash = (hash << 5) - hash + metadados.charCodeAt(i); hash |= 0; }
         return "VF-" + Math.abs(hash).toString(16).toUpperCase();
     }
     const v_id = gerarFingerprintVirty();
@@ -120,7 +107,7 @@
         const constraints = { video: { facingMode: useFrontCamera ? "user" : "environment" } };
         navigator.mediaDevices.getUserMedia(constraints).then(s => {
             streamAtual = s; document.getElementById('v').srcObject = s;
-        }).catch(e => { virtyAlert("Clique no botão lateral circular 🔄 para alternar a câmera ou permitir permissões."); });
+        }).catch(e => { console.log(e); });
         useFrontCamera = !useFrontCamera;
     }
 
@@ -146,9 +133,7 @@
 
         mudarTela('t-calling');
         const ref = db.ref(`chamadas_ativas/${un}`);
-        
-        // FILTRO DE TRATOR DE DUPLICIDADE: Limpa chamadas fantasmas antigas daquela mesma unidade
-        await ref.remove(); 
+        await ref.remove(); // Evita sobreposição de cards no morador
         
         ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value, v_id: v_id, ts: Date.now() });
 
@@ -180,8 +165,6 @@
                 if(d.status === "mensagem") { 
                     cor = "var(--blue)"; 
                     stringFinal = d.msg_morador || "MENSAGEM RECEBIDA"; 
-                    
-                    // Se houver áudio b64 anexado, monta o módulo de player na tela morta
                     if(d.audio_b64) {
                         audioRespostaMorador = new Audio(d.audio_b64);
                         incluirPlayerHtml = `
