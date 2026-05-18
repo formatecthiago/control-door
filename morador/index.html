@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.7.2</title>
+    <title>VIRTY MORADOR v1.7.3</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -83,7 +83,6 @@
         .circle-progress { fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 0; transition: stroke 0.3s, stroke-dashoffset 0.1s linear; }
         #texto-timer-voz { position: absolute; font-size: 2.2rem; font-weight: bold; color: #fff; }
         
-        /* POP-UP INTERNO CUSTOMIZADO DE REQUISITO DE DESIGN */
         .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
 
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; }
@@ -101,7 +100,10 @@
 
     <div id="s-cadastro" class="screen">
         <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
-        <video id="v-cad" autoplay playsinline muted style="width:160px; height:160px; border-radius:50%; object-fit:cover; margin:0 auto 20px; border:3px solid var(--neon); background:#111;"></video>
+        <div style="position:relative; width:160px; height:160px; margin:0 auto 20px;">
+            <video id="v-cad" autoplay playsinline muted style="width:160px; height:160px; border-radius:50%; object-fit:cover; border:3px solid var(--neon); background:#111; display:block;"></video>
+            <canvas id="c-cad" style="display:none; width:160px; height:160px; border-radius:50%; object-fit:cover; border:3px solid var(--neon); background:#111;"></canvas>
+        </div>
         <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR SELFIE</button>
         <input type="text" id="c-nome" placeholder="Nome Completo">
         <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
@@ -113,7 +115,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 1.7.2</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 1.7.3</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -188,7 +190,6 @@
     let tempoGeralRegressivo = 90;
     let timePressStart = 0;
 
-    // SÍNTESE DE ÁUDIO NATIVA DO HARDWARE (20 INTERFONES E CAMPAINHAS TRADICIONAIS REALISTAS)
     let audioCtx = null;
     let somAtual = parseInt(localStorage.getItem('virty_som')) || 0;
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
@@ -239,7 +240,7 @@
 
     function abrirPainelTexto() {
         estaDigitando = true;
-        gerenciarAlerta('stop'); // Silêncio total exigido por UX
+        gerenciarAlerta('stop');
         db.ref('chamadas_ativas/' + my_un).update({ status: 'escrevendo' });
         document.getElementById('container-digitar-texto').style.display = 'flex';
         document.getElementById('campo-texto-interno').focus();
@@ -262,7 +263,6 @@
         responder('mensagem');
     }
 
-    // MECÂNICA DUPLA DE CAPTURA: UM CLIQUE (MÃOS LIVRES COM ENVIO EM TOQUE ADICIONAL) OU SEGURAR
     function eventoMicStart(e) {
         e.preventDefault();
         if(estaGravando) return;
@@ -275,11 +275,9 @@
         e.preventDefault();
         let duration = Date.now() - timePressStart;
         if(duration < 400) {
-            // Clique Rápido detectado: Habilita Modo Mãos Livres 30s
             modoMaoLivre = true;
             document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque em qualquer lugar para enviar</span>";
         } else {
-            // Soltou de um clique longo: Envia direto
             if(!modoMaoLivre) stopRec();
         }
     }
@@ -294,7 +292,7 @@
     async function startRec() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 16000 }); // Compactação extrema de voz para leveza do banco
+            mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 16000 });
             chunks = []; estaGravando = true;
             gerenciarAlerta('stop');
 
@@ -411,24 +409,55 @@
 
     function vidCurto(id) { return id.length > 12 ? id.substring(0,12) + '...' : id; }
     function alternarBloqueio(vid) { const ref = db.ref(`bloqueados/${my_un}/${vid}`); ref.once('value', s => { if(s.exists()) ref.remove(); else ref.set({ ts: Date.now() }); }); }
-    function mudarTela(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id === 's-cadastro') { navigator.mediaDevices.getUserMedia({video:true}).then(s => document.getElementById('v-cad').srcObject = s).catch(e => console.log(e)); } }
     
+    function mudarTela(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById(id).classList.add('active'); 
+        if(id === 's-cadastro') { 
+            document.getElementById('v-cad').style.display = "block";
+            document.getElementById('c-cad').style.display = "none";
+            navigator.mediaDevices.getUserMedia({video:true}).then(s => document.getElementById('v-cad').srcObject = s).catch(e => console.log(e)); 
+        } 
+    }
+    
+    // IMPLEMENTAÇÃO DE CAPTURA ESTÁTICA CIRÚRGICA
     function fotoCad() { 
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad'); 
+        if(!v.videoWidth) return virtyAlert("Aguarde a câmera iniciar totalmente.");
+        
         c.width = v.videoWidth; c.height = v.videoHeight; 
         c.getContext('2d').drawImage(v, 0, 0); 
         my_foto = c.toDataURL('image/jpeg', 0.5); 
+        
+        c.style.display = "block";
+        v.style.display = "none"; 
+
+        if(v.srcObject) {
+            v.srcObject.getTracks().forEach(track => track.stop());
+        }
         virtyAlert("Selfie de cadastro capturada com sucesso!"); 
     }
     
+    // IMPLEMENTAÇÃO DE FILA DINÂMICA VIA PUSH() PARA O ADMIN
     function enviarCadastro() { 
         const un = document.getElementById('c-un').value, cpf = document.getElementById('c-cpf').value, nome = document.getElementById('c-nome').value; 
         if(!my_foto || !un || !cpf || !nome) return virtyAlert("Preencha todos os dados e capture a Selfie!"); 
         my_un = un; localStorage.setItem('my_un', un); 
-        db.ref('solicitacoes_cadastro/' + un).set({ nome: nome, cpf: cpf, unidade: un, foto: my_foto, ts: Date.now() }).then(() => { virtyAlert("Cadastro enviado com sucesso para validação!"); location.reload(); }); 
+        
+        db.ref('solicitacoes_cadastro').push({ 
+            nome: nome, 
+            cpf: cpf, 
+            unidade: un, 
+            foto: my_foto, 
+            ts: Date.now() 
+        }).then(() => { 
+            virtyAlert("Cadastro enviado com sucesso para validação!"); 
+            location.reload(); 
+        }).catch(err => {
+            virtyAlert("Erro ao salvar no banco: " + err.message);
+        }); 
     }
 
-    // SINTETIZADOR NATIVO REALISTA DE CAMPAINHAS (CHAVEADOR INDESTRUTÍVEL DE FREQUÊNCIAS DE INTERFONE)
     function proximoSom() {
         somAtual = (somAtual + 1) % 20;
         localStorage.setItem('virty_som', somAtual);
@@ -442,15 +471,12 @@
     function gerenciarAlerta(acao) {
         clearInterval(somInterval);
         if(audioCtx) { try { audioCtx.close(); } catch(e){} audioCtx = null; }
-        
         if(acao === 'stop') { navigator.vibrate(0); return; }
         if(modoAlerta === 3) { navigator.vibrate([400, 200, 400]); return; }
 
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if(modoAlerta === 2) navigator.vibrate([400, 200, 400]);
-
-            // Biblioteca matemática de frequências de interfones reais/tradicionais baseados no ID do som escolhido
             let f1 = 440 + (somAtual * 40);
             let f2 = f1 * 1.25; 
 
