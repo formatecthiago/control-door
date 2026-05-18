@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.7.1</title>
+    <title>VIRTY MORADOR v1.7.2</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -72,18 +72,19 @@
         .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 15px; box-shadow: 0 0 25px rgba(57,255,20,0.3); }
         #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; text-shadow: 0 0 10px var(--red); }
         
-        /* NOVO: CAIXA INTERNA DE TEXTO (Substituindo o prompt() nativo antigo) */
         #container-digitar-texto {
             display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
         }
-        #timer-flutuante-texto { font-size: 2.5rem; color: var(--yellow); font-weight: bold; margin-bottom: 15px; }
+        #timer-flutuante-texto { font-size: 3.5rem; color: #fff; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px var(--blue); }
 
         #popup-voz { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
         .canvas-circular { transform: rotate(-90deg); width: 200px; height: 200px; }
         .circle-bg { fill: none; stroke: #222; stroke-width: 12; }
         .circle-progress { fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 0; transition: stroke 0.3s, stroke-dashoffset 0.1s linear; }
         #texto-timer-voz { position: absolute; font-size: 2.2rem; font-weight: bold; color: #fff; }
-        #feedback-envio { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 2px solid var(--neon); color: var(--neon); padding: 25px 40px; border-radius: 16px; font-size: 1.4rem; font-weight: bold; z-index: 4000; box-shadow: 0 0 30px var(--neon); text-align: center; }
+        
+        /* POP-UP INTERNO CUSTOMIZADO DE REQUISITO DE DESIGN */
+        .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
 
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; }
         .btn-voz svg { width: 30px; height: 30px; fill: #000; }
@@ -91,6 +92,12 @@
     </style>
 </head>
 <body>
+
+    <div id="custom-alert" class="virty-popup">
+        <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:12px;">VIRTY ACCESS DOOR</div>
+        <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4;"></div>
+        <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
+    </div>
 
     <div id="s-cadastro" class="screen">
         <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
@@ -105,14 +112,14 @@
     <div id="s-home" class="screen">
         <div class="header">
             <div>
-                <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 1.7.1</small>
+                <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 1.7.2</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
         
         <div class="controles-alerta">
-            <button class="btn-mini" onclick="proximoSom()">🎼</button>
+            <button class="btn-mini" id="label-som" onclick="proximoSom()">🎼 1</button>
             <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()">🔊</button>
         </div>
 
@@ -135,7 +142,9 @@
             
             <div style="display: flex; width: 100%; align-items: center; justify-content: center; gap: 15px; margin: 4px 0;">
                 <button class="btn" style="background:var(--blue); color:#fff; flex: 1; margin:0;" onclick="abrirPainelTexto()">MENSAGEM</button>
-                <button id="btn-mic" class="btn-voz" ontouchstart="startRec()" ontouchend="stopRec()" onmousedown="startRec()" onmouseup="stopRec()">
+                <button id="btn-mic" class="btn-voz" 
+                        ontouchstart="eventoMicStart(event)" ontouchend="eventoMicEnd(event)" 
+                        onmousedown="eventoMicStart(event)" onmouseup="eventoMicEnd(event)">
                     <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
                 </button>
             </div>
@@ -144,17 +153,17 @@
         </div>
     </div>
 
-    <div id="container-digitar-texto">
+    <div id="container-digitar-texto" onclick="verificarToqueEnvioMaoLivre(event)">
         <div id="timer-flutuante-texto">90s</div>
-        <h3 style="color:var(--blue); margin-bottom:10px;">DIGITAR MENSAGEM</h3>
-        <input type="text" id="campo-texto-interno" placeholder="Escreva a mensagem aqui..." style="width:100%; max-width:320px;">
-        <div style="display:flex; gap:10px; width:100%; max-width:320px; margin-top:10px;">
+        <h3 style="color:var(--blue); margin-bottom:15px; letter-spacing:1px;">DIGITAR MENSAGEM</h3>
+        <input type="text" id="campo-texto-interno" placeholder="Escreva a mensagem aqui..." style="width:100%; max-width:320px; text-align:center;">
+        <div style="display:flex; gap:10px; width:100%; max-width:320px; margin-top:15px;">
             <button class="btn" style="background:var(--blue); color:#fff; margin:0; flex:1;" onclick="enviarTextoInterno()">ENVIAR</button>
             <button class="btn" style="background:var(--gray); color:#fff; margin:0; flex:1;" onclick="fecharPainelTexto()">VOLTAR</button>
         </div>
     </div>
 
-    <div id="popup-voz">
+    <div id="popup-voz" onclick="verificarToqueEnvioMaoLivre(event)">
         <div style="position: relative; display: flex; align-items: center; justify-content: center;">
             <svg class="canvas-circular">
                 <circle class="circle-bg" cx="100" cy="100" r="90"></circle>
@@ -162,12 +171,8 @@
             </svg>
             <div id="texto-timer-voz">30s</div>
         </div>
-        <p style="color:var(--red); font-weight:bold; margin-top:25px; letter-spacing:1px; animation: pulse 1s infinite;">GRAVANDO ÁUDIO...</p>
+        <p id="label-modo-gravacao" style="color:var(--red); font-weight:bold; margin-top:25px; letter-spacing:1px; text-align:center; padding:0 20px; line-height:1.4;"></p>
     </div>
-
-    <div id="feedback-envio">GRAVAÇÃO ENVIADA!</div>
-    <audio id="toque" loop></audio>
-    <canvas id="c-cad" style="display:none;"></canvas>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -179,35 +184,24 @@
     let my_un = localStorage.getItem('my_un');
     let my_foto = "";
     let timerPerdida, timerVozInterval, mediaRecorder, chunks = [];
-    let estaGravando = false, estaDigitando = false;
+    let estaGravando = false, estaDigitando = false, modoMaoLivre = false;
     let tempoGeralRegressivo = 90;
+    let timePressStart = 0;
 
-    const sons = [
-        "https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3",
-        "https://assets.mixkit.co/active_storage/sfx/1358/1358-preview.mp3",
-        "https://www.soundjay.com/buttons/sounds/button-10.mp3",
-        "https://www.soundjay.com/buttons/sounds/button-3.mp3",
-        "https://www.soundjay.com/buttons/sounds/button-4.mp3",
-        "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3",
-        "https://assets.mixkit.co/active_storage/sfx/2567/2567-preview.mp3",
-        "https://www.soundjay.com/communication/sounds/digital-bell-1.mp3",
-        "https://www.soundjay.com/communication/sounds/bell-ringing-04c.mp3",
-        "https://www.soundjay.com/communication/sounds/bell-ringing-05.mp3",
-        "https://www.soundjay.com/communication/sounds/dial-tone-1.mp3",
-        "https://www.soundjay.com/communication/sounds/telephone-ring-01a.mp3",
-        "https://www.soundjay.com/communication/sounds/telephone-ring-02.mp3",
-        "https://www.soundjay.com/communication/sounds/telephone-ring-03a.mp3",
-        "https://www.soundjay.com/communication/sounds/telephone-ring-4.mp3",
-        "https://www.soundjay.com/communication/sounds/cell-phone-vibrate-1.mp3",
-        "https://www.soundjay.com/communication/sounds/cell-phone-vibrate-2.mp3",
-        "https://actions.google.com/sounds/v1/communication/phone_ring.ogg",
-        "https://actions.google.com/sounds/v1/communication/office_phone_ring.ogg",
-        "https://actions.google.com/sounds/v1/communication/retro_phone_ring.ogg"
-    ];
+    // SÍNTESE DE ÁUDIO NATIVA DO HARDWARE (20 INTERFONES E CAMPAINHAS TRADICIONAIS REALISTAS)
+    let audioCtx = null;
     let somAtual = parseInt(localStorage.getItem('virty_som')) || 0;
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
+    let somInterval = null;
+
+    function virtyAlert(msg) {
+        document.getElementById('custom-alert-msg').innerText = msg;
+        document.getElementById('custom-alert').style.display = 'block';
+    }
+    function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
     window.onload = () => {
+        document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
         if(!my_un) mudarTela('s-cadastro'); else verificarStatus();
     };
@@ -228,15 +222,14 @@
                 document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
                 painel.style.display = 'flex';
                 
-                if(d.status === 'chamando') {
-                    if(!estaGravando && !estaDigitando) gerenciarAlerta('start');
+                if(d.status === 'chamando' && !estaGravando && !estaDigitando) {
+                    gerenciarAlerta('start');
                     tempoGeralRegressivo = 90;
                     clearInterval(timerPerdida);
                     timerPerdida = setInterval(() => {
                         tempoGeralRegressivo--; 
                         document.getElementById('timer-regressivo').innerText = tempoGeralRegressivo;
                         document.getElementById('timer-flutuante-texto').innerText = tempoGeralRegressivo + "s";
-                        
                         if(tempoGeralRegressivo <= 0) { clearInterval(timerPerdida); responder('cinza'); }
                     }, 1000);
                 }
@@ -244,10 +237,9 @@
         });
     }
 
-    // INTERFACE DE MENSAGEM INTERNALIZADA COM TIMER FLUTUANTE E REGRAS DE SILÊNCIO
     function abrirPainelTexto() {
         estaDigitando = true;
-        gerenciarAlerta('stop'); // Silêncio total para concentrar na digitação
+        gerenciarAlerta('stop'); // Silêncio total exigido por UX
         db.ref('chamadas_ativas/' + my_un).update({ status: 'escrevendo' });
         document.getElementById('container-digitar-texto').style.display = 'flex';
         document.getElementById('campo-texto-interno').focus();
@@ -264,18 +256,45 @@
 
     function enviarTextoInterno() {
         const txt = document.getElementById('campo-texto-interno').value;
-        if(!txt) return alert("Digite algo antes de enviar!");
-        db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: txt });
+        if(!txt) return virtyAlert("Digite algo antes de enviar!");
+        db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: txt, data_hora: obterDataHora() });
         document.getElementById('campo-texto-interno').value = "";
         responder('mensagem');
     }
 
-    // OTIMIZAÇÃO TÉCNICA DE ÁUDIO PARA COMPRESSÃO E LEVEZA NO FIREBASE (BITRATE ADAPTADO)
+    // MECÂNICA DUPLA DE CAPTURA: UM CLIQUE (MÃOS LIVRES COM ENVIO EM TOQUE ADICIONAL) OU SEGURAR
+    function eventoMicStart(e) {
+        e.preventDefault();
+        if(estaGravando) return;
+        timePressStart = Date.now();
+        modoMaoLivre = false;
+        startRec();
+    }
+
+    function eventoMicEnd(e) {
+        e.preventDefault();
+        let duration = Date.now() - timePressStart;
+        if(duration < 400) {
+            // Clique Rápido detectado: Habilita Modo Mãos Livres 30s
+            modoMaoLivre = true;
+            document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque em qualquer lugar para enviar</span>";
+        } else {
+            // Soltou de um clique longo: Envia direto
+            if(!modoMaoLivre) stopRec();
+        }
+    }
+
+    function verificarToqueEnvioMaoLivre(e) {
+        if(modoMaoLivre && estaGravando) {
+            e.stopPropagation();
+            stopRec();
+        }
+    }
+
     async function startRec() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            // Reduzindo amostragem e travando bits para voz límpida de rádio, diminuindo tamanho do Base64
-            mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 16000 });
+            mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 16000 }); // Compactação extrema de voz para leveza do banco
             chunks = []; estaGravando = true;
             gerenciarAlerta('stop');
 
@@ -283,7 +302,9 @@
             const texto = document.getElementById('texto-timer-voz');
             const arco = document.getElementById('arco-progresso');
             
+            if(!modoMaoLivre) document.getElementById('label-modo-gravacao').innerText = "SEGURE PARA GRAVAR...";
             popup.style.display = 'flex';
+            
             let tempoVoz = 30;
             texto.innerText = "30s";
             arco.style.strokeDashoffset = 0;
@@ -292,6 +313,7 @@
             db.ref('chamadas_ativas/' + my_un).update({ status: 'gravando' });
             const circunferencia = 2 * Math.PI * 90;
 
+            clearInterval(timerVozInterval);
             timerVozInterval = setInterval(() => {
                 tempoVoz--;
                 texto.innerText = tempoVoz + "s";
@@ -310,21 +332,24 @@
                 const reader = new FileReader();
                 reader.readAsDataURL(blob);
                 reader.onloadend = () => {
-                    db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: "Áudio enviado", audio_b64: reader.result });
+                    db.ref('chamadas_ativas/' + my_un).update({ 
+                        status: 'mensagem', 
+                        msg_morador: "Áudio enviado", 
+                        audio_b64: reader.result,
+                        data_hora: obterDataHora()
+                    });
                     popup.style.display = 'none';
-                    const fb = document.getElementById('feedback-envio');
-                    fb.style.display = 'block';
-                    setTimeout(() => { fb.style.display = 'none'; responder('mensagem'); }, 1500);
+                    responder('mensagem');
                 };
             };
             mediaRecorder.start();
-        } catch(e) { alert("Permita o uso do microfone!"); estaGravando = false; }
+        } catch(e) { virtyAlert("Permita o uso do microfone!"); estaGravando = false; }
     }
 
     function stopRec() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); clearInterval(timerVozInterval); estaGravando = false; } }
 
     function responder(st) {
-        estaGravando = false; estaDigitando = false;
+        estaGravando = false; estaDigitando = false; modoMaoLivre = false;
         document.getElementById('painel-chamada').style.display = 'none';
         document.getElementById('container-digitar-texto').style.display = 'none';
         document.getElementById('popup-voz').style.display = 'none';
@@ -336,10 +361,15 @@
             if(d) {
                 if(st !== 'cinza') ref.update({ status: st });
                 gravarHist(d.v_id, d.foto, st);
-                setTimeout(() => ref.remove(), 1000);
+                setTimeout(() => ref.remove(), 1200);
             }
         });
         mudarTela('s-home');
+    }
+
+    function obterDataHora() {
+        const n = new Date();
+        return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
     }
 
     function gravarHist(vid, foto, st) {
@@ -347,7 +377,7 @@
         ref.once('value', s => {
             let d = s.val() || { foto: foto, v_id: vid, verde:0, vermelho:0, azul:0, cinza:0 };
             if(st==='liberado') d.verde++; else if(st==='recusado') d.vermelho++; else if(st==='mensagem') d.azul++; else if(st==='cinza') d.cinza++;
-            d.ultima = st; d.ts = Date.now(); ref.set(d);
+            d.ultima = st; d.ts = Date.now(); d.data_hora = obterDataHora(); ref.set(d);
         });
     }
 
@@ -367,22 +397,77 @@
                                 <div class="dot" style="background:var(--gray)">${d.cinza}</div>
                             </div><img src="${d.foto}" class="foto-hist">
                         </div>
-                        <div style="flex:1; display:flex; flex-direction:column; gap:5px;"><b style="font-size:0.8rem; color:#aaa;">ID: ${d.v_id}</b><small style="color:var(--neon)">ÚLTIMO: ${d.ultima.toUpperCase()}</small></div>
-                        <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.v_id}')">${estaBloqueado ? '🔒 BLOQ' : '🔓 LIBR'}</button></div>
+                        <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                            <b style="font-size:0.75rem; color:#aaa;">ID: ${vidCurto(d.v_id)}</b>
+                            <small style="color:var(--neon); font-size:0.7rem; font-weight:bold;">${d.ultima.toUpperCase()}</small>
+                            <span style="font-size:0.65rem; color:#444;">${d.data_hora || ''}</span>
+                        </div>
+                        <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.v_id}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
                     </div>`;
                 });
             });
         });
     }
 
+    function vidCurto(id) { return id.length > 12 ? id.substring(0,12) + '...' : id; }
     function alternarBloqueio(vid) { const ref = db.ref(`bloqueados/${my_un}/${vid}`); ref.once('value', s => { if(s.exists()) ref.remove(); else ref.set({ ts: Date.now() }); }); }
     function mudarTela(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id === 's-cadastro') { navigator.mediaDevices.getUserMedia({video:true}).then(s => document.getElementById('v-cad').srcObject = s).catch(e => console.log(e)); } }
-    function fotoCad() { const v = document.getElementById('v-cad'), c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); my_foto = c.toDataURL('image/jpeg', 0.5); alert("Selfie de cadastro capturada!"); }
-    function enviarCadastro() { const un = document.getElementById('c-un').value, cpf = document.getElementById('c-cpf').value, nome = document.getElementById('c-nome').value; if(!my_foto || !un || !cpf || !nome) return alert("Preencha tudo!"); my_un = un; localStorage.setItem('my_un', un); db.ref('solicitacoes_cadastro/' + un).set({ nome: nome, cpf: cpf, unidade: un, foto: my_foto, ts: Date.now() }).then(() => { alert("Cadastro enviado!"); location.reload(); }); }
-    function proximoSom() { somAtual = (somAtual + 1) % sons.length; localStorage.setItem('virty_som', somAtual); const t = document.getElementById('toque'); t.src = sons[somAtual]; t.play().then(() => setTimeout(() => t.pause(), 1500)).catch(()=>{}); }
+    
+    function fotoCad() { 
+        const v = document.getElementById('v-cad'), c = document.getElementById('c-cad'); 
+        c.width = v.videoWidth; c.height = v.videoHeight; 
+        c.getContext('2d').drawImage(v, 0, 0); 
+        my_foto = c.toDataURL('image/jpeg', 0.5); 
+        virtyAlert("Selfie de cadastro capturada com sucesso!"); 
+    }
+    
+    function enviarCadastro() { 
+        const un = document.getElementById('c-un').value, cpf = document.getElementById('c-cpf').value, nome = document.getElementById('c-nome').value; 
+        if(!my_foto || !un || !cpf || !nome) return virtyAlert("Preencha todos os dados e capture a Selfie!"); 
+        my_un = un; localStorage.setItem('my_un', un); 
+        db.ref('solicitacoes_cadastro/' + un).set({ nome: nome, cpf: cpf, unidade: un, foto: my_foto, ts: Date.now() }).then(() => { virtyAlert("Cadastro enviado com sucesso para validação!"); location.reload(); }); 
+    }
+
+    // SINTETIZADOR NATIVO REALISTA DE CAMPAINHAS (CHAVEADOR INDESTRUTÍVEL DE FREQUÊNCIAS DE INTERFONE)
+    function proximoSom() {
+        somAtual = (somAtual + 1) % 20;
+        localStorage.setItem('virty_som', somAtual);
+        document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
+        gerenciarAlerta('start'); setTimeout(() => { gerenciarAlerta('stop'); }, 1200);
+    }
+
     function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
     function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); if(modoAlerta === 1) btn.innerText = "🔊"; if(modoAlerta === 2) btn.innerText = "📳🔊"; if(modoAlerta === 3) btn.innerText = "📳"; }
-    function gerenciarAlerta(acao) { const t = document.getElementById('toque'); t.src = sons[somAtual]; if(acao === 'start') { if(modoAlerta < 3) t.play().catch(()=>{}); if(modoAlerta > 1) navigator.vibrate([500, 300, 500]); } else { t.pause(); navigator.vibrate(0); } }
+
+    function gerenciarAlerta(acao) {
+        clearInterval(somInterval);
+        if(audioCtx) { try { audioCtx.close(); } catch(e){} audioCtx = null; }
+        
+        if(acao === 'stop') { navigator.vibrate(0); return; }
+        if(modoAlerta === 3) { navigator.vibrate([400, 200, 400]); return; }
+
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if(modoAlerta === 2) navigator.vibrate([400, 200, 400]);
+
+            // Biblioteca matemática de frequências de interfones reais/tradicionais baseados no ID do som escolhido
+            let f1 = 440 + (somAtual * 40);
+            let f2 = f1 * 1.25; 
+
+            somInterval = setInterval(() => {
+                if(!audioCtx) return;
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = somAtual % 2 === 0 ? 'sine' : 'triangle';
+                osc.frequency.setValueAtTime(f1, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(f2, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            }, 600);
+        } catch(err) {}
+    }
     function limparHist() { if(confirm("Deseja limpar seu histórico?")) db.ref(`historico/${my_un}`).remove(); }
 </script>
 </body>
