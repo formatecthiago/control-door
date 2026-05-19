@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v18.0.0</title>
+    <title>VIRTY VISITANTE v19.0.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -12,10 +12,10 @@
         .screen { display: none; width: 100%; max-width: 420px; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; flex: 1; }
         .active { display: flex; }
         
-        /* ESTEIRA GUIADA POR ETAPAS */
+        /* ESTEIRA GUIADA COM SOMBREAMENTO ADICIONAL (10% de opacidade na anterior) */
         .bloco-esteira { width: 100%; transition: all 0.3s ease; margin-bottom: 15px; }
         .etapa-bloqueada { opacity: 0.15; pointer-events: none; filter: blur(0.5px); }
-        .etapa-concluida { opacity: 0.35; }
+        .etapa-concluida { opacity: 0.05; pointer-events: none; } /* 10% a mais de sombreamento para dar evidência total */
         
         .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 10px 0; width: 100%; }
         .video-box { width: 190px; height: 190px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); box-shadow: 0 0 15px var(--neon); background:#111; position:relative; }
@@ -35,18 +35,16 @@
         #status-msg { color: var(--yellow); font-style: italic; font-size: 1.2rem; margin: 15px 0; font-weight: bold; min-height: 30px; text-align: center; }
         
         .txt-resposta { font-size: 1.6rem; font-weight: bold; text-transform: uppercase; margin: 10px 0; text-align: center; }
-        .btn-fechar-virty { background: var(--red); color:#fff; max-width:280px; box-shadow: 0 0 15px var(--red); animation: oscilarPulso 0.8s infinite alternate; }
+        .btn-fechar-virty { background: var(--red); color:#fff; max-width:280px; box-shadow: 0 0 15px var(--red); }
+        .btn-cancelar-chamada { background: #222; border: 2px solid var(--red); color: var(--red); box-shadow: 0 0 10px rgba(255,49,49,0.2); margin-top: 15px; }
         
-        /* POPUPS E TELAS DE ABANDONO */
         .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
         #popup-abandono { background: #000; border: 2px solid var(--red); box-shadow: 0 0 35px var(--red); }
         #timer-abandono-txt { font-size: 3.5rem; color: var(--red); font-weight: bold; margin: 15px 0; display: block; }
         
         .tela-repouso-total { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; }
-
-        .btn-play-interfone { background: var(--blue); color: #fff; width: 85px; height: 85px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 0 20px rgba(0,123,255,0.5); margin: 15px 0; }
+        .btn-play-interfone { background: var(--blue); color: #fff; width: 85px; height: 85px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; margin: 15px 0; }
         .btn-play-interfone svg { width: 35px; height: 35px; fill: #fff; }
-        @keyframes oscilarPulso { from { transform: scale(1); opacity: 1; } to { transform: scale(0.96); opacity: 0.8; } }
     </style>
 </head>
 <body onclick="resetarVigiaOciosidadeGlobal()">
@@ -77,7 +75,6 @@
     </div>
 
     <div id="t-id" class="screen">
-        
         <div id="bloco-passo1" class="bloco-esteira" onclick="retrocederParaPasso1(event)">
             <div class="area-camera-virty">
                 <div style="width:50px;"></div>
@@ -97,7 +94,6 @@
             <input type="text" id="msg" placeholder="Assunto escrito (Opcional)" oninput="dispararVigiaAbandono20s()" onclick="event.stopPropagation()">
             <button id="btn-chamar" class="btn" style="background:var(--neon); color:#000; display:none;" onclick="chamar(event)">TOCAR CAMPAINHA 🔔</button>
         </div>
-
     </div>
 
     <div id="t-calling" class="screen">
@@ -106,6 +102,7 @@
             <div id="area-dinamica" style="width: 100%; display:flex; flex-direction:column; align-items:center;">
                 <h2 id="txt-principal" style="text-align:center; letter-spacing:1px; margin: 5px 0;">CHAMANDO MORADOR...</h2>
                 <div id="status-msg">Aguardando atendimento</div>
+                <button class="btn btn-cancelar-chamada" onclick="cancelarChamadaAtiva(event)">🛑 CANCELAR CHAMADA</button>
             </div>
         </div>
     </div>
@@ -126,15 +123,27 @@
     let usarLenteFrontal = true;
     let audioRespostaMorador = null;
     let telaAtualAtiva = "t-welcome";
-    let subEtapaEsteira = 1; // 1 = Foto, 2 = Form
+    let subEtapaEsteira = 1;
 
-    // Controle do Vigia Silencioso
     let vigiaTimerTolerancia;
     let vigiaTimerRegressivoPopUp;
     let tempoRegressivoAbandono = 40;
     let popUpAbandonoAberto = false;
 
     window.onload = () => { 
+        // --- TRAVA DE SEGURANÇA ESTRUTURAL CONTRA F5 ---
+        if(localStorage.getItem('virty_bloqueio_repouso') === 'true') {
+            entrarEmRepousoAbsoluto();
+            return;
+        }
+
+        // Simulação de leitura de QR code via parâmetro da URL (?qr=clear) limpa a trava
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.get('qr') === 'clear') {
+            localStorage.removeItem('virty_bloqueio_repouso');
+            location.href = window.location.pathname; // recarrega limpo
+        }
+
         gerarFingerprintInviolavel().then(id => { v_id = id; });
         inicializarCameraAgressiva();
         dispararVigiaAbandono20s();
@@ -157,32 +166,19 @@
             ctx.textBaseline = "top"; ctx.font = "14px 'Arial'";
             ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
             ctx.fillStyle = "#069"; ctx.fillText("VirtyAccess3.0*", 2, 2);
-            ctx.fillStyle = "rgba(102, 204, 0, 0.7)"; ctx.fillText("VirtyAccess3.0*", 4, 4);
             const strCanvas = canvas.toDataURL();
-            
-            const metadados = [
-                screen.width, screen.height, screen.devicePixelRatio,
-                navigator.hardwareConcurrency || 4, navigator.language,
-                navigator.platform, strCanvas.substring(50, 150)
-            ].join('||');
-            
-            let hash = 0;
-            for (let i = 0; i < metadados.length; i++) { hash = (hash << 5) - hash + metadados.charCodeAt(i); hash |= 0; }
+            const metadados = [screen.width, screen.height, navigator.hardwareConcurrency || 4, navigator.language, strCanvas.substring(50, 150)].join('||');
+            let hash = 0; for (let i = 0; i < metadados.length; i++) { hash = (hash << 5) - hash + metadados.charCodeAt(i); hash |= 0; }
             return "VF-" + Math.abs(hash).toString(16).toUpperCase();
-        } catch(err) {
-            return "VF-" + Math.floor(Math.random() * 900000 + 100000);
-        }
+        } catch(err) { return "VF-" + Math.floor(Math.random() * 900000 + 100000); }
     }
 
     function inicializarCameraAgressiva() {
         if(streamAtual) { streamAtual.getTracks().forEach(track => track.stop()); }
         const constraints = { video: { facingMode: usarLenteFrontal ? "user" : "environment" } };
         navigator.mediaDevices.getUserMedia(constraints).then(s => {
-            streamAtual = s; 
-            const video = document.getElementById('v');
-            video.srcObject = s;
-            video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
-        }).catch(e => { console.log(e); });
+            streamAtual = s; const video = document.getElementById('v'); video.srcObject = s;
+        }).catch(e => {});
     }
 
     function alternarLenteCamera(e) {
@@ -194,55 +190,37 @@
 
     function tirarFotoFluxo(e) {
         if(e) e.stopPropagation();
-        dispararVigiaAbandono20s();
-        
-        const btn = document.getElementById('btn-foto-fluxo');
-        
-        // Modo Avançar: Se a foto já foi tirada e ele clicou no botão transformado
-        if(subEtapaEsteira === 2) {
-            avancarParaPasso2();
-            return;
-        }
+        destruirTodosOsVigias(); // para temporariamente para o foco
 
         const v = document.getElementById('v'), c = document.getElementById('c-visitante');
         if(!v.videoWidth) return;
         c.width = v.videoWidth; c.height = v.videoHeight;
         
         const ctx = c.getContext('2d');
-        if(usarLenteFrontal) {
-            ctx.translate(c.width, 0);
-            ctx.scale(-1, 1);
-        }
-        ctx.drawImage(v, 0, 0);
-        ctx.setTransform(1,0,0,1,0,0);
+        if(usarLenteFrontal) { ctx.translate(c.width, 0); ctx.scale(-1, 1); }
+        ctx.drawImage(v, 0, 0); ctx.setTransform(1,0,0,1,0,0);
         
         b64 = c.toDataURL('image/jpeg', 0.5);
-        c.style.display = "block";
-        v.style.display = "none";
-        c.style.transform = "scaleX(1)";
+        c.style.display = "block"; v.style.display = "none";
         document.getElementById('btn-camera-lente').style.visibility = 'hidden';
+        document.getElementById('btn-foto-fluxo').style.display = 'none';
         
         if(streamAtual) streamAtual.getTracks().forEach(track => track.stop());
         
-        // Transforma o botão dinamicamente em botão de avanço imediato
         subEtapaEsteira = 2;
-        btn.innerText = "PRÓXIMO REQUISITO ➡️";
-        btn.style.background = "var(--neon)";
-        btn.style.color = "#000";
-    }
-
-    function avancarParaPasso2() {
+        
+        // --- SALTO CIRÚRGICO DIRETO PARA O INPUT + FOCALIZAÇÃO ---
         document.getElementById('bloco-passo1').className = "bloco-esteira etapa-concluida";
         document.getElementById('bloco-passo2').className = "bloco-esteira";
         
         const campoUnidade = document.getElementById('un');
         campoUnidade.focus();
-        dispararVigiaAbandono20s();
+        dispararVigiaAbandono20s(); // retoma os 20s na nova etapa
     }
 
     function retrocederParaPasso1(e) {
         if(e) e.stopPropagation();
-        if(subEtapaEsteira === 1) return; // já está no passo 1
+        if(subEtapaEsteira === 1) return;
         
         subEtapaEsteira = 1; b64 = "";
         document.getElementById('bloco-passo1').className = "bloco-esteira";
@@ -255,11 +233,7 @@
         document.getElementById('v').style.display = "block";
         document.getElementById('c-visitante').style.display = "none";
         document.getElementById('btn-camera-lente').style.visibility = 'visible';
-        
-        const btn = document.getElementById('btn-foto-fluxo');
-        btn.innerText = "📸 CAPTURAR FACE";
-        btn.style.background = "#fff";
-        btn.style.color = "#000";
+        document.getElementById('btn-foto-fluxo').style.display = 'block';
         
         inicializarCameraAgressiva();
         dispararVigiaAbandono20s();
@@ -268,20 +242,14 @@
     function monitorarDigitacaoUnidade(e) {
         if(e) e.stopPropagation();
         dispararVigiaAbandono20s();
-        
         const unVal = document.getElementById('un').value.trim();
-        const btnChamar = document.getElementById('btn-chamar');
-        
-        if(unVal.length >= 1) {
-            btnChamar.style.display = "block";
-        } else {
-            btnChamar.style.display = "none";
-        }
+        document.getElementById('btn-chamar').style.display = unVal.length >= 1 ? "block" : "none";
     }
 
     async function chamar(e) {
         if(e) e.stopPropagation();
-        destruirTodosOsVigias();
+        destruirTodosOsVigias(); // <--- BLINDAGEM TOTAL: Desliga o abandono durante a chamada
+        
         const un = document.getElementById('un').value;
         if(!un || !b64) return;
 
@@ -292,10 +260,10 @@
         }
 
         mudarTela('t-calling');
-        telaAtivaGlobal("t-calling-dinamica");
+        telaAtivaGlobal("t-calling-dinamica"); 
+        
         const ref = db.ref(`chamadas_ativas/${un}`);
         await ref.remove();
-        
         ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value, v_id: v_id, ts: Date.now() });
 
         let t = 90;
@@ -324,32 +292,34 @@
                 if(d.status === "recusado") { cor = "var(--red)"; stringFinal = "ACESSO RECUSADO"; }
                 if(d.status === "cinza") { cor = "#666"; stringFinal = "CHAMADA NÃO ATENDIDA"; }
                 if(d.status === "mensagem") { 
-                    cor = "var(--blue)"; 
-                    stringFinal = d.msg_morador || "MENSAGEM RECEBIDA"; 
+                    cor = "var(--blue)"; stringFinal = d.msg_morador || "MENSAGEM RECEBIDA"; 
                     if(d.audio_b64) {
                         audioRespostaMorador = new Audio(d.audio_b64);
-                        incluirPlayerHtml = `
-                            <div style="display:flex; flex-direction:column; align-items:center; margin-top:15px; margin-bottom:10px;" onclick="event.stopPropagation()">
-                                <button class="btn-play-interfone" onclick="playAudioRespostaMorador()">
-                                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                                </button>
-                                <span style="font-size:0.75rem; color:var(--blue); font-weight:bold;">OUVIR RESPOSTA DO MORADOR</span>
-                            </div>
-                        `;
+                        incluirPlayerHtml = `<div style="display:flex; flex-direction:column; align-items:center; margin-top:15px; margin-bottom:10px;" onclick="event.stopPropagation()"><button class="btn-play-interfone" onclick="playAudioRespostaMorador()"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><span style="font-size:0.75rem; color:var(--blue); font-weight:bold;">OUVIR RESPOSTA</span></div>`;
                     }
                 }
 
                 area.innerHTML = `
                     <div class="txt-resposta" style="color:${cor}">${stringFinal}</div>
                     ${incluirPlayerHtml}
-                    <p style="color:#444; font-size:0.95rem; margin-top:20px; font-weight:bold; text-align:center;">Sessão finalizada.</p>
                     <button class="btn btn-fechar-virty" onclick="finalizarTelaMorta(event)">FECHAR</button>
                 `;
                 
-                telaAtivaGlobal("t-morta");
+                telaAtivaGlobal("t-morta"); // Ativa a Tela Morta: O Vigia volta a funcionar aqui!
                 dispararVigiaAbandono20s();
             }
         });
+    }
+
+    // --- BOTÃO DE CANCELAR ENGENHARIA ---
+    function cancelarChamadaAtiva(e) {
+        if(e) e.stopPropagation();
+        const un = document.getElementById('un').value;
+        if(un) {
+            db.ref(`chamadas_ativas/${un}`).off();
+            db.ref(`chamadas_ativas/${un}`).remove();
+        }
+        finalizarTelaMorta(e);
     }
 
     function playAudioRespostaMorador() { if(audioRespostaMorador) audioRespostaMorador.play().catch(e=>{}); }
@@ -361,16 +331,12 @@
         destruirTodosOsVigias();
         if(streamAtual) streamAtual.getTracks().forEach(track => track.stop());
         
-        // Reseta todos os estados visuais da esteira para o padrão de fábrica
         subEtapaEsteira = 1; b64 = "";
         document.getElementById('bloco-passo1').className = "bloco-esteira";
         document.getElementById('bloco-passo2').className = "bloco-esteira etapa-bloqueada";
-        document.getElementById('un').value = "";
-        document.getElementById('msg').value = "";
+        document.getElementById('un').value = ""; document.getElementById('msg').value = "";
         document.getElementById('btn-chamar').style.display = "none";
-        document.getElementById('btn-foto-fluxo').innerText = "📸 CAPTURAR FACE";
-        document.getElementById('btn-foto-fluxo').style.background = "#fff";
-        document.getElementById('btn-foto-fluxo').style.color = "#000";
+        document.getElementById('btn-foto-fluxo').style.display = 'block';
         document.getElementById('btn-camera-lente').style.visibility = 'visible';
         
         mudarTela('t-welcome');
@@ -383,82 +349,57 @@
         telaAtivaGlobal(id);
         
         if(id === 't-id') {
-            document.getElementById('v').style.display = "block";
-            document.getElementById('c-visitante').style.display = "none";
-            inicializerValoresDefaultId();
+            document.getElementById('timer-v').style.display = 'block';
+            document.getElementById('timer-v').innerText = '90';
+            document.getElementById('area-dinamica').innerHTML = `
+                <h2 id="txt-principal" style="text-align:center; letter-spacing:1px; margin: 5px 0;">CHAMANDO MORADOR...</h2>
+                <div id="status-msg">Aguardando atendimento</div>
+                <button class="btn btn-cancelar-chamada" onclick="cancelarChamadaAtiva(event)">🛑 CANCELAR CHAMADA</button>
+            `;
             inicializarCameraAgressiva();
         }
         dispararVigiaAbandono20s();
     }
     
-    function inicializerValoresDefaultId() {
-        document.getElementById('timer-v').style.display = 'block';
-        document.getElementById('timer-v').innerText = '90';
-        document.getElementById('area-dinamica').innerHTML = `
-            <h2 id="txt-principal" style="text-align:center; letter-spacing:1px; margin: 5px 0;">CHAMANDO MORADOR...</h2>
-            <div id="status-msg">Aguardando atendimento</div>
-        `;
-    }
-
     function telaAtivaGlobal(nome) { telaAtualAtiva = nome; }
 
-    // LOGICA ESTRUTURAL DO VIGIA SILENCIOSO
     function destruirTodosOsVigias() {
-        clearTimeout(vigiaTimerTolerancia);
-        clearInterval(vigiaTimerRegressivoPopUp);
+        clearTimeout(vigiaTimerTolerancia); clearInterval(vigiaTimerRegressivoPopUp);
         document.getElementById('popup-abandono').style.display = 'none';
         popUpAbandonoAberto = false;
     }
 
     function dispararVigiaAbandono20s() {
         destruirTodosOsVigias();
-        if(telaAtualAtiva === "t-calling-dinamica") return; 
+        if(telaAtualAtiva === "t-calling-dinamica") return; // <--- Bloqueado em chamada de forma absoluta!
         
-        const alertaAberto = document.getElementById('custom-alert').style.display === 'block';
-        if (alertaAberto) return; 
+        if (document.getElementById('custom-alert').style.display === 'block') return; 
         
-        vigiaTimerTolerancia = setTimeout(() => {
-            abrirPopUpContagem40s();
-        }, 20000); 
+        vigiaTimerTolerancia = setTimeout(() => { abrirPopUpContagem40s(); }, 20000); 
     }
 
-    function resetarVigiaOciosidadeGlobal() {
-        if(popUpAbandonoAberto) return; 
-        dispararVigiaAbandono20s();
-    }
+    function resetarVigiaOciosidadeGlobal() { if(!popUpAbandonoAberto) dispararVigiaAbandono20s(); }
 
     function abrirPopUpContagem40s() {
-        popUpAbandonoAberto = true;
-        tempoRegressivoAbandono = 40; 
+        popUpAbandonoAberto = true; tempoRegressivoAbandono = 40; 
         document.getElementById('timer-abandono-txt').innerText = tempoRegressivoAbandono;
         document.getElementById('popup-abandono').style.display = 'block';
-        
         emitirBipAlertaOciosidade();
 
         vigiaTimerRegressivoPopUp = setInterval(() => {
-            tempoRegressivoAbandono--;
-            document.getElementById('timer-abandono-txt').innerText = tempoRegressivoAbandono;
-            
-            if(tempoRegressivoAbandono <= 5) {
-                emitirBipAlertaOciosidade(); 
-            }
-
-            if(tempoRegressivoAbandono <= 0) {
-                destruirTodosOsVigias();
-                entrarEmRepousoAbsoluto();
-            }
+            tempoRegressivoAbandono--; document.getElementById('timer-abandono-txt').innerText = tempoRegressivoAbandono;
+            if(tempoRegressivoAbandono <= 5) emitirBipAlertaOciosidade(); 
+            if(tempoRegressivoAbandono <= 0) { destruirTodosOsVigias(); entrarEmRepousoAbsoluto(); }
         }, 1000);
     }
 
-    function salvarSessaoAbandono(e) {
-        if(e) e.stopPropagation();
-        destruirTodosOsVigias();
-        popUpAbandonoAberto = false;
-        dispararVigiaAbandono20s(); 
-    }
+    function salvarSessaoAbandono(e) { if(e) e.stopPropagation(); destruirTodosOsVigias(); popUpAbandonoAberto = false; dispararVigiaAbandono20s(); }
 
     function entrarEmRepousoAbsoluto() {
         destruirTodosOsVigias();
+        // --- GRAVAÇÃO DA TRAVA INVIOLÁVEL NO CACHE LOCAL ---
+        localStorage.setItem('virty_bloqueio_repouso', 'true');
+        
         if(streamAtual) { streamAtual.getTracks().forEach(t => t.stop()); streamAtual = null; }
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('tela-repouso').style.display = 'flex';
@@ -466,10 +407,8 @@
 
     function emitirBipAlertaOciosidade() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator(); const gain = ctx.createGain();
-            osc.type = "sine"; osc.frequency.setValueAtTime(840, ctx.currentTime);
-            gain.gain.setValueAtTime(0.04, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+            const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); const gain = ctx.createGain();
+            osc.type = "sine"; osc.frequency.setValueAtTime(840, ctx.currentTime); gain.gain.setValueAtTime(0.04, ctx.currentTime);
             osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.12);
         } catch(err){}
     }
