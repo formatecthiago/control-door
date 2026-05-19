@@ -3,40 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY ADMIN v1.4</title>
+    <title>VIRTY ADMIN v1.5</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --yellow: #FFD700; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --yellow: #FFD700; --blue: #007BFF; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
         
-        /* Cabeçalho de Status */
         .stats-bar { display: flex; gap: 10px; margin-bottom: 20px; position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 100; }
         .stat-btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; text-align: center; font-size: 0.8rem; cursor: default; }
         .btn-cad { background: var(--neon); color: #000; }
         .btn-pend { background: var(--yellow); color: #000; }
 
-        /* Estilo das Buscas */
         .search-group { margin-bottom: 25px; border: 1px solid #222; padding: 10px; border-radius: 10px; }
         .search-label { font-size: 0.7rem; color: #888; margin-bottom: 5px; display: block; text-transform: uppercase; }
         input.search-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
         input.search-input:focus { border-color: var(--neon); outline: none; }
 
-        /* Listas e Itens */
-        .list-container { max-height: 300px; overflow-y: auto; }
-        .item-row { background: #0a0a0a; border-bottom: 1px solid #1a1a1a; padding: 12px; cursor: pointer; transition: 0.2s; }
-        .item-row:hover { background: #151515; }
-        .item-header { display: flex; justify-content: space-between; align-items: center; }
-        .item-header b { color: var(--neon); font-size: 0.9rem; }
-        .item-header span { color: #ccc; font-size: 0.85rem; }
-
-        /* Detalhes (Escondidos por padrão) */
-        .item-details { display: none; padding-top: 15px; border-top: 1px solid #222; margin-top: 10px; animation: slideDown 0.3s ease; }
-        .item-details img { width: 120px; height: 120px; border-radius: 10px; object-fit: cover; border: 2px solid var(--neon); margin-bottom: 10px; }
-        .data-grid { font-size: 0.8rem; color: #aaa; margin-bottom: 15px; }
+        .list-container { max-height: 350px; overflow-y: auto; }
         
-        .actions { display: flex; gap: 10px; }
-        .btn-action { flex: 1; padding: 8px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; font-size: 0.7rem; }
+        /* LINHA MODELO CARD REESTRUTURADA (FOTO ESQUERDA, DADOS CENTRO, AÇÕES DIREITA) */
+        .item-row { 
+            background: #0a0a0a; 
+            border: 1px solid #1a1a1a; 
+            border-radius: 12px;
+            padding: 12px; 
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: 0.2s; 
+        }
+        .item-row:hover { background: #121212; border-color: #333; }
+        
+        /* Foto à Esquerda */
+        .card-foto-virty { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 10px; 
+            object-fit: cover; 
+            border: 2px solid var(--neon);
+            flex-shrink: 0;
+        }
+        
+        /* Dados ao Centro */
+        .card-info-virty { 
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .card-info-virty h3 { margin: 0; font-size: 1rem; color: #fff; font-weight: bold; }
+        .card-info-virty p { margin: 0; font-size: 0.8rem; color: #aaa; }
+        .badge-unidade { font-size: 0.75rem; font-weight: bold; color: var(--neon); text-transform: uppercase; }
 
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Ações à Direita */
+        .card-actions-virty { 
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 95px;
+        }
+        .btn-action { 
+            width: 100%;
+            padding: 7px; 
+            border-radius: 6px; 
+            border: none; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 0.65rem; 
+            text-transform: uppercase;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -65,10 +101,9 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    // Sincronização em tempo real das solicitações pendentes
+    // Monitoramento de Pendentes
     db.ref('solicitacoes_cadastro').on('value', snap => {
-        const container = document.getElementById('list-p');
-        container.innerHTML = "";
+        const container = document.getElementById('list-p'); container.innerHTML = "";
         let totalPendentes = 0;
 
         if (snap.exists()) {
@@ -76,32 +111,23 @@
                 const un = unidadeSnap.key;
                 unidadeSnap.forEach(moradorSnap => {
                     totalPendentes++;
-                    const d = moradorSnap.val();
-                    const fingerprint = moradorSnap.key;
-                    
+                    const d = moradorSnap.val(); const fingerprint = moradorSnap.key;
                     const searchStr = `${d.nome} ${un} ${d.cpf || ''}`.toLowerCase();
+                    
                     const row = document.createElement('div');
                     row.className = 'item-row';
                     row.setAttribute('data-search', searchStr);
-                    row.onclick = (e) => toggleDetails(row, e);
 
                     row.innerHTML = `
-                        <div class="item-header">
-                            <b>CASA ${un}</b>
-                            <span>${d.nome}</span>
-                            <small style="color:var(--yellow)">⏳</small>
+                        <img src="${d.foto}" class="card-foto-virty" style="border-color:var(--yellow)">
+                        <div class="card-info-virty">
+                            <span class="badge-unidade" style="color:var(--yellow)">CASA ${un}</span>
+                            <h3>${d.nome}</h3>
+                            <p><strong>CPF:</strong> ${d.cpf || '---'}</p>
                         </div>
-                        <div class="item-details">
-                            <img src="${d.foto}">
-                            <div class="data-grid">
-                                <p><strong>NOME:</strong> ${d.nome}</p>
-                                <p><strong>CPF:</strong> ${d.cpf || 'Não informado'}</p>
-                                <p><strong>DISPOSITIVO:</strong> ${fingerprint}</p>
-                            </div>
-                            <div class="actions">
-                                <button class="btn-action" style="background:var(--neon); color:#000;" onclick="aprovar('${un}', '${fingerprint}')">APROVAR AGORA</button>
-                                <button class="btn-action" style="background:var(--red); color:#fff;" onclick="recusar('${un}', '${fingerprint}')">REJEITAR</button>
-                            </div>
+                        <div class="card-actions-virty">
+                            <button class="btn-action" style="background:var(--neon); color:#000;" onclick="aprovar('${un}', '${fingerprint}')">APROVAR</button>
+                            <button class="btn-action" style="background:var(--red); color:#fff;" onclick="recusar('${un}', '${fingerprint}')">REJEITAR</button>
                         </div>
                     `;
                     container.appendChild(row);
@@ -111,28 +137,19 @@
         document.getElementById('count-pend').innerText = totalPendentes;
     });
 
-    // Sincronização em tempo real dos moradores habilitados
+    // Monitoramento de Aprovados/Habilitados
     db.ref('moradores_validados').on('value', snap => {
-        const container = document.getElementById('list-c');
-        container.innerHTML = "";
+        const container = document.getElementById('list-c'); container.innerHTML = "";
         let totalHabilitados = 0;
 
         if (snap.exists()) {
             snap.forEach(unidadeSnap => {
-                const un = unidadeSnap.key;
-                
-                // Tratamento preventivo: suporta tanto a árvore antiga (objeto único) quanto a nova (múltiplos moradores por nó)
-                const dadosUnidade = unidadeSnap.val();
-                
+                const un = unidadeSnap.key; const dadosUnidade = unidadeSnap.val();
                 if (dadosUnidade.nome) {
-                    // Registro legado/antigo do banco
-                    totalHabilitados++;
-                    renderizarLinhaHabilitado(container, un, dadosUnidade, null);
+                    totalHabilitados++; renderizarCardHabilitado(container, un, dadosUnidade, null);
                 } else {
-                    // Estrutura moderna multigrupo
                     unidadeSnap.forEach(moradorSnap => {
-                        totalHabilitados++;
-                        renderizarLinhaHabilitado(container, un, moradorSnap.val(), moradorSnap.key);
+                        totalHabilitados++; renderizarCardHabilitado(container, un, moradorSnap.val(), moradorSnap.key);
                     });
                 }
             });
@@ -140,44 +157,28 @@
         document.getElementById('count-cad').innerText = totalHabilitados;
     });
 
-    // Auxiliar de renderização para organização visual limpa
-    function renderizarLinhaHabilitado(container, un, d, fingerprintChave) {
+    // Renderização com Arquitetura Estética Exigida (Foto Esquerda, Dados Centro, Botões Direita)
+    function renderizarCardHabilitado(container, un, d, fingerprintChave) {
         const searchStr = `${d.nome} ${un} ${d.cpf || ''}`.toLowerCase();
         const row = document.createElement('div');
         row.className = 'item-row';
         row.setAttribute('data-search', searchStr);
-        row.onclick = (e) => toggleDetails(row, e);
 
-        // Chave de identificação para remoção segura
-        const parametroRemover = fingerprintChave ? `'${un}', '${fingerprintChave}'` : `'${un}', null`;
+        const paramExcluir = fingerprintChave ? `'${un}', '${fingerprintChave}'` : `'${un}', null`;
 
         row.innerHTML = `
-            <div class="item-header">
-                <b>CASA ${un}</b>
-                <span>${d.nome}</span>
-                <small style="color:var(--neon)">✔</small>
+            <img src="${d.foto || ''}" class="card-foto-virty" onerror="this.style.display='none'">
+            <div class="card-info-virty">
+                <span class="badge-unidade">CASA ${un}</span>
+                <h3>${d.nome}</h3>
+                <p><strong>CPF:</strong> ${d.cpf || '---'}</p>
             </div>
-            <div class="item-details">
-                <img src="${d.foto || ''}" onerror="this.style.display='none'">
-                <div class="data-grid">
-                    <p><strong>NOME:</strong> ${d.nome}</p>
-                    <p><strong>CPF:</strong> ${d.cpf || 'Não informado'}</p>
-                    <p><strong>STATUS:</strong> Habilitado Permanente</p>
-                </div>
-                <div class="actions">
-                    <button class="btn-action" style="background:var(--red); color:#fff" onclick="remover(${parametroRemover})">EXCLUIR MORADOR</button>
-                </div>
+            <div class="card-actions-virty">
+                <button class="btn-action" style="background:var(--blue); color:#fff;" onclick="editarMorador('${un}', '${fingerprintChave || ''}')">EDITAR</button>
+                <button class="btn-action" style="background:var(--red); color:#fff;" onclick="remover(${paramExcluir})">EXCLUIR</button>
             </div>
         `;
         container.appendChild(row);
-    }
-
-    function toggleDetails(row, event) {
-        if(event.target.tagName === 'BUTTON') return;
-        const details = row.querySelector('.item-details');
-        const isVisible = details.style.display === 'block';
-        row.parentElement.querySelectorAll('.item-details').forEach(d => d.style.display = 'none');
-        details.style.display = isVisible ? 'none' : 'block';
     }
 
     function filterList(containerId, term) {
@@ -185,26 +186,16 @@
         const rows = document.getElementById(containerId).querySelectorAll('.item-row');
         rows.forEach(r => {
             const text = r.getAttribute('data-search');
-            r.style.display = text.includes(t) ? 'block' : 'none';
+            r.style.display = text.includes(t) ? 'flex' : 'none';
         });
     }
 
-    // Ações do Administrador em Perfeita Sincronia com o Novo Banco
     function aprovar(un, fingerprint) {
         db.ref(`solicitacoes_cadastro/${un}/${fingerprint}`).once('value', s => {
-            if(!s.exists()) return;
-            const dados = s.val();
-            
-            // Grava na lista definitiva de validados preservando o fingerprint do morador
+            if(!s.exists()) return; const dados = s.val();
             db.ref(`moradores_validados/${un}/${fingerprint}`).set({
-                nome: dados.nome,
-                cpf: dados.cpf,
-                foto: dados.foto,
-                ts: Date.now()
-            }).then(() => {
-                // Remove cirurgicamente apenas esta solicitação resolvida da fila
-                db.ref(`solicitacoes_cadastro/${un}/${fingerprint}`).remove();
-            });
+                nome: dados.nome, cpf: dados.cpf, foto: dados.foto, ts: Date.now()
+            }).then(() => db.ref(`solicitacoes_cadastro/${un}/${fingerprint}`).remove());
         });
     }
 
@@ -214,16 +205,21 @@
         }
     }
 
+    // Trava de Segurança com Confirmação Humana Obrigatória na Exclusão
     function remover(un, fingerprint) {
-        if(confirm("Deseja realmente revogar o acesso deste morador?")) {
+        if(confirm(`⚠️ ATENÇÃO!\nDeseja realmente EXCLUIR e revogar em definitivo o acesso deste morador da Unidade ${un}?`)) {
             if(fingerprint) {
-                // Remove especificamente o morador selecionado daquela casa
                 db.ref(`moradores_validados/${un}/${fingerprint}`).remove();
             } else {
-                // Tratamento para registros antigos (limpa o nó inteiro)
                 db.ref('moradores_validados/' + un).remove();
             }
+            alert("Acesso revogado com sucesso!");
         }
+    }
+
+    function editarMorador(un, fingerprint) {
+        // Preparado estruturalmente para sua futura rotina de edição de dados em lote
+        alert(`Rotina de edição aberta para Unidade ${un}.`);
     }
 </script>
 </body>
