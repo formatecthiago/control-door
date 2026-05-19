@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.9.0</title>
+    <title>VIRTY MORADOR v2.0.0</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -85,7 +85,6 @@
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; }
         .btn-voz svg { width: 32px; height: 32px; fill: #000; }
 
-        /* Área da Câmera Espelhada e Alinhada */
         .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px 0 25px; width: 100%; }
         .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); box-shadow: 0 0 15px rgba(57,255,20,0.3); background:#111; position:relative; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
@@ -106,7 +105,8 @@
         <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
         
         <div class="area-camera-virty">
-            <div style="width:50px;"></div> <div class="video-box">
+            <div style="width:50px;"></div>
+            <div class="video-box">
                 <video id="v-cad" autoplay playsinline muted></video>
                 <canvas id="c-cad"></canvas>
             </div>
@@ -134,7 +134,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.0</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.0</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -145,7 +145,7 @@
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <span style="font-size:0.85rem; color:var(--gray); font-weight:bold; letter-spacing:0.5px;">HISTÓRICO DE CHAMADAS</span>
+            <span style="font-size:0.85rem; color:var(--gray); font-weight:bold; letter-spacing:0.5px;">HISTÓRICO DE REGISTROS</span>
             <button onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.75rem; font-weight:bold; cursor:pointer;">LIMPAR TUDO</button>
         </div>
 
@@ -208,6 +208,7 @@
     let estaGravando = false, estaDigitando = false, modoMaoLivre = false;
     let tempoGeralRegressivo = 90;
     let timePressStart = 0;
+    let limiteHistoricoAtual = 5;
 
     let audioCtx = null;
     let somAtual = parseInt(localStorage.getItem('virty_som')) || 0;
@@ -215,7 +216,7 @@
     let somInterval = null;
     
     let streamCameraAtiva = null;
-    let usarLenteFrontal = true; // Força prioridade Selfie
+    let usarLenteFrontal = true;
 
     function gerarFingerprintMorador() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
@@ -263,7 +264,6 @@
             streamCameraAtiva = s;
             const video = document.getElementById('v-cad');
             video.srcObject = s;
-            // Se for frontal espelha visualmente, se for traseira remove espelhamento para leitura perfeita
             video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
         }).catch(e => console.log(e));
     }
@@ -279,20 +279,16 @@
         c.width = v.videoWidth; c.height = v.videoHeight; 
         
         const ctx = c.getContext('2d');
-        // Corrige a orientação salvando exatamente a perspectiva espelhada que o usuário vê na tela
         if(usarLenteFrontal) {
             ctx.translate(c.width, 0);
             ctx.scale(-1, 1);
         }
         ctx.drawImage(v, 0, 0);
-        // Reseta transformações do canvas
         ctx.setTransform(1,0,0,1,0,0);
         
         my_foto = c.toDataURL('image/jpeg', 0.5); 
         c.style.display = "block"; 
         v.style.display = "none"; 
-        
-        // Mantém a exibição estática idêntica removendo efeitos dinâmicos
         c.style.transform = "scaleX(1)"; 
         
         if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
@@ -371,6 +367,7 @@
         db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: txt, data_hora: obterDataHora() });
         document.getElementById('campo-texto-interno').value = ""; responder('mensagem');
     }
+    
     function eventoMicStart(e) { e.preventDefault(); if(estaGravando) return; timePressStart = Date.now(); modoMaoLivre = false; startRec(); }
     function eventoMicEnd(e) { e.preventDefault(); let duration = Date.now() - timePressStart; if(duration < 400) { modoMaoLivre = true; document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque para enviar</span>"; } else { if(!modoMaoLivre) stopRec(); } }
     function verificarToqueEnvioMaoLivre(e) { if(modoMaoLivre && estaGravando) { e.stopPropagation(); stopRec(); } }
@@ -427,24 +424,48 @@
     }
 
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
+    
     function gravarHist(vid, foto, st) {
         const ref = db.ref(`historico/${my_un}/${vid}`);
         ref.once('value', s => {
-            let d = s.val() || { foto: foto, v_id: vid, verde:0, vermelho:0, azul:0, cinza:0 };
-            if(st==='liberado') d.verde++; else if(st==='recusado') d.vermelho++; else if(st==='mensagem') d.azul++; else if(st==='cinza') d.cinza++;
-            d.ultima = st; d.ts = Date.now(); d.data_hora = obterDataHora(); ref.set(d);
+            let d = s.val() || { foto: foto, v_id: vid, verde: 0, vermelho: 0, azul: 0, cinza: 0 };
+            if(st==='liberado') d.verde++; 
+            else if(st==='recusado') d.vermelho++; 
+            else if(st==='mensagem') d.azul++; 
+            else if(st==='cinza') d.cinza++;
+            
+            d.ultima = st; 
+            d.ts = Date.now(); 
+            d.data_hora = obterDataHora(); 
+            ref.set(d);
         });
     }
 
     function renderizarHist() {
-        db.ref(`historico/${my_un}`).on('value', snap => {
+        db.ref(`historico/${my_un}`).orderByChild('ts').on('value', snap => {
             db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
-                const bloqueados = bSnap.val() || {}; const list = document.getElementById('lista-hist'); list.innerHTML = "";
-                snap.forEach(item => {
-                    const d = item.val(); const estaBloqueado = !!bloqueados[d.v_id];
+                const bloqueados = bSnap.val() || {}; 
+                const list = document.getElementById('lista-hist'); 
+                list.innerHTML = "";
+                
+                if(!snap.exists()) return;
+                
+                let registros = [];
+                snap.forEach(item => { registros.push(item.val()); });
+                registros.reverse(); 
+
+                let exibidos = registros.slice(0, limiteHistoricoAtual);
+
+                exibidos.forEach(d => {
+                    const estaBloqueado = !!bloqueados[d.v_id];
                     list.innerHTML += `<div class="hist-card">
                         <div class="foto-box">
-                            <div class="dots-row"><div class="dot" style="background:var(--neon); color:#000">${d.verde}</div><div class="dot" style="background:var(--red)">${d.vermelho}</div><div class="dot" style="background:var(--blue)">${d.azul}</div><div class="dot" style="background:var(--gray)">${d.cinza}</div></div>
+                            <div class="dots-row">
+                                <div class="dot" style="background:var(--neon); color:#000">${d.verde}</div>
+                                <div class="dot" style="background:var(--red)">${d.vermelho}</div>
+                                <div class="dot" style="background:var(--blue)">${d.azul}</div>
+                                <div class="dot" style="background:var(--gray)">${d.cinza}</div>
+                            </div>
                             <img src="${d.foto}" class="foto-hist">
                         </div>
                         <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
@@ -455,9 +476,23 @@
                         <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.v_id}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
                     </div>`;
                 });
+
+                if (registros.length > limiteHistoricoAtual) {
+                    list.innerHTML += `
+                        <button class="btn" style="background:#111; color:var(--neon); border:1px solid var(--neon); padding:12px; font-size:0.8rem; margin-top:5px; border-radius:15px;" onclick="mostrarMaisHistorico()">
+                            🔽 VER MAIS REGISTROS (${registros.length - limiteHistoricoAtual})
+                        </button>
+                    `;
+                }
             });
         });
     }
+    
+    function mostrarMaisHistorico() {
+        limiteHistoricoAtual += 5;
+        renderizarHist();
+    }
+
     function vidCurto(id) { return id.length > 12 ? id.substring(0,12) + '...' : id; }
     function alternarBloqueio(vid) { const ref = db.ref(`bloqueados/${my_un}/${vid}`); ref.once('value', s => { if(s.exists()) ref.remove(); else ref.set({ ts: Date.now() }); }); }
     
