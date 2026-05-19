@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.8.0</title>
+    <title>VIRTY MORADOR v1.9.0</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -83,8 +83,15 @@
         
         .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; }
-        .btn-voz svg { width: 30px; height: 30px; fill: #000; }
-        @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
+        .btn-voz svg { width: 32px; height: 32px; fill: #000; }
+
+        /* Área da Câmera Espelhada e Alinhada */
+        .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px 0 25px; width: 100%; }
+        .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); box-shadow: 0 0 15px rgba(57,255,20,0.3); background:#111; position:relative; }
+        .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; transform: scaleX(-1); }
+        .btn-inverter { background: #111; border: 2px solid var(--neon); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 10px rgba(57,255,20,0.2); }
+        .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
     </style>
 </head>
 <body>
@@ -97,10 +104,17 @@
 
     <div id="s-cadastro" class="screen">
         <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
-        <div style="position:relative; width:160px; height:160px; margin:0 auto 20px;">
-            <video id="v-cad" autoplay playsinline muted style="width:160px; height:160px; border-radius:50%; object-fit:cover; border:3px solid var(--neon); background:#111; display:block;"></video>
-            <canvas id="c-cad" style="display:none; width:160px; height:160px; border-radius:50%; object-fit:cover; border:3px solid var(--neon); background:#111;"></canvas>
+        
+        <div class="area-camera-virty">
+            <div style="width:50px;"></div> <div class="video-box">
+                <video id="v-cad" autoplay playsinline muted></video>
+                <canvas id="c-cad"></canvas>
+            </div>
+            <button class="btn-inverter" onclick="alternarLenteCamera()">
+                <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
+            </button>
         </div>
+
         <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR SELFIE</button>
         <input type="text" id="c-nome" placeholder="Nome Completo">
         <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
@@ -120,7 +134,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 1.8.0</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.0</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -152,7 +166,7 @@
                 <button id="btn-mic" class="btn-voz" 
                         ontouchstart="eventoMicStart(event)" ontouchend="eventoMicEnd(event)" 
                         onmousedown="eventoMicStart(event)" onmouseup="eventoMicEnd(event)">
-                    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
                 </button>
             </div>
             
@@ -199,8 +213,10 @@
     let somAtual = parseInt(localStorage.getItem('virty_som')) || 0;
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
     let somInterval = null;
+    
+    let streamCameraAtiva = null;
+    let usarLenteFrontal = true; // Força prioridade Selfie
 
-    // GERADOR DE FINGERPRINT INDESTRUTÍVEL PARA DISPOSITIVO DO MORADOR
     function gerarFingerprintMorador() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
         let hash = 0;
@@ -221,14 +237,8 @@
         verificarStatus();
     };
 
-    // MOTOR PRINCIPAL DE CHECAGEM DE ESTADOS (VALIDADO vs EM ANÁLISE vs NÃO CADASTRADO)
     function verificarStatus() {
-        if(!my_un) {
-            mudarTela('s-cadastro');
-            return;
-        }
-
-        // Primeiro escuta se o morador já foi aprovado definitivo
+        if(!my_un) { mudarTela('s-cadastro'); return; }
         db.ref('moradores_validados/' + my_un).on('value', s => {
             if(s.exists()) { 
                 mudarTela('s-home'); 
@@ -236,31 +246,101 @@
                 escutarChamadas(); 
                 renderizarHist(); 
             } else { 
-                // Se não está validado, checa se a sua assinatura matemática está na fila de análise daquela unidade
                 db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).on('value', snap => {
                     if(snap.exists()) {
                         document.getElementById('txt-un-analise').innerText = "UNIDADE: " + my_un + " | ID HARDWARE: " + my_fingerprint;
                         mudarTela('s-analise');
-                    } else {
-                        mudarTela('s-cadastro');
-                    }
+                    } else { mudarTela('s-cadastro'); }
                 });
             }
         });
     }
 
+    function inicializarCapturaVideo() {
+        if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); }
+        const constraints = { video: { facingMode: usarLenteFrontal ? "user" : "environment" } };
+        navigator.mediaDevices.getUserMedia(constraints).then(s => {
+            streamCameraAtiva = s;
+            const video = document.getElementById('v-cad');
+            video.srcObject = s;
+            // Se for frontal espelha visualmente, se for traseira remove espelhamento para leitura perfeita
+            video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
+        }).catch(e => console.log(e));
+    }
+
+    function alternarLenteCamera() {
+        usarLenteFrontal = !usarLenteFrontal;
+        inicializarCapturaVideo();
+    }
+
+    function fotoCad() { 
+        const v = document.getElementById('v-cad'), c = document.getElementById('c-cad'); 
+        if(!v.videoWidth) return virtyAlert("Aguarde a câmera iniciar totalmente.");
+        c.width = v.videoWidth; c.height = v.videoHeight; 
+        
+        const ctx = c.getContext('2d');
+        // Corrige a orientação salvando exatamente a perspectiva espelhada que o usuário vê na tela
+        if(usarLenteFrontal) {
+            ctx.translate(c.width, 0);
+            ctx.scale(-1, 1);
+        }
+        ctx.drawImage(v, 0, 0);
+        // Reseta transformações do canvas
+        ctx.setTransform(1,0,0,1,0,0);
+        
+        my_foto = c.toDataURL('image/jpeg', 0.5); 
+        c.style.display = "block"; 
+        v.style.display = "none"; 
+        
+        // Mantém a exibição estática idêntica removendo efeitos dinâmicos
+        c.style.transform = "scaleX(1)"; 
+        
+        if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
+        virtyAlert("Selfie de cadastro capturada com sucesso!"); 
+    }
+
+    function enviarCadastro() { 
+        const un = document.getElementById('c-un').value, 
+              cpf = document.getElementById('c-cpf').value.trim(), 
+              nome = document.getElementById('c-nome').value.trim(); 
+              
+        if(!my_foto || !un || !cpf || !nome) return virtyAlert("Preencha todos os dados e capture a Selfie!"); 
+        
+        db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
+            const moradoresExistentes = snap.val() || {};
+            const chaves = Object.keys(moradoresExistentes);
+            const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
+            
+            if (!jaExisteEsseAparelho) {
+                if(chaves.length >= 5) return virtyAlert("Limite atingido! Esta casa já possui o número máximo de 5 moradores cadastrados.");
+                for (let k in moradoresExistentes) {
+                    let m = moradoresExistentes[k];
+                    if(m.cpf === cpf) return virtyAlert("Acesso negado! Este CPF já está registrado na lista desta unidade.");
+                    if(m.nome.toLowerCase() === nome.toLowerCase()) return virtyAlert("Acesso negado! Este Nome já está registrado na lista desta unidade.");
+                }
+            }
+            
+            db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({ 
+                nome: nome, cpf: cpf, unidade: un, foto: my_foto, ts: Date.now() 
+            }).then(() => { 
+                my_un = un; 
+                localStorage.setItem('my_un', un); 
+                virtyAlert("Solicitação enviada com sucesso!"); 
+                verificarStatus(); 
+            }).catch(err => virtyAlert("Erro: " + err.message));
+        });
+    }
+
     function escutarChamadas() {
         db.ref('chamadas_ativas/' + my_un).on('value', s => {
-            const d = s.val();
-            const painel = document.getElementById('painel-chamada');
+            const d = s.val(); const painel = document.getElementById('painel-chamada');
             if(d && (d.status === 'chamando' || d.status === 'escrevendo' || d.status === 'gravando')) {
                 document.getElementById('foto-v').src = d.foto;
                 document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
                 painel.style.display = 'flex';
                 
                 if(d.status === 'chamando' && !estaGravando && !estaDigitando) {
-                    gerenciarAlerta('start');
-                    tempoGeralRegressivo = 90;
+                    gerenciarAlerta('start'); tempoGeralRegressivo = 90;
                     clearInterval(timerPerdida);
                     timerPerdida = setInterval(() => {
                         tempoGeralRegressivo--; 
@@ -274,109 +354,58 @@
     }
 
     function abrirPainelTexto() {
-        estaDigitando = true;
-        gerenciarAlerta('stop');
+        estaDigitando = true; gerenciarAlerta('stop');
         db.ref('chamadas_ativas/' + my_un).update({ status: 'escrevendo' });
         document.getElementById('container-digitar-texto').style.display = 'flex';
         document.getElementById('campo-texto-interno').focus();
     }
-
     function fecharPainelTexto() {
-        estaDigitando = false;
-        document.getElementById('container-digitar-texto').style.display = 'none';
+        estaDigitando = false; document.getElementById('container-digitar-texto').style.display = 'none';
         if(document.getElementById('painel-chamada').style.display === 'flex' && !estaGravando) {
-            gerenciarAlerta('start');
-            db.ref('chamadas_ativas/' + my_un).update({ status: 'chamando' });
+            gerenciarAlerta('start'); db.ref('chamadas_ativas/' + my_un).update({ status: 'chamando' });
         }
     }
-
     function enviarTextoInterno() {
         const txt = document.getElementById('campo-texto-interno').value;
         if(!txt) return virtyAlert("Digite algo antes de enviar!");
         db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: txt, data_hora: obterDataHora() });
-        document.getElementById('campo-texto-interno').value = "";
-        responder('mensagem');
+        document.getElementById('campo-texto-interno').value = ""; responder('mensagem');
     }
-
-    function eventoMicStart(e) {
-        e.preventDefault();
-        if(estaGravando) return;
-        timePressStart = Date.now();
-        modoMaoLivre = false;
-        startRec();
-    }
-
-    function eventoMicEnd(e) {
-        e.preventDefault();
-        let duration = Date.now() - timePressStart;
-        if(duration < 400) {
-            modoMaoLivre = true;
-            document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque em qualquer lugar para enviar</span>";
-        } else {
-            if(!modoMaoLivre) stopRec();
-        }
-    }
-
-    function verificarToqueEnvioMaoLivre(e) {
-        if(modoMaoLivre && estaGravando) {
-            e.stopPropagation();
-            stopRec();
-        }
-    }
+    function eventoMicStart(e) { e.preventDefault(); if(estaGravando) return; timePressStart = Date.now(); modoMaoLivre = false; startRec(); }
+    function eventoMicEnd(e) { e.preventDefault(); let duration = Date.now() - timePressStart; if(duration < 400) { modoMaoLivre = true; document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque para enviar</span>"; } else { if(!modoMaoLivre) stopRec(); } }
+    function verificarToqueEnvioMaoLivre(e) { if(modoMaoLivre && estaGravando) { e.stopPropagation(); stopRec(); } }
 
     async function startRec() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 16000 });
-            chunks = []; estaGravando = true;
-            gerenciarAlerta('stop');
-
-            const popup = document.getElementById('popup-voz');
-            const texto = document.getElementById('texto-timer-voz');
-            const arco = document.getElementById('arco-progresso');
-            
+            chunks = []; estaGravando = true; gerenciarAlerta('stop');
+            const popup = document.getElementById('popup-voz'), texto = document.getElementById('texto-timer-voz'), arco = document.getElementById('arco-progresso');
             if(!modoMaoLivre) document.getElementById('label-modo-gravacao').innerText = "SEGURE PARA GRAVAR...";
             popup.style.display = 'flex';
-            
-            let tempoVoz = 30;
-            texto.innerText = "30s";
-            arco.style.strokeDashoffset = 0;
-            arco.style.stroke = "var(--neon)";
-            
+            let tempoVoz = 30; texto.innerText = "30s"; arco.style.strokeDashoffset = 0; arco.style.stroke = "var(--neon)";
             db.ref('chamadas_ativas/' + my_un).update({ status: 'gravando' });
             const circunferencia = 2 * Math.PI * 90;
-
             clearInterval(timerVozInterval);
             timerVozInterval = setInterval(() => {
-                tempoVoz--;
-                texto.innerText = tempoVoz + "s";
-                let percentual = (30 - tempoVoz) / 30;
-                arco.style.strokeDashoffset = circunferencia * percentual;
+                tempoVoz--; texto.innerText = tempoVoz + "s";
+                let percentual = (30 - tempoVoz) / 30; arco.style.strokeDashoffset = circunferencia * percentual;
                 if(tempoVoz <= 15 && tempoVoz > 5) arco.style.stroke = "var(--yellow)";
                 if(tempoVoz <= 5) arco.style.stroke = "var(--red)";
                 if(tempoVoz <= 0) stopRec();
             }, 1000);
-
             mediaRecorder.ondataavailable = e => chunks.push(e.data);
             mediaRecorder.onstop = () => {
                 const blob = new Blob(chunks, { type: 'audio/webm' });
-                const reader = new FileReader();
-                reader.readAsDataURL(blob);
+                const reader = new FileReader(); reader.readAsDataURL(blob);
                 reader.onloadend = () => {
-                    db.ref('chamadas_ativas/' + my_un).update({ 
-                        status: 'mensagem', 
-                        msg_morador: "Áudio enviado", 
-                        audio_b64: reader.result,
-                        data_hora: obterDataHora()
-                    });
-                    popup.style.display = 'none';
-                    responder('mensagem');
+                    db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: "Áudio enviado", audio_b64: reader.result, data_hora: obterDataHora() });
+                    popup.style.display = 'none'; responder('mensagem');
                 };
             };
             mediaRecorder.start();
         } catch(e) { virtyAlert("Permita o uso do microfone!"); estaGravando = false; }
     }
-
     function stopRec() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); clearInterval(timerVozInterval); estaGravando = false; } }
 
     function responder(st) {
@@ -385,7 +414,6 @@
         document.getElementById('container-digitar-texto').style.display = 'none';
         document.getElementById('popup-voz').style.display = 'none';
         gerenciarAlerta('stop');
-        
         const ref = db.ref('chamadas_ativas/' + my_un);
         ref.once('value', snap => {
             const d = snap.val();
@@ -398,11 +426,7 @@
         mudarTela('s-home');
     }
 
-    function obterDataHora() {
-        const n = new Date();
-        return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-    }
-
+    function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
     function gravarHist(vid, foto, st) {
         const ref = db.ref(`historico/${my_un}/${vid}`);
         ref.once('value', s => {
@@ -415,18 +439,13 @@
     function renderizarHist() {
         db.ref(`historico/${my_un}`).on('value', snap => {
             db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
-                const bloqueados = bSnap.val() || {};
-                const list = document.getElementById('lista-hist'); list.innerHTML = "";
+                const bloqueados = bSnap.val() || {}; const list = document.getElementById('lista-hist'); list.innerHTML = "";
                 snap.forEach(item => {
                     const d = item.val(); const estaBloqueado = !!bloqueados[d.v_id];
                     list.innerHTML += `<div class="hist-card">
                         <div class="foto-box">
-                            <div class="dots-row">
-                                <div class="dot" style="background:var(--neon); color:#000">${d.verde}</div>
-                                <div class="dot" style="background:var(--red)">${d.vermelho}</div>
-                                <div class="dot" style="background:var(--blue)">${d.azul}</div>
-                                <div class="dot" style="background:var(--gray)">${d.cinza}</div>
-                            </div><img src="${d.foto}" class="foto-hist">
+                            <div class="dots-row"><div class="dot" style="background:var(--neon); color:#000">${d.verde}</div><div class="dot" style="background:var(--red)">${d.vermelho}</div><div class="dot" style="background:var(--blue)">${d.azul}</div><div class="dot" style="background:var(--gray)">${d.cinza}</div></div>
+                            <img src="${d.foto}" class="foto-hist">
                         </div>
                         <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
                             <b style="font-size:0.75rem; color:#aaa;">ID: ${vidCurto(d.v_id)}</b>
@@ -439,7 +458,6 @@
             });
         });
     }
-
     function vidCurto(id) { return id.length > 12 ? id.substring(0,12) + '...' : id; }
     function alternarBloqueio(vid) { const ref = db.ref(`bloqueados/${my_un}/${vid}`); ref.once('value', s => { if(s.exists()) ref.remove(); else ref.set({ ts: Date.now() }); }); }
     
@@ -449,118 +467,38 @@
         if(id === 's-cadastro') { 
             document.getElementById('v-cad').style.display = "block";
             document.getElementById('c-cad').style.display = "none";
-            navigator.mediaDevices.getUserMedia({video:true}).then(s => document.getElementById('v-cad').srcObject = s).catch(e => console.log(e)); 
-        } 
+            inicializarCapturaVideo();
+        } else {
+            if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; }
+        }
     }
     
-    function fotoCad() { 
-        const v = document.getElementById('v-cad'), c = document.getElementById('c-cad'); 
-        if(!v.videoWidth) return virtyAlert("Aguarde a câmera iniciar totalmente.");
-        c.width = v.videoWidth; c.height = v.videoHeight; 
-        c.getContext('2d').drawImage(v, 0, 0); 
-        my_foto = c.toDataURL('image/jpeg', 0.5); 
-        c.style.display = "block"; v.style.display = "none"; 
-        if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
-        virtyAlert("Selfie de cadastro capturada com sucesso!"); 
-    }
-    
-    // A ALMA DA TRAVA AUTOMÁTICA: EXECUTA AS REGRAS EXIGIDAS NO SEU PROJETO ANTES DE SALVAR
-    function enviarCadastro() { 
-        const un = document.getElementById('c-un').value, 
-              cpf = document.getElementById('c-cpf').value.trim(), 
-              nome = document.getElementById('c-nome').value.trim(); 
-              
-        if(!my_foto || !un || !cpf || !nome) return virtyAlert("Preencha todos os dados e capture a Selfie!"); 
-        
-        // Entra no nó específico daquela casa para auditar a sublista existente
-        db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
-            const moradoresExistentes = snap.val() || {};
-            const chaves = Object.keys(moradoresExistentes);
-            
-            // Se o aparelho atual já estiver na lista, ele apenas atualizará (ignora as regras de limite para si mesmo)
-            const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
-            
-            if (!jaExisteEsseAparelho) {
-                // REGRA 1: Limite máximo de 5 cadastros por unidade residencial
-                if(chaves.length >= 5) {
-                    return virtyAlert("Limite atingido! Esta casa já possui o número máximo de 5 moradores cadastrados.");
-                }
-                
-                // Varre a lista em busca de CPFs ou Nomes idênticos já salvos por parentes
-                for (let k in moradoresExistentes) {
-                    let m = moradoresExistentes[k];
-                    // REGRA 2: Bloqueio de duplicidade de CPF na mesma residência
-                    if(m.cpf === cpf) {
-                        return virtyAlert("Acesso negado! Este CPF já está registrado na lista desta unidade.");
-                    }
-                    // REGRA 3: Bloqueio de duplicidade de Nome na mesma residência
-                    if(m.nome.toLowerCase() === nome.toLowerCase()) {
-                        return virtyAlert("Acesso negado! Este Nome já está registrado na lista desta unidade.");
-                    }
-                }
-            }
-            
-            // Passou em todas as validações: Grava usando o nó estruturado blindado
-            db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({ 
-                nome: nome, 
-                cpf: cpf, 
-                unidade: un, 
-                foto: my_foto, 
-                ts: Date.now() 
-            }).then(() => { 
-                my_un = un; 
-                localStorage.setItem('my_un', un); 
-                virtyAlert("Solicitação enviada com sucesso!"); 
-                verificarStatus(); // Sincroniza a tela dinamicamente sem forçar reload bruto da página
-            }).catch(err => {
-                virtyAlert("Erro no banco: " + err.message);
-            });
-        });
-    }
-
     function cancelarSolicitacaoAtual() {
         if(confirm("Deseja cancelar a análise atual e refazer os dados?")) {
             db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).remove().then(() => {
-                localStorage.removeItem('my_un');
-                my_un = null;
-                verificarStatus();
+                localStorage.removeItem('my_un'); my_un = null; verificarStatus();
             });
         }
     }
-
-    function proximoSom() {
-        somAtual = (somAtual + 1) % 20;
-        localStorage.setItem('virty_som', somAtual);
-        document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
-        gerenciarAlerta('start'); setTimeout(() => { gerenciarAlerta('stop'); }, 1200);
-    }
-
+    function proximoSom() { somAtual = (somAtual + 1) % 20; localStorage.setItem('virty_som', somAtual); document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1); gerenciarAlerta('start'); setTimeout(() => { gerenciarAlerta('stop'); }, 1200); }
     function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
     function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); if(modoAlerta === 1) btn.innerText = "🔊"; if(modoAlerta === 2) btn.innerText = "📳🔊"; if(modoAlerta === 3) btn.innerText = "📳"; }
-
     function gerenciarAlerta(acao) {
-        clearInterval(somInterval);
-        if(audioCtx) { try { audioCtx.close(); } catch(e){} audioCtx = null; }
+        clearInterval(somInterval); if(audioCtx) { try { audioCtx.close(); } catch(e){} audioCtx = null; }
         if(acao === 'stop') { navigator.vibrate(0); return; }
         if(modoAlerta === 3) { navigator.vibrate([400, 200, 400]); return; }
-
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if(modoAlerta === 2) navigator.vibrate([400, 200, 400]);
-            let f1 = 440 + (somAtual * 40);
-            let f2 = f1 * 1.25; 
-
+            let f1 = 440 + (somAtual * 40), f2 = f1 * 1.25; 
             somInterval = setInterval(() => {
                 if(!audioCtx) return;
-                let osc = audioCtx.createOscillator();
-                let gain = audioCtx.createGain();
+                let osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
                 osc.type = somAtual % 2 === 0 ? 'sine' : 'triangle';
                 osc.frequency.setValueAtTime(f1, audioCtx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(f2, audioCtx.currentTime + 0.4);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
             }, 600);
         } catch(err) {}
     }
