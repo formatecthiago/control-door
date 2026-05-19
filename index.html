@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v17.0.0</title>
+    <title>VIRTY VISITANTE v18.0.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -12,15 +12,22 @@
         .screen { display: none; width: 100%; max-width: 420px; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; flex: 1; }
         .active { display: flex; }
         
-        .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px 0; width: 100%; }
-        .video-box { width: 210px; height: 210px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); box-shadow: 0 0 15px var(--neon); background:#111; position:relative; }
+        /* ESTEIRA GUIADA POR ETAPAS */
+        .bloco-esteira { width: 100%; transition: all 0.3s ease; margin-bottom: 15px; }
+        .etapa-bloqueada { opacity: 0.15; pointer-events: none; filter: blur(0.5px); }
+        .etapa-concluida { opacity: 0.35; }
+        
+        .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 10px 0; width: 100%; }
+        .video-box { width: 190px; height: 190px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); box-shadow: 0 0 15px var(--neon); background:#111; position:relative; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; transform: scaleX(-1); }
         
-        .btn-inverter { background: #111; border: 2px solid var(--neon); width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .btn-inverter svg { width: 26px; height: 26px; fill: var(--neon); }
+        .btn-inverter { background: #111; border: 2px solid var(--neon); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
         
         input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 12px; border: 1px solid #222; background: #111; color: white; text-align: center; font-size: 1.1rem; }
+        input:focus { border-color: var(--neon); outline: none; }
+        
         .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 1rem; margin: 8px 0; }
         
         .container-centralizado { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; flex: 1; }
@@ -70,20 +77,27 @@
     </div>
 
     <div id="t-id" class="screen">
-        <div class="area-camera-virty">
-            <div style="width:55px;"></div>
-            <div class="video-box">
-                <video id="v" autoplay playsinline muted></video>
-                <canvas id="c-visitante"></canvas>
+        
+        <div id="bloco-passo1" class="bloco-esteira" onclick="retrocederParaPasso1(event)">
+            <div class="area-camera-virty">
+                <div style="width:50px;"></div>
+                <div class="video-box">
+                    <video id="v" autoplay playsinline muted></video>
+                    <canvas id="c-visitante"></canvas>
+                </div>
+                <button id="btn-camera-lente" class="btn-inverter" onclick="alternarLenteCamera(event)">
+                    <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
+                </button>
             </div>
-            <button class="btn-inverter" onclick="alternarLenteCamera(event)">
-                <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
-            </button>
+            <button id="btn-foto-fluxo" class="btn" style="background:#fff; color:#000" onclick="tirarFotoFluxo(event)">📸 CAPTURAR FACE</button>
         </div>
-        <button class="btn" style="background:#fff; color:#000" onclick="tirarFoto(event)">📸 CAPTURAR FACE</button>
-        <input type="number" id="un" placeholder="Nº da Unidade (Casa/Apt)" onclick="event.stopPropagation()">
-        <input type="text" id="msg" placeholder="Assunto escrito (Opcional)" onclick="event.stopPropagation()">
-        <button id="btn-chamar" class="btn" style="background:var(--neon); color:#000" onclick="chamar(event)" disabled>TOCAR CAMPAINHA</button>
+
+        <div id="bloco-passo2" class="bloco-esteira etapa-bloqueada">
+            <input type="number" id="un" placeholder="Nº da Unidade (Casa/Apt)" oninput="monitorarDigitacaoUnidade(event)" onclick="event.stopPropagation()">
+            <input type="text" id="msg" placeholder="Assunto escrito (Opcional)" oninput="dispararVigiaAbandono20s()" onclick="event.stopPropagation()">
+            <button id="btn-chamar" class="btn" style="background:var(--neon); color:#000; display:none;" onclick="chamar(event)">TOCAR CAMPAINHA 🔔</button>
+        </div>
+
     </div>
 
     <div id="t-calling" class="screen">
@@ -112,8 +126,9 @@
     let usarLenteFrontal = true;
     let audioRespostaMorador = null;
     let telaAtualAtiva = "t-welcome";
+    let subEtapaEsteira = 1; // 1 = Foto, 2 = Form
 
-    // Variáveis de Controle do Vigia Silencioso
+    // Controle do Vigia Silencioso
     let vigiaTimerTolerancia;
     let vigiaTimerRegressivoPopUp;
     let tempoRegressivoAbandono = 40;
@@ -129,7 +144,11 @@
         document.getElementById('custom-alert-msg').innerText = msg;
         document.getElementById('custom-alert').style.display = 'block';
     }
-    function fecharAlertCustomizado(e) { if(e)e.stopPropagation(); document.getElementById('custom-alert').style.display = 'none'; }
+    function fecharAlertCustomizado(e) { 
+        if(e) e.stopPropagation(); 
+        document.getElementById('custom-alert').style.display = 'none'; 
+        dispararVigiaAbandono20s();
+    }
 
     async function gerarFingerprintInviolavel() {
         try {
@@ -170,12 +189,23 @@
         if(e) e.stopPropagation();
         usarLenteFrontal = !usarLenteFrontal;
         inicializarCameraAgressiva();
+        dispararVigiaAbandono20s();
     }
 
-    function tirarFoto(e) {
+    function tirarFotoFluxo(e) {
         if(e) e.stopPropagation();
+        dispararVigiaAbandono20s();
+        
+        const btn = document.getElementById('btn-foto-fluxo');
+        
+        // Modo Avançar: Se a foto já foi tirada e ele clicou no botão transformado
+        if(subEtapaEsteira === 2) {
+            avancarParaPasso2();
+            return;
+        }
+
         const v = document.getElementById('v'), c = document.getElementById('c-visitante');
-        if(!v.videoWidth) return virtyAlert("Aguarde o visor da câmera carregar totalmente.");
+        if(!v.videoWidth) return;
         c.width = v.videoWidth; c.height = v.videoHeight;
         
         const ctx = c.getContext('2d');
@@ -190,17 +220,70 @@
         c.style.display = "block";
         v.style.display = "none";
         c.style.transform = "scaleX(1)";
+        document.getElementById('btn-camera-lente').style.visibility = 'hidden';
         
-        document.getElementById('btn-chamar').disabled = false;
         if(streamAtual) streamAtual.getTracks().forEach(track => track.stop());
-        virtyAlert("Identificação facial capturada e gerada!");
+        
+        // Transforma o botão dinamicamente em botão de avanço imediato
+        subEtapaEsteira = 2;
+        btn.innerText = "PRÓXIMO REQUISITO ➡️";
+        btn.style.background = "var(--neon)";
+        btn.style.color = "#000";
+    }
+
+    function avancarParaPasso2() {
+        document.getElementById('bloco-passo1').className = "bloco-esteira etapa-concluida";
+        document.getElementById('bloco-passo2').className = "bloco-esteira";
+        
+        const campoUnidade = document.getElementById('un');
+        campoUnidade.focus();
+        dispararVigiaAbandono20s();
+    }
+
+    function retrocederParaPasso1(e) {
+        if(e) e.stopPropagation();
+        if(subEtapaEsteira === 1) return; // já está no passo 1
+        
+        subEtapaEsteira = 1; b64 = "";
+        document.getElementById('bloco-passo1').className = "bloco-esteira";
+        document.getElementById('bloco-passo2').className = "bloco-esteira etapa-bloqueada";
+        
+        document.getElementById('un').value = "";
+        document.getElementById('msg').value = "";
+        document.getElementById('btn-chamar').style.display = "none";
+        
+        document.getElementById('v').style.display = "block";
+        document.getElementById('c-visitante').style.display = "none";
+        document.getElementById('btn-camera-lente').style.visibility = 'visible';
+        
+        const btn = document.getElementById('btn-foto-fluxo');
+        btn.innerText = "📸 CAPTURAR FACE";
+        btn.style.background = "#fff";
+        btn.style.color = "#000";
+        
+        inicializarCameraAgressiva();
+        dispararVigiaAbandono20s();
+    }
+
+    function monitorarDigitacaoUnidade(e) {
+        if(e) e.stopPropagation();
+        dispararVigiaAbandono20s();
+        
+        const unVal = document.getElementById('un').value.trim();
+        const btnChamar = document.getElementById('btn-chamar');
+        
+        if(unVal.length >= 1) {
+            btnChamar.style.display = "block";
+        } else {
+            btnChamar.style.display = "none";
+        }
     }
 
     async function chamar(e) {
         if(e) e.stopPropagation();
-        destruirTodosOsVigias(); // Suspende o vigia, pois a tela dinâmica de chamada gerencia seu próprio tempo de 90s
+        destruirTodosOsVigias();
         const un = document.getElementById('un').value;
-        if(!un || !b64) return virtyAlert("Insira a unidade e tire sua foto!");
+        if(!un || !b64) return;
 
         const blockCheck = await db.ref(`bloqueados/${un}/${v_id}`).once('value');
         if(blockCheck.exists()) {
@@ -263,7 +346,6 @@
                     <button class="btn btn-fechar-virty" onclick="finalizarTelaMorta(event)">FECHAR</button>
                 `;
                 
-                // Entrou na Tela Morta: O vigia ativa a contagem de 20 segundos de ociosidade específicos dela
                 telaAtivaGlobal("t-morta");
                 dispararVigiaAbandono20s();
             }
@@ -279,9 +361,18 @@
         destruirTodosOsVigias();
         if(streamAtual) streamAtual.getTracks().forEach(track => track.stop());
         
-        // Retorna para a home e inicia imediatamente o contador de ociosidade da Home
+        // Reseta todos os estados visuais da esteira para o padrão de fábrica
+        subEtapaEsteira = 1; b64 = "";
+        document.getElementById('bloco-passo1').className = "bloco-esteira";
+        document.getElementById('bloco-passo2').className = "bloco-esteira etapa-bloqueada";
         document.getElementById('un').value = "";
         document.getElementById('msg').value = "";
+        document.getElementById('btn-chamar').style.display = "none";
+        document.getElementById('btn-foto-fluxo').innerText = "📸 CAPTURAR FACE";
+        document.getElementById('btn-foto-fluxo').style.background = "#fff";
+        document.getElementById('btn-foto-fluxo').style.color = "#000";
+        document.getElementById('btn-camera-lente').style.visibility = 'visible';
+        
         mudarTela('t-welcome');
     }
 
@@ -294,15 +385,24 @@
         if(id === 't-id') {
             document.getElementById('v').style.display = "block";
             document.getElementById('c-visitante').style.display = "none";
-            document.getElementById('btn-chamar').disabled = (b64 === "");
+            inicializerValoresDefaultId();
             inicializarCameraAgressiva();
         }
         dispararVigiaAbandono20s();
     }
+    
+    function inicializerValoresDefaultId() {
+        document.getElementById('timer-v').style.display = 'block';
+        document.getElementById('timer-v').innerText = '90';
+        document.getElementById('area-dinamica').innerHTML = `
+            <h2 id="txt-principal" style="text-align:center; letter-spacing:1px; margin: 5px 0;">CHAMANDO MORADOR...</h2>
+            <div id="status-msg">Aguardando atendimento</div>
+        `;
+    }
 
     function telaAtivaGlobal(nome) { telaAtualAtiva = nome; }
 
-    // ESTRUTURA LOGICA DO VIGIA SILENCIOSO (ABANDONO DE ESTAÇÃO)
+    // LOGICA ESTRUTURAL DO VIGIA SILENCIOSO
     function destruirTodosOsVigias() {
         clearTimeout(vigiaTimerTolerancia);
         clearInterval(vigiaTimerRegressivoPopUp);
@@ -312,25 +412,27 @@
 
     function dispararVigiaAbandono20s() {
         destruirTodosOsVigias();
-        if(telaAtualAtiva === "t-calling-dinamica") return; // Ignora se o morador estiver chamando ativamente
+        if(telaAtualAtiva === "t-calling-dinamica") return; 
+        
+        const alertaAberto = document.getElementById('custom-alert').style.display === 'block';
+        if (alertaAberto) return; 
         
         vigiaTimerTolerancia = setTimeout(() => {
             abrirPopUpContagem40s();
-        }, 20000); // 20 Segundos de Tolerância
+        }, 20000); 
     }
 
     function resetarVigiaOciosidadeGlobal() {
-        if(popUpAbandonoAberto) return; // Se o pop-up de 40s pulou na tela, cliques aleatórios não resetam
+        if(popUpAbandonoAberto) return; 
         dispararVigiaAbandono20s();
     }
 
     function abrirPopUpContagem40s() {
         popUpAbandonoAberto = true;
-        tempoRegressivoAbandono = 40; // 40 Segundos de contagem regressiva
+        tempoRegressivoAbandono = 40; 
         document.getElementById('timer-abandono-txt').innerText = tempoRegressivoAbandono;
         document.getElementById('popup-abandono').style.display = 'block';
         
-        // Emite sinal sonoro curto e sutil para alertar o abandono
         emitirBipAlertaOciosidade();
 
         vigiaTimerRegressivoPopUp = setInterval(() => {
@@ -338,7 +440,7 @@
             document.getElementById('timer-abandono-txt').innerText = tempoRegressivoAbandono;
             
             if(tempoRegressivoAbandono <= 5) {
-                emitirBipAlertaOciosidade(); // Bipa agressivo nos últimos 5 segundos
+                emitirBipAlertaOciosidade(); 
             }
 
             if(tempoRegressivoAbandono <= 0) {
@@ -352,7 +454,7 @@
         if(e) e.stopPropagation();
         destruirTodosOsVigias();
         popUpAbandonoAberto = false;
-        dispararVigiaAbandono20s(); // Renova o ciclo
+        dispararVigiaAbandono20s(); 
     }
 
     function entrarEmRepousoAbsoluto() {
@@ -366,9 +468,9 @@
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = ctx.createOscillator(); const gain = ctx.createGain();
-            osc.type = "sine"; osc.frequency.setValueAtTime(880, ctx.currentTime);
-            gain.gain.setValueAtTime(0.05, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-            osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.15);
+            osc.type = "sine"; osc.frequency.setValueAtTime(840, ctx.currentTime);
+            gain.gain.setValueAtTime(0.04, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+            osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.12);
         } catch(err){}
     }
 </script>
