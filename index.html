@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v16.0</title>
+    <title>VIRTY VISITANTE v17.0.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden; }
         
-        .screen { display: none; width: 100%; max-width: 420px; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; }
+        .screen { display: none; width: 100%; max-width: 420px; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; flex: 1; }
         .active { display: flex; }
         
-        /* Área da Câmera Espelhada e Alinhada lateralmente */
         .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px 0; width: 100%; }
         .video-box { width: 210px; height: 210px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); box-shadow: 0 0 15px var(--neon); background:#111; position:relative; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
@@ -29,44 +28,62 @@
         #status-msg { color: var(--yellow); font-style: italic; font-size: 1.2rem; margin: 15px 0; font-weight: bold; min-height: 30px; text-align: center; }
         
         .txt-resposta { font-size: 1.6rem; font-weight: bold; text-transform: uppercase; margin: 10px 0; text-align: center; }
-        
-        /* Botão Fechar Padrão com Oscilação Suave */
         .btn-fechar-virty { background: var(--red); color:#fff; max-width:280px; box-shadow: 0 0 15px var(--red); animation: oscilarPulso 0.8s infinite alternate; }
         
+        /* POPUPS E TELAS DE ABANDONO */
         .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
+        #popup-abandono { background: #000; border: 2px solid var(--red); box-shadow: 0 0 35px var(--red); }
+        #timer-abandono-txt { font-size: 3.5rem; color: var(--red); font-weight: bold; margin: 15px 0; display: block; }
+        
+        .tela-repouso-total { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; }
+
         .btn-play-interfone { background: var(--blue); color: #fff; width: 85px; height: 85px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 0 20px rgba(0,123,255,0.5); margin: 15px 0; }
         .btn-play-interfone svg { width: 35px; height: 35px; fill: #fff; }
         @keyframes oscilarPulso { from { transform: scale(1); opacity: 1; } to { transform: scale(0.96); opacity: 0.8; } }
     </style>
 </head>
-<body>
+<body onclick="resetarVigiaOciosidadeGlobal()">
 
     <div id="custom-alert" class="virty-popup">
         <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:12px;">VIRTY ACCESS DOOR</div>
         <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4;"></div>
-        <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
+        <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado(event)">OK</button>
+    </div>
+
+    <div id="popup-abandono" class="virty-popup">
+        <div style="color:var(--red); font-size:0.8rem; letter-spacing:2px; margin-bottom:5px;">SESSÃO OCIOSA</div>
+        <div style="font-size:1.05rem; font-weight:normal; line-height:1.4; color:#aaa;">Na falta de interação, o sistema irá fechar.</div>
+        <span id="timer-abandono-txt">40</span>
+        <button class="btn" style="background:var(--neon); color:#000; margin:0;" onclick="salvarSessaoAbandono(event)">CONTINUAR ACESSO</button>
+    </div>
+
+    <div id="tela-repouso" class="tela-repouso-total">
+        <div style="color:var(--red); font-size:3.5rem; margin-bottom:20px;">🔒</div>
+        <h2 style="color:#fff; letter-spacing:1px; margin-bottom:10px; font-size:1.4rem;">SESSÃO EXPIRADA</h2>
+        <p style="color:#555; max-width:280px; line-height:1.5; font-size:1rem; font-weight:bold;">Aproxime-se e faça novamente a leitura do QR Code para reiniciar o terminal.</p>
     </div>
 
     <div id="t-welcome" class="screen active">
         <h1 style="color:var(--neon); margin-top:120px; letter-spacing: 2px;">VIRTY ACCESS DOOR</h1>
         <p style="color:#555; margin-bottom: 40px; font-weight: bold;">SISTEMA DE IDENTIFICAÇÃO PREDIAL</p>
-        <button class="btn" style="background:var(--neon); color:#000" onclick="mudarTela('t-id')">INICIAR ACESSO</button>
+        <button class="btn" style="background:var(--neon); color:#000" onclick="mudarTela('t-id', event)">INICIAR ACESSO</button>
     </div>
 
     <div id="t-id" class="screen">
         <div class="area-camera-virty">
-            <div style="width:55px;"></div> <div class="video-box">
+            <div style="width:55px;"></div>
+            <div class="video-box">
                 <video id="v" autoplay playsinline muted></video>
                 <canvas id="c-visitante"></canvas>
             </div>
-            <button class="btn-inverter" onclick="alternarLenteCamera()">
+            <button class="btn-inverter" onclick="alternarLenteCamera(event)">
                 <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
             </button>
         </div>
-        <button class="btn" style="background:#fff; color:#000" onclick="tirarFoto()">📸 CAPTURAR FACE</button>
-        <input type="number" id="un" placeholder="Nº da Unidade (Casa/Apt)">
-        <input type="text" id="msg" placeholder="Assunto escrito (Opcional)">
-        <button id="btn-chamar" class="btn" style="background:var(--neon); color:#000" onclick="chamar()" disabled>TOCAR CAMPAINHA</button>
+        <button class="btn" style="background:#fff; color:#000" onclick="tirarFoto(event)">📸 CAPTURAR FACE</button>
+        <input type="number" id="un" placeholder="Nº da Unidade (Casa/Apt)" onclick="event.stopPropagation()">
+        <input type="text" id="msg" placeholder="Assunto escrito (Opcional)" onclick="event.stopPropagation()">
+        <button id="btn-chamar" class="btn" style="background:var(--neon); color:#000" onclick="chamar(event)" disabled>TOCAR CAMPAINHA</button>
     </div>
 
     <div id="t-calling" class="screen">
@@ -79,6 +96,8 @@
         </div>
     </div>
 
+    <canvas id="c-fingerprint" style="display:none;" width="200" height="20"></canvas>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
@@ -86,26 +105,55 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
+    let v_id = "VF-CAPTURING";
+    let b64 = "";
+    let timerRegressivoVisitante;
+    let streamAtual = null;
+    let usarLenteFrontal = true;
+    let audioRespostaMorador = null;
+    let telaAtualAtiva = "t-welcome";
+
+    // Variáveis de Controle do Vigia Silencioso
+    let vigiaTimerTolerancia;
+    let vigiaTimerRegressivoPopUp;
+    let tempoRegressivoAbandono = 40;
+    let popUpAbandonoAberto = false;
+
+    window.onload = () => { 
+        gerarFingerprintInviolavel().then(id => { v_id = id; });
+        inicializarCameraAgressiva();
+        dispararVigiaAbandono20s();
+    };
+
     function virtyAlert(msg) {
         document.getElementById('custom-alert-msg').innerText = msg;
         document.getElementById('custom-alert').style.display = 'block';
     }
-    function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
+    function fecharAlertCustomizado(e) { if(e)e.stopPropagation(); document.getElementById('custom-alert').style.display = 'none'; }
 
-    function gerarFingerprintVirty() {
-        const metadados = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language, navigator.platform].join('||');
-        let hash = 0;
-        for (let i = 0; i < metadados.length; i++) { hash = (hash << 5) - hash + metadados.charCodeAt(i); hash |= 0; }
-        return "VF-" + Math.abs(hash).toString(16).toUpperCase();
+    async function gerarFingerprintInviolavel() {
+        try {
+            const canvas = document.getElementById('c-fingerprint');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = "top"; ctx.font = "14px 'Arial'";
+            ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
+            ctx.fillStyle = "#069"; ctx.fillText("VirtyAccess3.0*", 2, 2);
+            ctx.fillStyle = "rgba(102, 204, 0, 0.7)"; ctx.fillText("VirtyAccess3.0*", 4, 4);
+            const strCanvas = canvas.toDataURL();
+            
+            const metadados = [
+                screen.width, screen.height, screen.devicePixelRatio,
+                navigator.hardwareConcurrency || 4, navigator.language,
+                navigator.platform, strCanvas.substring(50, 150)
+            ].join('||');
+            
+            let hash = 0;
+            for (let i = 0; i < metadados.length; i++) { hash = (hash << 5) - hash + metadados.charCodeAt(i); hash |= 0; }
+            return "VF-" + Math.abs(hash).toString(16).toUpperCase();
+        } catch(err) {
+            return "VF-" + Math.floor(Math.random() * 900000 + 100000);
+        }
     }
-    const v_id = gerarFingerprintVirty();
-    let b64 = "";
-    let timerRegressivoVisitante;
-    let streamAtual = null;
-    let usarLenteFrontal = true; // Força prioridade Selfie
-    let audioRespostaMorador = null;
-
-    window.onload = () => { inicializarCameraAgressiva(); };
 
     function inicializarCameraAgressiva() {
         if(streamAtual) { streamAtual.getTracks().forEach(track => track.stop()); }
@@ -118,12 +166,14 @@
         }).catch(e => { console.log(e); });
     }
 
-    function alternarLenteCamera() {
+    function alternarLenteCamera(e) {
+        if(e) e.stopPropagation();
         usarLenteFrontal = !usarLenteFrontal;
         inicializarCameraAgressiva();
     }
 
-    function tirarFoto() {
+    function tirarFoto(e) {
+        if(e) e.stopPropagation();
         const v = document.getElementById('v'), c = document.getElementById('c-visitante');
         if(!v.videoWidth) return virtyAlert("Aguarde o visor da câmera carregar totalmente.");
         c.width = v.videoWidth; c.height = v.videoHeight;
@@ -146,17 +196,20 @@
         virtyAlert("Identificação facial capturada e gerada!");
     }
 
-    async function chamar() {
+    async function chamar(e) {
+        if(e) e.stopPropagation();
+        destruirTodosOsVigias(); // Suspende o vigia, pois a tela dinâmica de chamada gerencia seu próprio tempo de 90s
         const un = document.getElementById('un').value;
         if(!un || !b64) return virtyAlert("Insira a unidade e tire sua foto!");
 
         const blockCheck = await db.ref(`bloqueados/${un}/${v_id}`).once('value');
         if(blockCheck.exists()) {
             virtyAlert("Não foi possível estabelecer contato com a unidade informada.");
-            location.reload(); return;
+            setTimeout(() => { location.reload(); }, 2000); return;
         }
 
         mudarTela('t-calling');
+        telaAtivaGlobal("t-calling-dinamica");
         const ref = db.ref(`chamadas_ativas/${un}`);
         await ref.remove();
         
@@ -193,7 +246,7 @@
                     if(d.audio_b64) {
                         audioRespostaMorador = new Audio(d.audio_b64);
                         incluirPlayerHtml = `
-                            <div style="display:flex; flex-direction:column; align-items:center; margin-top:15px; margin-bottom:10px;">
+                            <div style="display:flex; flex-direction:column; align-items:center; margin-top:15px; margin-bottom:10px;" onclick="event.stopPropagation()">
                                 <button class="btn-play-interfone" onclick="playAudioRespostaMorador()">
                                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                 </button>
@@ -207,29 +260,116 @@
                     <div class="txt-resposta" style="color:${cor}">${stringFinal}</div>
                     ${incluirPlayerHtml}
                     <p style="color:#444; font-size:0.95rem; margin-top:20px; font-weight:bold; text-align:center;">Sessão finalizada.</p>
-                    <button class="btn btn-fechar-virty" onclick="finalizarTelaMorta()">FECHAR</button>
+                    <button class="btn btn-fechar-virty" onclick="finalizarTelaMorta(event)">FECHAR</button>
                 `;
+                
+                // Entrou na Tela Morta: O vigia ativa a contagem de 20 segundos de ociosidade específicos dela
+                telaAtivaGlobal("t-morta");
+                dispararVigiaAbandono20s();
             }
         });
     }
 
     function playAudioRespostaMorador() { if(audioRespostaMorador) audioRespostaMorador.play().catch(e=>{}); }
 
-    function finalizarTelaMorta() {
+    function finalizarTelaMorta(e) {
+        if(e) e.stopPropagation();
         const un = document.getElementById('un').value;
         db.ref(`chamadas_ativas/${un}`).off();
+        destruirTodosOsVigias();
         if(streamAtual) streamAtual.getTracks().forEach(track => track.stop());
-        location.reload();
+        
+        // Retorna para a home e inicia imediatamente o contador de ociosidade da Home
+        document.getElementById('un').value = "";
+        document.getElementById('msg').value = "";
+        mudarTela('t-welcome');
     }
 
-    function mudarTela(id) {
+    function mudarTela(id, e) {
+        if(e) e.stopPropagation();
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
+        telaAtivaGlobal(id);
+        
         if(id === 't-id') {
             document.getElementById('v').style.display = "block";
             document.getElementById('c-visitante').style.display = "none";
-            inicializerCameraAgressiva();
+            document.getElementById('btn-chamar').disabled = (b64 === "");
+            inicializarCameraAgressiva();
         }
+        dispararVigiaAbandono20s();
+    }
+
+    function telaAtivaGlobal(nome) { telaAtualAtiva = nome; }
+
+    // ESTRUTURA LOGICA DO VIGIA SILENCIOSO (ABANDONO DE ESTAÇÃO)
+    function destruirTodosOsVigias() {
+        clearTimeout(vigiaTimerTolerancia);
+        clearInterval(vigiaTimerRegressivoPopUp);
+        document.getElementById('popup-abandono').style.display = 'none';
+        popUpAbandonoAberto = false;
+    }
+
+    function dispararVigiaAbandono20s() {
+        destruirTodosOsVigias();
+        if(telaAtualAtiva === "t-calling-dinamica") return; // Ignora se o morador estiver chamando ativamente
+        
+        vigiaTimerTolerancia = setTimeout(() => {
+            abrirPopUpContagem40s();
+        }, 20000); // 20 Segundos de Tolerância
+    }
+
+    function resetarVigiaOciosidadeGlobal() {
+        if(popUpAbandonoAberto) return; // Se o pop-up de 40s pulou na tela, cliques aleatórios não resetam
+        dispararVigiaAbandono20s();
+    }
+
+    function abrirPopUpContagem40s() {
+        popUpAbandonoAberto = true;
+        tempoRegressivoAbandono = 40; // 40 Segundos de contagem regressiva
+        document.getElementById('timer-abandono-txt').innerText = tempoRegressivoAbandono;
+        document.getElementById('popup-abandono').style.display = 'block';
+        
+        // Emite sinal sonoro curto e sutil para alertar o abandono
+        emitirBipAlertaOciosidade();
+
+        vigiaTimerRegressivoPopUp = setInterval(() => {
+            tempoRegressivoAbandono--;
+            document.getElementById('timer-abandono-txt').innerText = tempoRegressivoAbandono;
+            
+            if(tempoRegressivoAbandono <= 5) {
+                emitirBipAlertaOciosidade(); // Bipa agressivo nos últimos 5 segundos
+            }
+
+            if(tempoRegressivoAbandono <= 0) {
+                destruirTodosOsVigias();
+                entrarEmRepousoAbsoluto();
+            }
+        }, 1000);
+    }
+
+    function salvarSessaoAbandono(e) {
+        if(e) e.stopPropagation();
+        destruirTodosOsVigias();
+        popUpAbandonoAberto = false;
+        dispararVigiaAbandono20s(); // Renova o ciclo
+    }
+
+    function entrarEmRepousoAbsoluto() {
+        destruirTodosOsVigias();
+        if(streamAtual) { streamAtual.getTracks().forEach(t => t.stop()); streamAtual = null; }
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('tela-repouso').style.display = 'flex';
+    }
+
+    function emitirBipAlertaOciosidade() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator(); const gain = ctx.createGain();
+            osc.type = "sine"; osc.frequency.setValueAtTime(880, ctx.currentTime);
+            gain.gain.setValueAtTime(0.05, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+            osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.15);
+        } catch(err){}
     }
 </script>
 </body>
