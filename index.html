@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v15.0</title>
+    <title>VIRTY VISITANTE v16.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -12,12 +12,14 @@
         .screen { display: none; width: 100%; max-width: 420px; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; }
         .active { display: flex; }
         
+        /* Área da Câmera Espelhada e Alinhada lateralmente */
         .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px 0; width: 100%; }
-        .video-box { width: 210px; height: 210px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); box-shadow: 0 0 15px var(--neon); }
-        video, canvas { width: 100%; height: 100%; object-fit: cover; }
+        .video-box { width: 210px; height: 210px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); box-shadow: 0 0 15px var(--neon); background:#111; position:relative; }
+        .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; transform: scaleX(-1); }
         
-        .btn-contingencia-camera { background: #111; border: 2px solid var(--neon); width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .btn-contingencia-camera svg { width: 26px; height: 26px; fill: var(--neon); }
+        .btn-inverter { background: #111; border: 2px solid var(--neon); width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .btn-inverter svg { width: 26px; height: 26px; fill: var(--neon); }
         
         input { width: 100%; padding: 15px; margin: 8px 0; border-radius: 12px; border: 1px solid #222; background: #111; color: white; text-align: center; font-size: 1.1rem; }
         .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 1rem; margin: 8px 0; }
@@ -27,13 +29,14 @@
         #status-msg { color: var(--yellow); font-style: italic; font-size: 1.2rem; margin: 15px 0; font-weight: bold; min-height: 30px; text-align: center; }
         
         .txt-resposta { font-size: 1.6rem; font-weight: bold; text-transform: uppercase; margin: 10px 0; text-align: center; }
-        .btn-fechar-piscando { background: none; border: none; cursor: pointer; margin-top: 25px; animation: piscar 0.8s infinite alternate; }
-        .btn-fechar-piscando svg { width: 55px; height: 55px; fill: var(--red); filter: drop-shadow(0 0 8px var(--red)); }
+        
+        /* Botão Fechar Padrão com Oscilação Suave */
+        .btn-fechar-virty { background: var(--red); color:#fff; max-width:280px; box-shadow: 0 0 15px var(--red); animation: oscilarPulso 0.8s infinite alternate; }
         
         .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
         .btn-play-interfone { background: var(--blue); color: #fff; width: 85px; height: 85px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 0 20px rgba(0,123,255,0.5); margin: 15px 0; }
         .btn-play-interfone svg { width: 35px; height: 35px; fill: #fff; }
-        @keyframes piscar { from { opacity: 1; transform: scale(1); } to { opacity: 0.3; transform: scale(0.92); } }
+        @keyframes oscilarPulso { from { transform: scale(1); opacity: 1; } to { transform: scale(0.96); opacity: 0.8; } }
     </style>
 </head>
 <body>
@@ -52,10 +55,12 @@
 
     <div id="t-id" class="screen">
         <div class="area-camera-virty">
-            <div style="width:55px;"></div>
-            <div class="video-box"><video id="v" autoplay playsinline muted></video></div>
-            <button class="btn-contingencia-camera" onclick="inicializarCameraAgressiva()">
-                <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v3h12v-6h-2v4z"/></svg>
+            <div style="width:55px;"></div> <div class="video-box">
+                <video id="v" autoplay playsinline muted></video>
+                <canvas id="c-visitante"></canvas>
+            </div>
+            <button class="btn-inverter" onclick="alternarLenteCamera()">
+                <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
             </button>
         </div>
         <button class="btn" style="background:#fff; color:#000" onclick="tirarFoto()">📸 CAPTURAR FACE</button>
@@ -67,7 +72,7 @@
     <div id="t-calling" class="screen">
         <div class="container-centralizado">
             <div id="timer-v">90</div>
-            <div id="area-dinamica" style="width: 100%;">
+            <div id="area-dinamica" style="width: 100%; display:flex; flex-direction:column; align-items:center;">
                 <h2 id="txt-principal" style="text-align:center; letter-spacing:1px; margin: 5px 0;">CHAMANDO MORADOR...</h2>
                 <div id="status-msg">Aguardando atendimento</div>
             </div>
@@ -97,27 +102,47 @@
     let b64 = "";
     let timerRegressivoVisitante;
     let streamAtual = null;
-    let useFrontCamera = true;
+    let usarLenteFrontal = true; // Força prioridade Selfie
     let audioRespostaMorador = null;
 
     window.onload = () => { inicializarCameraAgressiva(); };
 
     function inicializarCameraAgressiva() {
         if(streamAtual) { streamAtual.getTracks().forEach(track => track.stop()); }
-        const constraints = { video: { facingMode: useFrontCamera ? "user" : "environment" } };
+        const constraints = { video: { facingMode: usarLenteFrontal ? "user" : "environment" } };
         navigator.mediaDevices.getUserMedia(constraints).then(s => {
-            streamAtual = s; document.getElementById('v').srcObject = s;
+            streamAtual = s; 
+            const video = document.getElementById('v');
+            video.srcObject = s;
+            video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
         }).catch(e => { console.log(e); });
-        useFrontCamera = !useFrontCamera;
+    }
+
+    function alternarLenteCamera() {
+        usarLenteFrontal = !usarLenteFrontal;
+        inicializarCameraAgressiva();
     }
 
     function tirarFoto() {
-        const v = document.getElementById('v'), c = document.createElement('canvas');
+        const v = document.getElementById('v'), c = document.getElementById('c-visitante');
         if(!v.videoWidth) return virtyAlert("Aguarde o visor da câmera carregar totalmente.");
         c.width = v.videoWidth; c.height = v.videoHeight;
-        c.getContext('2d').drawImage(v, 0, 0);
+        
+        const ctx = c.getContext('2d');
+        if(usarLenteFrontal) {
+            ctx.translate(c.width, 0);
+            ctx.scale(-1, 1);
+        }
+        ctx.drawImage(v, 0, 0);
+        ctx.setTransform(1,0,0,1,0,0);
+        
         b64 = c.toDataURL('image/jpeg', 0.5);
+        c.style.display = "block";
+        v.style.display = "none";
+        c.style.transform = "scaleX(1)";
+        
         document.getElementById('btn-chamar').disabled = false;
+        if(streamAtual) streamAtual.getTracks().forEach(track => track.stop());
         virtyAlert("Identificação facial capturada e gerada!");
     }
 
@@ -133,7 +158,7 @@
 
         mudarTela('t-calling');
         const ref = db.ref(`chamadas_ativas/${un}`);
-        await ref.remove(); // Evita sobreposição de cards no morador
+        await ref.remove();
         
         ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value, v_id: v_id, ts: Date.now() });
 
@@ -168,7 +193,7 @@
                     if(d.audio_b64) {
                         audioRespostaMorador = new Audio(d.audio_b64);
                         incluirPlayerHtml = `
-                            <div style="display:flex; flex-direction:column; align-items:center; margin-top:15px;">
+                            <div style="display:flex; flex-direction:column; align-items:center; margin-top:15px; margin-bottom:10px;">
                                 <button class="btn-play-interfone" onclick="playAudioRespostaMorador()">
                                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                 </button>
@@ -182,9 +207,7 @@
                     <div class="txt-resposta" style="color:${cor}">${stringFinal}</div>
                     ${incluirPlayerHtml}
                     <p style="color:#444; font-size:0.95rem; margin-top:20px; font-weight:bold; text-align:center;">Sessão finalizada.</p>
-                    <button class="btn-fechar-piscando" onclick="finalizarTelaMorta()">
-                        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                    </button>
+                    <button class="btn btn-fechar-virty" onclick="finalizarTelaMorta()">FECHAR</button>
                 `;
             }
         });
@@ -202,7 +225,11 @@
     function mudarTela(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(id === 't-id') inicializarCameraAgressiva();
+        if(id === 't-id') {
+            document.getElementById('v').style.display = "block";
+            document.getElementById('c-visitante').style.display = "none";
+            inicializerCameraAgressiva();
+        }
     }
 </script>
 </body>
