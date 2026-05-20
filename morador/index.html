@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.1.1</title>
+    <title>VIRTY MORADOR v2.1.2</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; --yellow: #FFD700; --dark-card: #0d0d0d; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -81,7 +81,7 @@
 
     <div id="s-home" class="screen">
         <div class="header">
-            <div><b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br><small style="color:var(--gray); font-weight:bold;">VERSION 2.1.1</small></div>
+            <div><b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br><small style="color:var(--gray); font-weight:bold;">VERSION 2.1.2</small></div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold;"></span>
         </div>
         <div class="controles-alerta">
@@ -153,7 +153,7 @@
     let tempoGeralRegressivo = 90, timePressStart = 0, limiteHistoricoAtual = 5;
     let audioCtx = null, somAtual = parseInt(localStorage.getItem('virty_som')) || 0, modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1, somInterval = null;
     let streamCameraAtiva = null;
-    let popUpPosAudioAberto = false; // TRAVA DE CONTROLE ESTRUTURAL
+    let popUpPosAudioAberto = false; // TRAVA DE SEGURANÇA CONTRA INTERRUPÇÃO DO FIREBASE
 
     function virtyAlert(msg) { document.getElementById('custom-alert-msg').innerText = msg; document.getElementById('custom-alert').style.display = 'block'; }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
@@ -190,7 +190,7 @@
         db.ref('chamadas_ativas/' + my_un).on('value', s => {
             const d = s.val(); const painel = document.getElementById('painel-chamada');
             
-            // --- CORREÇÃO: SE O POP-UP DE 10S ESTIVER ATIVO, BLOQUEIA O CORTE DO FIREBASE ---
+            // SE O POP-UP DE 10S ESTIVER ATIVO, O FIREBASE FICA IMPEDIDO DE DERRUBAR A TELA
             if (popUpPosAudioAberto) return;
 
             if(d && ['chamando','escrevendo','gravando'].includes(d.status)) {
@@ -241,7 +241,7 @@
             mediaRecorder.onstop = () => {
                 new FileReader().readAsDataURL(new Blob(chunks, { type: 'audio/webm' }));
                 FileReader.prototype.onloadend = function() { 
-                    popUpPosAudioAberto = true; // <--- TRAVA IMEDIATA ANTES DE GRAVAR NO BANCO
+                    popUpPosAudioAberto = true; // SECO TRANCADO ANTES DE ENVIAR AO BANCO
                     db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: "Áudio enviado", audio_b64: this.result, data_hora: obterDataHora() }); 
                     abrirPopUpDecisao10s();
                 };
@@ -281,7 +281,7 @@
                 gravarHist(d.v_id, d.foto, statusDestino);
                 setTimeout(() => {
                     ref.remove();
-                    popUpPosAudioAberto = false; // LIBERA A TRAVA APÓS LIMPAR O BANCO
+                    popUpPosAudioAberto = false; // LIBERA O MONITORAMENTO DE CHAMADAS APÓS EXPULSAR O REGISTRO DO BANCO
                 }, 800);
             } else {
                 popUpPosAudioAberto = false;
@@ -330,7 +330,7 @@
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
         document.getElementById(id).classList.add('active'); 
         if(id==='s-cadastro') {
-            inicializarCapturaVideo(); // SÓ DISPARA CÂMERA DE CADASTRO QUANDO ENTRA NA TELA
+            inicializarCapturaVideo(); // REATIVO: DISPARA A CÂMERA DE CADASTRO APENAS AO ENTRAR NA TELA
         } else {
             if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; }
         }
