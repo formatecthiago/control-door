@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v19.1.0</title>
+    <title>VIRTY VISITANTE v19.2.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -14,7 +14,7 @@
         
         .bloco-esteira { width: 100%; transition: all 0.3s ease; margin-bottom: 15px; }
         .etapa-bloqueada { opacity: 0.15; pointer-events: none; filter: blur(0.5px); }
-        .etapa-concluida { opacity: 0.05; pointer-events: none; } /* 10% a mais de sombreamento para dar evidência total */
+        .etapa-concluida { opacity: 0.05; pointer-events: none; }
         
         .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 10px 0; width: 100%; }
         .video-box { width: 190px; height: 190px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); box-shadow: 0 0 15px var(--neon); background:#111; position:relative; }
@@ -128,15 +128,14 @@
     let popUpAbandonoAberto = false;
 
     window.onload = () => { 
-        if(localStorage.getItem('virty_bloqueio_repouso') === 'true') {
-            entrarEmRepousoAbsoluto();
+        // INTELIGÊNCIA DE URL DA SUA BANCADA: Verifica se a URL atual possui o carimbo de travamento
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('status') === 'bloqueado') {
+            executarExibicaoTelaPretaFisica();
             return;
         }
-        const urlParams = new URLSearchParams(window.location.search);
-        if(urlParams.get('qr') === 'clear') {
-            localStorage.removeItem('virty_bloqueio_repouso');
-            location.href = window.location.pathname;
-        }
+
+        // Se a URL veio limpa (Leitura de um novo QR Code da parede), inicia normalmente
         gerarFingerprintInviolavel().then(id => { v_id = id; });
         dispararVigiaAbandono20s();
     };
@@ -346,7 +345,7 @@
                 <div id="status-msg">Aguardando atendimento</div>
                 <button class="btn btn-cancelar-chamada" onclick="cancelarChamadaAtiva(event)">🛑 CANCELAR CHAMADA</button>
             `;
-            inicializarCameraAgressiva(); // LIGA IMEDIATAMENTE APÓS O TOQUE DE INICIAR
+            inicializarCameraAgressiva(); // ABRE IMEDIATAMENTE APÓS O TOQUE DE INICIAR
         }
     }
     
@@ -360,8 +359,10 @@
 
     function dispararVigiaAbandono20s() {
         destruirTodosOsVigias();
-        // --- TRAVA ABSOLUTA: IMPEDE ATIVAÇÃO DO POPUP EM CHAMADA ---
-        if(telaAtualAtiva === "t-calling" || telaAtualAtiva === "t-calling-dinamica") return; 
+        // IMPEDE ATIVAÇÃO DO POPUP SE TIVER CARIMBO DE BLOQUEIO OU SE ESTIVER EM CHAMADA
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('status') === 'bloqueado') return;
+        if (telaAtualAtiva === "t-calling" || telaAtualAtiva === "t-calling-dinamica") return; 
         if (document.getElementById('custom-alert').style.display === 'block') return; 
         
         vigiaTimerTolerancia = setTimeout(() => { abrirPopUpContagem40s(); }, 20000); 
@@ -385,10 +386,19 @@
 
     function salvarSessaoAbandono(e) { if(e) e.stopPropagation(); destruirTodosOsVigias(); popUpAbandonoAberto = false; dispararVigiaAbandono20s(); }
 
+    // SEU ENGENHO INTERNO REVERSO REESTRUTURADO AQUI
     function entrarEmRepousoAbsoluto() {
         destruirTodosOsVigias();
-        localStorage.setItem('virty_bloqueio_repouso', 'true');
         if(streamAtual) { streamAtual.getTracks().forEach(t => t.stop()); streamAtual = null; }
+        
+        // Aplica o carimbo na URL e empurra no histórico para travar tentativas de F5
+        const novaUrlComCarimbo = window.location.pathname + "?status=bloqueado";
+        window.history.pushState({ path: novaUrlComCarimbo }, '', novaUrlComCarimbo);
+        
+        executarExibicaoTelaPretaFisica();
+    }
+
+    function ejecutarExibicaoTelaPretaFisica() {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('tela-repouso').style.display = 'flex';
     }
