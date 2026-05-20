@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v19.0.0</title>
+    <title>VIRTY VISITANTE v19.1.0</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -12,7 +12,6 @@
         .screen { display: none; width: 100%; max-width: 420px; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; flex: 1; }
         .active { display: flex; }
         
-        /* ESTEIRA GUIADA COM SOMBREAMENTO ADICIONAL (10% de opacidade na anterior) */
         .bloco-esteira { width: 100%; transition: all 0.3s ease; margin-bottom: 15px; }
         .etapa-bloqueada { opacity: 0.15; pointer-events: none; filter: blur(0.5px); }
         .etapa-concluida { opacity: 0.05; pointer-events: none; } /* 10% a mais de sombreamento para dar evidência total */
@@ -43,8 +42,6 @@
         #timer-abandono-txt { font-size: 3.5rem; color: var(--red); font-weight: bold; margin: 15px 0; display: block; }
         
         .tela-repouso-total { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; }
-        .btn-play-interfone { background: var(--blue); color: #fff; width: 85px; height: 85px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; margin: 15px 0; }
-        .btn-play-interfone svg { width: 35px; height: 35px; fill: #fff; }
     </style>
 </head>
 <body onclick="resetarVigiaOciosidadeGlobal()">
@@ -131,21 +128,16 @@
     let popUpAbandonoAberto = false;
 
     window.onload = () => { 
-        // --- TRAVA DE SEGURANÇA ESTRUTURAL CONTRA F5 ---
         if(localStorage.getItem('virty_bloqueio_repouso') === 'true') {
             entrarEmRepousoAbsoluto();
             return;
         }
-
-        // Simulação de leitura de QR code via parâmetro da URL (?qr=clear) limpa a trava
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.get('qr') === 'clear') {
             localStorage.removeItem('virty_bloqueio_repouso');
-            location.href = window.location.pathname; // recarrega limpo
+            location.href = window.location.pathname;
         }
-
         gerarFingerprintInviolavel().then(id => { v_id = id; });
-        inicializarCameraAgressiva();
         dispararVigiaAbandono20s();
     };
 
@@ -190,7 +182,7 @@
 
     function tirarFotoFluxo(e) {
         if(e) e.stopPropagation();
-        destruirTodosOsVigias(); // para temporariamente para o foco
+        destruirTodosOsVigias();
 
         const v = document.getElementById('v'), c = document.getElementById('c-visitante');
         if(!v.videoWidth) return;
@@ -209,13 +201,12 @@
         
         subEtapaEsteira = 2;
         
-        // --- SALTO CIRÚRGICO DIRETO PARA O INPUT + FOCALIZAÇÃO ---
         document.getElementById('bloco-passo1').className = "bloco-esteira etapa-concluida";
         document.getElementById('bloco-passo2').className = "bloco-esteira";
         
         const campoUnidade = document.getElementById('un');
         campoUnidade.focus();
-        dispararVigiaAbandono20s(); // retoma os 20s na nova etapa
+        dispararVigiaAbandono20s();
     }
 
     function retrocederParaPasso1(e) {
@@ -248,7 +239,7 @@
 
     async function chamar(e) {
         if(e) e.stopPropagation();
-        destruirTodosOsVigias(); // <--- BLINDAGEM TOTAL: Desliga o abandono durante a chamada
+        destruirTodosOsVigias();
         
         const un = document.getElementById('un').value;
         if(!un || !b64) return;
@@ -259,8 +250,8 @@
             setTimeout(() => { location.reload(); }, 2000); return;
         }
 
+        telaAtivaGlobal("t-calling-dinamica");
         mudarTela('t-calling');
-        telaAtivaGlobal("t-calling-dinamica"); 
         
         const ref = db.ref(`chamadas_ativas/${un}`);
         await ref.remove();
@@ -305,13 +296,12 @@
                     <button class="btn btn-fechar-virty" onclick="finalizarTelaMorta(event)">FECHAR</button>
                 `;
                 
-                telaAtivaGlobal("t-morta"); // Ativa a Tela Morta: O Vigia volta a funcionar aqui!
+                telaAtivaGlobal("t-morta");
                 dispararVigiaAbandono20s();
             }
         });
     }
 
-    // --- BOTÃO DE CANCELAR ENGENHARIA ---
     function cancelarChamadaAtiva(e) {
         if(e) e.stopPropagation();
         const un = document.getElementById('un').value;
@@ -356,9 +346,8 @@
                 <div id="status-msg">Aguardando atendimento</div>
                 <button class="btn btn-cancelar-chamada" onclick="cancelarChamadaAtiva(event)">🛑 CANCELAR CHAMADA</button>
             `;
-            inicializarCameraAgressiva();
+            inicializarCameraAgressiva(); // LIGA IMEDIATAMENTE APÓS O TOQUE DE INICIAR
         }
-        dispararVigiaAbandono20s();
     }
     
     function telaAtivaGlobal(nome) { telaAtualAtiva = nome; }
@@ -371,8 +360,8 @@
 
     function dispararVigiaAbandono20s() {
         destruirTodosOsVigias();
-        if(telaAtualAtiva === "t-calling-dinamica") return; // <--- Bloqueado em chamada de forma absoluta!
-        
+        // --- TRAVA ABSOLUTA: IMPEDE ATIVAÇÃO DO POPUP EM CHAMADA ---
+        if(telaAtualAtiva === "t-calling" || telaAtualAtiva === "t-calling-dinamica") return; 
         if (document.getElementById('custom-alert').style.display === 'block') return; 
         
         vigiaTimerTolerancia = setTimeout(() => { abrirPopUpContagem40s(); }, 20000); 
@@ -381,6 +370,7 @@
     function resetarVigiaOciosidadeGlobal() { if(!popUpAbandonoAberto) dispararVigiaAbandono20s(); }
 
     function abrirPopUpContagem40s() {
+        if(telaAtualAtiva === "t-calling" || telaAtualAtiva === "t-calling-dinamica") return;
         popUpAbandonoAberto = true; tempoRegressivoAbandono = 40; 
         document.getElementById('timer-abandono-txt').innerText = tempoRegressivoAbandono;
         document.getElementById('popup-abandono').style.display = 'block';
@@ -397,9 +387,7 @@
 
     function entrarEmRepousoAbsoluto() {
         destruirTodosOsVigias();
-        // --- GRAVAÇÃO DA TRAVA INVIOLÁVEL NO CACHE LOCAL ---
         localStorage.setItem('virty_bloqueio_repouso', 'true');
-        
         if(streamAtual) { streamAtual.getTracks().forEach(t => t.stop()); streamAtual = null; }
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('tela-repouso').style.display = 'flex';
