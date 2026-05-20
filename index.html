@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v2.1.5</title>
+    <title>VIRTY VISITANTE v2.1.6</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #222; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -12,37 +12,37 @@
         .active { display: flex; }
         .btn { width: 100%; max-width: 280px; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; }
         
-        /* TELA DE CAPTURA DO EXIBÍVEL DO VISITANTE */
-        .camera-container { width: 200px; height: 200px; border-radius: 50%; overflow: hidden; border: 4px solid var(--neon); background: #111; margin-bottom: 20px; position: relative; }
+        /* PAINEL DE INTERFONE COM A CÂMERA EM CÍRCULO NEON */
+        .camera-container { width: 200px; height: 200px; border-radius: 50%; overflow: hidden; border: 4px solid var(--neon); background: #111; margin-bottom: 20px; position: relative; box-shadow: 0 0 20px rgba(57,255,20,0.3); }
         #v-visitante { width: 100%; height: 100%; object-fit: cover; }
         #c-visitante { display: none; }
 
-        /* CONTADOR REGRESSIVO DO VISITANTE */
         .timer-visitante { font-size: 4rem; font-weight: bold; color: var(--red); margin-bottom: 15px; }
-        
-        /* POP-UP CIRÚRGICO DE REPRODUÇÃO DE ÁUDIO REQUERIDO */
-        #popup-audio-recebido { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .btn-play { background: var(--neon); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; margin: 25px 0; cursor: pointer; box-shadow: 0 0 20px rgba(57,255,20,0.4); }
-        .btn-play svg { width: 35px; height: 35px; fill: #000; margin-left: 5px; }
-        
         .msg-status { font-size: 1.5rem; letter-spacing: 1px; font-weight: bold; margin-bottom: 10px; }
+        
+        /* POP-UP EXCLUSIVO PARA O ÁUDIO DO MORADOR */
+        #popup-audio-recebido { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .btn-play { background: var(--neon); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; margin: 25px 0; cursor: pointer; box-shadow: 0 0 20px rgba(57,255,20,0.5); }
+        .btn-play svg { width: 35px; height: 35px; fill: #000; margin-left: 5px; }
     </style>
 </head>
 <body>
 
     <div id="s-captura" class="screen active">
         <h2 style="color:var(--neon); margin-bottom:25px; letter-spacing:2px;">VIRTY ACCESS</h2>
-        <div class="camera-container">
-            <video id="v-visitante" autoplay playsinline muted></video>
-            <canvas id="c-visitante"></canvas>
-        </div>
-        <button class="btn" style="background:var(--neon); color:#000;" onclick="inicializarInterfone()">🔔 INICIAR CHAMADA</button>
+        <button class="btn" style="background:var(--neon); color:#000;" onclick="abrirPainelEIniciarChamada()">🔔 INICIAR INTERFONE</button>
     </div>
 
     <div id="s-aguardo" class="screen">
         <div id="timer-v" class="timer-visitante">40</div>
+        
+        <div class="camera-container">
+            <video id="v-visitante" autoplay playsinline muted></video>
+            <canvas id="c-visitante"></canvas>
+        </div>
+
         <div id="status-v" class="msg-status" style="color:var(--neon);">CHAMANDO...</div>
-        <p id="feedback-v" style="color:#666; font-style:italic; max-width:280px;"></p>
+        <p id="feedback-v" style="color:#aaa; font-style:italic; max-width:280px; font-size: 1.1rem; min-height: 24px; margin: 5px 0 0 0;"></p>
     </div>
 
     <div id="s-liberado" class="screen">
@@ -59,11 +59,11 @@
 
     <div id="s-descanso" class="screen">
         <div style="font-size: 4rem; margin-bottom:20px;">⏳</div>
-        <h3 style="color:var(--red); max-width:300px; line-height:1.5;">Sua sessão expirou faça a leitura do QR code novamente</h3>
+        <h3 style="color:var(--red); max-width:300px; line-height:1.5; font-weight: bold;">Sua sessão expirou faça a leitura do QR code novamente</h3>
     </div>
 
     <div id="popup-audio-recebido">
-        <div style="font-size: 1.8rem; font-weight: bold; color: #fff; letter-spacing: 1px;">Ouvir</div>
+        <div style="font-size: 2rem; font-weight: bold; color: #fff; letter-spacing: 1px;">Ouvir</div>
         
         <button class="btn-play" onclick="reproduzirAudioInstalado()">
             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -79,44 +79,54 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    // Captura parâmetros da URL (?un=101)
     const urlParams = new URLSearchParams(window.location.search);
     const my_un = urlParams.get('un') || "100"; 
     
     let visitanteID = localStorage.getItem('virty_id_visitante');
-    if(!visitanteID) { visitanteID = 'v_' + Math.random().toString(36).substring(2, 11); localStorage.setItem('virty_id_visitante', visitanteID); }
-
-    let timerGeralVisitante, tempoRestante = 40;
-    let stringAudioBase64 = "", audioInstancia = null;
-
-    window.onload = () => {
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => {
-            document.getElementById('v-visitante').srcObject = s;
-        }).catch(e => {});
-    };
-
-    function inicializarInterfone() {
-        const v = document.getElementById('v-visitante'), c = document.getElementById('c-visitante');
-        c.width = v.videoWidth > 0 ? v.videoWidth : 320;
-        c.height = v.videoHeight > 0 ? v.videoHeight : 320;
-        c.getContext('2d').drawImage(v, 0, 0);
-        const fotoData = c.toDataURL('image/jpeg', 0.4);
-
-        // Cria chamada ativa no Firebase
-        db.ref('chamadas_ativas/' + my_un).set({
-            v_id: visitanteID,
-            foto: fotoData,
-            status: 'chamando',
-            texto: 'Aguardando liberação...',
-            audio_b64: ""
-        }).then(() => {
-            mudarTela('s-aguardo');
-            iniciarContagemRegressivaVisitante();
-            ouvirRespostaMorador();
-        });
+    if(!visitanteID) { 
+        visitanteID = 'v_' + Math.random().toString(36).substring(2, 11); 
+        localStorage.setItem('virty_id_visitante', visitanteID); 
     }
 
-    // CONTADOR DE 40 SEGUNDOS GLOBAL DO VISITANTE
+    let timerGeralVisitante, tempoRestante = 40;
+    let stringAudioBase64 = "", audioInstancia = null, streamAtivo = null;
+
+    // Inicializa a câmera em segundo plano para agilizar o processo
+    window.onload = () => {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => {
+            streamAtivo = s;
+            document.getElementById('v-visitante').srcObject = s;
+        }).catch(e => console.log("Erro câmera:", e));
+    };
+
+    function abrirPainelEIniciarChamada() {
+        mudarTela('s-aguardo');
+        
+        // Garante que o vídeo está rodando
+        if(streamAtivo) {
+            document.getElementById('v-visitante').srcObject = streamAtivo;
+        }
+
+        setTimeout(() => {
+            const v = document.getElementById('v-visitante'), c = document.getElementById('c-visitante');
+            c.width = v.videoWidth > 0 ? v.videoWidth : 320;
+            c.height = v.videoHeight > 0 ? v.videoHeight : 320;
+            c.getContext('2d').drawImage(v, 0, 0);
+            const fotoData = c.toDataURL('image/jpeg', 0.4);
+
+            db.ref('chamadas_ativas/' + my_un).set({
+                v_id: visitanteID,
+                foto: fotoData,
+                status: 'chamando',
+                texto: 'Aguardando liberação...',
+                audio_b64: ""
+            }).then(() => {
+                iniciarContagemRegressivaVisitante();
+                ouvirRespostaMorador();
+            });
+        }, 800); 
+    }
+
     function iniciarContagemRegressivaVisitante() {
         tempoRestante = 40;
         document.getElementById('timer-v').innerText = tempoRestante;
@@ -128,9 +138,10 @@
             
             if(tempoRestante <= 0) {
                 clearInterval(timerGeralVisitante);
-                // Expira e limpa a chamada no Firebase
                 db.ref('chamadas_ativas/' + my_un).remove();
-                mudarTela('s-descanso'); // Vai para a tela de descanso
+                fecharPopUpAudioVisitante();
+                if(streamAtivo) { streamAtivo.getTracks().forEach(t => t.stop()); }
+                mudarTela('s-descanso');
             }
         }, 1000);
     }
@@ -140,7 +151,6 @@
             const d = s.val();
             if(!d) return;
 
-            // Tratamento de Status Visuais de feedback
             if(d.status === 'escrevendo') {
                 document.getElementById('status-v').innerText = "MORADOR DIGITANDO...";
                 document.getElementById('status-v').style.color = "var(--blue)";
@@ -152,53 +162,45 @@
                 document.getElementById('status-v').style.color = "var(--neon)";
             }
 
-            // Exibição de textos vindos do morador
             if(d.msg_morador && d.msg_morador !== "Áudio enviado") {
                 document.getElementById('feedback-v').innerText = `"${d.msg_morador}"`;
             }
 
-            // CORREÇÃO: Resgate dinâmico do áudio do morador
             if(d.audio_b64 && d.audio_b64 !== stringAudioBase64) {
                 stringAudioBase64 = d.audio_b64;
                 abrirPopUpAudioVisitante();
             }
 
-            // Redirecionamento de telas finais de curso
             if(d.status === 'liberado') {
                 clearInterval(timerGeralVisitante);
                 fecharPopUpAudioVisitante();
+                if(streamAtivo) { streamAtivo.getTracks().forEach(t => t.stop()); }
                 mudarTela('s-liberado');
             } else if(d.status === 'recusado') {
                 clearInterval(timerGeralVisitante);
                 fecharPopUpAudioVisitante();
+                if(streamAtivo) { streamAtivo.getTracks().forEach(t => t.stop()); }
                 mudarTela('s-recusado');
             }
         });
     }
 
-    // GERENCIAMENTO DA INTERFACE DO ÁUDIO
     function abrirPopUpAudioVisitante() {
         document.getElementById('popup-audio-recebido').style.display = 'flex';
     }
 
     function fecharPopUpAudioVisitante() {
-        if(audioInstancia) {
-            try { audioInstancia.pause(); } catch(e){}
-        }
+        if(audioInstancia) { try { audioInstancia.pause(); } catch(e){} }
         document.getElementById('popup-audio-recebido').style.display = 'none';
     }
 
     function reproduzirAudioInstalado() {
         if(!stringAudioBase64) return;
         if(audioInstancia) { try{ audioInstancia.pause(); }catch(e){} }
-        
         audioInstancia = new Audio(stringAudioBase64);
-        audioInstancia.play().catch(e => {
-            alert("Erro ao reproduzir áudio: " + e.message);
-        });
-    </script>
+        audioInstancia.play().catch(e => console.log("Erro play:", e.message));
+    }
 
-    <script>
     function mudarTela(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
