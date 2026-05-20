@@ -3,24 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v2.1.6</title>
+    <title>VIRTY VISITANTE v2.1.7</title>
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #222; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #222; --dark: #111; }
         *, *::before, *::after { box-sizing: border-box; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; user-select: none; }
         .screen { display: none; padding: 20px; height: 100vh; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         .active { display: flex; }
-        .btn { width: 100%; max-width: 280px; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; }
         
-        /* PAINEL DE INTERFONE COM A CÂMERA EM CÍRCULO NEON */
-        .camera-container { width: 200px; height: 200px; border-radius: 50%; overflow: hidden; border: 4px solid var(--neon); background: #111; margin-bottom: 20px; position: relative; box-shadow: 0 0 20px rgba(57,255,20,0.3); }
+        input { width: 100%; max-width: 280px; padding: 18px; margin: 15px 0; border-radius: 14px; border: 2px solid #333; background: #0a0a0a; color: #fff; font-size: 1.4rem; text-align: center; font-weight: bold; }
+        input:focus { border-color: var(--neon); outline: none; }
+        
+        .btn { width: 100%; max-width: 280px; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px 0; font-size: 1rem; letter-spacing: 1px; }
+        
+        .camera-container { width: 200px; height: 200px; border-radius: 50%; overflow: hidden; border: 4px solid var(--neon); background: var(--dark); margin-bottom: 20px; position: relative; box-shadow: 0 0 20px rgba(57,255,20,0.3); }
         #v-visitante { width: 100%; height: 100%; object-fit: cover; }
         #c-visitante { display: none; }
 
         .timer-visitante { font-size: 4rem; font-weight: bold; color: var(--red); margin-bottom: 15px; }
         .msg-status { font-size: 1.5rem; letter-spacing: 1px; font-weight: bold; margin-bottom: 10px; }
         
-        /* POP-UP EXCLUSIVO PARA O ÁUDIO DO MORADOR */
+        /* POP-UP EXCLUSIVO CIRÚRGICO REQUERIDO */
         #popup-audio-recebido { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .btn-play { background: var(--neon); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; margin: 25px 0; cursor: pointer; box-shadow: 0 0 20px rgba(57,255,20,0.5); }
         .btn-play svg { width: 35px; height: 35px; fill: #000; margin-left: 5px; }
@@ -28,9 +31,11 @@
 </head>
 <body>
 
-    <div id="s-captura" class="screen active">
-        <h2 style="color:var(--neon); margin-bottom:25px; letter-spacing:2px;">VIRTY ACCESS</h2>
-        <button class="btn" style="background:var(--neon); color:#000;" onclick="abrirPainelEIniciarChamada()">🔔 INICIAR INTERFONE</button>
+    <div id="s-inicial" class="screen active">
+        <h2 style="color:var(--neon); letter-spacing:3px; margin-bottom: 5px;">VIRTY ACCESS</h2>
+        <p style="color:#666; font-size:0.85rem; margin-bottom:25px; font-weight:bold;">INTERFONE DIGITAL CONDOMINIAL</p>
+        <input type="number" id="input-unidade" placeholder="Nº CASA / APT">
+        <button class="btn" style="background:var(--neon); color:#000;" onclick="validarEAvancarParaSelfie()">AVANÇAR ➡️</button>
     </div>
 
     <div id="s-aguardo" class="screen">
@@ -52,9 +57,9 @@
     </div>
 
     <div id="s-recusado" class="screen">
-        <div style="font-size: 5rem;">❌</div>
-        <h2 style="color:var(--red); letter-spacing:1px; margin-top:10px;">NÃO AUTORIZADO</h2>
-        <p style="color:#aaa;">A chamada foi encerrada pelo morador.</p>
+        <div id="icone-recusado" style="font-size: 5rem;">❌</div>
+        <h2 id="titulo-recusado" style="color:var(--red); letter-spacing:1px; margin-top:10px;">NÃO AUTORIZADO</h2>
+        <p id="sub-recusado" style="color:#aaa;">A chamada foi encerrada pelo morador.</p>
     </div>
 
     <div id="s-descanso" class="screen">
@@ -79,34 +84,48 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const my_un = urlParams.get('un') || "100"; 
-    
     let visitanteID = localStorage.getItem('virty_id_visitante');
     if(!visitanteID) { 
         visitanteID = 'v_' + Math.random().toString(36).substring(2, 11); 
         localStorage.setItem('virty_id_visitante', visitanteID); 
     }
 
+    let target_un = "";
     let timerGeralVisitante, tempoRestante = 40;
     let stringAudioBase64 = "", audioInstancia = null, streamAtivo = null;
 
-    // Inicializa a câmera em segundo plano para agilizar o processo
+    // Inicialização preventiva da câmera para agilizar a experiência
     window.onload = () => {
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => {
             streamAtivo = s;
-            document.getElementById('v-visitante').srcObject = s;
-        }).catch(e => console.log("Erro câmera:", e));
+        }).catch(e => console.log("Câmera indisponível:", e.message));
     };
 
-    function abrirPainelEIniciarChamada() {
+    function validarEAvancarParaSelfie() {
+        target_un = document.getElementById('input-unidade').value.trim();
+        if(!target_un) return;
+
+        // Verificação de segurança: O visitante foi bloqueado por esta unidade?
+        db.ref(`bloqueados/${target_un}/${visitanteID}`).once('value', s => {
+            if(s.exists()) {
+                document.getElementById('icone-recusado').innerText = "🔒";
+                document.getElementById('titulo-recusado').innerText = "DISCAGEM RECUSADA";
+                document.getElementById('sub-recusado').innerText = "Este aparelho está temporariamente impedido de discar para esta unidade.";
+                mudarTela('s-recusado');
+            } else {
+                iniciarFluxoInterfone();
+            }
+        });
+    }
+
+    function iniciarFluxoInterfone() {
         mudarTela('s-aguardo');
         
-        // Garante que o vídeo está rodando
         if(streamAtivo) {
             document.getElementById('v-visitante').srcObject = streamAtivo;
         }
 
+        // Aguarda estabilização do canvas para captura limpa
         setTimeout(() => {
             const v = document.getElementById('v-visitante'), c = document.getElementById('c-visitante');
             c.width = v.videoWidth > 0 ? v.videoWidth : 320;
@@ -114,7 +133,7 @@
             c.getContext('2d').drawImage(v, 0, 0);
             const fotoData = c.toDataURL('image/jpeg', 0.4);
 
-            db.ref('chamadas_ativas/' + my_un).set({
+            db.ref('chamadas_ativas/' + target_un).set({
                 v_id: visitanteID,
                 foto: fotoData,
                 status: 'chamando',
@@ -124,7 +143,7 @@
                 iniciarContagemRegressivaVisitante();
                 ouvirRespostaMorador();
             });
-        }, 800); 
+        }, 800);
     }
 
     function iniciarContagemRegressivaVisitante() {
@@ -138,7 +157,7 @@
             
             if(tempoRestante <= 0) {
                 clearInterval(timerGeralVisitante);
-                db.ref('chamadas_ativas/' + my_un).remove();
+                db.ref('chamadas_ativas/' + target_un).remove();
                 fecharPopUpAudioVisitante();
                 if(streamAtivo) { streamAtivo.getTracks().forEach(t => t.stop()); }
                 mudarTela('s-descanso');
@@ -147,7 +166,7 @@
     }
 
     function ouvirRespostaMorador() {
-        db.ref('chamadas_ativas/' + my_un).on('value', s => {
+        db.ref('chamadas_ativas/' + target_un).on('value', s => {
             const d = s.val();
             if(!d) return;
 
@@ -198,7 +217,7 @@
         if(!stringAudioBase64) return;
         if(audioInstancia) { try{ audioInstancia.pause(); }catch(e){} }
         audioInstancia = new Audio(stringAudioBase64);
-        audioInstancia.play().catch(e => console.log("Erro play:", e.message));
+        audioInstancia.play().catch(e => console.log("Erro de codec:", e.message));
     }
 
     function mudarTela(id) {
