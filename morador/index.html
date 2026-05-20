@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.1.2</title>
+    <title>VIRTY MORADOR v2.1.4</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; --yellow: #FFD700; --dark-card: #0d0d0d; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -22,8 +22,10 @@
         .hist-card { background: var(--dark-card); border-radius: 16px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #161616; position: relative; }
         .foto-box { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
         .foto-hist { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; border: 1px solid var(--neon); }
-        .dots-row { position: absolute; top: -10px; left: 0; width: 100%; display: flex; justify-content: center; gap: 4px; z-index: 10; }
-        .dot { width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; }
+        
+        /* LINHA SUPERIOR PARA AS 4 BOLINHAS DE CONTADORES ACC */
+        .dots-row { position: absolute; top: -10px; left: 0; width: 100%; display: flex; justify-content: center; gap: 3px; z-index: 10; }
+        .dot { width: 16px; height: 16px; border-radius: 50%; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; }
         
         .switch-bloqueio { padding: 8px 14px; border-radius: 20px; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; }
         .status-bloqueado { background: var(--red); color: #fff; }
@@ -39,7 +41,8 @@
         #popup-voz { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
         .canvas-circular { transform: rotate(-90deg); width: 200px; height: 200px; }
         .circle-bg { fill: none; stroke: #222; stroke-width: 12; }
-        .circle-progress { fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 0; transition: stroke-dashoffset 0.1s linear; }
+        .circle-progress { fill: none; stroke: var(--neon); stroke-width: 12; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 0; transition: stroke-dashoffset 0.1s linear; }
+        
         #texto-timer-voz { position: absolute; font-size: 2.2rem; font-weight: bold; color: #fff; }
         
         #popup-pos-audio { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
@@ -81,7 +84,7 @@
 
     <div id="s-home" class="screen">
         <div class="header">
-            <div><b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br><small style="color:var(--gray); font-weight:bold;">VERSION 2.1.2</small></div>
+            <div><b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br><small style="color:var(--gray); font-weight:bold;">VERSION 2.1.4</small></div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold;"></span>
         </div>
         <div class="controles-alerta">
@@ -89,7 +92,7 @@
             <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()">🔊</button>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <span style="font-size:0.85rem; color:var(--gray); font-weight:bold;">HISTÓRICO</span>
+            <span style="font-size:0.85rem; color:var(--gray); font-weight:bold;">HISTÓRICO AGRUPADO</span>
             <button onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.75rem; font-weight:bold;">LIMPAR TUDO</button>
         </div>
         <div id="lista-hist"></div>
@@ -148,12 +151,13 @@
     const db = firebase.database();
     
     let my_un = localStorage.getItem('my_un'), my_foto = "";
-    let timerPerdida, timerVozInterval, timerDeDezSegundos, mediaRecorder, chunks = [];
+    let timerPerdida, timerVozInterval, timerDeDezSegundos, mediaRecorder;
+    let chunks = []; 
     let estaGravando = false, estaDigitando = false, modoMaoLivre = false;
     let tempoGeralRegressivo = 90, timePressStart = 0, limiteHistoricoAtual = 5;
     let audioCtx = null, somAtual = parseInt(localStorage.getItem('virty_som')) || 0, modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1, somInterval = null;
     let streamCameraAtiva = null;
-    let popUpPosAudioAberto = false; // TRAVA DE SEGURANÇA CONTRA INTERRUPÇÃO DO FIREBASE
+    let popUpPosAudioAberto = false; 
 
     function virtyAlert(msg) { document.getElementById('custom-alert-msg').innerText = msg; document.getElementById('custom-alert').style.display = 'block'; }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
@@ -190,7 +194,6 @@
         db.ref('chamadas_ativas/' + my_un).on('value', s => {
             const d = s.val(); const painel = document.getElementById('painel-chamada');
             
-            // SE O POP-UP DE 10S ESTIVER ATIVO, O FIREBASE FICA IMPEDIDO DE DERRUBAR A TELA
             if (popUpPosAudioAberto) return;
 
             if(d && ['chamando','escrevendo','gravando'].includes(d.status)) {
@@ -223,34 +226,73 @@
 
     async function startRec() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 16000 });
-            chunks = []; estaGravando = true; gerenciarAlerta('stop'); document.getElementById('popup-voz').style.display = 'flex';
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            chunks = []; 
+            
+            estaGravando = true; 
+            gerenciarAlerta('stop'); 
+            document.getElementById('popup-voz').style.display = 'flex';
+            document.getElementById('label-modo-gravacao').innerHTML = modoMaoLivre ? "MÃOS LIVRES...<br><small>Toque na tela para enviar</small>" : "GRAVANDO ÁUDIO...";
             
             clearInterval(timerPerdida); 
+            db.ref('chamadas_ativas/' + my_un).update({ status: 'gravando' });
             
-            let tempoVoz = 30; db.ref('chamadas_ativas/' + my_un).update({ status: 'gravando' });
-            const circ = 2 * Math.PI * 90; const arco = document.getElementById('arco-progresso');
+            let tempoVoz = 30; 
+            document.getElementById('texto-timer-voz').innerText = tempoVoz + "s";
+            
+            const circ = 2 * Math.PI * 90; 
+            const arco = document.getElementById('arco-progresso');
+            arco.style.strokeDashoffset = "0"; 
+
             clearInterval(timerVozInterval);
             timerVozInterval = setInterval(() => {
-                tempoVoz--; document.getElementById('texto-timer-voz').innerText = tempoVoz + "s";
+                tempoVoz--; 
+                document.getElementById('texto-timer-voz').innerText = tempoVoz + "s";
                 arco.style.strokeDashoffset = circ * ((30 - tempoVoz) / 30);
                 if(tempoVoz <= 0) stopRec();
             }, 1000);
             
-            mediaRecorder.ondataavailable = e => chunks.push(e.data);
+            mediaRecorder.ondataavailable = e => {
+                if (e.data && e.data.size > 0) chunks.push(e.data);
+            };
+            
             mediaRecorder.onstop = () => {
-                new FileReader().readAsDataURL(new Blob(chunks, { type: 'audio/webm' }));
-                FileReader.prototype.onloadend = function() { 
-                    popUpPosAudioAberto = true; // SECO TRANCADO ANTES DE ENVIAR AO BANCO
-                    db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: "Áudio enviado", audio_b64: this.result, data_hora: obterDataHora() }); 
-                    abrirPopUpDecisao10s();
+                const blobAudio = new Blob(chunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                
+                reader.readAsDataURL(blobAudio);
+                reader.onloadend = function() { 
+                    const base64Audio = reader.result; 
+                    popUpPosAudioAberto = true; 
+                    
+                    db.ref('chamadas_ativas/' + my_un).update({ 
+                        status: 'mensagem', 
+                        msg_morador: "Áudio enviado", 
+                        audio_b64: base64Audio, 
+                        data_hora: obterDataHora() 
+                    }).then(() => {
+                        stream.getTracks().forEach(track => track.stop());
+                        abrirPopUpDecisao10s();
+                    });
                 };
             };
+            
             mediaRecorder.start();
-        } catch(e) { estaGravando = false; }
+        } catch(e) { 
+            estaGravando = false; 
+            virtyAlert("Erro ao acessar microfone: " + e.message);
+        }
     }
     
-    function stopRec() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); clearInterval(timerVozInterval); document.getElementById('popup-voz').style.display = 'none'; estaGravando = false; } }
+    function stopRec() { 
+        if(mediaRecorder && mediaRecorder.state !== 'inactive') { 
+            mediaRecorder.stop(); 
+            clearInterval(timerVozInterval); 
+            document.getElementById('popup-voz').style.display = 'none'; 
+            estaGravando = false; 
+        } 
+    }
 
     function abrirPopUpDecisao10s() {
         document.getElementById('painel-chamada').style.display = 'none';
@@ -281,7 +323,7 @@
                 gravarHist(d.v_id, d.foto, statusDestino);
                 setTimeout(() => {
                     ref.remove();
-                    popUpPosAudioAberto = false; // LIBERA O MONITORAMENTO DE CHAMADAS APÓS EXPULSAR O REGISTRO DO BANCO
+                    popUpPosAudioAberto = false; 
                 }, 800);
             } else {
                 popUpPosAudioAberto = false;
@@ -299,38 +341,71 @@
     }
 
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
+    
+    // REGRA DE AGRUPAMENTO: Atualiza os contadores baseados no ID fixo do visitante
     function gravarHist(vid, foto, st) {
         const ref = db.ref(`historico/${my_un}/${vid}`);
         ref.once('value', s => {
             let d = s.val() || { foto: foto, v_id: vid, verde: 0, vermelho: 0, azul: 0, cinza: 0 };
-            if(st==='liberado') d.verde++; else if(st==='recusado') d.vermelho++; else if(st==='mensagem') d.azul++; else if(st==='cinza') d.cinza++;
-            d.ultima = st; d.ts = Date.now(); d.data_hora = obterDataHora(); ref.set(d);
+            if(st==='liberado') d.verde++; 
+            else if(st==='recusado') d.vermelho++; 
+            else if(st==='mensagem') d.azul++; 
+            else if(st==='cinza') d.cinza++;
+            d.ultima = st; 
+            d.ts = Date.now(); 
+            d.data_hora = obterDataHora(); 
+            ref.set(d);
         });
     }
 
+    // INTERFACE DE HISTÓRICO CORRIGIDA: Renderiza as 4 bolinhas organizadas em linha sobre a foto
     function renderizarHist() {
         db.ref(`historico/${my_un}`).orderByChild('ts').on('value', snap => {
             db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
-                const bl = bSnap.val() || {}; const list = document.getElementById('lista-hist'); list.innerHTML = "";
-                if(!snap.exists()) return; let reg = []; snap.forEach(i => { reg.push(i.val()); }); reg.reverse();
+                const bl = bSnap.val() || {}; 
+                const list = document.getElementById('lista-hist'); 
+                list.innerHTML = "";
+                
+                if(!snap.exists()) return; 
+                let reg = []; 
+                snap.forEach(i => { reg.push(i.val()); }); 
+                reg.reverse();
+                
                 reg.slice(0, limiteHistoricoAtual).forEach(d => {
                     const isB = !!bl[d.v_id];
                     list.innerHTML += `<div class="hist-card">
-                        <div class="foto-box"><div class="dots-row"><div class="dot" style="background:var(--neon);color:#000">${d.verde}</div><div class="dot" style="background:var(--red)">${d.vermelho}</div></div><img src="${d.foto}" class="foto-hist"></div>
-                        <div style="flex:1;"><b style="font-size:0.75rem;color:#aaa;">ID: ${d.v_id.substring(0,8)}...</b><br><small style="color:var(--neon);font-size:0.7rem;">${d.ultima.toUpperCase()}</small></div>
-                        <div><button class="switch-bloqueio ${isB ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.v_id}')">${isB ? '🔒' : '🔓'}</button></div>
+                        <div class="foto-box">
+                            <div class="dots-row">
+                                <div class="dot" style="background:var(--neon); color:#000;">${d.verde || 0}</div>
+                                <div class="dot" style="background:var(--red); color:#fff;">${d.vermelho || 0}</div>
+                                <div class="dot" style="background:var(--blue); color:#fff;">${d.azul || 0}</div>
+                                <div class="dot" style="background:var(--gray); color:#fff;">${d.cinza || 0}</div>
+                            </div>
+                            <img src="${d.foto}" class="foto-hist">
+                        </div>
+                        <div style="flex:1;">
+                            <b style="font-size:0.75rem; color:#aaa;">ID: ${d.v_id.substring(0,8)}...</b><br>
+                            <small style="color:var(--neon); font-size:0.7rem;">ÚLTIMA: ${d.ultima.toUpperCase()}</small><br>
+                            <span style="font-size:0.65rem; color:var(--gray);">${d.data_hora || ''}</span>
+                        </div>
+                        <div>
+                            <button class="switch-bloqueio ${isB ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.v_id}')">
+                                ${isB ? '🔒' : '🔓'}
+                            </button>
+                        </div>
                     </div>`;
                 });
             });
         });
     }
+    
     function alternarBloqueio(vid) { const ref = db.ref(`bloqueados/${my_un}/${vid}`); ref.once('value', s => { if(s.exists()) ref.remove(); else ref.set({ ts: Date.now() }); }); }
     
     function mudarTela(id) { 
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
         document.getElementById(id).classList.add('active'); 
         if(id==='s-cadastro') {
-            inicializarCapturaVideo(); // REATIVO: DISPARA A CÂMERA DE CADASTRO APENAS AO ENTRAR NA TELA
+            inicializarCapturaVideo(); 
         } else {
             if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; }
         }
