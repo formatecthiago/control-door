@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.1.0</title>
+    <title>VIRTY MORADOR v2.1.1</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; --yellow: #FFD700; --dark-card: #0d0d0d; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -42,7 +42,6 @@
         .circle-progress { fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 0; transition: stroke-dashoffset 0.1s linear; }
         #texto-timer-voz { position: absolute; font-size: 2.2rem; font-weight: bold; color: #fff; }
         
-        /* POPUP DE DECISÃO PÓS-ÁUDIO DE 10 SEGUNDOS */
         #popup-pos-audio { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         #timer-pos-audio { font-size: 4.5rem; color: var(--yellow); font-weight: bold; margin-bottom: 15px; }
 
@@ -80,15 +79,9 @@
         <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
     </div>
 
-    <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
-        <h1 style="color:var(--yellow); font-size:1.8rem; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
-        <div style="margin-top:40px; color:var(--gray); font-size:0.8rem;" id="txt-un-analise"></div>
-        <button class="btn" style="background:#222; color:#fff;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
-    </div>
-
     <div id="s-home" class="screen">
         <div class="header">
-            <div><b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br><small style="color:var(--gray); font-weight:bold;">VERSION 2.1.0</small></div>
+            <div><b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br><small style="color:var(--gray); font-weight:bold;">VERSION 2.1.1</small></div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold;"></span>
         </div>
         <div class="controles-alerta">
@@ -159,9 +152,8 @@
     let estaGravando = false, estaDigitando = false, modoMaoLivre = false;
     let tempoGeralRegressivo = 90, timePressStart = 0, limiteHistoricoAtual = 5;
     let audioCtx = null, somAtual = parseInt(localStorage.getItem('virty_som')) || 0, modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1, somInterval = null;
-    let streamCameraAtiva = null, usarLenteFrontal = true;
-
-    const my_fingerprint = "M-" + Math.floor(Math.random() * 900000).toString(16).toUpperCase();
+    let streamCameraAtiva = null;
+    let popUpPosAudioAberto = false; // TRAVA DE CONTROLE ESTRUTURAL
 
     function virtyAlert(msg) { document.getElementById('custom-alert-msg').innerText = msg; document.getElementById('custom-alert').style.display = 'block'; }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
@@ -197,11 +189,14 @@
     function escutarChamadas() {
         db.ref('chamadas_ativas/' + my_un).on('value', s => {
             const d = s.val(); const painel = document.getElementById('painel-chamada');
+            
+            // --- CORREÇÃO: SE O POP-UP DE 10S ESTIVER ATIVO, BLOQUEIA O CORTE DO FIREBASE ---
+            if (popUpPosAudioAberto) return;
+
             if(d && ['chamando','escrevendo','gravando'].includes(d.status)) {
                 document.getElementById('foto-v').src = d.foto; document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
                 painel.style.display = 'flex';
                 
-                // Se o morador abriu a tela e NÃO iniciou gravação, roda o timer principal de 90s
                 if(d.status === 'chamando' && !estaGravando && !estaDigitando) {
                     gerenciarAlerta('start'); tempoGeralRegressivo = 90; clearInterval(timerPerdida);
                     timerPerdida = setInterval(() => {
@@ -211,14 +206,13 @@
                     }, 1000);
                 }
             } else { 
-                if(!estaGravando && document.getElementById('popup-pos-audio').style.display !== 'flex') {
+                if(!estaGravando) {
                     painel.style.display = 'none'; fecharPainelTexto(); gerenciarAlerta('stop'); clearInterval(timerPerdida); 
                 }
             }
         });
     }
 
-    // AO DIGITAR MENSAGEM: O TIMER DE 90S PERMANECE RODANDO NORMALMENTE EM BACKGROUND
     function abrirPainelTexto() { estaDigitando = true; gerenciarAlerta('stop'); db.ref('chamadas_ativas/' + my_un).update({ status: 'escrevendo' }); document.getElementById('container-digitar-texto').style.display = 'flex'; document.getElementById('campo-texto-interno').focus(); }
     function fecharPainelTexto() { estaDigitando = false; document.getElementById('container-digitar-texto').style.display = 'none'; if(document.getElementById('painel-chamada').style.display === 'flex' && !estaGravando) { gerenciarAlerta('start'); db.ref('chamadas_ativas/' + my_un).update({ status: 'chamando' }); } }
     function enviarTextoInterno() { const txt = document.getElementById('campo-texto-interno').value; if(!txt) return; clearInterval(timerPerdida); db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: txt, data_hora: obterDataHora() }); document.getElementById('campo-texto-interno').value = ""; responder('mensagem'); }
@@ -232,7 +226,6 @@
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 16000 });
             chunks = []; estaGravando = true; gerenciarAlerta('stop'); document.getElementById('popup-voz').style.display = 'flex';
             
-            // --- ENCERRAR O TIMER DE 90 SEGUNDOS IMEDIATAMENTE AO TOCAR NO AUDIO ---
             clearInterval(timerPerdida); 
             
             let tempoVoz = 30; db.ref('chamadas_ativas/' + my_un).update({ status: 'gravando' });
@@ -248,8 +241,9 @@
             mediaRecorder.onstop = () => {
                 new FileReader().readAsDataURL(new Blob(chunks, { type: 'audio/webm' }));
                 FileReader.prototype.onloadend = function() { 
+                    popUpPosAudioAberto = true; // <--- TRAVA IMEDIATA ANTES DE GRAVAR NO BANCO
                     db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: "Áudio enviado", audio_b64: this.result, data_hora: obterDataHora() }); 
-                    abrirPopUpDecisao10s(); // Transiciona para o Pop-up Regressivo de 10s
+                    abrirPopUpDecisao10s();
                 };
             };
             mediaRecorder.start();
@@ -258,7 +252,6 @@
     
     function stopRec() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); clearInterval(timerVozInterval); document.getElementById('popup-voz').style.display = 'none'; estaGravando = false; } }
 
-    // --- ENGENHARIA DO POP-UP DE 10 SEGUNDOS POS-AUDIO ---
     function abrirPopUpDecisao10s() {
         document.getElementById('painel-chamada').style.display = 'none';
         document.getElementById('popup-pos-audio').style.display = 'flex';
@@ -270,7 +263,7 @@
             tempoPortao--;
             document.getElementById('timer-pos-audio').innerText = tempoPortao;
             if(tempoPortao <= 0) {
-                decidirPortaoPosAudio(false); // Estourou o tempo: vai para a home sem abrir
+                decidirPortaoPosAudio(false);
             }
         }, 1000);
     }
@@ -286,9 +279,14 @@
             if(d) {
                 ref.update({ status: statusDestino });
                 gravarHist(d.v_id, d.foto, statusDestino);
-                setTimeout(() => ref.remove(), 800);
+                setTimeout(() => {
+                    ref.remove();
+                    popUpPosAudioAberto = false; // LIBERA A TRAVA APÓS LIMPAR O BANCO
+                }, 800);
+            } else {
+                popUpPosAudioAberto = false;
             }
-            mudarTela('s-home'); // Força retorno para a home do morador
+            mudarTela('s-home');
         });
     }
 
@@ -327,7 +325,17 @@
         });
     }
     function alternarBloqueio(vid) { const ref = db.ref(`bloqueados/${my_un}/${vid}`); ref.once('value', s => { if(s.exists()) ref.remove(); else ref.set({ ts: Date.now() }); }); }
-    function mudarTela(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id==='s-cadastro') inicializarCapturaVideo(); }
+    
+    function mudarTela(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById(id).classList.add('active'); 
+        if(id==='s-cadastro') {
+            inicializarCapturaVideo(); // SÓ DISPARA CÂMERA DE CADASTRO QUANDO ENTRA NA TELA
+        } else {
+            if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; }
+        }
+    }
+    
     function proximoSom() { somAtual = (somAtual + 1) % 20; localStorage.setItem('virty_som', somAtual); document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1); }
     function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
     function atualizarInterfaceAlerta() { const b = document.getElementById('btn-alerta'); b.innerText = modoAlerta===1 ? "🔊" : modoAlerta===2 ? "📳🔊" : "📳"; }
