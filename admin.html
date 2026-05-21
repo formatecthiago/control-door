@@ -3,94 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY ADMIN v1.5</title>
+    <title>VIRTY ADMIN v2.0 - Otimizado</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --yellow: #FFD700; --blue: #007BFF; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
-        
         .stats-bar { display: flex; gap: 10px; margin-bottom: 20px; position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 100; }
-        .stat-btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; text-align: center; font-size: 0.8rem; cursor: default; }
+        .stat-btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; text-align: center; font-size: 0.8rem; }
         .btn-cad { background: var(--neon); color: #000; }
         .btn-pend { background: var(--yellow); color: #000; }
-
         .search-group { margin-bottom: 25px; border: 1px solid #222; padding: 10px; border-radius: 10px; }
         .search-label { font-size: 0.7rem; color: #888; margin-bottom: 5px; display: block; text-transform: uppercase; }
         input.search-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
-        input.search-input:focus { border-color: var(--neon); outline: none; }
-
         .list-container { max-height: 350px; overflow-y: auto; }
-        
-        /* LINHA MODELO CARD REESTRUTURADA (FOTO ESQUERDA, DADOS CENTRO, AÇÕES DIREITA) */
-        .item-row { 
-            background: #0a0a0a; 
-            border: 1px solid #1a1a1a; 
-            border-radius: 12px;
-            padding: 12px; 
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            transition: 0.2s; 
-        }
-        .item-row:hover { background: #121212; border-color: #333; }
-        
-        /* Foto à Esquerda */
-        .card-foto-virty { 
-            width: 80px; 
-            height: 80px; 
-            border-radius: 10px; 
-            object-fit: cover; 
-            border: 2px solid var(--neon);
-            flex-shrink: 0;
-        }
-        
-        /* Dados ao Centro */
-        .card-info-virty { 
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .card-info-virty h3 { margin: 0; font-size: 1rem; color: #fff; font-weight: bold; }
+        .item-row { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; }
+        .card-foto-virty { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; border: 2px solid var(--neon); flex-shrink: 0; }
+        .card-info-virty { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .card-info-virty h3 { margin: 0; font-size: 1rem; }
         .card-info-virty p { margin: 0; font-size: 0.8rem; color: #aaa; }
         .badge-unidade { font-size: 0.75rem; font-weight: bold; color: var(--neon); text-transform: uppercase; }
-
-        /* Ações à Direita */
-        .card-actions-virty { 
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-width: 95px;
-        }
-        .btn-action { 
-            width: 100%;
-            padding: 7px; 
-            border-radius: 6px; 
-            border: none; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 0.65rem; 
-            text-transform: uppercase;
-            text-align: center;
-        }
+        .card-actions-virty { display: flex; flex-direction: column; gap: 6px; min-width: 95px; }
+        .btn-action { width: 100%; padding: 7px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 0.65rem; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
     <div class="stats-bar">
-        <div class="stat-btn btn-cad">CADASTRADOS: <span id="count-cad">0</span></div>
-        <div class="stat-btn btn-pend">PENDENTES: <span id="count-pend">0</span></div>
+        <div class="stat-btn btn-cad">CADASTRADOS ATIVOS: <span id="count-cad">0</span></div>
+        <div class="stat-btn btn-pend">PENDENTES NA FILA: <span id="count-pend">0</span></div>
     </div>
 
     <div class="search-group">
-        <label class="search-label">🔍 Pesquisar Solicitações (Pendentes)</label>
-        <input type="text" class="search-input" id="search-p" placeholder="Nome ou Unidade..." onkeyup="filterList('list-p', this.value)">
+        <label class="search-label">🔍 Solicitações Pendentes</label>
+        <input type="text" class="search-input" placeholder="Filtrar pendentes..." onkeyup="filterList('list-p', this.value)">
         <div id="list-p" class="list-container"></div>
     </div>
 
     <div class="search-group">
-        <label class="search-label">🔍 Pesquisar Moradores (Habilitados)</label>
-        <input type="text" class="search-input" id="search-c" placeholder="Nome, Unidade ou CPF..." onkeyup="filterList('list-c', this.value)">
+        <label class="search-label">🔍 Moradores Habilitados</label>
+        <input type="text" class="search-input" placeholder="Filtrar habilitados..." onkeyup="filterList('list-c', this.value)">
         <div id="list-c" class="list-container"></div>
     </div>
 
@@ -101,70 +51,86 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    // Monitoramento de Pendentes
-    db.ref('solicitacoes_cadastro').on('value', snap => {
-        const container = document.getElementById('list-p'); container.innerHTML = "";
-        let totalPendentes = 0;
+    let qtdPendentes = 0;
+    let qtdCadastrados = 0;
 
-        if (snap.exists()) {
-            snap.forEach(unidadeSnap => {
-                const un = unidadeSnap.key;
-                unidadeSnap.forEach(moradorSnap => {
-                    totalPendentes++;
-                    const d = moradorSnap.val(); const fingerprint = moradorSnap.key;
-                    const searchStr = `${d.nome} ${un} ${d.cpf || ''}`.toLowerCase();
-                    
-                    const row = document.createElement('div');
-                    row.className = 'item-row';
-                    row.setAttribute('data-search', searchStr);
-
-                    row.innerHTML = `
-                        <img src="${d.foto}" class="card-foto-virty" style="border-color:var(--yellow)">
-                        <div class="card-info-virty">
-                            <span class="badge-unidade" style="color:var(--yellow)">CASA ${un}</span>
-                            <h3>${d.nome}</h3>
-                            <p><strong>CPF:</strong> ${d.cpf || '---'}</p>
-                        </div>
-                        <div class="card-actions-virty">
-                            <button class="btn-action" style="background:var(--neon); color:#000;" onclick="aprovar('${un}', '${fingerprint}')">APROVAR</button>
-                            <button class="btn-action" style="background:var(--red); color:#fff;" onclick="recusar('${un}', '${fingerprint}')">REJEITAR</button>
-                        </div>
-                    `;
-                    container.appendChild(row);
-                });
-            });
-        }
-        document.getElementById('count-pend').innerText = totalPendentes;
+    // 📡 CORREÇÃO CIRÚRGICA: Escutador de Pendentes baseado em eventos de filhos (Leve e Econômico)
+    const refPendentes = db.ref('solicitacoes_cadastro');
+    refPendentes.on('child_added', unidadeSnap => {
+        const un = unidadeSnap.key;
+        unidadeSnap.forEach(moradorSnap => {
+            qtdPendentes++;
+            document.getElementById('count-pend').innerText = qtdPendentes;
+            renderizarPendente(un, moradorSnap.key, moradorSnap.val());
+        });
+    });
+    refPendentes.on('child_removed', unidadeSnap => {
+        // Quando limpa o nó da unidade, decrementa o contador global e remove do DOM
+        const un = unidadeSnap.key;
+        const elementos = document.getElementById('list-p').querySelectorAll(`[data-unidade="${un}"]`);
+        elementos.forEach(el => {
+            el.remove();
+            if(qtdPendentes > 0) qtdPendentes--;
+        });
+        document.getElementById('count-pend').innerText = qtdPendentes;
     });
 
-    // Monitoramento de Aprovados/Habilitados
-    db.ref('moradores_validados').on('value', snap => {
-        const container = document.getElementById('list-c'); container.innerHTML = "";
-        let totalHabilitados = 0;
-
-        if (snap.exists()) {
-            snap.forEach(unidadeSnap => {
-                const un = unidadeSnap.key; const dadosUnidade = unidadeSnap.val();
-                if (dadosUnidade.nome) {
-                    totalHabilitados++; renderizarCardHabilitado(container, un, dadosUnidade, null);
-                } else {
-                    unidadeSnap.forEach(moradorSnap => {
-                        totalHabilitados++; renderizarCardHabilitado(container, un, moradorSnap.val(), moradorSnap.key);
-                    });
-                }
+    // 📡 CORREÇÃO CIRÚRGICA: Escutador de Validados baseado em eventos de filhos
+    const refValidados = db.ref('moradores_validados');
+    refValidados.on('child_added', unidadeSnap => {
+        const un = unidadeSnap.key;
+        const dados = unidadeSnap.val();
+        
+        // Trata nós diretos ou agrupados por morador
+        if (dados.nome) {
+            qtdCadastrados++; renderizarCadastrado(un, null, dados);
+        } else {
+            unidadeSnap.forEach(moradorSnap => {
+                qtdCadastrados++; renderizarCadastrado(un, moradorSnap.key, moradorSnap.val());
             });
         }
-        document.getElementById('count-cad').innerText = totalHabilitados;
+        document.getElementById('count-cad').innerText = qtdCadastrados;
+    });
+    refValidados.on('child_removed', unidadeSnap => {
+        const un = unidadeSnap.key;
+        const elementos = document.getElementById('list-c').querySelectorAll(`[data-unidade="${un}"]`);
+        elementos.forEach(el => {
+            el.remove();
+            if(qtdCadastrados > 0) qtdCadastrados--;
+        });
+        document.getElementById('count-cad').innerText = qtdCadastrados;
     });
 
-    // Renderização com Arquitetura Estética Exigida (Foto Esquerda, Dados Centro, Botões Direita)
-    function renderizarCardHabilitado(container, un, d, fingerprintChave) {
-        const searchStr = `${d.nome} ${un} ${d.cpf || ''}`.toLowerCase();
+    function renderizarPendente(un, fId, d) {
+        const container = document.getElementById('list-p');
         const row = document.createElement('div');
         row.className = 'item-row';
-        row.setAttribute('data-search', searchStr);
+        row.id = `pend-${un}-${fId}`;
+        row.setAttribute('data-unidade', un);
+        row.setAttribute('data-search', `${d.nome} ${un} ${d.cpf || ''}`.toLowerCase());
 
-        const paramExcluir = fingerprintChave ? `'${un}', '${fingerprintChave}'` : `'${un}', null`;
+        row.innerHTML = `
+            <img src="${d.foto}" class="card-foto-virty" style="border-color:var(--yellow)">
+            <div class="card-info-virty">
+                <span class="badge-unidade" style="color:var(--yellow)">CASA ${un}</span>
+                <h3>${d.nome}</h3>
+                <p><strong>CPF:</strong> ${d.cpf || '---'}</p>
+            </div>
+            <div class="card-actions-virty">
+                <button class="btn-action" style="background:var(--neon); color:#000;" onclick="aprovar('${un}', '${fId}')">APROVAR</button>
+                <button class="btn-action" style="background:var(--red); color:#fff;" onclick="recusar('${un}', '${fId}')">REJEITAR</button>
+            </div>
+        `;
+        container.appendChild(row);
+    }
+
+    function renderizarCadastrado(un, fId, d) {
+        const container = document.getElementById('list-c');
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.id = `cad-${un}-${fId || 'dir'}`;
+        row.setAttribute('data-unidade', un);
+        row.setAttribute('data-search', `${d.nome} ${un} ${d.cpf || ''}`.toLowerCase());
 
         row.innerHTML = `
             <img src="${d.foto || ''}" class="card-foto-virty" onerror="this.style.display='none'">
@@ -174,8 +140,8 @@
                 <p><strong>CPF:</strong> ${d.cpf || '---'}</p>
             </div>
             <div class="card-actions-virty">
-                <button class="btn-action" style="background:var(--blue); color:#fff;" onclick="editarMorador('${un}', '${fingerprintChave || ''}')">EDITAR</button>
-                <button class="btn-action" style="background:var(--red); color:#fff;" onclick="remover(${paramExcluir})">EXCLUIR</button>
+                <button class="btn-action" style="background:var(--blue); color:#fff;" onclick="alert('Rotina de Edição Unidade ${un}')">EDITAR</button>
+                <button class="btn-action" style="background:var(--red); color:#fff;" onclick="remover('${un}', '${fId || ''}')">EXCLUIR</button>
             </div>
         `;
         container.appendChild(row);
@@ -190,36 +156,38 @@
         });
     }
 
-    function aprovar(un, fingerprint) {
-        db.ref(`solicitacoes_cadastro/${un}/${fingerprint}`).once('value', s => {
-            if(!s.exists()) return; const dados = s.val();
-            db.ref(`moradores_validados/${un}/${fingerprint}`).set({
+    function aprovar(un, fId) {
+        db.ref(`solicitacoes_cadastro/${un}/${fId}`).once('value', s => {
+            if(!s.exists()) return;
+            const dados = s.val();
+            db.ref(`moradores_validados/${un}/${fId}`).set({
                 nome: dados.nome, cpf: dados.cpf, foto: dados.foto, ts: Date.now()
-            }).then(() => db.ref(`solicitacoes_cadastro/${un}/${fingerprint}`).remove());
+            }).then(() => {
+                db.ref(`solicitacoes_cadastro/${un}/${fId}`).remove();
+                document.getElementById(`pend-${un}-${fId}`).remove();
+            });
         });
     }
 
-    function recusar(un, fingerprint) {
-        if(confirm("Deseja realmente rejeitar esta solicitação de cadastro?")) {
-            db.ref(`solicitacoes_cadastro/${un}/${fingerprint}`).remove();
+    function recusar(un, fId) {
+        if(confirm("Rejeitar solicitação?")) {
+            db.ref(`solicitacoes_cadastro/${un}/${fId}`).remove().then(() => {
+                const el = document.getElementById(`pend-${un}-${fId}`);
+                if(el) el.remove();
+            });
         }
     }
 
-    // Trava de Segurança com Confirmação Humana Obrigatória na Exclusão
-    function remover(un, fingerprint) {
-        if(confirm(`⚠️ ATENÇÃO!\nDeseja realmente EXCLUIR e revogar em definitivo o acesso deste morador da Unidade ${un}?`)) {
-            if(fingerprint) {
-                db.ref(`moradores_validados/${un}/${fingerprint}`).remove();
-            } else {
-                db.ref('moradores_validados/' + un).remove();
-            }
-            alert("Acesso revogado com sucesso!");
+    function remover(un, fId) {
+        if(confirm(`Revogar acesso da Unidade ${un}?`)) {
+            const caminho = fId ? `moradores_validados/${un}/${fId}` : `moradores_validados/${un}`;
+            db.ref(caminho).remove().then(() => {
+                const idProcurado = fId ? `cad-${un}-${fId}` : `cad-${un}-dir`;
+                const el = document.getElementById(idProcurado);
+                if(el) el.remove();
+                alert("Acesso revogado.");
+            });
         }
-    }
-
-    function editarMorador(un, fingerprint) {
-        // Preparado estruturalmente para sua futura rotina de edição de dados em lote
-        alert(`Rotina de edição aberta para Unidade ${un}.`);
     }
 </script>
 </body>
