@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v16.0 - Estabilizado</title>
+    <title>VIRTY VISITANTE v16.0 - Standard Estabilizado</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -90,19 +90,23 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    function gerarFingerprintVirty() {
+    // Geração estável de ID combinando LocalStorage para fixar em abas normais
+    let idDispositivoEstavel = localStorage.getItem('virty_device_token');
+    if(!idDispositivoEstavel) {
         const metadados = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language, navigator.platform].join('||');
         let hash = 0;
         for (let i = 0; i < metadados.length; i++) { hash = (hash << 5) - hash + metadados.charCodeAt(i); hash |= 0; }
-        return "VF-" + Math.abs(hash).toString(16).toUpperCase();
+        idDispositivoEstavel = "VF-" + Math.abs(hash).toString(16).toUpperCase() + "-" + Math.random().toString(36).substr(2, 4).toUpperCase();
+        localStorage.setItem('virty_device_token', idDispositivoEstavel);
     }
 
-    const v_id = gerarFingerprintVirty();
+    const v_id = idDispositivoEstavel;
     let b64 = "";
     let timerRegressivoVisitante;
     let streamAtual = null;
     let usarLenteFrontal = true;
     let audioRespostaMorador = null;
+    let unidadeEmAtendimentoAtual = null;
 
     window.onload = () => { inicializarCameraAgressiva(); };
 
@@ -149,18 +153,33 @@
         const un = document.getElementById('un').value;
         if(!un || !b64) return virtyAlert("Insira a unidade e tire sua foto!");
         
-        // 🏠 MELHORIA CIRÚRGICA: Validação se a unidade existe antes de criar a chamada
+        // 1. Validação se a unidade existe antes de criar a chamada
         const checkUnidade = await db.ref(`moradores_validados/${un}`).once('value');
         if(!checkUnidade.exists()){
             virtyAlert(`A unidade ${un} não possui moradores ativos habilitados no sistema.`);
             return;
         }
 
+        // 2. Validação se o visitante está na lista de bloqueados
         const blockCheck = await db.ref(`bloqueados/${un}/${v_id}`).once('value');
         if(blockCheck.exists()) {
             virtyAlert("Não foi possível estabelecer contato com a unidade informada.");
             location.reload(); return;
         }
+
+        // 🔒 TRAVA ANTI-MÚLTIPLOS NAVEGADORES: Verifica se a unidade já está ocupada por outra sessão ativa
+        const chamadaExistente = await db.ref(`chamadas_ativas/${un}`).once('value');
+        if(chamadaExistente.exists()) {
+            const dadosChamada = chamadaExistente.val();
+            // Se já tem alguém chamando e NÃO é este mesmo navegador (v_id diferente), barra na hora!
+            if(dadosChamada.v_id !== v_id && ["chamando", "gravando", "escrevendo"].includes(dadosChamada.status)) {
+                virtyAlert(`A unidade ${un} encontra-se ocupada em outro atendimento neste momento. Aguarde.`);
+                return;
+            }
+        }
+
+        // Se passou nos testes, assume o controle da unidade
+        unidadeEmAtendimentoAtual = un;
         mudarTela('t-calling');
         const ref = db.ref(`chamadas_ativas/${un}`);
         await ref.remove();
@@ -170,7 +189,11 @@
         clearInterval(timerRegressivoVisitante);
         timerRegressivoVisitante = setInterval(() => {
             t--; document.getElementById('timer-v').innerText = t;
-            if(t <= 0) { clearInterval(timerRegressivoVisitante); ref.update({status: 'cinza'}); }
+            if(t <= 0) { 
+                clearInterval(timerRegressivoVisitante); 
+                ref.update({status: 'cinza'}); 
+                liberarUnidadeDoBanco();
+            }
         }, 1000);
 
         ref.on('value', s => {
@@ -218,9 +241,17 @@
 
     function playAudioRespostaMorador() { if(audioRespostaMorador) audioRespostaMorador.play().catch(e=>{}); }
 
-    function finalizarTelaMorta() {
-        const un = document.getElementById('un').value;
-        db.ref(`chamadas_ativas/${un}`).off();
+    // Remove a chamada ativa do Firebase desocupando a linha imediatamente
+    async function liberarUnidadeDoBanco() {
+        if(unidadeEmAtendimentoAtual) {
+            await db.ref(`chamadas_ativas/${unidadeEmAtendimentoAtual}`).remove();
+            unidadeEmAtendimentoAtual = null;
+        }
+    }
+
+    async function finalizarTelaMorta() {
+        if(unidadeEmAtendimentoAtual) db.ref(`chamadas_ativas/${unidadeEmAtendimentoAtual}`).off();
+        await liberarUnidadeDoBanco();
         if(streamAtual) streamAtual.getTracks().forEach(track => track.stop());
         location.reload();
     }
