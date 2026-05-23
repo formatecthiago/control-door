@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v16.1 - DNA Protegido</title>
+    <title>VIRTY VISITANTE v16.2 - DNA Unificado</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -101,7 +101,7 @@
         localStorage.setItem('virty_device_token', idDispositivoEstavel);
     }
 
-    // O v_id final ganha um sufixo aleatório para permitir navegação local, mas mantém o DNA intacto no início
+    // O v_id final ganha um sufixo aleatório local, mantendo o DNA intacto no início
     const v_id = idDispositivoEstavel + "-" + Math.random().toString(36).substr(2, 4).toUpperCase();
     
     let b64 = "";
@@ -168,20 +168,20 @@
             location.reload(); return;
         }
 
-        // 🔥 CRÍTICO: Validação por DNA (Primeiros 11 caracteres)
+        // 🔥 VALIDAÇÃO POR DNA NO CLIENTE (Evita envio inútil ao servidor)
         const chamadaExistente = await db.ref(`chamadas_ativas/${un}`).once('value');
         if(chamadaExistente.exists()) {
             const dadosChamada = chamadaExistente.val();
-            if(dadosChamada.v_id && dadosChamada.status !== "cinza") {
-                const dnaChamadaAtiva = dadosChamada.v_id.substring(0, 11);
+            if(dadosChamada.status !== "cinza") {
+                const dnaChamadaAtiva = dadosChamada.dna_dispositivo || (dadosChamada.v_id ? dadosChamada.v_id.substring(0, 11) : "");
                 const dnaDesteVisitante = v_id.substring(0, 11);
 
-                // Se o DNA for idêntico, veio do mesmo aparelho (Aba normal vs Anônima) -> BARRA!
+                // Se o DNA for idêntico e o v_id completo mudar -> Abas clonadas/anônimas no mesmo aparelho -> BARRA
                 if(dnaChamadaAtiva === dnaDesteVisitante && dadosChamada.v_id !== v_id) {
                     virtyAlert(`Acesso recusado. Este aparelho já possui uma chamada em andamento para a unidade ${un}.`);
                     return;
                 }
-                // Se for outra pessoa real tentando ligar na mesma casa ocupada -> BARRA TAMBÉM!
+                // Se for outro visitante real tentando ligar na mesma vaga ocupada -> BARRA TAMBÉM
                 if(dnaChamadaAtiva !== dnaDesteVisitante && ["chamando", "gravando", "escrevendo"].includes(dadosChamada.status)) {
                     virtyAlert(`A unidade ${un} encontra-se ocupada em outro atendimento neste momento. Aguarde.`);
                     return;
@@ -194,7 +194,16 @@
         const ref = db.ref(`chamadas_ativas/${un}`);
         await ref.remove();
         
-        ref.set({ status: "chamando", foto: b64, texto: document.getElementById('msg').value, v_id: v_id, ts: Date.now() });
+        // 🚀 ENVIO UNIFICADO: Passa o 'dna_dispositivo' de 11 caracteres isolado para o Firebase validar nativamente
+        ref.set({ 
+            status: "chamando", 
+            foto: b64, 
+            texto: document.getElementById('msg').value, 
+            v_id: v_id, 
+            dna_dispositivo: v_id.substring(0, 11),
+            ts: Date.now() 
+        });
+
         let t = 90;
         clearInterval(timerRegressivoVisitante);
         timerRegressivoVisitante = setInterval(() => {
