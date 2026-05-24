@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY ADMIN v2.0 - Otimizado</title>
+    <title>VIRTY ADMIN v2.1 - Faxina Automatizada</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --yellow: #FFD700; --blue: #007BFF; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
@@ -11,6 +11,15 @@
         .stat-btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; text-align: center; font-size: 0.8rem; }
         .btn-cad { background: var(--neon); color: #000; }
         .btn-pend { background: var(--yellow); color: #000; }
+        
+        /* 🧹 ESTILOS DO NOVO MÓDULO LIMPADOR */
+        .cleaner-group { margin-bottom: 25px; border: 2px dashed var(--red); padding: 15px; border-radius: 12px; background: #080101; }
+        .cleaner-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+        .input-cleaner { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; font-size: 1rem; }
+        .input-cleaner:focus { border-color: var(--red); outline: none; }
+        .btn-cleaner { padding: 12px 24px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 0.85rem; transition: background 0.3s; }
+        .btn-cleaner:disabled { background: #222 !important; color: #555 !important; cursor: not-allowed; box-shadow: none !important; }
+        
         .search-group { margin-bottom: 25px; border: 1px solid #222; padding: 10px; border-radius: 10px; }
         .search-label { font-size: 0.7rem; color: #888; margin-bottom: 5px; display: block; text-transform: uppercase; }
         input.search-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
@@ -30,6 +39,14 @@
     <div class="stats-bar">
         <div class="stat-btn btn-cad">CADASTRADOS ATIVOS: <span id="count-cad">0</span></div>
         <div class="stat-btn btn-pend">PENDENTES NA FILA: <span id="count-pend">0</span></div>
+    </div>
+
+    <div class="cleaner-group">
+        <label class="search-label" style="color: var(--red); font-weight: bold;">⚠️ Resetador Geral de Unidade Habitação</label>
+        <div class="cleaner-row">
+            <input type="number" id="input-casa-limpar" class="input-cleaner" placeholder="N° da Casa (Ex: 14)" oninput="gerenciarBotaoLimpar()">
+            <button id="btn-executar-limpeza" class="btn-cleaner" style="background: var(--red); color: #fff; box-shadow: 0 0 10px rgba(255,49,49,0.2);" onclick="limparDadosCasaManual()" disabled>Limpar</button>
+        </div>
     </div>
 
     <div class="search-group">
@@ -54,7 +71,6 @@
     let qtdPendentes = 0;
     let qtdCadastrados = 0;
 
-    // 📡 CORREÇÃO CIRÚRGICA: Escutador de Pendentes baseado em eventos de filhos (Leve e Econômico)
     const refPendentes = db.ref('solicitacoes_cadastro');
     refPendentes.on('child_added', unidadeSnap => {
         const un = unidadeSnap.key;
@@ -65,7 +81,6 @@
         });
     });
     refPendentes.on('child_removed', unidadeSnap => {
-        // Quando limpa o nó da unidade, decrementa o contador global e remove do DOM
         const un = unidadeSnap.key;
         const elementos = document.getElementById('list-p').querySelectorAll(`[data-unidade="${un}"]`);
         elementos.forEach(el => {
@@ -75,13 +90,11 @@
         document.getElementById('count-pend').innerText = qtdPendentes;
     });
 
-    // 📡 CORREÇÃO CIRÚRGICA: Escutador de Validados baseado em eventos de filhos
     const refValidados = db.ref('moradores_validados');
     refValidados.on('child_added', unidadeSnap => {
         const un = unidadeSnap.key;
         const dados = unidadeSnap.val();
         
-        // Trata nós diretos ou agrupados por morador
         if (dados.nome) {
             qtdCadastrados++; renderizarCadastrado(un, null, dados);
         } else {
@@ -178,14 +191,58 @@
         }
     }
 
+    // 🔄 RECURSO ATUALIZADO: Remove morador e executa a faxina se a casa ficar vazia
     function remover(un, fId) {
-        if(confirm(`Revogar acesso da Unidade ${un}?`)) {
+        if(confirm(`Revogar acesso do morador da Unidade ${un}?`)) {
             const caminho = fId ? `moradores_validados/${un}/${fId}` : `moradores_validados/${un}`;
+            
             db.ref(caminho).remove().then(() => {
                 const idProcurado = fId ? `cad-${un}-${fId}` : `cad-${un}-dir`;
                 const el = document.getElementById(idProcurado);
                 if(el) el.remove();
-                alert("Acesso revogado.");
+                
+                // 🔥 VERIFICAÇÃO AUTOMÁTICA EM CADEIA
+                db.ref(`moradores_validados/${un}`).once('value', snap => {
+                    if(!snap.exists() || snap.val() === null) {
+                        // Se a casa ficou sem nenhum morador ativo, apaga as tabelas vinculadas
+                        db.ref(`historico/${un}`).remove();
+                        db.ref(`bloqueados/${un}`).remove();
+                        db.ref(`solicitacoes_cadastro/${un}`).remove();
+                        alert(`Acesso revogado. Como este era o último morador, as listas de Histórico e Bloqueados da Unidade ${un} foram redefinidas.`);
+                    } else {
+                        alert("Acesso revogado do integrante.");
+                    }
+                });
+            });
+        }
+    }
+
+    // ⚡ DINÂMICA DO BOTÃO: Ativa ou desativa baseado no input digitado
+    function gerenciarBotaoLimpar() {
+        const campo = document.getElementById('input-casa-limpar');
+        const botao = document.getElementById('btn-executar-limpeza');
+        botao.disabled = (campo.value.trim() === "");
+    }
+
+    // 🧽 FUNÇÃO MANUAL: Limpa absolutamente tudo de uma casa específica por digitação
+    function limparDadosCasaManual() {
+        const campo = document.getElementById('input-casa-limpar');
+        const un = campo.value.trim();
+        if(!un) return;
+
+        if(confirm(`🔴 ATENÇÃO CRÍTICA!\n\nVocê está prestes a deletar TODOS os dados da CASA ${un}.\nIsso inclui: Moradores Validados, Solicitações Pendentes, Histórico e Lista de Bloqueados.\n\nDeseja prosseguir com o reset total?`)) {
+            
+            const p1 = db.ref(`moradores_validados/${un}`).remove();
+            const p2 = db.ref(`solicitacoes_cadastro/${un}`).remove();
+            const p3 = db.ref(`historico/${un}`).remove();
+            const p4 = db.ref(`bloqueados/${un}`).remove();
+
+            Promise.all([p1, p2, p3, p4]).then(() => {
+                alert(`🧹 Sucesso! A Unidade ${un} foi completamente zerada do sistema.`);
+                campo.value = "";
+                gerenciarBotaoLimpar();
+            }).catch(err => {
+                alert("Erro ao executar a limpeza: " + err.message);
             });
         }
     }
