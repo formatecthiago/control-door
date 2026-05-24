@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.9.3 - Histórico Protegido</title>
+    <title>VIRTY MORADOR v1.9.6 - Correção de Ouvintes</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -133,7 +133,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.3</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.6</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -227,6 +227,9 @@
 
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
+    
+    // Objeto global na memória para evitar conflito de renderização cruzada
+    let cacheBloqueadosGlobais = {};
 
     function gerarFingerprintMorador() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
@@ -469,14 +472,12 @@
 
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
 
-    // 🔥 GRAVAR HISTÓRICO: Limitador para manter no máximo 30 filhos
     function gravarHist(vid, foto, st, dna) {
         const baseRef = db.ref(`historico/${my_un}`);
         
         baseRef.once('value', snapshot => {
             let totalFilhos = snapshot.numChildren();
             
-            // Se já tem 30 e o registro atual NÃO existe na lista (é um novo DNA), removemos o mais antigo
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null;
                 let menorTs = Infinity;
@@ -494,7 +495,6 @@
                 }
             }
             
-            // Grava ou atualiza o registro do DNA correspondente
             const refDispositivo = baseRef.child(dna);
             let d = snapshot.child(dna).val() || { foto: foto, v_id: vid, dna_dispositivo: dna, verde:0, vermelho:0, azul:0, cinza:0 };
             
@@ -507,21 +507,46 @@
             d.ts = Date.now(); 
             d.data_hora = obterDataHora(); 
             refDispositivo.set(d);
+            
+            db.ref(`bloqueados/${my_un}/${dna}`).once('value', bSnap => {
+                if(bSnap.exists()){
+                    db.ref(`bloqueados/${my_un}/${dna}`).update({
+                        foto: foto,
+                        ultima: d.ultima,
+                        data_hora: d.data_hora,
+                        verde: d.verde,
+                        vermelho: d.vermelho,
+                        azul: d.azul,
+                        cinza: d.cinza
+                    });
+                }
+            });
         });
     }
 
+    // 🔒 DESACOPLAMENTO DE OUVIENTES (A grande correção contra a limpeza indesejada)
     function renderizarDadosAbas() {
-        db.ref(`historico/${my_un}`).on('value', snap => {
-            db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
-                const bloqueados = bSnap.val() || {};
-                const dadosTratados = [];
-                
-                snap.forEach(item => { dadosTratados.push(item.val()); });
-                dadosTratados.sort((a, b) => b.ts - a.ts);
-                
-                construirListaNormal(dadosTratados, bloqueados);
-                construirListaBloqueados(dadosTratados, bloqueados);
+        // OUVINTE 1: Escuta os Bloqueados de forma fixa e permanente
+        db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
+            cacheBloqueadosGlobais = bSnap.val() || {};
+            construirListaBloqueadosDireta(cacheBloqueadosGlobais);
+            
+            // Força a atualização do histórico de chamadas normais usando a nova lista negra atualizada
+            db.ref(`historico/${my_un}`).once('value', snap => {
+                const historicoItens = [];
+                snap.forEach(item => { historicoItens.push(item.val()); });
+                historicoItens.sort((a, b) => b.ts - a.ts);
+                construirListaNormal(historicoItens, cacheBloqueadosGlobais);
             });
+        });
+
+        // OUVINTE 2: Escuta o histórico de forma isolada. Se sumir, ele limpa só a aba dele!
+        db.ref(`historico/${my_un}`).on('value', snap => {
+            const historicoItens = [];
+            snap.forEach(item => { historicoItens.push(item.val()); });
+            historicoItens.sort((a, b) => b.ts - a.ts);
+            
+            construirListaNormal(historicoItens, cacheBloqueadosGlobais);
         });
     }
 
@@ -547,34 +572,37 @@
         }
     }
 
-    function construirListaBloqueados(itens, listaBloqueados) {
+    function construirListaBloqueadosDireta(mapaBloqueados) {
         const list = document.getElementById('lista-bloqueados');
         list.innerHTML = "";
 
-        const banidos = itens.filter(i => listaBloqueados[i.dna_dispositivo]);
+        const chaves = Object.keys(mapaBloqueados);
 
-        if(banidos.length === 0) {
+        if(chaves.length === 0) {
             list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum dispositivo bloqueado.</p>`;
             return;
         }
 
-        banidos.forEach(d => { list.innerHTML += criarCardHTML(d, true); });
+        const listaOrdenada = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
+        listaOrdenada.forEach(d => { 
+            list.innerHTML += criarCardHTML(d, true); 
+        });
     }
 
     function criarCardHTML(d, estaBloqueado) {
         return `<div class="hist-card">
             <div class="foto-box">
                 <div class="dots-row">
-                    <div class="dot" style="background:var(--neon); color:#000">${d.verde}</div>
-                    <div class="dot" style="background:var(--red)">${d.vermelho}</div>
-                    <div class="dot" style="background:var(--blue)">${d.azul}</div>
-                    <div class="dot" style="background:var(--gray)">${d.cinza}</div>
+                    <div class="dot" style="background:var(--neon); color:#000">${d.verde || 0}</div>
+                    <div class="dot" style="background:var(--red)">${d.vermelho || 0}</div>
+                    <div class="dot" style="background:var(--blue)">${d.azul || 0}</div>
+                    <div class="dot" style="background:var(--gray)">${d.cinza || 0}</div>
                 </div>
-                <img src="${d.foto}" class="foto-hist">
+                <img src="${d.foto || ''}" class="foto-hist" onerror="this.src='https://placehold.co/70x70/0a0a0a/39FF14?text=VIRTY'">
             </div>
             <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
                 <b style="font-size:0.75rem; color:#aaa;">DNA: ${d.dna_dispositivo}</b>
-                <small style="color:var(--neon); font-size:0.7rem; font-weight:bold;">${d.ultima.toUpperCase()}</small>
+                <small style="color:var(--neon); font-size:0.7rem; font-weight:bold;">${(d.ultima || 'Bloqueado').toUpperCase()}</small>
                 <span style="font-size:0.65rem; color:#444;">${d.data_hora || ''}</span>
             </div>
             <div>
@@ -619,12 +647,31 @@
 
     function alternarBloqueio(dna) { 
         const ref = db.ref(`bloqueados/${my_un}/${dna}`); 
-        ref.once('value', s => { if(s.exists()) ref.remove(); else ref.set({ ts: Date.now() }); }); 
+        ref.once('value', s => { 
+            if(s.exists()) {
+                ref.remove(); 
+            } else {
+                db.ref(`historico/${my_un}/${dna}`).once('value', hSnap => {
+                    const dadosHist = hSnap.val() || {};
+                    ref.set({
+                        dna_dispositivo: dna,
+                        ts: Date.now(),
+                        data_hora: obterDataHora(),
+                        foto: dadosHist.foto || "",
+                        ultima: dadosHist.ultima || "recusado",
+                        verde: dadosHist.verde || 0,
+                        vermelho: dadosHist.vermelho || 0,
+                        azul: dadosHist.azul || 0,
+                        cinza: dadosHist.cinza || 0
+                    });
+                });
+            } 
+        }); 
     }
 
-    // 🔒 BLINDAGEM: Apaga APENAS o nó 'historico', preservando o nó 'bloqueados'
+    // 🧹 LIMPEZA CIRÚRGICA: Apaga apenas o histórico, a lista negra fica intacta no banco
     function limparHist() { 
-        if(confirm("Deseja limpar seu histórico de chamadas? Os dispositivos bloqueados serão preservados.")) {
+        if(confirm("Deseja limpar seu histórico de chamadas? Os visitantes bloqueados serão mantidos.")) {
             db.ref(`historico/${my_un}`).remove(); 
         } 
     }
