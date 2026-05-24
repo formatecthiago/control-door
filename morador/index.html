@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.9.0 - Estabilizado</title>
+    <title>VIRTY MORADOR v1.9.1 - Proteção DNA</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -130,7 +130,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.0</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.1</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -209,7 +209,7 @@
     
     let streamCameraAtiva = null;
     let usarLenteFrontal = true;
-    let micStreamGlobal = null; // Guarda permissão estável do microfone
+    let micStreamGlobal = null;
 
     function gerarFingerprintMorador() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
@@ -240,11 +240,10 @@
                 escutarChamadas(); 
                 renderizarHist(); 
                 
-                // 🎙️ MELHORIA CIRÚRGICA: Pré-solicita microfone aqui no início e o deixa pronto.
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => { micStreamGlobal = stream; })
-                    .catch(e => console.log("Microfone recusado ou indisponível de início."));
+                    .catch(e => console.log("Microfone recusado."));
                 }
             } else { 
                 db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).on('value', snap => {
@@ -393,7 +392,6 @@
 
     async function startRec() {
         try {
-            // Reaproveita fluxo global ou solicita caso não capturado
             const stream = micStreamGlobal || await navigator.mediaDevices.getUserMedia({ audio: true });
             if(!micStreamGlobal) micStreamGlobal = stream;
 
@@ -444,7 +442,8 @@
             const d = snap.val();
             if(d) {
                 if(st !== 'cinza') ref.update({ status: st });
-                gravarHist(d.v_id, d.foto, st);
+                // 🔥 MELHORIA CIRÚRGICA: Passa o v_id E TAMBÉM o dna_dispositivo correto para o histórico
+                gravarHist(d.v_id, d.foto, st, d.dna_dispositivo || d.v_id.substring(0, 11));
                 setTimeout(() => ref.remove(), 1200);
             }
         });
@@ -453,21 +452,27 @@
 
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
 
-    function gravarHist(vid, foto, st) {
+    // 🔥 GRAVAÇÃO CORRIGIDA: Agora vincula o DNA correto ao registro histórico
+    function gravarHist(vid, foto, st, dna) {
         const ref = db.ref(`historico/${my_un}/${vid}`);
         ref.once('value', s => {
-            let d = s.val() || { foto: foto, v_id: vid, verde:0, vermelho:0, azul:0, cinza:0 };
+            let d = s.val() || { foto: foto, v_id: vid, dna_dispositivo: dna, verde:0, vermelho:0, azul:0, cinza:0 };
             if(st==='liberado') d.verde++; else if(st==='recusado') d.vermelho++; else if(st==='mensagem') d.azul++; else if(st==='cinza') d.cinza++;
             d.ultima = st; d.ts = Date.now(); d.data_hora = obterDataHora(); ref.set(d);
         });
     }
 
+    // 🔥 RENDERIZAÇÃO CORRIGIDA: O switch-bloqueio agora busca e aplica a trava baseando-se no DNA Puro (11 dígitos)
     function renderizarHist() {
         db.ref(`historico/${my_un}`).on('value', snap => {
             db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
                 const bloqueados = bSnap.val() || {}; const list = document.getElementById('lista-hist'); list.innerHTML = "";
                 snap.forEach(item => {
-                    const d = item.val(); const estaBloqueado = !!bloqueados[d.v_id];
+                    const d = item.val(); 
+                    // Extrai com segurança o DNA estável de 11 caracteres
+                    const dnaAlvo = d.dna_dispositivo || d.v_id.substring(0, 11);
+                    const estaBloqueado = !!bloqueados[dnaAlvo];
+                    
                     list.innerHTML += `<div class="hist-card">
                         <div class="foto-box">
                             <div class="dots-row"><div class="dot" style="background:var(--neon); color:#000">${d.verde}</div><div class="dot" style="background:var(--red)">${d.vermelho}</div><div class="dot" style="background:var(--blue)">${d.azul}</div><div class="dot" style="background:var(--gray)">${d.cinza}</div></div>
@@ -478,7 +483,7 @@
                             <small style="color:var(--neon); font-size:0.7rem; font-weight:bold;">${d.ultima.toUpperCase()}</small>
                             <span style="font-size:0.65rem; color:#444;">${d.data_hora || ''}</span>
                         </div>
-                        <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.v_id}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
+                        <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${dnaAlvo}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
                     </div>`;
                 });
             });
@@ -486,7 +491,12 @@
     }
 
     function vidCurto(id) { return id.length > 12 ? id.substring(0,12) + '...' : id; }
-    function alternarBloqueio(vid) { const ref = db.ref(`bloqueados/${my_un}/${vid}`); ref.once('value', s => { if(s.exists()) ref.remove(); else ref.set({ ts: Date.now() }); }); }
+    
+    // 🔥 BOTÃO ALTERNAR CORRIGIDO: Agora grava em definitivo no nó dos 11 caracteres (DNA puro), eliminando a brecha da aba anônima
+    function alternarBloqueio(dna) { 
+        const ref = db.ref(`bloqueados/${my_un}/${dna}`); 
+        ref.once('value', s => { if(s.exists()) ref.remove(); else ref.set({ ts: Date.now() }); }); 
+    }
     
     function mudarTela(id) { 
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
