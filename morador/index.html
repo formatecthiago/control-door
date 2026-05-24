@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.9.2 - Histórico Avançado</title>
+    <title>VIRTY MORADOR v1.9.3 - Histórico Protegido</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -133,7 +133,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.2</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.3</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -225,7 +225,6 @@
     let usarLenteFrontal = true;
     let micStreamGlobal = null;
 
-    // Controladores de visualização de paginação
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
 
@@ -460,7 +459,6 @@
             const d = snap.val();
             if(d) {
                 if(st !== 'cinza') ref.update({ status: st });
-                // 🔥 EMPILHAMENTO RESTABELECIDO: Usa o DNA estável (11 dígitos) como chave definitiva do histórico empilhado
                 const dnaChave = d.dna_dispositivo || d.v_id.substring(0, 11);
                 gravarHist(d.v_id, d.foto, st, dnaChave);
                 setTimeout(() => ref.remove(), 1200);
@@ -471,17 +469,47 @@
 
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
 
-    // 🔥 EMPILHAMENTO DO MESMO ID: Agrupa dados acumulados usando o DNA único do celular
+    // 🔥 GRAVAR HISTÓRICO: Limitador para manter no máximo 30 filhos
     function gravarHist(vid, foto, st, dna) {
-        const ref = db.ref(`historico/${my_un}/${dna}`);
-        ref.once('value', s => {
-            let d = s.val() || { foto: foto, v_id: vid, dna_dispositivo: dna, verde:0, vermelho:0, azul:0, cinza:0 };
-            if(st==='liberado') d.verde++; else if(st==='recusado') d.vermelho++; else if(st==='mensagem') d.azul++; else if(st==='cinza') d.cinza++;
-            d.ultima = st; d.ts = Date.now(); d.data_hora = obterDataHora(); ref.set(d);
+        const baseRef = db.ref(`historico/${my_un}`);
+        
+        baseRef.once('value', snapshot => {
+            let totalFilhos = snapshot.numChildren();
+            
+            // Se já tem 30 e o registro atual NÃO existe na lista (é um novo DNA), removemos o mais antigo
+            if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
+                let maisAntigoChave = null;
+                let menorTs = Infinity;
+                
+                snapshot.forEach(filho => {
+                    let dadosFilho = filho.val();
+                    if (dadosFilho.ts < menorTs) {
+                        menorTs = dadosFilho.ts;
+                        maisAntigoChave = filho.key;
+                    }
+                });
+                
+                if (maisAntigoChave) {
+                    baseRef.child(maisAntigoChave).remove();
+                }
+            }
+            
+            // Grava ou atualiza o registro do DNA correspondente
+            const refDispositivo = baseRef.child(dna);
+            let d = snapshot.child(dna).val() || { foto: foto, v_id: vid, dna_dispositivo: dna, verde:0, vermelho:0, azul:0, cinza:0 };
+            
+            if(st==='liberado') d.verde++; 
+            else if(st==='recusado') d.vermelho++; 
+            else if(st==='mensagem') d.azul++; 
+            else if(st==='cinza') d.cinza++;
+            
+            d.ultima = st; 
+            d.ts = Date.now(); 
+            d.data_hora = obterDataHora(); 
+            refDispositivo.set(d);
         });
     }
 
-    // 📡 CENTRALIZADOR DE ASSINATURA DO FIREBASE
     function renderizarDadosAbas() {
         db.ref(`historico/${my_un}`).on('value', snap => {
             db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
@@ -489,7 +517,6 @@
                 const dadosTratados = [];
                 
                 snap.forEach(item => { dadosTratados.push(item.val()); });
-                // Ordena por data decrescente (mais recentes primeiro)
                 dadosTratados.sort((a, b) => b.ts - a.ts);
                 
                 construirListaNormal(dadosTratados, bloqueados);
@@ -498,12 +525,10 @@
         });
     }
 
-    // 📋 LISTA HISTÓRICO: Exibe apenas 5 e oculta o resto atrás do "Ver Mais"
     function construirListaNormal(itens, listaBloqueados) {
         const list = document.getElementById('lista-hist');
         list.innerHTML = "";
         
-        // Filtra para exibir na home apenas os que NÃO estão banidos
         const ativos = itens.filter(i => !listaBloqueados[i.dna_dispositivo]);
         
         if(ativos.length === 0) {
@@ -513,9 +538,7 @@
         }
 
         const exibidos = ativos.slice(0, limiteExibicaoHist);
-        exibidos.forEach(d => {
-            list.innerHTML += criarCardHTML(d, false);
-        });
+        exibidos.forEach(d => { list.innerHTML += criarCardHTML(d, false); });
 
         if(ativos.length > limiteExibicaoHist) {
             document.getElementById('btn-ver-mais').style.display = "block";
@@ -524,12 +547,10 @@
         }
     }
 
-    // 🔒 LISTA EXCLUSIVA DE BLOQUEADOS
     function construirListaBloqueados(itens, listaBloqueados) {
         const list = document.getElementById('lista-bloqueados');
         list.innerHTML = "";
 
-        // Filtra apenas os que estão no nó de bloqueados do Firebase
         const banidos = itens.filter(i => listaBloqueados[i.dna_dispositivo]);
 
         if(banidos.length === 0) {
@@ -537,9 +558,7 @@
             return;
         }
 
-        banidos.forEach(d => {
-            list.innerHTML += criarCardHTML(d, true);
-        });
+        banidos.forEach(d => { list.innerHTML += criarCardHTML(d, true); });
     }
 
     function criarCardHTML(d, estaBloqueado) {
@@ -567,11 +586,10 @@
     }
 
     function expandirHistorico() {
-        limiteExibicaoHist += 5;
+        limiteExibicaoHist = Math.min(limiteExibicaoHist + 5, 30);
         renderizarDadosAbas();
     }
 
-    // Alternador de Abas de Visão (Histórico Legítimo vs Lista Negra)
     function alternarVisaoListas() {
         vendoBloqueados = !vendoBloqueados;
         const txtTitulo = document.getElementById('titulo-secao-atual');
@@ -584,7 +602,6 @@
             txtTitulo.innerText = "Dispositivos Bloqueados";
             txtTitulo.style.color = "var(--red)";
             btnToggle.innerText = "VER HISTÓRICO";
-            btnToggle.style.borderHeader = "1px solid var(--neon)";
             btnToggle.style.color = "var(--neon)";
             btnLimpar.style.display = "none";
         } else {
@@ -593,10 +610,9 @@
             txtTitulo.innerText = "Histórico de Chamadas";
             txtTitulo.style.color = "var(--gray)";
             btnToggle.innerText = "VER BLOQUEADOS";
-            btnToggle.style.borderHeader = "1px solid var(--red)";
             btnToggle.style.color = "var(--red)";
             btnLimpar.style.display = "block";
-            limiteExibicaoHist = 5; // Reseta o limite ao voltar
+            limiteExibicaoHist = 5;
         }
         renderizarDadosAbas();
     }
@@ -606,8 +622,13 @@
         ref.once('value', s => { if(s.exists()) ref.remove(); else ref.set({ ts: Date.now() }); }); 
     }
 
-    function vidCurto(id) { return id.length > 12 ? id.substring(0,12) + '...' : id; }
-    
+    // 🔒 BLINDAGEM: Apaga APENAS o nó 'historico', preservando o nó 'bloqueados'
+    function limparHist() { 
+        if(confirm("Deseja limpar seu histórico de chamadas? Os dispositivos bloqueados serão preservados.")) {
+            db.ref(`historico/${my_un}`).remove(); 
+        } 
+    }
+
     function mudarTela(id) { 
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
         document.getElementById(id).classList.add('active'); 
@@ -650,7 +671,6 @@
             }, 600);
         } catch(err) {}
     }
-    function limparHist() { if(confirm("Deseja limpar seu histórico?")) db.ref(`historico/${my_un}`).remove(); }
 </script>
 </body>
 </html>
