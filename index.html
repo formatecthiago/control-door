@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY ACCESS DOOR</title>
-    <link class="virty-pwa-link" rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json">
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -23,10 +23,7 @@
         #timer-v { font-size: 4rem; color: var(--neon); font-weight: bold; text-shadow: 0 0 15px var(--neon); margin-bottom: 20px; }
         #status-msg { color: var(--yellow); font-style: italic; font-size: 1.2rem; margin: 15px 0; font-weight: bold; min-height: 30px; text-align: center; }
         .txt-resposta { font-size: 1.6rem; font-weight: bold; text-transform: uppercase; margin: 10px 0; text-align: center; }
-        .btn-fechar-virty { background: var(--red); color:#fff; max-width:280px; box-shadow: 0 0 15px var(--red); }
         .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
-        .btn-play-interfone { background: var(--blue); color: #fff; width: 85px; height: 85px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; margin: 15px auto; }
-        .btn-play-interfone svg { width: 35px; height: 35px; fill: #fff; }
     </style>
 </head>
 <body>
@@ -40,17 +37,11 @@
     <div id="t-instalar" class="screen active">
         <h1 style="color:var(--neon); margin-top:140px; text-align:center; letter-spacing: 2px;">VIRTY ACCESS DOOR</h1>
         <div style="height: 40px;"></div>
-        <button id="btn-instalar-pwa" class="btn" style="background:var(--neon); color:#000;">[ INICIAR O ACESSO ]</button>
+        <button id="btn-instalar-pwa" class="btn" style="background:var(--neon); color:#000;">[ INICIAR ACESSO ]</button>
         
         <p id="dica-ios" style="color:var(--yellow); font-size:0.9rem; text-align:center; display:none; margin-top:20px; padding: 0 20px; line-height:1.4;">
             No iPhone: Toque no ícone de compartilhar (seta para cima) e selecione "Adicionar à Tela de Início".
         </p>
-    </div>
-
-    <div id="t-welcome" class="screen">
-        <h1 style="color:var(--neon); margin-top:140px; text-align:center; letter-spacing: 2px;">VIRTY ACCESS DOOR</h1>
-        <div style="height: 40px;"></div>
-        <button class="btn" style="background:var(--neon); color:#000" onclick="iniciarChamadaUnica()">[ INICIAR IDENTIFICAÇÃO ]</button>
     </div>
 
     <div id="t-id" class="screen">
@@ -107,8 +98,9 @@
     const emModoApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
     window.addEventListener('DOMContentLoaded', () => {
+        // 🌟 CORREÇÃO: Se já abriu de dentro do App, liga os motores de mídia direto e pula pra tela da câmera
         if (emModoApp) {
-            mudarTela('t-welcome');
+            ativarMotoresMidiaEDiretoParaCamera();
         } else {
             if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                 document.getElementById('dica-ios').style.display = 'block';
@@ -120,45 +112,28 @@
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         gatilhoInstalacao = e;
-        mudarTela('t-instalar');
     });
 
-    // 🌟 JUNÇÃO CORRIGIDA: Força o avanço para a tela B e quebra qualquer travamento do navegador
+    // Ação do botão principal [ INICIAR ACESSO ]
     document.getElementById('btn-instalar-pwa').addEventListener('click', async () => {
         if (gatilhoInstalacao) {
             try {
                 gatilhoInstalacao.prompt();
-                const { outcome } = await gatilhoInstalacao.userChoice;
-                console.log('Escolha do usuário:', outcome);
-            } catch (err) {
-                console.log('Erro no gatilho, avançando...', err);
-            }
+                await gatilhoInstalacao.userChoice;
+            } catch (err) {}
             gatilhoInstalacao = null;
-            mudarTela('t-welcome'); 
+            ativarMotoresMidiaEDiretoParaCamera();
         } else {
-            mudarTela('t-welcome'); 
+            ativarMotoresMidiaEDiretoParaCamera();
         }
     });
 
     window.addEventListener('appinstalled', () => {
-        mudarTela('t-welcome');
+        ativarMotoresMidiaEDiretoParaCamera();
     });
 
-    function mudarTela(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(id === 't-id' && (!streamAtual || !streamAtual.active)) { inicializarCameraAgressiva(); }
-    }
-
-    // --- LOGICA DE MIDIA E SESSÃO ---
-    let streamAtual = null;
-    let usarLenteFrontal = true;
-    let audioRespostaMorador = null;
-    let unidadeEmAtendimentoAtual = null;
-    let timerRegressivoVisitante;
-    let b64 = "";
-
-    function iniciarChamadaUnica() {
+    // 🌟 NOVA FUNÇÃO AUTOMÁTICA: Limpa o áudio, inicia a câmera e muda de tela sem cliques extras
+    function activarMotoresMidiaEDiretoParaCamera() {
         try {
             const contextoAudio = new (window.AudioContext || window.webkitAudioContext)();
             const osciladorSilencioso = contextoAudio.createOscillator();
@@ -168,6 +143,20 @@
         inicializarCameraAgressiva();
         mudarTela('t-id');
     }
+
+    function mudarTela(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id === 't-id' && (!streamAtual || !streamAtual.active)) { inicializarCameraAgressiva(); }
+    }
+
+    // --- REGRAS DE MÍDIA E SESSÃO ---
+    let streamAtual = null;
+    let usarLenteFrontal = true;
+    let audioRespostaMorador = null;
+    let unidadeEmAtendimentoAtual = null;
+    let timerRegressivoVisitante;
+    let b64 = "";
 
     function inicializarCameraAgressiva() {
         if(streamAtual) { streamAtual.getTracks().forEach(track => track.stop()); }
