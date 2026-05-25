@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY PORTARIA v2.0.1 - Design Ajustado</title>
+    <title>VIRTY PORTARIA v2.1.1 - Sem Confirmações</title>
     
     <link rel="manifest" href="manifest.json">
     
@@ -11,25 +11,35 @@
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; overflow: hidden; -webkit-user-select: none; user-select: none; }
-        .screen { display: none; padding: 20px; height: 100vh; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
+        
+        .screen { 
+            display: none; 
+            padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 16px)) 20px; 
+            height: 100vh; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            box-sizing: border-box; 
+        }
         .active { display: flex; }
         
-        /* 📏 PADRÃO DE TAMANHO DE BOTÕES AJUSTADO */
-        .btn { width: 100%; padding: 16px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 8px 0; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: transform 0.1s; }
+        .btn { width: 100%; padding: 16px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: transform 0.1s; }
         .btn:active { transform: scale(0.98); }
         
-        .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px 0; width: 100%; }
+        .btn-group { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+        
+        .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: auto 0; width: 100%; }
         .video-box { width: 260px; height: 260px; border-radius: 50%; overflow: hidden; border: 4px solid var(--neon); box-shadow: 0 0 25px rgba(57,255,20,0.4); background:#111; position:relative; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; transform: scaleX(-1); }
+        
         .btn-inverter { background: #111; border: 2px solid var(--neon); width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 15px rgba(57,255,20,0.3); }
         .btn-inverter svg { width: 26px; height: 24px; fill: var(--neon); }
+        
         .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
         #txt-status { font-size: 2.2rem; color: var(--neon); text-shadow: 0 0 15px var(--neon); font-weight: bold; margin-bottom: 5px; }
         .foto-m { width: 130px; height: 130px; border-radius: 50%; border: 3px solid var(--blue); object-fit: cover; margin-top: 15px; box-shadow: 0 0 20px rgba(0,123,255,0.4); }
-        .virty-input { width: 100%; padding: 18px; background: #111; border: 2px solid var(--neon); color: #fff; text-align: center; font-size: 2rem; font-weight: bold; border-radius: 15px; margin-bottom: 20px; outline: none; box-shadow: 0 0 15px rgba(57,255,20,0.2); }
+        .virty-input { width: 100%; padding: 18px; background: #111; border: 2px solid var(--neon); color: #fff; text-align: center; font-size: 2.2rem; font-weight: bold; border-radius: 15px; margin-bottom: 25px; outline: none; box-shadow: 0 0 15px rgba(57,255,20,0.2); }
         
-        /* 🔊 CONTAINER DO PLAYER DE ÁUDIO CORRIGIDO */
         #box-audio-player { width: 100%; max-width: 280px; display: flex; justify-content: center; margin-top: 15px; }
         #box-audio-player audio { width: 100%; height: 45px; }
     </style>
@@ -42,13 +52,13 @@
         <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
-    <div id="s-inicio" class="screen active" style="justify-content:center; align-items:center;">
-        <div style="text-align:center; margin-bottom:40px;">
-            <h1 style="color:var(--neon); font-size:2.8rem; letter-spacing:4px; margin:0 0 5px 0; text-shadow: 0 0 10px rgba(57,255,20,0.3);">VIRTY</h1>
+    <div id="s-inicio" class="screen active" style="justify-content: center; align-items: center;">
+        <div style="text-align:center; margin-bottom: 50px;">
+            <h1 style="color:var(--neon); font-size:3rem; letter-spacing:5px; margin:0 0 5px 0; text-shadow: 0 0 10px rgba(57,255,20,0.3);">VIRTY</h1>
             <div style="color:var(--gray); font-size:0.85rem; font-weight:bold; letter-spacing:2px;">PORTARIA INTELIGENTE</div>
         </div>
-        <button class="btn" style="background:var(--neon); color:#000; height:90px; font-size:1.3rem; border-radius:20px;" onclick="iniciarFluxo()">🔔 TOCAR CAMPAINHA</button>
-        <div style="color:#333; font-size:0.75rem; font-weight:bold;">VERSION 2.0.1</div>
+        <button class="btn" style="background:var(--neon); color:#000; height:90px; font-size:1.3rem; border-radius:20px; max-width: 320px;" onclick="iniciarFluxo()">🔔 TOCAR CAMPAINHA</button>
+        <div style="color:#333; font-size:0.75rem; font-weight:bold; margin-top: 50px;">VERSION 2.1.1</div>
     </div>
 
     <div id="s-camera" class="screen">
@@ -68,21 +78,23 @@
             </button>
         </div>
 
-        <div>
-            <button class="btn" style="background:#fff; color:#000;" onclick="capturarFoto()">📸 CAPTURAR MINHA FOTO</button>
-            <button class="btn" style="background:#111; color:var(--red); border:1px solid var(--red); padding:12px; font-size:0.9rem;" onclick="voltarInicio()">CANCELAR</button>
+        <div class="btn-group">
+            <button class="btn" style="background:var(--neon); color:#000;" onclick="capturarFotoDireta()">📸 TIRAR FOTO</button>
+            <button class="btn" style="background:#000; color:var(--red); border:2px solid var(--red);" onclick="voltarInicio()">CANCELAR</button>
         </div>
     </div>
 
     <div id="s-unidade" class="screen" style="justify-content:center; align-items:center;">
-        <div style="text-align:center; width:100%;">
+        <div style="text-align:center; width:100%; margin: auto 0;">
             <h2 style="color:var(--neon); margin-bottom:10px;">DIGITE A UNIDADE</h2>
             <p style="color:var(--gray); font-size:0.9rem; margin-bottom:30px;">Informe o número do apartamento ou casa que deseja chamar</p>
             
             <input type="number" id="input-unidade" class="virty-input" placeholder="000" inputmode="numeric">
-            
+        </div>
+        
+        <div class="btn-group">
             <button class="btn" style="background:var(--neon); color:#000;" onclick="confirmarUnidadeESequencia()">🔔 INTERFONAR</button>
-            <button class="btn" style="background:#111; color:var(--gray); border:1px solid #333; padding:12px; font-size:0.9rem;" onclick="voltarInicio()">VOLTAR</button>
+            <button class="btn" style="background:#000; color:var(--gray); border:2px solid #333;" onclick="voltarInicio()">VOLTAR</button>
         </div>
     </div>
 
@@ -114,7 +126,6 @@
     let tempoRestante = 90;
     let un = "";
 
-    // 🔒 MANUTENÇÃO DO DNA DE ARQUITETURA ORIGINAL
     let idDispositivoEstavel = localStorage.getItem('virty_device_token');
     if(!idDispositivoEstavel) {
         const metadados = [screen.width, screen.height, screen.colorDepth, navigator.hardwareConcurrency || 4].join('||');
@@ -158,7 +169,8 @@
         inicializarCamera();
     }
 
-    function capturarFoto() {
+    // 🚀 FLUXO DIRETO: BATE A FOTO E JÁ PULA DE TELA SEM POPUPS DE CONFIRMAÇÃO
+    function capturarFotoDireta() {
         const v = document.getElementById('video'), c = document.getElementById('canvas');
         if(!v.videoWidth) return virtyAlert("Aguarde o carregamento completo da câmera.");
         
@@ -169,8 +181,10 @@
         ctx.setTransform(1,0,0,1,0,0);
         
         fotoB64 = c.toDataURL('image/jpeg', 0.4);
+        
         if(streamVideoGlobal) { streamVideoGlobal.getTracks().forEach(t => t.stop()); streamVideoGlobal = null; }
         
+        // Vai direto para a tela de digitar a unidade imediatamente
         mudarTela('s-unidade');
         document.getElementById('input-unidade').focus();
     }
@@ -288,8 +302,6 @@
                 if(d.msg_morador) {
                     document.getElementById('txt-feedback').innerText = `"${d.msg_morador}"`;
                 }
-                
-                // Geração dinâmica do player com dimensões confortáveis para o toque
                 if(d.audio_b64) {
                     document.getElementById('box-audio-player').innerHTML = `<audio src="${d.audio_b64}" controls autoplay></audio>`;
                 }
