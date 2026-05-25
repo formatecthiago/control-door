@@ -113,7 +113,7 @@
         gatilhoInstalacao = e;
     });
 
-    // 🚀 CLIQUE FORÇADO UNIFICADO: Aciona o prompt, mas pula de tela na mesma hora sem travar
+    // Clique forçado que pula a tela de carregamento sem travar
     document.getElementById('btn-instalar-pwa').addEventListener('click', () => {
         if (gatilhoInstalacao) {
             try {
@@ -185,6 +185,7 @@
         virtyAlert("Foto capturada com sucesso!");
     }
 
+    // Chamada limpa e direta via Realtime Database (Garante o aviso em tempo real)
     async function chamar() {
         const un = document.getElementById('un').value;
         if(!un || !b64) return virtyAlert("Insira a unidade e tire sua foto!");
@@ -205,6 +206,7 @@
         const ref = db.ref(`chamadas_ativas/${un}`);
         await ref.remove();
         
+        // Envia os dados da chamada para o Firebase (Ativa o receptor do morador instantaneamente)
         ref.set({ 
             status: "chamando", foto: b64, texto: document.getElementById('msg').value, 
             v_id: v_id, dna_dispositivo: v_id.substring(0, 11), ts: Date.now() 
