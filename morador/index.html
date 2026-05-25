@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.9.6 - Correção de Ouvintes</title>
+    <title>VIRTY MORADOR v1.9.7 - Gatilho PWA Ativo</title>
     
     <link rel="manifest" href="manifest.json">
     
@@ -128,7 +128,7 @@
         <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
         <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
         <p style="color:#aaa; font-size:1.1rem; max-width:300px; line-height:1.5;">Olá! Os seus dados foram enviados para a administração do condomínio. Aguarde a liberação do seu acesso doméstico.</p>
-        <div style="margin-top:40px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
+        <div style="views-top:40px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
         <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
     </div>
 
@@ -136,7 +136,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.6</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.7</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -230,8 +230,8 @@
 
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
-    
     let cacheBloqueadosGlobais = {};
+    let swRegistration = null;
 
     function gerarFingerprintMorador() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
@@ -251,7 +251,14 @@
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
         verificarStatus();
+        solicitarPermissaoNotificacoes();
     };
+
+    function solicitarPermissaoNotificacoes() {
+        if ('Notification' in window && Notification.permission !== 'granted') {
+            Notification.requestPermission();
+        }
+    }
 
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
@@ -291,7 +298,7 @@
 
     function alternarLenteCamera() {
         usarLenteFrontal = !usarLenteFrontal;
-        inicializarCapturaVideo();
+        inicializarCaptureVideo();
     }
 
     function fotoCad() { 
@@ -313,7 +320,7 @@
         c.style.transform = "scaleX(1)"; 
         
         if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
-        virtyAlert("Selfie de cadastro captured com sucesso!"); 
+        virtyAlert("Selfie de cadastro capturada com sucesso!"); 
     }
 
     function enviarCadastro() { 
@@ -348,6 +355,7 @@
         });
     }
 
+    // 🚀 NOVO GATILHO DE ESCUTA: Monitora e dispara avisos locais/PWA
     function escutarChamadas() {
         db.ref('chamadas_ativas/' + my_un).on('value', s => {
             const d = s.val(); const painel = document.getElementById('painel-chamada');
@@ -358,6 +366,16 @@
                 
                 if(d.status === 'chamando' && !estaGravando && !estaDigitando) {
                     gerenciarAlerta('start'); tempoGeralRegressivo = 90;
+                    
+                    // Dispara ordem para o Service Worker criar a notificação caso o app seja fechado
+                    if (swRegistration) {
+                        swRegistration.active.postMessage({
+                            tipo: 'NOTIFICAR_CHAMADA',
+                            unidade: my_un,
+                            mensagem: d.texto || "Visitante tocando o interfone!"
+                        });
+                    }
+
                     clearInterval(timerPerdida);
                     timerPerdida = setInterval(() => {
                         tempoGeralRegressivo--; 
@@ -366,7 +384,17 @@
                         if(tempoGeralRegressivo <= 0) { clearInterval(timerPerdida); responder('cinza'); }
                     }, 1000);
                 }
-            } else { painel.style.display = 'none'; fecharPainelTexto(); gerenciarAlerta('stop'); clearInterval(timerPerdida); }
+            } else { 
+                painel.style.display = 'none'; 
+                fecharPainelTexto(); 
+                gerenciarAlerta('stop'); 
+                clearInterval(timerPerdida); 
+                
+                // Limpa notificações pendentes no Service Worker
+                if (swRegistration) {
+                    swRegistration.active.postMessage({ tipo: 'LIMPAR_NOTIFICACOES' });
+                }
+            }
         });
     }
 
@@ -459,6 +487,8 @@
         document.getElementById('popup-voz').style.display = 'none';
         gerenciarAlerta('stop');
         
+        if (swRegistration) { swRegistration.active.postMessage({ tipo: 'LIMPAR_NOTIFICACOES' }); }
+
         const ref = db.ref('chamadas_ativas/' + my_un);
         ref.once('value', snap => {
             const d = snap.val();
@@ -485,7 +515,7 @@
                 let menorTs = Infinity;
                 
                 snapshot.forEach(filho => {
-                    let dadosFilho = child.val();
+                    let dadosFilho = filho.val();
                     if (dadosFilho.ts < menorTs) {
                         menorTs = dadosFilho.ts;
                         maisAntigoChave = filho.key;
@@ -573,7 +603,6 @@
     function construirListaBloqueadosDireta(mapaBloqueados) {
         const list = document.getElementById('lista-bloqueados');
         list.innerHTML = "";
-
         const chaves = Object.keys(mapaBloqueados);
 
         if(chaves.length === 0) {
@@ -692,6 +721,7 @@
             });
         }
     }
+    
     function proximoSom() { somAtual = (somAtual + 1) % 20; localStorage.setItem('virty_som', somAtual); document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1); gerenciarAlerta('start'); setTimeout(() => { gerenciarAlerta('stop'); }, 1200); }
     function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
     function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); if(modoAlerta === 1) btn.innerText = "🔊"; if(modoAlerta === 2) btn.innerText = "📳🔊"; if(modoAlerta === 3) btn.innerText = "📳"; }
@@ -716,10 +746,15 @@
         } catch(err) {}
     }
 
-    // 🟢 ADIÇÃO PWA: Mecanismo automático para registrar e escutar status de aplicativo do Morador
+    // 🟢 REGISTRO DO SERVICE WORKER E CAPTURA DE REGISTRO PARA PUSH LOCAL
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log("Erro SW:", err));
+            navigator.serviceWorker.register('sw.js')
+            .then(reg => {
+                swRegistration = reg;
+                console.log("Service Worker ativo no Morador.");
+            })
+            .catch(err => console.log("Erro SW:", err));
         });
     }
 </script>
