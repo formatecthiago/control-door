@@ -95,12 +95,11 @@
     const v_id = idDispositivoEstavel + "-" + Math.random().toString(36).substr(2, 4).toUpperCase();
 
     let gatilhoInstalacao = null;
-    const emModoApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    const emModoApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone || document.referrer.includes('android-app');
 
     window.addEventListener('DOMContentLoaded', () => {
-        // 🌟 CORREÇÃO: Se já abriu de dentro do App, liga os motores de mídia direto e pula pra tela da câmera
         if (emModoApp) {
-            ativarMotoresMidiaEDiretoParaCamera();
+            activarMotoresMidiaEDiretoParaCamera();
         } else {
             if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                 document.getElementById('dica-ios').style.display = 'block';
@@ -114,25 +113,23 @@
         gatilhoInstalacao = e;
     });
 
-    // Ação do botão principal [ INICIAR ACESSO ]
-    document.getElementById('btn-instalar-pwa').addEventListener('click', async () => {
+    // 🚀 CLIQUE FORÇADO UNIFICADO: Aciona o prompt, mas pula de tela na mesma hora sem travar
+    document.getElementById('btn-instalar-pwa').addEventListener('click', () => {
         if (gatilhoInstalacao) {
             try {
                 gatilhoInstalacao.prompt();
-                await gatilhoInstalacao.userChoice;
-            } catch (err) {}
+            } catch (err) {
+                console.log('Erro ao disparar prompt nativo');
+            }
             gatilhoInstalacao = null;
-            ativarMotoresMidiaEDiretoParaCamera();
-        } else {
-            ativarMotoresMidiaEDiretoParaCamera();
         }
+        activarMotoresMidiaEDiretoParaCamera();
     });
 
     window.addEventListener('appinstalled', () => {
-        ativarMotoresMidiaEDiretoParaCamera();
+        activarMotoresMidiaEDiretoParaCamera();
     });
 
-    // 🌟 NOVA FUNÇÃO AUTOMÁTICA: Limpa o áudio, inicia a câmera e muda de tela sem cliques extras
     function activarMotoresMidiaEDiretoParaCamera() {
         try {
             const contextoAudio = new (window.AudioContext || window.webkitAudioContext)();
