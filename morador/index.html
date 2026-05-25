@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY MORADOR v1.9.6 - Correção de Ouvintes</title>
+    
+    <link rel="manifest" href="manifest.json">
+    
     <style>
         :root { 
             --neon: #39FF14; 
@@ -228,7 +231,6 @@
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
     
-    // Objeto global na memória para evitar conflito de renderização cruzada
     let cacheBloqueadosGlobais = {};
 
     function gerarFingerprintMorador() {
@@ -483,7 +485,7 @@
                 let menorTs = Infinity;
                 
                 snapshot.forEach(filho => {
-                    let dadosFilho = filho.val();
+                    let dadosFilho = child.val();
                     if (dadosFilho.ts < menorTs) {
                         menorTs = dadosFilho.ts;
                         maisAntigoChave = filho.key;
@@ -524,14 +526,11 @@
         });
     }
 
-    // 🔒 DESACOPLAMENTO DE OUVIENTES (A grande correção contra a limpeza indesejada)
     function renderizarDadosAbas() {
-        // OUVINTE 1: Escuta os Bloqueados de forma fixa e permanente
         db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
             cacheBloqueadosGlobais = bSnap.val() || {};
             construirListaBloqueadosDireta(cacheBloqueadosGlobais);
             
-            // Força a atualização do histórico de chamadas normais usando a nova lista negra atualizada
             db.ref(`historico/${my_un}`).once('value', snap => {
                 const historicoItens = [];
                 snap.forEach(item => { historicoItens.push(item.val()); });
@@ -540,7 +539,6 @@
             });
         });
 
-        // OUVINTE 2: Escuta o histórico de forma isolada. Se sumir, ele limpa só a aba dele!
         db.ref(`historico/${my_un}`).on('value', snap => {
             const historicoItens = [];
             snap.forEach(item => { historicoItens.push(item.val()); });
@@ -669,7 +667,6 @@
         }); 
     }
 
-    // 🧹 LIMPEZA CIRÚRGICA: Apaga apenas o histórico, a lista negra fica intacta no banco
     function limparHist() { 
         if(confirm("Deseja limpar seu histórico de chamadas? Os visitantes bloqueados serão mantidos.")) {
             db.ref(`historico/${my_un}`).remove(); 
@@ -717,6 +714,13 @@
                 osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
             }, 600);
         } catch(err) {}
+    }
+
+    // 🟢 ADIÇÃO PWA: Mecanismo automático para registrar e escutar status de aplicativo do Morador
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log("Erro SW:", err));
+        });
     }
 </script>
 </body>
