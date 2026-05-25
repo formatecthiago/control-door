@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY VISITANTE v16.2 - DNA Unificado</title>
+    
+    <link rel="manifest" href="manifest.json">
+    
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -47,7 +50,7 @@
     <div id="t-welcome" class="screen active">
         <h1 style="color:var(--neon); margin-top:120px; letter-spacing: 2px;">VIRTY ACCESS DOOR</h1>
         <p style="color:#555; margin-bottom: 40px; font-weight: bold;">SISTEMA DE IDENTIFICAÇÃO PREDIAL</p>
-        <button class="btn" style="background:var(--neon); color:#000" onclick="mudarTela('t-id')">INICIAR ACESSO</button>
+        <button class="btn" style="background:var(--neon); color:#000" onclick="iniciarChamadaUnica()">[ INICIAR CHAMADA ]</button>
     </div>
 
     <div id="t-id" class="screen">
@@ -90,18 +93,15 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    // Geração estável do ID base (DNA do aparelho)
     let idDispositivoEstavel = localStorage.getItem('virty_device_token');
     if(!idDispositivoEstavel) {
         const metadados = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language, navigator.platform].join('||');
         let hash = 0;
         for (let i = 0; i < metadados.length; i++) { hash = (hash << 5) - hash + metadados.charCodeAt(i); hash |= 0; }
-        // Gera o prefixo fixo de 11 caracteres (Ex: VF-349D9301)
         idDispositivoEstavel = "VF-" + Math.abs(hash).toString(16).toUpperCase().substring(0, 8);
         localStorage.setItem('virty_device_token', idDispositivoEstavel);
     }
 
-    // O v_id final ganha um sufixo aleatório local, mantendo o DNA intacto no início
     const v_id = idDispositivoEstavel + "-" + Math.random().toString(36).substr(2, 4).toUpperCase();
     
     let b64 = "";
@@ -111,7 +111,24 @@
     let audioRespostaMorador = null;
     let unidadeEmAtendimentoAtual = null;
 
-    window.onload = () => { inicializarCameraAgressiva(); };
+    // 🟢 MUDANÇA COGNITIVA: Remove o onload automático para não travar a câmera antes do toque inicial
+    window.onload = () => { console.log("Aguardando toque inicial para destravar recursos de mídia."); };
+
+    // 🟢 NOVA FUNÇÃO UNIFICADA: Desbloqueia áudio, liga a câmera em background e vai para a tela de ID
+    function iniciarChamadaUnica() {
+        // Desbloqueia o motor de som do navegador
+        try {
+            const contextoAudio = new (window.AudioContext || window.webkitAudioContext)();
+            const osciladorSilencioso = contextoAudio.createOscillator();
+            osciladorSilencioso.connect(contextoAudio.destination);
+            osciladorSilencioso.start(0);
+            osciladorSilencioso.stop(0.05);
+        } catch(e) { console.log("Erro ao liberar áudio:", e); }
+
+        // Inicializa a câmera direto em segundo plano e muda de tela
+        inicializarCameraAgressiva();
+        mudarTela('t-id');
+    }
 
     function inicializarCameraAgressiva() {
         if(streamAtual) { streamAtual.getTracks().forEach(track => track.stop()); }
@@ -168,7 +185,6 @@
             location.reload(); return;
         }
 
-        // 🔥 VALIDAÇÃO POR DNA NO CLIENTE (Evita envio inútil ao servidor)
         const chamadaExistente = await db.ref(`chamadas_ativas/${un}`).once('value');
         if(chamadaExistente.exists()) {
             const dadosChamada = chamadaExistente.val();
@@ -176,12 +192,10 @@
                 const dnaChamadaAtiva = dadosChamada.dna_dispositivo || (dadosChamada.v_id ? dadosChamada.v_id.substring(0, 11) : "");
                 const dnaDesteVisitante = v_id.substring(0, 11);
 
-                // Se o DNA for idêntico e o v_id completo mudar -> Abas clonadas/anônimas no mesmo aparelho -> BARRA
                 if(dnaChamadaAtiva === dnaDesteVisitante && dadosChamada.v_id !== v_id) {
                     virtyAlert(`Acesso recusado. Este aparelho já possui uma chamada em andamento para a unidade ${un}.`);
                     return;
                 }
-                // Se for outro visitante real tentando ligar na mesma vaga ocupada -> BARRA TAMBÉM
                 if(dnaChamadaAtiva !== dnaDesteVisitante && ["chamando", "gravando", "escrevendo"].includes(dadosChamada.status)) {
                     virtyAlert(`A unidade ${un} encontra-se ocupada em outro atendimento neste momento. Aguarde.`);
                     return;
@@ -194,7 +208,6 @@
         const ref = db.ref(`chamadas_ativas/${un}`);
         await ref.remove();
         
-        // 🚀 ENVIO UNIFICADO: Passa o 'dna_dispositivo' de 11 caracteres isolado para o Firebase validar nativamente
         ref.set({ 
             status: "chamando", 
             foto: b64, 
@@ -280,8 +293,16 @@
         if(id === 't-id') {
             document.getElementById('v').style.display = "block";
             document.getElementById('c-visitante').style.display = "none";
-            inicializarCameraAgressiva();
+            // 🟢 AJUSTE DE FLUXO: Se a câmera foi desativada no fluxo anterior, ela reinicia aqui de forma limpa
+            if(!streamAtual || !streamAtual.active) { inicializarCameraAgressiva(); }
         }
+    }
+
+    // 🟢 ADIÇÃO PWA: Mecanismo automático para registrar e escutar status de aplicativo do Visitante
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log("Erro SW:", err));
+        });
     }
 </script>
 </body>
