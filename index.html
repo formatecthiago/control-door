@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY ACCESS DOOR</title>
-    <link rel="manifest" href="manifest.json">
+    <link class="virty-pwa-link" rel="manifest" href="manifest.json">
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --yellow: #FFD700; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -123,16 +123,146 @@
         mudarTela('t-instalar');
     });
 
+    // 🌟 JUNÇÃO CORRIGIDA: Força o avanço para a tela B e quebra qualquer travamento do navegador
     document.getElementById('btn-instalar-pwa').addEventListener('click', async () => {
         if (gatilhoInstalacao) {
-            gatilhoInstalacao.prompt();
-            const { outcome } = await gatilhoInstalacao.userChoice;
-            if (outcome === 'accepted') { console.log('Instalação aceita.'); }
+            try {
+                gatilhoInstalacao.prompt();
+                const { outcome } = await gatilhoInstalacao.userChoice;
+                console.log('Escolha do usuário:', outcome);
+            } catch (err) {
+                console.log('Erro no gatilho, avançando...', err);
+            }
             gatilhoInstalacao = null;
+            mudarTela('t-welcome'); 
         } else {
-            mudarTela('t-welcome');
+            mudarTela('t-welcome'); 
         }
     });
 
     window.addEventListener('appinstalled', () => {
-        mudarTela('t
+        mudarTela('t-welcome');
+    });
+
+    function mudarTela(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id === 't-id' && (!streamAtual || !streamAtual.active)) { inicializarCameraAgressiva(); }
+    }
+
+    // --- LOGICA DE MIDIA E SESSÃO ---
+    let streamAtual = null;
+    let usarLenteFrontal = true;
+    let audioRespostaMorador = null;
+    let unidadeEmAtendimentoAtual = null;
+    let timerRegressivoVisitante;
+    let b64 = "";
+
+    function iniciarChamadaUnica() {
+        try {
+            const contextoAudio = new (window.AudioContext || window.webkitAudioContext)();
+            const osciladorSilencioso = contextoAudio.createOscillator();
+            osciladorSilencioso.connect(contextoAudio.destination);
+            osciladorSilencioso.start(0); osciladorSilencioso.stop(0.05);
+        } catch(e) {}
+        inicializarCameraAgressiva();
+        mudarTela('t-id');
+    }
+
+    function inicializarCameraAgressiva() {
+        if(streamAtual) { streamAtual.getTracks().forEach(track => track.stop()); }
+        const constraints = { video: { facingMode: usarLenteFrontal ? "user" : "environment" } };
+        navigator.mediaDevices.getUserMedia(constraints).then(s => {
+            streamAtual = s; 
+            const video = document.getElementById('v');
+            video.srcObject = s;
+            video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
+        }).catch(e => console.log(e));
+    }
+
+    function alternarLenteCamera() {
+        usarLenteFrontal = !usarLenteFrontal;
+        inicializarCameraAgressiva();
+    }
+
+    function tirarFoto() {
+        const v = document.getElementById('v'), c = document.getElementById('c-visitante');
+        if(!v.videoWidth) return virtyAlert("Aguarde o visor da câmera carregar.");
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        const ctx = c.getContext('2d');
+        if(usarLenteFrontal) { ctx.translate(c.width, 0); ctx.scale(-1, 1); }
+        ctx.drawImage(v, 0, 0); ctx.setTransform(1,0,0,1,0,0);
+        b64 = c.toDataURL('image/jpeg', 0.5);
+        c.style.display = "block"; v.style.display = "none";
+        document.getElementById('btn-chamar').disabled = false;
+        if(streamAtual) streamAtual.getTracks().forEach(track => track.stop());
+        virtyAlert("Foto capturada com sucesso!");
+    }
+
+    async function chamar() {
+        const un = document.getElementById('un').value;
+        if(!un || !b64) return virtyAlert("Insira a unidade e tire sua foto!");
+        
+        const checkUnidade = await db.ref(`moradores_validados/${un}`).once('value');
+        if(!checkUnidade.exists()){
+            return virtyAlert(`Unidade ${un} sem moradores ativos.`);
+        }
+
+        const blockCheck = await db.ref(`bloqueados/${un}/${v_id.substring(0,11)}`).once('value');
+        if(blockCheck.exists()) {
+            virtyAlert("Não foi possível estabelecer contato.");
+            location.reload(); return;
+        }
+
+        unidadeEmAtendimentoAtual = un;
+        mudarTela('t-calling');
+        const ref = db.ref(`chamadas_ativas/${un}`);
+        await ref.remove();
+        
+        ref.set({ 
+            status: "chamando", foto: b64, texto: document.getElementById('msg').value, 
+            v_id: v_id, dna_dispositivo: v_id.substring(0, 11), ts: Date.now() 
+        });
+
+        let t = 90;
+        clearInterval(timerRegressivoVisitante);
+        timerRegressivoVisitante = setInterval(() => {
+            t--; document.getElementById('timer-v').innerText = t;
+            if(t <= 0) { clearInterval(timerRegressivoVisitante); finalizarTelaMorta(); }
+        }, 1000);
+
+        ref.on('value', s => {
+            const d = s.val(); if(!d) return;
+            const sm = document.getElementById('status-msg');
+            if(d.status === "gravando") sm.innerText = "Morador gravando resposta...";
+            else if(d.status === "escrevendo") sm.innerText = "Morador digitando...";
+            
+            if(["liberado", "recusado", "mensagem", "cinza"].includes(d.status)) {
+                clearInterval(timerRegressivoVisitante);
+                document.getElementById('timer-v').style.display = 'none';
+                const area = document.getElementById('area-dinamica');
+                let cor = "var(--neon)", stringFinal = "ACESSO AUTORIZADO", incluirPlayerHtml = "";
+                
+                if(d.status === "recusado") { cor = "var(--red)"; stringFinal = "ACESSO RECUSADO"; }
+                if(d.status === "cinza") { cor = "#666"; stringFinal = "CHAMADA NÃO ATENDIDA"; }
+                if(d.status === "mensagem") { 
+                    cor = "var(--blue)"; stringFinal = d.msg_morador || "MENSAGEM RECEBIDA"; 
+                    if(d.audio_b64) {
+                        audioRespostaMorador = new Audio(d.audio_b64);
+                        incluirPlayerHtml = `<button class="btn-play-interfone" onclick="audioRespostaMorador.play()">▶ Ouvir Voz</button>`;
+                    }
+                }
+                area.innerHTML = `<div class="txt-resposta" style="color:${cor}">${stringFinal}</div>${incluirPlayerHtml}<button class="btn btn-fechar-virty" onclick="finalizarTelaMorta()">FECHAR</button>`;
+            }
+        });
+    }
+
+    async function finalizarTelaMorta() {
+        if(unidadeEmAtendimentoAtual) db.ref(`chamadas_ativas/${unidadeEmAtendimentoAtual}`).off();
+        if(unidadeEmAtendimentoAtual) await db.ref(`chamadas_ativas/${unidadeEmAtendimentoAtual}`).remove();
+        if(streamAtual) streamAtual.getTracks().forEach(track => track.stop());
+        location.reload();
+    }
+</script>
+</body>
+</html>
