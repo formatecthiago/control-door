@@ -1,8 +1,7 @@
 {
   "name": "Virty Access Door",
   "short_name": "Virty",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#39FF14",
