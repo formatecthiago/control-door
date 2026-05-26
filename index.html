@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY PORTARIA v2.1.2 - Proporcional Estrito</title>
+    <title>VIRTY PORTARIA v2.1.3 - Proporcional Total</title>
     
     <link rel="manifest" href="manifest.json">
     
@@ -12,29 +12,33 @@
         *, *::before, *::after { box-sizing: border-box; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; overflow: hidden; -webkit-user-select: none; user-select: none; }
         
-        /* 📐 Divisão Estrita: 15% Vão Livre / 70% Todo o Conteúdo / 15% Vão Livre */
+        /* 📐 Divisão Proporcional Estrita (Vertical e Horizontal) */
         .screen { 
             display: none; 
             height: 100vh; 
+            width: 100vw;
             grid-template-rows: 15vh 70vh 15vh;
-            width: 100%;
+            grid-template-columns: 5vw 90vw 5vw; /* 5% esquerda | 90% conteúdo | 5% direita */
             box-sizing: border-box; 
         }
         .active { display: grid; }
         
-        /* Zonas de Escape Obliteradas (15% Completamente Vazios) */
-        .screen-top-gap { height: 15vh; width: 100%; pointer-events: none; }
-        .screen-bottom-gap { height: 15vh; width: 100%; pointer-events: none; }
+        /* Gaps Invisíveis de Isolamento (Telas sem eventos de clique) */
+        .screen-top-gap { grid-column: 1 / span 3; height: 15vh; pointer-events: none; }
+        .screen-bottom-gap { grid-column: 1 / span 3; height: 15vh; pointer-events: none; }
+        .screen-left-gap { height: 70vh; pointer-events: none; }
+        .screen-right-gap { height: 70vh; pointer-events: none; }
         
-        /* Miolo Único Centralizado (70% onde TUDO acontece) */
+        /* 📦 Área Útil Central Restrita (Onde tudo acontece de forma harmoniosa) */
         .screen-main-content { 
+            grid-column: 2; /* Fixa estritamente nos 90% centrais horizontais */
             display: flex; 
             flex-direction: column; 
             justify-content: space-between; 
             align-items: center; 
             height: 70vh; 
-            padding: 0 20px; 
             width: 100%; 
+            padding: 0; /* Margens controladas pelo grid externo */
             box-sizing: border-box;
         }
 
@@ -70,19 +74,22 @@
 
     <div id="s-inicio" class="screen active">
         <div class="screen-top-gap"></div>
+        <div class="screen-left-gap"></div>
         <div class="screen-main-content" style="justify-content: center;">
             <div style="text-align:center; margin-bottom: 40px;">
                 <h1 style="color:var(--neon); font-size:3rem; letter-spacing:5px; margin:0 0 5px 0; text-shadow: 0 0 10px rgba(57,255,20,0.3);">VIRTY</h1>
                 <div style="color:var(--gray); font-size:0.85rem; font-weight:bold; letter-spacing:2px;">PORTARIA INTELIGENTE</div>
             </div>
             <button class="btn" style="background:var(--neon); color:#000; height:90px; font-size:1.3rem; border-radius:20px;" onclick="iniciarFluxo()">🔔 TOCAR CAMPAINHA</button>
-            <div style="color:#333; font-size:0.75rem; font-weight:bold; margin-top: 40px;">VERSION 2.1.2</div>
+            <div style="color:#333; font-size:0.75rem; font-weight:bold; margin-top: 40px;">VERSION 2.1.3</div>
         </div>
+        <div class="screen-right-gap"></div>
         <div class="screen-bottom-gap"></div>
     </div>
 
     <div id="s-camera" class="screen">
         <div class="screen-top-gap"></div>
+        <div class="screen-left-gap"></div>
         <div class="screen-main-content">
             <div style="text-align:center;">
                 <h2 style="color:var(--neon); margin:0 0 5px 0; letter-spacing:1px; font-size:1.4rem;">IDENTIFICAÇÃO VIRTUAL</h2>
@@ -105,11 +112,13 @@
                 <button class="btn" style="background:#000; color:var(--red); border:2px solid var(--red); padding:12px;" onclick="voltarInicio()">CANCELAR</button>
             </div>
         </div>
+        <div class="screen-right-gap"></div>
         <div class="screen-bottom-gap"></div>
     </div>
 
     <div id="s-unidade" class="screen">
         <div class="screen-top-gap"></div>
+        <div class="screen-left-gap"></div>
         <div class="screen-main-content">
             <h2 style="color:var(--neon); margin:0; text-align:center;">DIGITE A UNIDADE</h2>
             
@@ -123,11 +132,13 @@
                 <button class="btn" style="background:#000; color:var(--gray); border:2px solid #333; padding:12px;" onclick="voltarInicio()">VOLTAR</button>
             </div>
         </div>
+        <div class="screen-right-gap"></div>
         <div class="screen-bottom-gap"></div>
     </div>
 
     <div id="s-chamando" class="screen">
         <div class="screen-top-gap"></div>
+        <div class="screen-left-gap"></div>
         <div class="screen-main-content">
             <div id="txt-status">CHAMANDO...</div>
             
@@ -145,6 +156,7 @@
             
             <button id="btn-cancelar-chamado" class="btn" style="background:var(--red); color:#fff;" onclick="cancelarChamadaManual()">DESCONECTAR INTERFONE</button>
         </div>
+        <div class="screen-right-gap"></div>
         <div class="screen-bottom-gap"></div>
     </div>
 
