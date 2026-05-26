@@ -246,6 +246,7 @@
         document.getElementById('txt-status').innerText = "CONECTANDO...";
         document.getElementById('txt-feedback').innerText = "";
         document.getElementById('btn-fechar-recado').style.display = "none";
+        document.getElementById('btn-cancelar-chamado').style.display = "block";
 
         try {
             const blockCheck = await db.ref(`bloqueados/${un}/${idDispositivoEstavel}`).once('value');
@@ -344,8 +345,9 @@
                 document.getElementById('txt-status').innerText = "RECADO RECEBIDO";
                 document.getElementById('txt-status').style.color = "var(--blue)";
                 document.getElementById('txt-status').style.textShadow = "0 0 15px var(--blue)";
-                document.getElementById('btn-cancelar-chamado').innerText = "VOLTAR AO INÍCIO";
                 
+                // 🛑 Esconde o botão vermelho da base e exibe exclusivamente o botão azul centralizado
+                document.getElementById('btn-cancelar-chamado').style.display = "none";
                 document.getElementById('btn-fechar-recado').style.display = "block";
 
                 if(d.msg_morador) {
@@ -395,6 +397,7 @@
         document.getElementById('foto-morador').style.display = "none";
         document.getElementById('btn-fechar-recado').style.display = "none";
         document.getElementById('btn-cancelar-chamado').innerText = "DESCONECTAR INTERFONE";
+        document.getElementById('btn-cancelar-chamado').style.display = "block";
         document.getElementById('txt-status').style.color = "var(--neon)";
         document.getElementById('txt-status').style.textShadow = "0 0 15px var(--neon)";
         mudarTela('s-inicio');
