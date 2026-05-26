@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.9.7 - Gatilho PWA Ativo</title>
+    <title>VIRTY MORADOR v1.9.8 - Estável</title>
     
     <link rel="manifest" href="manifest.json">
     
@@ -136,7 +136,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.7</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.8</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -268,12 +268,13 @@
             return; 
         }
         
-        db.ref('moradores_validados/' + my_un).off();
-        db.ref('moradores_validados/' + my_un).on('value', s => {
+        const unString = String(my_un).trim();
+        db.ref('moradores_validados/' + unString).off();
+        db.ref('moradores_validados/' + unString).on('value', s => {
             if(s.exists()) { 
-                db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).off();
+                db.ref(`solicitacoes_cadastro/${unString}/${my_fingerprint}`).off();
                 mudarTela('s-home'); 
-                document.getElementById('txt-un').innerText = "CASA " + my_un; 
+                document.getElementById('txt-un').innerText = "CASA " + unString; 
                 escutarChamadas(); 
                 renderizarDadosAbas(); 
                 
@@ -284,9 +285,9 @@
                 }
             } else { 
                 desligarTodosEscutadores();
-                db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).on('value', snap => {
+                db.ref(`solicitacoes_cadastro/${unString}/${my_fingerprint}`).on('value', snap => {
                     if(snap.exists()) {
-                        document.getElementById('txt-un-analise').innerText = "UNIDADE: " + my_un + " | ID HARDWARE: " + my_fingerprint;
+                        document.getElementById('txt-un-analise').innerText = "UNIDADE: " + unString + " | ID HARDWARE: " + my_fingerprint;
                         mudarTela('s-analise');
                     } else { mudarTela('s-cadastro'); }
                 });
@@ -296,9 +297,10 @@
 
     function desligarTodosEscutadores() {
         if(my_un) {
-            db.ref('chamadas_ativas/' + my_un).off();
-            db.ref(`bloqueados/${my_un}`).off();
-            db.ref(`historico/${my_un}`).off();
+            const unString = String(my_un).trim();
+            db.ref('chamadas_ativas/' + unString).off();
+            db.ref(`bloqueados/${unString}`).off();
+            db.ref(`historico/${unString}`).off();
         }
     }
 
@@ -347,7 +349,8 @@
               
         if(!my_foto || !un || !cpf || !nome) return virtyAlert("Preencha todos os dados e capture a Selfie!"); 
         
-        db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
+        const unString = String(un).trim();
+        db.ref('solicitacoes_cadastro/' + unString).once('value', snap => {
             const moradoresExistentes = snap.val() || {};
             const chaves = Object.keys(moradoresExistentes);
             const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
@@ -361,11 +364,11 @@
                 }
             }
             
-            db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({ 
-                nome: nome, cpf: cpf, unidade: un, foto: my_foto, ts: Date.now() 
+            db.ref(`solicitacoes_cadastro/${unString}/${my_fingerprint}`).set({ 
+                nome: nome, cpf: cpf, unidade: unString, foto: my_foto, ts: Date.now() 
             }).then(() => { 
-                my_un = un; 
-                localStorage.setItem('my_un', un); 
+                my_un = unString; 
+                localStorage.setItem('my_un', unString); 
                 virtyAlert("Solicitação enviada com sucesso!"); 
                 verificarStatus(); 
             }).catch(err => virtyAlert("Erro: " + err.message));
@@ -374,23 +377,26 @@
 
     function escutarChamadas() {
         if(!my_un) return;
-        db.ref('chamadas_ativas/' + my_un).off();
-        db.ref('chamadas_ativas/' + my_un).on('value', s => {
-            const d = s.val(); const painel = document.getElementById('painel-chamada');
+        const unidadeBusca = String(my_un).trim();
+        
+        db.ref('chamadas_ativas/' + unidadeBusca).off();
+        db.ref('chamadas_ativas/' + unidadeBusca).on('value', s => {
+            const d = s.val(); 
+            const painel = document.getElementById('painel-chamada');
             
-            // Trava de segurança: impede ativação se o nó interno não bater com sua unidade
-            if(d && d.unidade === my_un && (d.status === 'chamando' || d.status === 'escrevendo' || d.status === 'gravando')) {
+            if(d && String(d.unidade).trim() === unidadeBusca && (d.status === 'chamando' || d.status === 'escrevendo' || d.status === 'gravando')) {
                 document.getElementById('foto-v').src = d.foto;
-                document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
+                document.getElementById('msg-v').innerText = d.texto || "Visitante aguardando...";
                 painel.style.display = 'flex';
                 
                 if(d.status === 'chamando' && !estaGravando && !estaDigitando) {
-                    gerenciarAlerta('start'); tempoGeralRegressivo = 90;
+                    gerenciarAlerta('start'); 
+                    tempoGeralRegressivo = 90;
                     
                     if (swRegistration) {
                         swRegistration.active.postMessage({
                             tipo: 'NOTIFICAR_CHAMADA',
-                            unidade: my_un,
+                            unidade: unidadeBusca,
                             mensagem: d.texto || "Visitante tocando o interfone!"
                         });
                     }
@@ -404,36 +410,41 @@
                     }, 1000);
                 }
             } else { 
-                painel.style.display = 'none'; 
-                fecharPainelTexto(); 
-                gerenciarAlerta('stop'); 
-                clearInterval(timerPerdida); 
-                
-                if (swRegistration && swRegistration.active) {
-                    swRegistration.active.postMessage({ tipo: 'LIMPAR_NOTIFICACOES' });
+                if (!d || (d.status !== 'mensagem' && d.status !== 'liberado' && d.status !== 'recusado')) {
+                    painel.style.display = 'none'; 
+                    fecharPainelTexto(); 
+                    gerenciarAlerta('stop'); 
+                    clearInterval(timerPerdida); 
+                    
+                    if (swRegistration && swRegistration.active) {
+                        swRegistration.active.postMessage({ tipo: 'LIMPAR_NOTIFICACOES' });
+                    }
                 }
             }
         });
     }
 
     function abrirPainelTexto() {
+        if(!my_un) return;
         estaDigitando = true; gerenciarAlerta('stop');
-        db.ref('chamadas_ativas/' + my_un).update({ status: 'escrevendo' });
+        db.ref('chamadas_ativas/' + String(my_un).trim()).update({ status: 'escrevendo' });
         document.getElementById('container-digitar-texto').style.display = 'flex';
         document.getElementById('campo-texto-interno').focus();
     }
 
     function fecharPainelTexto() {
+        if(!my_un) return;
         estaDigitando = false; document.getElementById('container-digitar-texto').style.display = 'none';
         if(document.getElementById('painel-chamada').style.display === 'flex' && !estaGravando) {
-            gerenciarAlerta('start'); db.ref('chamadas_ativas/' + my_un).update({ status: 'chamando' });
+            gerenciarAlerta('start'); db.ref('chamadas_ativas/' + String(my_un).trim()).update({ status: 'chamando' });
         }
     }
 
     function enviarTextoInternal() {
+        if(!my_un) return;
         const txt = document.getElementById('campo-texto-interno').value;
         if(!txt) return virtyAlert("Digite algo antes de enviar!");
-        db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: txt, data_hora: obterDataHora() });
+        db.ref('chamadas_ativas/' + String(my_un).trim()).update({ status: 'mensagem', msg_morador: txt, data_hora: obterDataHora() });
         document.getElementById('campo-texto-interno').value = ""; responder('mensagem');
     }
 
@@ -459,6 +470,7 @@
     function verificarToqueEnvioMaoLivre(e) { if(modoMaoLivre && estaGravando) { e.stopPropagation(); stopRec(); } }
 
     async function startRec() {
+        if(!my_un) return;
         try {
             const stream = micStreamGlobal || await navigator.mediaDevices.getUserMedia({ audio: true });
             if(!micStreamGlobal) micStreamGlobal = stream;
@@ -471,7 +483,7 @@
             popup.style.display = 'flex';
             
             let tempoVoz = 30; texto.innerText = "30s"; arco.style.strokeDashoffset = 0; arco.style.stroke = "var(--neon)";
-            db.ref('chamadas_ativas/' + my_un).update({ status: 'gravando' });
+            db.ref('chamadas_ativas/' + String(my_un).trim()).update({ status: 'gravando' });
             
             const circunferencia = 2 * Math.PI * 90;
             clearInterval(timerVozInterval);
@@ -488,7 +500,7 @@
                 const blob = new Blob(chunks, { type: 'audio/webm' });
                 const reader = new FileReader(); reader.readAsDataURL(blob);
                 reader.onloadend = () => {
-                    db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: "Áudio enviado", audio_b64: reader.result, data_hora: obterDataHora() });
+                    db.ref('chamadas_ativas/' + String(my_un).trim()).update({ status: 'mensagem', msg_morador: "Áudio enviado", audio_b64: reader.result, data_hora: obterDataHora() });
                     popup.style.display = 'none'; responder('mensagem');
                 };
             };
@@ -499,6 +511,8 @@
     function stopRec() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); clearInterval(timerVozInterval); estaGravando = false; } }
 
     function responder(st) {
+        if(!my_un) return;
+        const unString = String(my_un).trim();
         estaGravando = false; estaDigitando = false; modoMaoLivre = false;
         document.getElementById('painel-chamada').style.display = 'none';
         document.getElementById('container-digitar-texto').style.display = 'none';
@@ -507,7 +521,7 @@
         
         if (swRegistration && swRegistration.active) { swRegistration.active.postMessage({ tipo: 'LIMPAR_NOTIFICACOES' }); }
 
-        const ref = db.ref('chamadas_ativas/' + my_un);
+        const ref = db.ref('chamadas_ativas/' + unString);
         ref.once('value', snap => {
             const d = snap.val();
             if(d) {
@@ -523,7 +537,9 @@
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
 
     function gravarHist(vid, foto, st, dna) {
-        const baseRef = db.ref(`historico/${my_un}`);
+        if(!my_un) return;
+        const unString = String(my_un).trim();
+        const baseRef = db.ref(`historico/${unString}`);
         
         baseRef.once('value', snapshot => {
             let totalFilhos = snapshot.numChildren();
@@ -533,16 +549,14 @@
                 let menorTs = Infinity;
                 
                 snapshot.forEach(filho => {
-                    let dadosFilho = child.val();
+                    let dadosFilho = filho.val();
                     if (dadosFilho.ts < menorTs) {
                         menorTs = dadosFilho.ts;
                         maisAntigoChave = filho.key;
                     }
                 });
                 
-                if (maisAntigoChave) {
-                    baseRef.child(maisAntigoChave).remove();
-                }
+                if (maisAntigoChave) { baseRef.child(maisAntigoChave).remove(); }
             }
             
             const refDispositivo = baseRef.child(dna);
@@ -558,16 +572,11 @@
             d.data_hora = obterDataHora(); 
             refDispositivo.set(d);
             
-            db.ref(`bloqueados/${my_un}/${dna}`).once('value', bSnap => {
+            db.ref(`bloqueados/${unString}/${dna}`).once('value', bSnap => {
                 if(bSnap.exists()){
-                    db.ref(`bloqueados/${my_un}/${dna}`).update({
-                        foto: foto,
-                        ultima: d.ultima,
-                        data_hora: d.data_hora,
-                        verde: d.verde,
-                        vermelho: d.vermelho,
-                        azul: d.azul,
-                        cinza: d.cinza
+                    db.ref(`bloqueados/${unString}/${dna}`).update({
+                        foto: foto, ultima: d.ultima, data_hora: d.data_hora,
+                        verde: d.verde, vermelho: d.vermelho, azul: d.azul, cinza: d.cinza
                     });
                 }
             });
@@ -576,22 +585,21 @@
 
     function renderizarDadosAbas() {
         if(!my_un) return;
+        const unString = String(my_un).trim();
 
-        // Escutadores paralelos e independentes para evitar travas no Safari
-        db.ref(`bloqueados/${my_un}`).off();
-        db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
+        db.ref(`bloqueados/${unString}`).off();
+        db.ref(`bloqueados/${unString}`).on('value', bSnap => {
             cacheBloqueadosGlobais = bSnap.val() || {};
             construirListaBloqueadosDireta(cacheBloqueadosGlobais);
             construirListaNormal(cacheHistoricoGlobal, cacheBloqueadosGlobais);
         });
 
-        db.ref(`historico/${my_un}`).off();
-        db.ref(`historico/${my_un}`).on('value', snap => {
+        db.ref(`historico/${unString}`).off();
+        db.ref(`historico/${unString}`).on('value', snap => {
             const items = [];
             snap.forEach(child => { items.push(child.val()); });
             items.sort((a, b) => b.ts - a.ts);
             cacheHistoricoGlobal = items;
-            
             construirListaNormal(cacheHistoricoGlobal, cacheBloqueadosGlobais);
         });
     }
@@ -611,11 +619,8 @@
         const exibidos = ativos.slice(0, limiteExibicaoHist);
         exibidos.forEach(d => { list.innerHTML += criarCardHTML(d, false); });
 
-        if(ativos.length > limiteExibicaoHist) {
-            document.getElementById('btn-ver-mais').style.display = "block";
-        } else {
-            document.getElementById('btn-ver-mais').style.display = "none";
-        }
+        if(ativos.length > limiteExibicaoHist) { document.getElementById('btn-ver-mais').style.display = "block"; } 
+        else { document.getElementById('btn-ver-mais').style.display = "none"; }
     }
 
     function construirListaBloqueadosDireta(mapaBloqueados) {
@@ -629,9 +634,7 @@
         }
 
         const listaOrdenada = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
-        listaOrdenada.forEach(d => { 
-            list.innerHTML += criarCardHTML(d, true); 
-        });
+        listaOrdenada.forEach(d => { list.innerHTML += criarCardHTML(d, true); });
     }
 
     function criarCardHTML(d, estaBloqueado) {
@@ -691,23 +694,19 @@
     }
 
     function alternarBloqueio(dna) { 
-        const ref = db.ref(`bloqueados/${my_un}/${dna}`); 
+        if(!my_un) return;
+        const unString = String(my_un).trim();
+        const ref = db.ref(`bloqueados/${unString}/${dna}`); 
         ref.once('value', s => { 
-            if(s.exists()) {
-                ref.remove(); 
-            } else {
-                db.ref(`historico/${my_un}/${dna}`).once('value', hSnap => {
+            if(s.exists()) { ref.remove(); } 
+            else {
+                db.ref(`historico/${unString}/${dna}`).once('value', hSnap => {
                     const dadosHist = hSnap.val() || {};
                     ref.set({
-                        dna_dispositivo: dna,
-                        ts: Date.now(),
-                        data_hora: obterDataHora(),
-                        foto: dadosHist.foto || "",
-                        ultima: dadosHist.ultima || "recusado",
-                        verde: dadosHist.verde || 0,
-                        vermelho: dadosHist.vermelho || 0,
-                        azul: dadosHist.azul || 0,
-                        cinza: dadosHist.cinza || 0
+                        dna_dispositivo: dna, ts: Date.now(), data_hora: obterDataHora(),
+                        foto: dadosHist.foto || "", ultima: dadosHist.ultima || "recusado",
+                        verde: dadosHist.verde || 0, vermelho: dadosHist.vermelho || 0,
+                        azul: dadosHist.azul || 0, cinza: dadosHist.cinza || 0
                     });
                 });
             } 
@@ -715,8 +714,9 @@
     }
 
     function limparHist() { 
+        if(!my_un) return;
         if(confirm("Deseja limpar seu histórico de chamadas? Os visitantes bloqueados serão mantidos.")) {
-            db.ref(`historico/${my_un}`).remove(); 
+            db.ref(`historico/${String(my_un).trim()}`).remove(); 
         } 
     }
 
@@ -733,8 +733,10 @@
     }
     
     function cancelarSolicitacaoAtual() {
+        if(!my_un) return;
+        const unString = String(my_un).trim();
         if(confirm("Deseja cancelar a análise atual e refazer os dados?")) {
-            db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).remove().then(() => {
+            db.ref(`solicitacoes_cadastro/${unString}/${my_fingerprint}`).remove().then(() => {
                 localStorage.removeItem('my_un'); my_un = null; verificarStatus();
             });
         }
@@ -767,10 +769,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
-            .then(reg => {
-                swRegistration = reg;
-                console.log("Service Worker ativo no Morador.");
-            })
+            .then(reg => { swRegistration = reg; console.log("Service Worker ativo."); })
             .catch(err => console.log("Erro SW:", err));
         });
     }
