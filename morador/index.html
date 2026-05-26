@@ -29,7 +29,7 @@
             user-select: none;
         }
         
-        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
+        .screen { display: none; padding: 5vh 2vw; min-height: 100vh; flex-direction: column; box-sizing: border-box; overflow: hidden; }
         .active { display: flex; }
         
         input { 
@@ -74,13 +74,13 @@
         .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; margin-bottom: 10px; font-weight: bold; font-size: 0.85rem; }
         .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
 
-        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
+        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; }
         .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 15px; box-shadow: 0 0 25px rgba(57,255,20,0.3); }
         #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; text-shadow: 0 0 10px var(--red); }
         
-        #container-digitar-texto { display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #container-digitar-texto { display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow: hidden; }
         #timer-flutuante-texto { font-size: 3.5rem; color: #fff; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px var(--blue); }
-        #popup-voz { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+        #popup-voz { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
         .canvas-circular { transform: rotate(-90deg); width: 200px; height: 200px; }
         .circle-bg { fill: none; stroke: #222; stroke-width: 12; }
         .circle-progress { fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 0; transition: stroke 0.3s, stroke-dashoffset 0.1s linear; }
@@ -128,7 +128,7 @@
         <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
         <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
         <p style="color:#aaa; font-size:1.1rem; max-width:300px; line-height:1.5;">Olá! Os seus dados foram enviados para a administração do condomínio. Aguarde a liberação do seu acesso doméstico.</p>
-        <div style="views-top:40px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
+        <div style="margin-top:40px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
         <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
     </div>
 
@@ -231,6 +231,7 @@
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
+    let cacheHistoricoGlobal = [];
     let swRegistration = null;
 
     function gerarFingerprintMorador() {
@@ -261,20 +262,28 @@
     }
 
     function verificarStatus() {
-        if(!my_un) { mudarTela('s-cadastro'); return; }
+        if(!my_un) { 
+            desligarTodosEscutadores();
+            mudarTela('s-cadastro'); 
+            return; 
+        }
+        
+        db.ref('moradores_validados/' + my_un).off();
         db.ref('moradores_validados/' + my_un).on('value', s => {
             if(s.exists()) { 
+                db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).off();
                 mudarTela('s-home'); 
                 document.getElementById('txt-un').innerText = "CASA " + my_un; 
                 escutarChamadas(); 
                 renderizarDadosAbas(); 
                 
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && !micStreamGlobal) {
                     navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => { micStreamGlobal = stream; })
                     .catch(e => console.log("Microfone recusado."));
                 }
             } else { 
+                desligarTodosEscutadores();
                 db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).on('value', snap => {
                     if(snap.exists()) {
                         document.getElementById('txt-un-analise').innerText = "UNIDADE: " + my_un + " | ID HARDWARE: " + my_fingerprint;
@@ -283,6 +292,14 @@
                 });
             }
         });
+    }
+
+    function desligarTodosEscutadores() {
+        if(my_un) {
+            db.ref('chamadas_ativas/' + my_un).off();
+            db.ref(`bloqueados/${my_un}`).off();
+            db.ref(`historico/${my_un}`).off();
+        }
     }
 
     function inicializarCapturaVideo() {
@@ -298,7 +315,7 @@
 
     function alternarLenteCamera() {
         usarLenteFrontal = !usarLenteFrontal;
-        inicializarCaptureVideo();
+        inicializarCapturaVideo();
     }
 
     function fotoCad() { 
@@ -324,7 +341,7 @@
     }
 
     function enviarCadastro() { 
-        const un = document.getElementById('c-un').value, 
+        const un = document.getElementById('c-un').value.trim(), 
               cpf = document.getElementById('c-cpf').value.trim(), 
               nome = document.getElementById('c-nome').value.trim(); 
               
@@ -355,11 +372,14 @@
         });
     }
 
-    // 🚀 NOVO GATILHO DE ESCUTA: Monitora e dispara avisos locais/PWA
     function escutarChamadas() {
+        if(!my_un) return;
+        db.ref('chamadas_ativas/' + my_un).off();
         db.ref('chamadas_ativas/' + my_un).on('value', s => {
             const d = s.val(); const painel = document.getElementById('painel-chamada');
-            if(d && (d.status === 'chamando' || d.status === 'escrevendo' || d.status === 'gravando')) {
+            
+            // Trava de segurança: impede ativação se o nó interno não bater com sua unidade
+            if(d && d.unidade === my_un && (d.status === 'chamando' || d.status === 'escrevendo' || d.status === 'gravando')) {
                 document.getElementById('foto-v').src = d.foto;
                 document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
                 painel.style.display = 'flex';
@@ -367,7 +387,6 @@
                 if(d.status === 'chamando' && !estaGravando && !estaDigitando) {
                     gerenciarAlerta('start'); tempoGeralRegressivo = 90;
                     
-                    // Dispara ordem para o Service Worker criar a notificação caso o app seja fechado
                     if (swRegistration) {
                         swRegistration.active.postMessage({
                             tipo: 'NOTIFICAR_CHAMADA',
@@ -390,8 +409,7 @@
                 gerenciarAlerta('stop'); 
                 clearInterval(timerPerdida); 
                 
-                // Limpa notificações pendentes no Service Worker
-                if (swRegistration) {
+                if (swRegistration && swRegistration.active) {
                     swRegistration.active.postMessage({ tipo: 'LIMPAR_NOTIFICACOES' });
                 }
             }
@@ -487,7 +505,7 @@
         document.getElementById('popup-voz').style.display = 'none';
         gerenciarAlerta('stop');
         
-        if (swRegistration) { swRegistration.active.postMessage({ tipo: 'LIMPAR_NOTIFICACOES' }); }
+        if (swRegistration && swRegistration.active) { swRegistration.active.postMessage({ tipo: 'LIMPAR_NOTIFICACOES' }); }
 
         const ref = db.ref('chamadas_ativas/' + my_un);
         ref.once('value', snap => {
@@ -515,7 +533,7 @@
                 let menorTs = Infinity;
                 
                 snapshot.forEach(filho => {
-                    let dadosFilho = filho.val();
+                    let dadosFilho = child.val();
                     if (dadosFilho.ts < menorTs) {
                         menorTs = dadosFilho.ts;
                         maisAntigoChave = filho.key;
@@ -557,24 +575,24 @@
     }
 
     function renderizarDadosAbas() {
+        if(!my_un) return;
+
+        // Escutadores paralelos e independentes para evitar travas no Safari
+        db.ref(`bloqueados/${my_un}`).off();
         db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
             cacheBloqueadosGlobais = bSnap.val() || {};
             construirListaBloqueadosDireta(cacheBloqueadosGlobais);
-            
-            db.ref(`historico/${my_un}`).once('value', snap => {
-                const historicoItens = [];
-                snap.forEach(item => { historicoItens.push(item.val()); });
-                historicoItens.sort((a, b) => b.ts - a.ts);
-                construirListaNormal(historicoItens, cacheBloqueadosGlobais);
-            });
+            construirListaNormal(cacheHistoricoGlobal, cacheBloqueadosGlobais);
         });
 
+        db.ref(`historico/${my_un}`).off();
         db.ref(`historico/${my_un}`).on('value', snap => {
-            const historicoItens = [];
-            snap.forEach(item => { historicoItens.push(item.val()); });
-            historicoItens.sort((a, b) => b.ts - a.ts);
+            const items = [];
+            snap.forEach(child => { items.push(child.val()); });
+            items.sort((a, b) => b.ts - a.ts);
+            cacheHistoricoGlobal = items;
             
-            construirListaNormal(historicoItens, cacheBloqueadosGlobais);
+            construirListaNormal(cacheHistoricoGlobal, cacheBloqueadosGlobais);
         });
     }
 
@@ -746,7 +764,6 @@
         } catch(err) {}
     }
 
-    // 🟢 REGISTRO DO SERVICE WORKER E CAPTURA DE REGISTRO PARA PUSH LOCAL
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
