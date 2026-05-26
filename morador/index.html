@@ -29,7 +29,6 @@
             user-select: none;
         }
         
-        /* 📐 ESTRUTURA VERTICAL E LATERAL RESTAURADA A RISCA */
         .screen { 
             display: none; 
             padding: 5vh 2vw; 
@@ -234,6 +233,7 @@
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
+    let cacheHistoricoGlobal = []; // 📦 Cache unificado para evitar concorrência
     let swRegistration = null;
 
     function gerarFingerprintMorador() {
@@ -556,25 +556,24 @@
         });
     }
 
+    // 🔄 SOLUÇÃO: SINCRONIZAÇÃO EM TEMPO REAL LIMPA E IMUNE A CONCORRÊNCIA DE NAVEGADORES
     function renderizarDadosAbas() {
+        // Escuta a tabela de bloqueados continuamente
         db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
             cacheBloqueadosGlobais = bSnap.val() || {};
             construirListaBloqueadosDireta(cacheBloqueadosGlobais);
-            
-            db.ref(`historico/${my_un}`).once('value', snap => {
-                const historicoItens = [];
-                snap.forEach(item => { historicoItens.push(item.val()); });
-                historicoItens.sort((a, b) => b.ts - a.ts);
-                construirListaNormal(historicoItens, cacheBloqueadosGlobais);
-            });
+            // Sempre força a atualização casada da lista normal ao mudar um bloqueio
+            construirListaNormal(cacheHistoricoGlobal, cacheBloqueadosGlobais);
         });
 
+        // Escuta a tabela de histórico continuamente
         db.ref(`historico/${my_un}`).on('value', snap => {
             const historicoItens = [];
             snap.forEach(item => { historicoItens.push(item.val()); });
             historicoItens.sort((a, b) => b.ts - a.ts);
             
-            construirListaNormal(historicoItens, cacheBloqueadosGlobais);
+            cacheHistoricoGlobal = historicoItens; // Salva no cache unificado
+            construirListaNormal(cacheHistoricoGlobal, cacheBloqueadosGlobais);
         });
     }
 
