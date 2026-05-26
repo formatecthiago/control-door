@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY PORTARIA v2.1.1 - Sem Confirmações</title>
+    <title>VIRTY PORTARIA v2.1.2 - Proporcional</title>
     
     <link rel="manifest" href="manifest.json">
     
@@ -12,23 +12,28 @@
         *, *::before, *::after { box-sizing: border-box; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; overflow: hidden; -webkit-user-select: none; user-select: none; }
         
+        /* 📐 Estrutura Matemática Baseada em Proporções Rigorosas */
         .screen { 
             display: none; 
-            padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 16px)) 20px; 
             height: 100vh; 
-            flex-direction: column; 
-            justify-content: space-between; 
+            grid-template-rows: 15vh 70vh 15vh;
+            width: 100%;
             box-sizing: border-box; 
         }
-        .active { display: flex; }
+        .active { display: grid; }
         
-        .btn { width: 100%; padding: 16px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: transform 0.1s; }
+        /* Divisões de Zona */
+        .screen-top { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 15vh; padding: 0 20px; }
+        .screen-middle { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 70vh; padding: 0 20px; width: 100%; }
+        .screen-bottom { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 15vh; padding: 0 20px 20px 20px; width: 100%; }
+
+        .btn { width: 100%; max-width: 320px; padding: 16px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: transform 0.1s; }
         .btn:active { transform: scale(0.98); }
         
-        .btn-group { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+        .btn-group { display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: center; }
         
-        .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: auto 0; width: 100%; }
-        .video-box { width: 260px; height: 260px; border-radius: 50%; overflow: hidden; border: 4px solid var(--neon); box-shadow: 0 0 25px rgba(57,255,20,0.4); background:#111; position:relative; }
+        .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; width: 100%; }
+        .video-box { width: 240px; height: 240px; border-radius: 50%; overflow: hidden; border: 4px solid var(--neon); box-shadow: 0 0 25px rgba(57,255,20,0.4); background:#111; position:relative; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; transform: scaleX(-1); }
         
@@ -37,10 +42,10 @@
         
         .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
         #txt-status { font-size: 2.2rem; color: var(--neon); text-shadow: 0 0 15px var(--neon); font-weight: bold; margin-bottom: 5px; }
-        .foto-m { width: 130px; height: 130px; border-radius: 50%; border: 3px solid var(--blue); object-fit: cover; margin-top: 15px; box-shadow: 0 0 20px rgba(0,123,255,0.4); }
-        .virty-input { width: 100%; padding: 18px; background: #111; border: 2px solid var(--neon); color: #fff; text-align: center; font-size: 2.2rem; font-weight: bold; border-radius: 15px; margin-bottom: 25px; outline: none; box-shadow: 0 0 15px rgba(57,255,20,0.2); }
+        .foto-m { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--blue); object-fit: cover; margin-top: 10px; box-shadow: 0 0 20px rgba(0,123,255,0.4); }
+        .virty-input { width: 100%; max-width: 280px; padding: 14px; background: #111; border: 2px solid var(--neon); color: #fff; text-align: center; font-size: 2.2rem; font-weight: bold; border-radius: 15px; outline: none; box-shadow: 0 0 15px rgba(57,255,20,0.2); }
         
-        #box-audio-player { width: 100%; max-width: 280px; display: flex; justify-content: center; margin-top: 15px; }
+        #box-audio-player { width: 100%; max-width: 280px; display: flex; justify-content: center; margin-top: 10px; }
         #box-audio-player audio { width: 100%; height: 45px; }
     </style>
 </head>
@@ -52,64 +57,79 @@
         <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
-    <div id="s-inicio" class="screen active" style="justify-content: center; align-items: center;">
-        <div style="text-align:center; margin-bottom: 50px;">
-            <h1 style="color:var(--neon); font-size:3rem; letter-spacing:5px; margin:0 0 5px 0; text-shadow: 0 0 10px rgba(57,255,20,0.3);">VIRTY</h1>
-            <div style="color:var(--gray); font-size:0.85rem; font-weight:bold; letter-spacing:2px;">PORTARIA INTELIGENTE</div>
+    <div id="s-inicio" class="screen active">
+        <div class="screen-top"></div>
+        <div class="screen-middle">
+            <div style="text-align:center; margin-bottom: 40px;">
+                <h1 style="color:var(--neon); font-size:3rem; letter-spacing:5px; margin:0 0 5px 0; text-shadow: 0 0 10px rgba(57,255,20,0.3);">VIRTY</h1>
+                <div style="color:var(--gray); font-size:0.85rem; font-weight:bold; letter-spacing:2px;">PORTARIA INTELIGENTE</div>
+            </div>
+            <button class="btn" style="background:var(--neon); color:#000; height:90px; font-size:1.3rem; border-radius:20px;" onclick="iniciarFluxo()">🔔 TOCAR CAMPAINHA</button>
         </div>
-        <button class="btn" style="background:var(--neon); color:#000; height:90px; font-size:1.3rem; border-radius:20px; max-width: 320px;" onclick="iniciarFluxo()">🔔 TOCAR CAMPAINHA</button>
-        <div style="color:#333; font-size:0.75rem; font-weight:bold; margin-top: 50px;">VERSION 2.1.1</div>
+        <div class="screen-bottom">
+            <div style="color:#333; font-size:0.75rem; font-weight:bold;">VERSION 2.1.2</div>
+        </div>
     </div>
 
     <div id="s-camera" class="screen">
-        <div>
-            <h2 style="color:var(--neon); text-align:center; margin:10px 0 5px; letter-spacing:1px; font-size:1.5rem;">IDENTIFICAÇÃO VIRTUAL</h2>
-            <p style="color:var(--gray); text-align:center; margin:0; font-size:0.85rem; font-weight:bold;">RECONHECIMENTO OBRIGATÓRIO PARA ENTRADA</p>
+        <div class="screen-top">
+            <h2 style="color:var(--neon); margin:0 0 5px 0; letter-spacing:1px; font-size:1.4rem;">IDENTIFICAÇÃO VIRTUAL</h2>
+            <p style="color:var(--gray); margin:0; font-size:0.8rem; font-weight:bold;">RECONHECIMENTO OBRIGATÓRIO PARA ENTRADA</p>
         </div>
-        
-        <div class="area-camera-virty">
-            <div style="width:55px;"></div>
-            <div class="video-box">
-                <video id="video" autoplay playsinline muted></video>
-                <canvas id="canvas"></canvas>
+        <div class="screen-middle">
+            <div class="area-camera-virty">
+                <div style="width:55px;"></div>
+                <div class="video-box">
+                    <video id="video" autoplay playsinline muted></video>
+                    <canvas id="canvas"></canvas>
+                </div>
+                <button class="btn-inverter" onclick="alternarLenteCamera()">
+                    <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
+                </button>
             </div>
-            <button class="btn-inverter" onclick="alternarLenteCamera()">
-                <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
-            </button>
         </div>
-
-        <div class="btn-group">
-            <button class="btn" style="background:var(--neon); color:#000;" onclick="capturarFotoDireta()">📸 TIRAR FOTO</button>
-            <button class="btn" style="background:#000; color:var(--red); border:2px solid var(--red);" onclick="voltarInicio()">CANCELAR</button>
+        <div class="screen-bottom">
+            <div class="btn-group">
+                <button class="btn" style="background:var(--neon); color:#000;" onclick="capturarFotoDireta()">📸 TIRAR FOTO</button>
+                <button class="btn" style="background:#000; color:var(--red); border:2px solid var(--red); padding:12px;" onclick="voltarInicio()">CANCELAR</button>
+            </div>
         </div>
     </div>
 
-    <div id="s-unidade" class="screen" style="justify-content:center; align-items:center;">
-        <div style="text-align:center; width:100%; margin: auto 0;">
-            <h2 style="color:var(--neon); margin-bottom:10px;">DIGITE A UNIDADE</h2>
-            <p style="color:var(--gray); font-size:0.9rem; margin-bottom:30px;">Informe o número do apartamento ou casa que deseja chamar</p>
-            
+    <div id="s-unidade" class="screen">
+        <div class="screen-top">
+            <h2 style="color:var(--neon); margin:0;">DIGITE A UNIDADE</h2>
+        </div>
+        <div class="screen-middle">
+            <p style="color:var(--gray); font-size:0.9rem; margin:0 0 20px 0; text-align:center;">Informe o número do apartamento ou casa que deseja chamar</p>
             <input type="number" id="input-unidade" class="virty-input" placeholder="000" inputmode="numeric">
         </div>
-        
-        <div class="btn-group">
-            <button class="btn" style="background:var(--neon); color:#000;" onclick="confirmarUnidadeESequencia()">🔔 INTERFONAR</button>
-            <button class="btn" style="background:#000; color:var(--gray); border:2px solid #333;" onclick="voltarInicio()">VOLTAR</button>
+        <div class="screen-bottom">
+            <div class="btn-group">
+                <button class="btn" style="background:var(--neon); color:#000;" onclick="confirmarUnidadeESequencia()">🔔 INTERFONAR</button>
+                <button class="btn" style="background:#000; color:var(--gray); border:2px solid #333; padding:12px;" onclick="voltarInicio()">VOLTAR</button>
+            </div>
         </div>
     </div>
 
-    <div id="s-chamando" class="screen" style="justify-content:center; align-items:center; text-align:center;">
-        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%;">
+    <div id="s-chamando" class="screen">
+        <div class="screen-top">
             <div id="txt-status">CHAMANDO...</div>
-            <div id="timer-box" style="font-size:1.1rem; color:var(--red); font-weight:bold; margin-bottom:20px;">AGUARDE: <span id="virty-timer">90</span>s</div>
+        </div>
+        <div class="screen-middle">
+            <div id="timer-box" style="font-size:1.1rem; color:var(--red); font-weight:bold; margin-bottom:15px;">AGUARDE: <span id="virty-timer">90</span>s</div>
             
-            <div id="resposta-container" style="width:100%; max-width:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:150px;">
-                <p id="txt-feedback" style="color:#aaa; font-size:1.1rem; font-style:italic; line-height:1.4; margin:0; padding:0 10px;"></p>
+            <div id="resposta-container" style="width:100%; max-width:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:160px;">
+                <p id="txt-feedback" style="color:#aaa; font-size:1.1rem; font-style:italic; line-height:1.4; margin:0 0 10px 0; padding:0 10px;"></p>
                 <div id="box-audio-player"></div>
                 <img id="foto-morador" class="foto-m" src="" style="display:none;">
+                
+                <button id="btn-fechar-recado" class="btn" style="display:none; background:var(--blue); color:#fff; margin-top:15px; padding:10px; font-size:0.85rem;" onclick="voltarInicio()">FECHAR RECADO</button>
             </div>
         </div>
-        <button id="btn-cancelar-chamado" class="btn" style="background:var(--red); color:#fff;" onclick="cancelarChamadaManual()">DESCONECTAR INTERFONE</button>
+        <div class="screen-bottom">
+            <button id="btn-cancelar-chamado" class="btn" style="background:var(--red); color:#fff;" onclick="cancelarChamadaManual()">DESCONECTAR INTERFONE</button>
+        </div>
     </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -169,7 +189,6 @@
         inicializarCamera();
     }
 
-    // 🚀 FLUXO DIRETO: BATE A FOTO E JÁ PULA DE TELA SEM POPUPS DE CONFIRMAÇÃO
     function capturarFotoDireta() {
         const v = document.getElementById('video'), c = document.getElementById('canvas');
         if(!v.videoWidth) return virtyAlert("Aguarde o carregamento completo da câmera.");
@@ -184,7 +203,6 @@
         
         if(streamVideoGlobal) { streamVideoGlobal.getTracks().forEach(t => t.stop()); streamVideoGlobal = null; }
         
-        // Vai direto para a tela de digitar a unidade imediatamente
         mudarTela('s-unidade');
         document.getElementById('input-unidade').focus();
     }
@@ -199,6 +217,7 @@
         mudarTela('s-chamando');
         document.getElementById('txt-status').innerText = "CONECTANDO...";
         document.getElementById('txt-feedback').innerText = "";
+        document.getElementById('btn-fechar-recado').style.display = "none";
 
         try {
             const blockCheck = await db.ref(`bloqueados/${un}/${idDispositivoEstavel}`).once('value');
@@ -298,6 +317,9 @@
                 document.getElementById('txt-status').style.color = "var(--blue)";
                 document.getElementById('txt-status').style.textShadow = "0 0 15px var(--blue)";
                 document.getElementById('btn-cancelar-chamado').innerText = "VOLTAR AO INÍCIO";
+                
+                // Exibe o botão de fechar recado amigável no miolo da tela
+                document.getElementById('btn-fechar-recado').style.display = "block";
 
                 if(d.msg_morador) {
                     document.getElementById('txt-feedback').innerText = `"${d.msg_morador}"`;
@@ -344,6 +366,7 @@
         document.getElementById('input-unidade').value = "";
         document.getElementById('box-audio-player').innerHTML = "";
         document.getElementById('foto-morador').style.display = "none";
+        document.getElementById('btn-fechar-recado').style.display = "none";
         document.getElementById('btn-cancelar-chamado').innerText = "DESCONECTAR INTERFONE";
         document.getElementById('txt-status').style.color = "var(--neon)";
         document.getElementById('txt-status').style.textShadow = "0 0 15px var(--neon)";
