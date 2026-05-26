@@ -21,38 +21,52 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             margin: 0; 
             padding: 0; 
-            overflow-x: hidden; 
+            overflow: hidden; 
             -webkit-user-select: none;
             user-select: none;
         }
         
-        /* Regra de Ouro: Telas centralizadas verticalmente e horizontalmente */
+        /* Estrutura Base das Telas: 100% da viewport sem rolagens esquisitas */
         .screen { 
             display: none; 
-            min-height: 100vh; 
+            width: 100vw;
+            height: 100vh; 
             flex-direction: column; 
-            justify-content: center; 
+            justify-content: space-between; /* Força os elementos a respeitarem os extremos */
             align-items: center; 
             box-sizing: border-box; 
-            padding: 20px 0;
+            padding: 15vh 5% 5vh 5%; /* Regra de Ouro: 15% Superior, 5% Laterais */
         }
         .active { display: flex; }
 
-        /* Container interno que dita os 5% de recuo de cada lado (90% de largura útil) */
-        .conteudo-tela {
-            width: 90%;
+        /* Miolo Centralizado Ocupando a proporção de 70% */
+        .conteudo-central {
+            width: 100%;
+            max-width: 400px;
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; /* Centraliza tudo perfeitamente na zona central */
+            text-align: center;
+            gap: 20px;
+        }
+
+        /* Rodapé posicionado na zona dos 15% inferiores */
+        .rodape-tela {
+            width: 100%;
             max-width: 400px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            text-align: center;
+            justify-content: flex-end;
+            margin-bottom: 2vh; /* Garante o respiro do botão em relação à barra do sistema */
         }
         
         input { 
             width: 100%; 
             padding: 16px; 
-            margin: 8px 0; 
+            margin: 4px 0; 
             border-radius: 12px; 
             border: 2px solid #222; 
             background: #111; 
@@ -70,17 +84,21 @@
             font-weight: bold; 
             cursor: pointer; 
             text-transform: uppercase; 
-            margin: 8px 0; 
             font-size: 1rem;
         }
 
+        .btn-perigo {
+            background: var(--red);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 49, 49, 0.2);
+        }
+
         .foto-v { 
-            width: 200px; 
-            height: 200px; 
+            width: 190px; 
+            height: 190px; 
             border-radius: 50%; 
             border: 4px solid var(--neon); 
             object-fit: cover; 
-            margin-bottom: 20px; 
             box-shadow: 0 0 25px rgba(57,255,20,0.3); 
         }
 
@@ -93,7 +111,6 @@
             align-items: center; 
             justify-content: center; 
             gap: 15px; 
-            margin: 15px 0 25px; 
             width: 100%; 
         }
         .video-box { 
@@ -108,6 +125,7 @@
         }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; transform: scaleX(-1); }
+        
         .btn-inverter { 
             background: #111; 
             border: 2px solid var(--neon); 
@@ -118,7 +136,6 @@
             align-items: center; 
             justify-content: center; 
             cursor: pointer; 
-            box-shadow: 0 0 10px rgba(57,255,20,0.2); 
         }
         .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
 
@@ -131,49 +148,61 @@
             background: #0a0a0a; 
             border: 2px solid var(--neon); 
             color: #fff; 
-            padding: 30px; 
+            padding: 25px; 
             border-radius: 16px; 
-            font-size: 1.3rem; 
-            font-weight: bold; 
             z-index: 5000; 
             box-shadow: 0 0 35px rgba(57,255,20,0.4); 
             text-align: center; 
-            width: 85%; 
+            width: 90%; 
             max-width: 340px; 
         }
 
+        .texto-neon-verde {
+            color: var(--neon);
+            text-shadow: 0 0 15px rgba(57, 255, 20, 0.6);
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin: 5px 0;
+        }
+
+        .texto-neon-azul {
+            color: var(--blue);
+            text-shadow: 0 0 15px rgba(0, 123, 255, 0.6);
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin: 5px 0;
+        }
+
         #timer-chamada {
-            font-size: 3rem;
+            font-size: 1.3rem;
             color: var(--red);
             font-weight: bold;
-            margin-bottom: 15px;
-            text-shadow: 0 0 10px var(--red);
+            margin-top: 10px;
         }
 
-        /* Animação Pulsante para a Tela de Chamada ativa */
         .pulsar { animation: pulseBlink 2s infinite; }
         @keyframes pulseBlink {
-            0% { opacity: 0.4; }
+            0% { opacity: 0.5; }
             50% { opacity: 1; }
-            100% { opacity: 0.4; }
+            100% { opacity: 0.5; }
         }
-
-        #audio-player-v { display: none; }
     </style>
 </head>
 <body>
 
     <div id="custom-alert" class="virty-popup">
-        <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:12px;">VIRTY ACCESS DOOR</div>
-        <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4;"></div>
-        <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
+        <div style="color:var(--neon); font-size:0.9rem; letter-spacing:2px; margin-bottom:15px; font-weight:bold;">VIRTY ACCESS DOOR</div>
+        <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4; margin-bottom:20px;"></div>
+        <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
     <div id="s-inicio" class="screen active">
-        <div class="conteudo-tela">
-            <div style="color:var(--neon); font-size:0.8rem; letter-spacing:3px; margin-bottom:10px; font-weight:bold;">VIRTY ACCESS DOOR</div>
-            <h2 style="color:#fff; margin:0 0 20px 0; letter-spacing:1px; font-weight:300;">TOQUE O INTERFONE</h2>
-            
+        <div style="text-align: center; width: 100%;">
+            <h1 class="texto-neon-verde" style="font-size: 2.2rem; margin: 0;">IDENTIFICAÇÃO VIRTUAL</h1>
+            <div style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">RECONHECIMENTO OBRIGATÓRIO PARA ENTRADA</div>
+        </div>
+
+        <div class="conteudo-central">
             <div class="area-camera-virty">
                 <div style="width:50px;"></div> 
                 <div class="video-box">
@@ -184,34 +213,40 @@
                     <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
                 </button>
             </div>
-
-            <button class="btn" style="background:#fff; color:#000; margin-bottom:15px;" onclick="fotoVis()">📸 TIRAR FOTO OBRIGATÓRIA</button>
             
             <input type="number" id="v-un" placeholder="Número do Apt / Casa">
             <input type="text" id="v-texto" placeholder="Recado rápido (Opcional)">
-            
-            <button class="btn" style="background:var(--neon); color:#000; margin-top:10px;" onclick="dispararInterfone()">🔔 INTERFONAR</button>
+        </div>
+
+        <div class="rodape-tela">
+            <button class="btn" style="background:#fff; color:#000; margin-bottom: 12px;" onclick="fotoVis()">📸 CAPTURAR MINHA FOTO</button>
+            <button class="btn" style="background:transparent; border:2px solid var(--red); color:var(--red);" onclick="resetarFluxoVisitante()">CANCELAR</button>
         </div>
     </div>
 
     <div id="s-chamando" class="screen">
-        <div class="conteudo-tela">
-            <div id="timer-chamada">90</div>
-            <img id="foto-v-chamando" class="foto-v pulsar" src="">
-            <h2 style="color:var(--neon); margin:0 0 10px 0; letter-spacing:2px;">CHAMANDO MORADOR...</h2>
-            <p style="color:#666; margin:0; font-size:1rem; line-height:1.4;">Aguarde na porta. O morador está recebendo o alerta em tempo real no smartphone.</p>
+        <div></div> <div class="conteudo-central">
+            <h1 id="texto-unidade-chamando" class="texto-neon-verde pulsar" style="font-size: 2.6rem; margin: 0; line-height: 1.2;">CHAMANDO<br>UNIDADE</h1>
+            <div id="timer-chamada">AGUARDE: 90s</div>
+        </div>
+
+        <div class="rodape-tela">
+            <button class="btn btn-perigo" onclick="cancelarInterfone()">DESCONECTAR INTERFONE</button>
         </div>
     </div>
 
     <div id="s-feedback" class="screen">
-        <div class="conteudo-tela">
-            <img id="foto-v-resultado" class="foto-v" src="">
-            <h1 id="titulo-feedback" style="margin:0 0 15px 0; font-size:2.2rem; letter-spacing:1px;"></h1>
-            <p id="msg-feedback" style="color:#aaa; margin:0 0 30px 0; font-size:1.2rem; line-height:1.5; min-height:40px;"></p>
+        <div></div>
+
+        <div class="conteudo-central">
+            <h1 id="titulo-feedback" class="texto-neon-azul" style="font-size: 2.5rem; margin: 0 0 20px 0;">RECADO RECEBIDO</h1>
+            <p id="msg-feedback" style="color:#aaa; font-style: italic; font-size: 1.3rem; margin-bottom: 25px;">"Áudio enviado"</p>
             
-            <audio id="audio-player-v" controls></audio>
-            
-            <button id="btn-voltar-feedback" class="btn" style="background:#222; color:#fff; display:none;" onclick="resetarFluxoVisitante()">VOLTAR AO INÍCIO</button>
+            <audio id="audio-player-v" style="width: 100%; border-radius: 30px;"></audio>
+        </div>
+
+        <div class="rodape-tela">
+            <button id="btn-voltar-feedback" class="btn" style="background: var(--blue); color: #fff;" onclick="resetarFluxoVisitante()">FECHAR RECADO</button>
         </div>
     </div>
 
@@ -223,12 +258,12 @@
     const db = firebase.database();
 
     let streamCameraAtiva = null;
-    let usarLenteFrontal = false; // Visitantes geralmente usam a câmera traseira do totem
+    let usarLenteFrontal = false;
     let visitanteFotoBase64 = "";
     let chamadaIdGlobal = "";
     let escutadorFirebaseAtivo = null;
     let timerRegressivoInterval = null;
-    let tempoRestante Chamada = 90;
+    let tempoRestanteChamada = 90;
 
     function gerarFingerprintDispositivo() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
@@ -244,9 +279,7 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    window.onload = () => {
-        inicializarCapturaVideo();
-    };
+    window.onload = () => { inicializarCapturaVideo(); };
 
     function inicializarCapturaVideo() {
         if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); }
@@ -268,19 +301,12 @@
         const v = document.getElementById('v-vis'), c = document.getElementById('c-vis');
         if(!v.videoWidth) return virtyAlert("Aguarde o feed da câmera carregar.");
         c.width = v.videoWidth; c.height = v.videoHeight;
-        
         const ctx = c.getContext('2d');
-        if(usarLenteFrontal) {
-            ctx.translate(c.width, 0);
-            ctx.scale(-1, 1);
-        }
+        if(usarLenteFrontal) { ctx.translate(c.width, 0); ctx.scale(-1, 1); }
         ctx.drawImage(v, 0, 0);
         ctx.setTransform(1,0,0,1,0,0);
-        
         visitanteFotoBase64 = c.toDataURL('image/jpeg', 0.5);
-        c.style.display = "block";
-        v.style.display = "none";
-        
+        c.style.display = "block"; v.style.display = "none";
         if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
         virtyAlert("Sua foto foi registrada com sucesso!");
     }
@@ -292,21 +318,21 @@
         if(!visitanteFotoBase64) return virtyAlert("Por favor, tire sua foto antes de interfonar!");
         if(!un) return virtyAlert("Digite o número da unidade (Casa/Apt)!");
 
-        // Verifica primeiro se o morador está bloqueando este dispositivo
         db.ref(`bloqueados/${un}/${meu_fingerprint}`).once('value', bSnap => {
             if(bSnap.exists()) {
-                exibirFeedbackCustomizado('recusado', "ACESSO BLOQUEADO", "Este totem de acesso está restrito para esta unidade de destino.");
+                exibirFeedbackCustomizado('recusado', "ACESSO BLOQUEADO", "Totem de acesso restrito.");
                 return;
             }
 
-            // Verifica se a unidade destino existe validada no condomínio
             db.ref(`moradores_validados/${un}`).once('value', mSnap => {
                 if(!mSnap.exists()) {
-                    virtyAlert("Unidade não encontrada ou sem moradores ativos.");
+                    virtyAlert("Unidade não cadastrada ou sem moradores ativos.");
                     return;
                 }
 
                 chamadaIdGlobal = un;
+                document.getElementById('texto-unidade-chamando').innerHTML = `CHAMANDO<br>UNIDADE ${un}`;
+                
                 const dadosChamada = {
                     v_id: meu_fingerprint,
                     dna_dispositivo: meu_fingerprint,
@@ -318,25 +344,30 @@
 
                 db.ref(`chamadas_ativas/${un}`).set(dadosChamada).then(() => {
                     mudarTela('s-chamando');
-                    document.getElementById('foto-v-chamando').src = visitanteFotoBase64;
                     iniciarTimerRegressivo();
                     escutarRespostaMorador();
+                }).catch(err => {
+                    virtyAlert("Erro de conexão ao iniciar chamada:\n" + err.message);
                 });
             });
         });
     }
 
+    // Vincula a ação de clicar no botão Interfonar se preenchido corretamente
+    document.getElementById('v-un').addEventListener('keyup', (e) => {
+        if(e.key === 'Enter') dispararInterfone();
+    });
+
     function iniciarTimerRegressivo() {
         tempoRestanteChamada = 90;
-        document.getElementById('timer-chamada').innerText = tempoRestanteChamada;
+        document.getElementById('timer-chamada').innerText = `AGUARDE: ${tempoRestanteChamada}s`;
         clearInterval(timerRegressivoInterval);
         timerRegressivoInterval = setInterval(() => {
             tempoRestanteChamada--;
-            document.getElementById('timer-chamada').innerText = tempoRestanteChamada;
+            document.getElementById('timer-chamada').innerText = `AGUARDE: ${tempoRestanteChamada}s`;
             if(tempoRestanteChamada <= 0) {
-                clearInterval(timerRegressivoInterval);
-                db.ref(`chamadas_ativas/${chamadaIdGlobal}`).remove();
-                exibirFeedbackCustomizado('cinza', "SEM RESPOSTA", "O morador não pôde atender no momento. Tente novamente mais tarde.");
+                cancelarInterfone();
+                exibirFeedbackCustomizado('cinza', "SEM RESPOSTA", "O morador não pôde atender no momento.");
             }
         }, 1000);
     }
@@ -351,64 +382,60 @@
 
             if(d.status === 'liberado') {
                 clearInterval(timerRegressivoInterval);
-                exibirFeedbackCustomizado('liberado', "ENTRADA AUTORIZADA", "Seja bem-vindo! A porta de acesso foi liberada.");
-                fecharEscutadorAposTempo(5000);
+                exibirFeedbackCustomizado('liberado', "ENTRADA AUTORIZADA", "Porta liberada. Seja bem-vindo!");
+                fecharEscutadorAposTempo(4000);
             }
             else if(d.status === 'recusado') {
                 clearInterval(timerRegressivoInterval);
-                exibirFeedbackCustomizado('recusado', "ENTRADA RECUSADA", "A sua solicitação de entrada foi recusada pelo morador.");
-                fecharEscutadorAposTempo(5000);
+                exibirFeedbackCustomizado('recusado', "ENTRADA RECUSADA", "A solicitação foi recusada.");
+                fecharEscutadorAposTempo(4000);
             }
             else if(d.status === 'mensagem') {
                 clearInterval(timerRegressivoInterval);
-                
-                let textoResposta = d.msg_morador || "";
                 if(d.audio_b64) {
-                    exibirFeedbackCustomizado('mensagem', "RECADO RECEBIDO", "O morador deixou um áudio para você.");
+                    exibirFeedbackCustomizado('mensagem', "RECADO RECEBIDO", '"Áudio enviado"');
                     const player = document.getElementById('audio-player-v');
                     player.src = d.audio_b64;
-                    player.style.display = 'block';
+                    player.setAttribute('controls', 'controls');
                     player.play();
                 } else {
-                    exibirFeedbackCustomizado('mensagem', "RECADO DO MORADOR", `"${textoResposta}"`);
+                    exibirFeedbackCustomizado('mensagem', "RECADO MORADOR", `"${d.msg_morador}"`);
                 }
-                fecharEscutadorAposTempo(15000);
+                fecharEscutadorAposTempo(20000);
             }
         });
     }
 
+    function cancelarInterfone() {
+        clearInterval(timerRegressivoInterval);
+        if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
+        if(chamadaIdGlobal) db.ref(`chamadas_ativas/${chamadaIdGlobal}`).remove();
+        resetarFluxoVisitante();
+    }
+
     function fecharEscutadorAposTempo(ms) {
-        if(escutadorFirebaseAtivo) {
-            setTimeout(() => {
-                escutadorFirebaseAtivo.off();
-                db.ref(`chamadas_ativas/${chamadaIdGlobal}`).remove();
-            }, ms);
-        }
+        setTimeout(() => {
+            if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
+            if(chamadaIdGlobal) db.ref(`chamadas_ativas/${chamadaIdGlobal}`).remove();
+        }, ms);
     }
 
     function exibirFeedbackCustomizado(tipo, titulo, mensagem) {
         mudarTela('s-feedback');
-        
-        const fotoResultado = document.getElementById('foto-v-resultado');
         const txtTitulo = document.getElementById('titulo-feedback');
         const txtMsg = document.getElementById('msg-feedback');
         const btnVoltar = document.getElementById('btn-voltar-feedback');
         const player = document.getElementById('audio-player-v');
 
-        player.style.display = 'none';
+        player.removeAttribute('controls');
         player.src = "";
-        btnVoltar.style.display = 'block';
 
-        fotoResultado.className = `foto-v ${tipo}`;
-        fotoResultado.src = visitanteFotoBase64 || "https://placehold.co/200x200/0a0a0a/39FF14?text=VIRTY";
-        
         txtTitulo.innerText = titulo;
         txtMsg.innerText = mensagem;
 
-        if(tipo === 'liberado') txtTitulo.style.color = "var(--neon)";
-        if(tipo === 'recusado') txtTitulo.style.color = "var(--red)";
-        if(tipo === 'mensagem') txtTitulo.style.color = "var(--blue)";
-        if(tipo === 'cinza') txtTitulo.style.color = "var(--gray)";
+        if(tipo === 'liberado') { txtTitulo.className = "texto-neon-verde"; btnVoltar.style.background = "var(--neon)"; btnVoltar.style.color = "#000"; }
+        if(tipo === 'recusado') { txtTitulo.className = "texto-neon-vermelho"; btnVoltar.style.background = "var(--red)"; btnVoltar.style.color = "#fff"; }
+        if(tipo === 'mensagem') { txtTitulo.className = "texto-neon-azul"; btnVoltar.style.background = "var(--blue)"; btnVoltar.style.color = "#fff"; }
     }
 
     function resetarFluxoVisitante() {
@@ -418,7 +445,6 @@
         visitanteFotoBase64 = "";
         document.getElementById('v-un').value = "";
         document.getElementById('v-texto').value = "";
-        
         document.getElementById('c-vis').style.display = "none";
         document.getElementById('v-vis').style.display = "block";
         
@@ -429,7 +455,6 @@
     function mudarTela(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        
         if(id !== 's-inicio' && streamCameraAtiva) {
             streamCameraAtiva.getTracks().forEach(t => t.stop());
             streamCameraAtiva = null;
