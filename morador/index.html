@@ -29,7 +29,7 @@
             user-select: none;
         }
         
-        /* 📐 REGRA APLICADA: Proporções verticais de 5vh / 90vh / 5vh e 2vw laterais */
+        /* 📐 ESTRUTURA VERTICAL E LATERAL RESTAURADA A RISCA */
         .screen { 
             display: none; 
             padding: 5vh 2vw; 
@@ -158,14 +158,10 @@
             <button id="btn-limpar-tudo" onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.75rem; font-weight:bold; cursor:pointer;">LIMPAR TUDO</button>
         </div>
 
-        <div id="container-historico-normal">
-            <div id="lista-hist"></div>
-            <button id="btn-ver-mais" class="btn-expansor" style="display:none;" onclick="expandirHistorico()">VER MAIS</button>
-        </div>
+        <div id="lista-hist"></div>
+        <button id="btn-ver-mais" class="btn-expansor" style="display:none;" onclick="expandirHistorico()">VER MAIS</button>
         
-        <div id="container-lista-bloqueados" style="display:none;">
-            <div id="lista-bloqueados"></div>
-        </div>
+        <div id="lista-bloqueados" style="display:none;"></div>
 
         <button id="btn-toggle-bloqueados" class="btn-secundario" style="margin-top: 15px;" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
     </div>
@@ -519,7 +515,7 @@
                 let menorTs = Infinity;
                 
                 snapshot.forEach(filho => {
-                    let dadosFilho = child = filho.val();
+                    let dadosFilho = filho.val();
                     if (dadosFilho.ts < menorTs) {
                         menorTs = dadosFilho.ts;
                         maisAntigoChave = filho.key;
@@ -656,16 +652,16 @@
         const btnLimpar = document.getElementById('btn-limpar-tudo');
         
         if(vendoBloqueados) {
-            document.getElementById('container-historico-normal').style.display = "none";
-            document.getElementById('container-lista-bloqueados').style.display = "block";
+            document.getElementById('lista-hist').style.display = "none";
+            document.getElementById('lista-bloqueados').style.display = "block";
             txtTitulo.innerText = "Dispositivos Bloqueados";
             txtTitulo.style.color = "var(--red)";
             btnToggle.innerText = "VER HISTÓRICO";
             btnToggle.style.color = "var(--neon)";
             btnLimpar.style.display = "none";
         } else {
-            document.getElementById('container-historico-normal').style.display = "block";
-            document.getElementById('container-lista-bloqueados').style.display = "none";
+            document.getElementById('lista-hist').style.display = "block";
+            document.getElementById('lista-bloqueados').style.display = "none";
             txtTitulo.innerText = "Histórico de Chamadas";
             txtTitulo.style.color = "var(--gray)";
             btnToggle.innerText = "VER BLOQUEADOS";
