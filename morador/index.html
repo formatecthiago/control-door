@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v1.9.8 - Grid Proporcional e Alertas Ativos</title>
+    <title>VIRTY MORADOR v1.9.8 - Grid Ajustado e Alertas Ativos</title>
     
     <link rel="manifest" href="manifest.json">
     
@@ -29,22 +29,22 @@
             user-select: none;
         }
         
-        /* 📐 Divisão Proporcional Estrita (15% Topo | 70% Centro | 15% Base) com 5% de Recuo Lateral */
+        /* 📐 Divisão Proporcional Customizada (5% Topo | 90% Centro | 5% Base) com 2% de Recuo Lateral */
         .screen { 
             display: none; 
             height: 100vh; 
             width: 100vw;
-            grid-template-rows: 15vh 70vh 15vh;
-            grid-template-columns: 5vw 90vw 5vw;
+            grid-template-rows: 5vh 90vh 5vh;
+            grid-template-columns: 2vw 96vw 2vw;
             box-sizing: border-box; 
         }
         .active { display: grid; }
         
         /* Gaps Invisíveis de Isolamento Lateral e Vertical */
-        .screen-top-gap, .screen-bottom-gap { grid-column: 1 / span 3; height: 15vh; pointer-events: none; }
-        .screen-left-gap, .screen-right-gap { height: 70vh; pointer-events: none; }
+        .screen-top-gap, .screen-bottom-gap { grid-column: 1 / span 3; height: 5vh; pointer-events: none; }
+        .screen-left-gap, .screen-right-gap { height: 90vh; pointer-events: none; }
         
-        /* Área Útil Central Restrita a 90vw */
+        /* Área Útil Central Restrita a 96vw */
         .screen-main-content { 
             grid-column: 2; 
             display: flex; 
@@ -56,15 +56,15 @@
             box-sizing: border-box;
         }
 
-        /* Zonas Verticais Absolutas */
-        .header-zona { height: 15vh; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; box-sizing: border-box; }
-        .center-zona { height: 55vh; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; }
-        .footer-zona { height: 15vh; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; box-sizing: border-box; }
+        /* Zonas Verticais Ajustadas para o Novo Layout */
+        .header-zona { width: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-start; }
+        .center-zona { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; }
+        .footer-zona { width: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; }
         
-        /* Customização para ocultar barra de rolagem do centro mantendo a função */
+        /* Ocultar barra de rolagem mantendo a função */
         .center-zona::-webkit-scrollbar { display: none; }
         .center-zona { -ms-overflow-style: none; scrollbar-width: none; }
-
+        
         input { 
             width: 100%; 
             padding: 14px; 
@@ -90,7 +90,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
         
-        .header-virty-home { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 10px; width: 100%; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 10px; margin-bottom: 10px; width: 100%; }
         .controles-alerta { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; width: 100%; }
         .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 10px 18px; border-radius: 12px; cursor: pointer; font-size: 1.2rem; min-width: 65px; }
         
@@ -108,12 +108,12 @@
         .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; margin-bottom: 10px; font-weight: bold; font-size: 0.85rem; }
         .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 12px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; width: 100%; font-size: 0.85rem; text-transform: uppercase; }
 
-        /* Painel de chamada agora usa a mesma mecânica de grids rígidos isolados */
-        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:2000; grid-template-rows: 15vh 70vh 15vh; grid-template-columns: 5vw 90vw 5vw; }
+        /* Painel de chamadas adaptado para a mesma regra de grids rígidos estruturais */
+        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:2000; grid-template-rows: 5vh 90vh 5vh; grid-template-columns: 2vw 96vw 2vw; }
         .foto-v { width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 10px; box-shadow: 0 0 25px rgba(57,255,20,0.3); }
-        #timer-regressivo { font-size: 2.8rem; color: var(--red); font-weight: bold; text-shadow: 0 0 10px var(--red); }
+        #timer-regressivo { font-size: 2.8rem; color: var(--red); font-weight: bold; text-shadow: 0 0 10px var(--red); margin-bottom: 5px; }
         
-        #container-digitar-texto { display: none; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; grid-template-rows: 15vh 70vh 15vh; grid-template-columns: 5vw 90vw 5vw; }
+        #container-digitar-texto { display: none; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; grid-template-rows: 5vh 90vh 5vh; grid-template-columns: 2vw 96vw 2vw; }
         #timer-flutuante-texto { font-size: 3.2rem; color: #fff; font-weight: bold; text-shadow: 0 0 10px var(--blue); }
         #popup-voz { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
         
@@ -145,7 +145,7 @@
         <div class="screen-top-gap"></div><div class="screen-left-gap"></div>
         <div class="screen-main-content">
             <div class="header-zona">
-                <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px; margin:0;">CADASTRO MORADOR</h2>
+                <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px; margin:0 0 10px 0;">CADASTRO MORADOR</h2>
             </div>
             <div class="center-zona">
                 <div class="area-camera-virty">
@@ -164,7 +164,7 @@
                 <input type="number" id="c-un" placeholder="Número da Casa/Apt">
             </div>
             <div class="footer-zona">
-                <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
+                <button class="btn" style="background:var(--neon); color:#000; margin:0;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
             </div>
         </div>
         <div class="screen-right-gap"></div><div class="screen-bottom-gap"></div>
@@ -174,15 +174,15 @@
         <div class="screen-top-gap"></div><div class="screen-left-gap"></div>
         <div class="screen-main-content">
             <div class="header-zona">
-                <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px;">VIRTY ACCESS DOOR</div>
+                <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; text-align:center;">VIRTY ACCESS DOOR</div>
             </div>
             <div class="center-zona">
                 <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin:0 0 10px 0;">CADASTRO EM ANÁLISE</h1>
-                <p style="color:#aaa; font-size:1.1rem; max-width:300px; line-height:1.5; margin:0;">Olá! Os seus dados foram enviados para a administração do condomínio. Aguarde a liberação do seu acesso doméstico.</p>
-                <div style="margin-top:20px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
+                <p style="color:#aaa; font-size:1.1rem; max-width:300px; line-height:1.5; margin:0; text-align:center;">Olá! Os seus dados foram enviados para a administração do condomínio. Aguarde a liberação do seu access doméstico.</p>
+                <div style="margin-top:20px; color:var(--gray); font-size:0.8rem; font-weight:bold; text-align:center;" id="txt-un-analise"></div>
             </div>
             <div class="footer-zona">
-                <button class="btn" style="background:#222; color:#fff;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
+                <button class="btn" style="background:#222; color:#fff; margin:0;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
             </div>
         </div>
         <div class="screen-right-gap"></div><div class="screen-bottom-gap"></div>
@@ -192,14 +192,20 @@
         <div class="screen-top-gap"></div><div class="screen-left-gap"></div>
         <div class="screen-main-content">
             <div class="header-zona">
-                <div class="header-virty-home">
+                <div class="header">
                     <div>
                         <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
                         <small style="color:var(--gray); font-weight:bold;">VERSION 1.9.8</small>
                     </div>
                     <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
                 </div>
+                
+                <div class="controles-alerta">
+                    <button class="btn-mini" id="label-som" onclick="proximoSom()">🎼 1</button>
+                    <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()">🔊</button>
+                </div>
             </div>
+            
             <div class="center-zona">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; width:100%;">
                     <span id="titulo-secao-atual" style="font-size:0.85rem; color:var(--gray); font-weight:bold; letter-spacing:0.5px; text-transform: uppercase;">HISTÓRICO DE CHAMADAS</span>
@@ -215,12 +221,9 @@
                     <div id="lista-bloqueados"></div>
                 </div>
             </div>
+            
             <div class="footer-zona">
-                <div class="controles-alerta">
-                    <button class="btn-mini" id="label-som" onclick="proximoSom()">🎼 1</button>
-                    <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()">🔊</button>
-                </div>
-                <button id="btn-toggle-bloqueados" class="btn-secundario" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
+                <button id="btn-toggle-bloqueados" class="btn-secundario" style="margin:0;" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
             </div>
         </div>
         <div class="screen-right-gap"></div><div class="screen-bottom-gap"></div>
@@ -230,11 +233,11 @@
         <div class="screen-top-gap"></div><div class="screen-left-gap"></div>
         <div class="screen-main-content">
             <div class="header-zona">
-                <div id="timer-regressivo">90</div>
+                <div id="timer-regressivo" style="text-align:center;">90</div>
             </div>
             <div class="center-zona">
                 <img id="foto-v" class="foto-v" src="">
-                <h3 style="color:var(--neon); margin:5px 0; letter-spacing:1px;">VISITANTE NA PORTA</h3>
+                <h3 style="color:var(--neon); margin:5px 0; letter-spacing:1px; text-align:center;">VISITANTE NA PORTA</h3>
                 <p id="msg-v" style="font-style:italic; color:#aaa; margin:0; text-align:center; padding:0 20px; font-size:1.1rem; min-height:20px;"></p>
             </div>
             <div class="footer-zona">
@@ -259,7 +262,7 @@
         <div class="screen-top-gap"></div><div class="screen-left-gap"></div>
         <div class="screen-main-content">
             <div class="header-zona">
-                <div id="timer-flutuante-texto">90s</div>
+                <div id="timer-flutuante-texto" style="text-align:center;">90s</div>
             </div>
             <div class="center-zona">
                 <h3 style="color:var(--blue); margin-bottom:15px; letter-spacing:1px; text-align:center;">DIGITAR MENSAGEM</h3>
@@ -441,17 +444,16 @@
         db.ref('chamadas_ativas/' + my_un).on('value', s => {
             const d = s.val(); const painel = document.getElementById('painel-chamada');
             if(d && (d.status === 'chamando' || d.status === 'escrevendo' || d.status === 'gravando')) {
-                // Sincronização dinâmica da foto do visitante caso ela seja atualizada no nó
                 document.getElementById('foto-v').src = d.foto;
                 document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
                 
-                if(painel.style.display !== 'flex') {
-                    painel.style.display = 'grid'; // Força entrada no padrão proporcional
+                if(painel.style.display !== 'grid') {
+                    painel.style.display = 'grid'; // Grid proporcional ajustado
                 }
                 
                 if(d.status === 'chamando' && !estaGravando && !estaDigitando) {
                     gerenciarAlerta('start'); tempoGeralRegressivo = 90;
-                    solicitarWakeLock(); // 🔋 Reteem o acendimento da tela nativo
+                    solicitarWakeLock(); // 🔋 Wake Lock para retenção de visor ativa
                     
                     if (swRegistration) {
                         swRegistration.active.postMessage({
@@ -474,7 +476,7 @@
                 fecharPainelTexto(); 
                 gerenciarAlerta('stop'); 
                 clearInterval(timerPerdida); 
-                liberarWakeLock(); // Libera a tela
+                liberarWakeLock(); // Libera o visor
                 
                 if (swRegistration) {
                     swRegistration.active.postMessage({ tipo: 'LIMPAR_NOTIFICACOES' });
@@ -486,7 +488,7 @@
     function abrirPainelTexto() {
         estaDigitando = true; gerenciarAlerta('stop');
         db.ref('chamadas_ativas/' + my_un).update({ status: 'escrevendo' });
-        document.getElementById('container-digitar-texto').style.display = 'grid'; // Grid Proporcional
+        document.getElementById('container-digitar-texto').style.display = 'grid';
         document.getElementById('campo-texto-interno').focus();
     }
 
@@ -563,11 +565,10 @@
         } catch(e) { virtyAlert("Permita o uso do microfone!"); estaGravando = false; }
     }
 
-    // ⏱️ CORREÇÃO DE ÁUDIO CORTADO: Introdução controlada de delay para processamento completo de hardware
+    // ⏱️ CORREÇÃO DE ÁUDIO CORTADO: Retardo controlado de 400ms para salvar buffer completo de áudio
     function stopRec() { 
         if(mediaRecorder && mediaRecorder.state !== 'inactive') { 
             clearInterval(timerVozInterval);
-            // Atrasa o fechamento em 400ms para coletar os últimos frames do buffer do microfone
             setTimeout(() => {
                 mediaRecorder.stop(); 
                 estaGravando = false; 
@@ -598,7 +599,7 @@
         mudarTela('s-home');
     }
 
-    function obtenerDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
+    function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
 
     function gravarHist(vid, foto, st, dna) {
         const baseRef = db.ref(`historico/${my_un}`);
@@ -611,7 +612,7 @@
                 let menorTs = Infinity;
                 
                 snapshot.forEach(filho => {
-                    let dadosFilho = child.val();
+                    let dadosFilho = filho.val();
                     if (dadosFilho.ts < menorTs) {
                         menorTs = dadosFilho.ts;
                         maisAntigoChave = filho.key;
@@ -633,7 +634,7 @@
             
             d.ultima = st; 
             d.ts = Date.now(); 
-            d.data_hora = obtenerDataHora(); 
+            d.data_hora = obterDataHora(); 
             refDispositivo.set(d);
             
             db.ref(`bloqueados/${my_un}/${dna}`).once('value', bSnap => {
@@ -822,12 +823,11 @@
     function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
     function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); if(modoAlerta === 1) btn.innerText = "🔊"; if(modoAlerta === 2) btn.innerText = "📳🔊"; if(modoAlerta === 3) btn.innerText = "📳"; }
     
-    // 📳 VIBRAÇÃO AGRESSIVA MODO CHAMADA: Aplicado o padrão pulsante contínuo
+    // 📳 VIBRAÇÃO AGRESSIVA MODO CHAMADA: Ciclo contínuo de 1s vibrando e 500ms parado
     function gerenciarAlerta(acao) {
         clearInterval(somInterval); if(audioCtx) { try { audioCtx.close(); } catch(e){} audioCtx = null; }
         if(acao === 'stop') { navigator.vibrate(0); return; }
         
-        // Padrão de pulso agressivo contínuo solicitado para o modo chamada
         if ("vibrate" in navigator) {
             navigator.vibrate([1000, 500, 1000, 500]);
             somInterval = setInterval(() => {
@@ -835,12 +835,11 @@
             }, 3000);
         }
 
-        if(modoAlerta === 3) return; // Se for puramente vibrar, encerra aqui o fluxo de som
+        if(modoAlerta === 3) return;
 
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             let f1 = 440 + (somAtual * 40), f2 = f1 * 1.25; 
-            // O intervalo agora corre sincronizado com a vibração
             let somLoop = setInterval(() => {
                 if(!audioCtx) { clearInterval(somLoop); return; }
                 let osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
@@ -853,7 +852,7 @@
         } catch(err) {}
     }
 
-    // 🔋 ENERGIA: Lógica de retenção da Wake Lock API
+    // 🔋 WAKE LOCK API: Mantém a tela acesa de forma forçada durante a chamada ativa
     async function solicitarWakeLock() {
         if ('wakeLock' in navigator) {
             try {
@@ -868,14 +867,6 @@
         if (wakeLockAtivo !== null) {
             wakeLockAtivo.release().then(() => { wakeLockAtivo = null; });
         }
-    }
-
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-            .then(reg => { swRegistration = reg; console.log("Service Worker ativo no Morador."); })
-            .catch(err => console.log("Erro SW:", err));
-        });
     }
 </script>
 </body>
