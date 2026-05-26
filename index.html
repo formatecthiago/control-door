@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY PORTARIA v2.0.0 - QR Único</title>
+    <title>VIRTY PORTARIA v2.0.1 - QR Único</title>
     
     <link rel="manifest" href="manifest.json">
     
@@ -41,7 +41,7 @@
             <div style="color:var(--gray); font-size:0.85rem; font-weight:bold; letter-spacing:2px;">PORTARIA INTELIGENTE</div>
         </div>
         <button class="btn" style="background:var(--neon); color:#000; height:120px; font-size:1.4rem; border-radius:25px;" onclick="iniciarFluxo()">🔔 TOCAR CAMPAINHA</button>
-        <div style="color:#333; font-size:0.75rem; font-weight:bold;">VERSION 2.0.0</div>
+        <div style="color:#333; font-size:0.75rem; font-weight:bold;">VERSION 2.0.1</div>
     </div>
 
     <div id="s-camera" class="screen">
@@ -105,9 +105,8 @@
     let fotoB64 = "";
     let countdownInterval;
     let tempoRestante = 90;
-    let un = ""; // Será preenchido dinamicamente pelo visitante
+    let un = "";
 
-    // 🔒 GERADOR DE DNA ULTRA-ESTÁVEL DE HARDWARE
     let idDispositivoEstavel = localStorage.getItem('virty_device_token');
     if(!idDispositivoEstavel) {
         const metadados = [screen.width, screen.height, screen.colorDepth, navigator.hardwareConcurrency || 4].join('||');
@@ -164,25 +163,24 @@
         fotoB64 = c.toDataURL('image/jpeg', 0.4);
         if(streamVideoGlobal) { streamVideoGlobal.getTracks().forEach(t => t.stop()); streamVideoGlobal = null; }
         
-        // Próximo passo: perguntar a unidade
         mudarTela('s-unidade');
         document.getElementById('input-unidade').focus();
     }
 
     function confirmarUnidadeESequencia() {
-        un = document.getElementById('input-unidade').value.trim();
+        un = String(document.getElementById('input-unidade').value).trim();
         if(!un) return virtyAlert("Por favor, digite o número da unidade!");
         chamar();
     }
 
-    // 🚀 FUNÇÃO DE CHAMADA REAL: Agora rodando com a checagem dinâmica da unidade digitada
     async function chamar() {
         mudarTela('s-chamando');
         document.getElementById('txt-status').innerText = "CONECTANDO...";
         document.getElementById('txt-feedback').innerText = "";
+        
+        un = String(document.getElementById('input-unidade').value).trim();
 
         try {
-            // 🛑 CHECAGEM DE BLOQUEIO DINÂMICA: Verifica se o Hardware do celular está banido NAQUELA unidade digitada
             const blockCheck = await db.ref(`bloqueados/${un}/${idDispositivoEstavel}`).once('value');
             
             if(blockCheck.exists()) {
@@ -195,15 +193,17 @@
                 return; 
             }
 
-            // Cria a chamada ativa na unidade digitada
-            await db.ref('chamadas_ativas/' + un).set({
-                v_id: v_id,
-                dna_dispositivo: idDispositivoEstavel,
-                foto: fotoB64,
+            const dadosChamada = {
+                v_id: String(v_id),
+                unidade: String(un),
+                dna_dispositivo: String(idDispositivoEstavel),
+                foto: String(fotoB64),
                 status: 'chamando',
-                texto: '',
-                ts: Date.now()
-            });
+                texto: 'Visitante aguardando...',
+                ts: Number(Date.now())
+            };
+
+            await db.ref('chamadas_ativas/' + un).set(dadosChamada);
 
             document.getElementById('txt-status').innerText = "CHAMANDO UNIDADE " + un;
             iniciarContagemRegressiva();
@@ -232,6 +232,7 @@
     }
 
     function escutarRespostaMorador() {
+        db.ref('chamadas_ativas/' + un).off();
         db.ref('chamadas_ativas/' + un).on('value', snap => {
             const d = snap.val();
             if(!d) return;
@@ -276,6 +277,7 @@
             }
             else if(d.status === 'mensagem') {
                 clearInterval(countdownInterval);
+                db.ref('chamadas_ativas/' + un).off();
                 document.getElementById('timer-box').style.display = "none";
                 document.getElementById('txt-status').innerText = "RECADO RECEBIDO";
                 document.getElementById('txt-status').style.color = "var(--blue)";
