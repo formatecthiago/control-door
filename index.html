@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY VISITANTE v1.9.9</title>
     
+    <!-- Configurações PWA nativas para rodar em tela cheia -->
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -291,12 +292,14 @@
 </head>
 <body>
 
+    <!-- Alerta Customizado Interno -->
     <div id="custom-alert" class="virty-popup">
         <div style="color:var(--neon); font-size:0.9rem; letter-spacing:2px; margin-bottom:15px; font-weight:bold;">VIRTY ACCESS DOOR</div>
         <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4; margin-bottom:20px;"></div>
         <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
+    <!-- POP-UP INSTRUTIVO DA ÁREA DE TRABALHO DO SMARTPHONE -->
     <div id="pop-ajuda-instalacao" class="popup-instalacao">
         <button class="btn-fechar-pop" onclick="fecharInstrucaoInstalacao()">X</button>
         <div class="mockup-smartphone">
@@ -312,6 +315,7 @@
         <div class="legenda-popup-virty">Procure pelo ícone do aplicativo na tela inicial do seu celular.</div>
     </div>
 
+    <!-- TELA 1: ESCOLHA DE INTERFONE OU INSTALAÇÃO -->
     <div id="s-boasvindas" class="screen active">
         <div class="virty-header">
             <h1>VIRTY ACCESS DOOR</h1>
@@ -325,6 +329,7 @@
         <div></div>
     </div>
 
+    <!-- TELA 2: FLUXO DE CADASTRO EM ETAPAS (WIZARD) -->
     <div id="s-inicio" class="screen">
         <div class="virty-header">
             <h2 id="titulo-wizard" class="texto-neon-verde" style="font-size: 1.4rem; margin: 0; text-transform:uppercase;">PASSO 1 DE 3</h2>
@@ -332,6 +337,7 @@
         </div>
 
         <div class="conteudo-central">
+            <!-- Sub-Passo 1: Câmera -->
             <div id="sub-passo-foto" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:20px;">
                 <div class="area-camera-virty">
                     <div style="width:55px;"></div> 
@@ -346,10 +352,12 @@
                 <button id="btn-tirar-foto" class="btn" style="background:#fff; color:#000; max-width:280px;" onclick="fotoVis()">📸 CAPTURAR MINHA FOTO</button>
             </div>
 
+            <!-- Sub-Passo 2: Unidade -->
             <div id="sub-passo-unidade" style="width:100%; display:none;">
                 <input type="number" id="v-un" placeholder="Número do Apt / Casa">
             </div>
 
+            <!-- Sub-Passo 3: Mensagem -->
             <div id="sub-passo-texto" style="width:100%; display:none;">
                 <input type="text" id="v-texto" placeholder="Recado rápido (Opcional)">
             </div>
@@ -361,6 +369,7 @@
         </div>
     </div>
 
+    <!-- TELA 3: MONITOR DE CHAMADA ATIVA -->
     <div id="s-chamando" class="screen">
         <div></div> 
         <div class="conteudo-central">
@@ -373,6 +382,7 @@
         </div>
     </div>
 
+    <!-- TELA 4: FEEDBACK DO MORADOR -->
     <div id="s-feedback" class="screen">
         <div></div>
         <div class="conteudo-central">
@@ -394,14 +404,13 @@
     const db = firebase.database();
 
     let streamCameraAtiva = null;
-    let usarLenteFrontal = true; // Iniciando obrigatoriamente na lente interna/selfie
+    let usarLenteFrontal = true; 
     let visitanteFotoBase64 = "";
-    let chamadaIdGlobal = "";
+    let llamadaIdGlobal = "";
     let escutadorFirebaseAtivo = null;
     let timerRegressivoInterval = null;
     let tempoRestanteChamada = 90;
     
-    // Controle do Wizard Sequencial
     let passoAtualWizard = 1; 
     let deferredPrompt = null;
 
@@ -419,29 +428,28 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    // Gerenciador nativo de captura do gatilho de instalação PWA
+    // Captura o evento de instalação do navegador
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
     });
 
+    // Dispara a instalação ou abre o pop-up com a Home de fundo limpa
     function dispararInstalacaoPWA() {
+        resetarFluxoVisitante();
+
         if (deferredPrompt) {
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    resetarFluxoVisitante();
-                    document.getElementById('pop-ajuda-instalacao').style.display = 'flex';
-                }
+                document.getElementById('pop-ajuda-instalacao').style.display = 'flex';
                 deferredPrompt = null;
             });
         } else {
-            // Caso o prompt não esteja disponível, simula a instrução diretamente
-            resetarFluxoVisitante();
             document.getElementById('pop-ajuda-instalacao').style.display = 'flex';
         }
     }
 
+    // Fecha a animação do smartphone e mantém o controle na Home limpa
     function fecharInstrucaoInstalacao() {
         document.getElementById('pop-ajuda-instalacao').style.display = 'none';
     }
@@ -499,7 +507,7 @@
             atualizarVisualWizard();
         }
         else if(passoAtualWizard === 3) {
-            dispararInterfone(); // Disparo definitivo
+            dispararInterfone(); 
         }
     }
 
@@ -526,7 +534,6 @@
         });
     }
 
-    // Botão inteligente: FORÇA a câmera de selfie independente de cliques alternados
     function forcarLenteSelfie() {
         usarLenteFrontal = true;
         document.getElementById('c-vis').style.display = "none";
@@ -553,7 +560,6 @@
         if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; }
     }
 
-    // Lógica intocada de segurança e comunicação com Firebase
     function dispararInterfone() {
         const un = document.getElementById('v-un').value.trim();
         const recado = document.getElementById('v-texto').value.trim();
