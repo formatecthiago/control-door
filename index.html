@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v1.9.8</title>
+    <title>VIRTY VISITANTE v1.9.9</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
     <style>
         :root { 
             --neon: #39FF14; 
@@ -11,7 +17,6 @@
             --red: #FF3131; 
             --blue: #007BFF; 
             --gray: #666; 
-            --yellow: #FFD700; 
             --dark-card: #0d0d0d; 
         }
         *, *::before, *::after { box-sizing: border-box; }
@@ -26,7 +31,7 @@
             user-select: none;
         }
         
-        /* 📐 NOVA ESTRUTURA BASE DA GRID: 5% TOPO E LATERAIS, 15% NA BASE INFERIOR */
+        /* ESTRUTURA BASE DA GRID: 5% TOPO E LATERAIS, 15% NA BASE INFERIOR */
         .screen { 
             display: none; 
             width: 100vw;
@@ -39,7 +44,6 @@
         }
         .active { display: flex; }
 
-        /* Cabeçalho Padronizado do Sistema */
         .virty-header {
             text-align: center; 
             width: 100%;
@@ -72,67 +76,26 @@
             margin: auto 0;
         }
 
-        /* Container de Ativação - Exclusivo para a Nova Inicialização Centralizada */
-        .btn-ativar-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            width: 100%;
-            margin: auto 0;
-        }
-        
-        .pronome-projeto {
-            color: var(--gray);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
-
-        .btn-pulsante {
-            width: 100%;
-            max-width: 300px;
-            height: 100px;
-            background: none;
-            border: 2px solid var(--neon);
-            color: var(--neon);
-            font-size: 1.3rem;
-            font-weight: bold;
-            letter-spacing: 1px;
-            border-radius: 20px;
-            cursor: pointer;
-            text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(57,255,20,0.1);
-            animation: pulsarVirty 2s infinite;
-        }
-        @keyframes pulsarVirty {
-            0% { box-shadow: 0 0 5px rgba(57,255,20,0.2); transform: scale(1); }
-            50% { box-shadow: 0 0 25px rgba(57,255,20,0.6); transform: scale(1.02); border-color: #fff; color: #fff; }
-            100% { box-shadow: 0 0 5px rgba(57,255,20,0.2); transform: scale(1); border-color: var(--neon); color: var(--neon); }
-        }
-
-        /* Rodapé de Ação assentado cirurgicamente na linha de 15% */
+        /* Rodapé de Ação assentado na linha de 15% */
         .rodape-tela {
             width: 100%;
             max-width: 400px;
             display: flex;
-            flex-direction: column;
+            gap: 12px;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: center;
             margin-top: auto;
         }
         
         input { 
             width: 100%; 
-            padding: 16px; 
-            margin: 4px 0; 
+            padding: 18px; 
+            margin: 8px 0; 
             border-radius: 12px; 
             border: 2px solid #222; 
             background: #111; 
             color: #fff; 
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             text-align: center;
         }
         input:focus { border-color: var(--neon); outline: none; }
@@ -147,12 +110,30 @@
             text-transform: uppercase; 
             font-size: 1rem;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .btn-perigo {
-            background: var(--red);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(255, 49, 49, 0.2);
+        .btn-pulsante {
+            width: 100%;
+            max-width: 300px;
+            height: 85px;
+            background: none;
+            border: 2px solid var(--neon);
+            color: var(--neon);
+            font-size: 1.3rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            cursor: pointer;
+            text-transform: uppercase;
+            animation: pulsarVirty 2s infinite;
+        }
+        @keyframes pulsarVirty {
+            0% { box-shadow: 0 0 5px rgba(57,255,20,0.2); transform: scale(1); }
+            50% { box-shadow: 0 0 25px rgba(57,255,20,0.6); transform: scale(1.02); border-color: #fff; color: #fff; }
+            100% { box-shadow: 0 0 5px rgba(57,255,20,0.2); transform: scale(1); border-color: var(--neon); color: var(--neon); }
         }
 
         .area-camera-virty { 
@@ -163,12 +144,12 @@
             width: 100%; 
         }
         .video-box { 
-            width: 180px; 
-            height: 180px; 
+            width: 200px; 
+            height: 200px; 
             border-radius: 50%; 
             overflow: hidden; 
-            border: 3px solid var(--neon); 
-            box-shadow: 0 0 15px rgba(57,255,20,0.3); 
+            border: 4px solid var(--neon); 
+            box-shadow: 0 0 20px rgba(57,255,20,0.4); 
             background:#111; 
             position:relative; 
         }
@@ -178,15 +159,15 @@
         .btn-inverter { 
             background: #111; 
             border: 2px solid var(--neon); 
-            width: 50px; 
-            height: 50px; 
+            width: 55px; 
+            height: 55px; 
             border-radius: 50%; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             cursor: pointer; 
         }
-        .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
+        .btn-inverter svg { width: 26px; height: 26px; fill: var(--neon); }
 
         .virty-popup { 
             display: none; 
@@ -206,43 +187,105 @@
             max-width: 340px; 
         }
 
-        .texto-neon-verde {
-            color: var(--neon);
-            text-shadow: 0 0 15px rgba(57, 255, 20, 0.6);
-            font-weight: bold;
-            letter-spacing: 1px;
-            margin: 5px 0;
-        }
+        .texto-neon-verde { color: var(--neon); text-shadow: 0 0 15px rgba(57, 255, 20, 0.6); font-weight: bold; }
+        .texto-neon-azul { color: var(--blue); text-shadow: 0 0 15px rgba(0, 123, 255, 0.6); font-weight: bold; }
+        .texto-neon-vermelho { color: var(--red); text-shadow: 0 0 15px rgba(255, 49, 49, 0.6); font-weight: bold; }
 
-        .texto-neon-azul {
-            color: var(--blue);
-            text-shadow: 0 0 15px rgba(0, 123, 255, 0.6);
-            font-weight: bold;
-            letter-spacing: 1px;
-            margin: 5px 0;
-        }
-
-        /* 🛠️ Adicionada a classe ausente para evitar quebras visuais na recusa */
-        .texto-neon-vermelho {
-            color: var(--red);
-            text-shadow: 0 0 15px rgba(255, 49, 49, 0.6);
-            font-weight: bold;
-            letter-spacing: 1px;
-            margin: 5px 0;
-        }
-
-        #timer-chamada {
-            font-size: 1.3rem;
-            color: var(--red);
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
+        #timer-chamada { font-size: 1.3rem; color: var(--red); font-weight: bold; margin-top: 10px; }
         .pulsar { animation: pulseBlink 2s infinite; }
-        @keyframes pulseBlink {
-            0% { opacity: 0.5; }
-            50% { opacity: 1; }
-            100% { opacity: 0.5; }
+        @keyframes pulseBlink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        /* POP-UP ILUSTRATIVO DE INSTALAÇÃO DO SMARTPHONE */
+        .popup-instalacao {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.96);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .btn-fechar-pop {
+            position: absolute;
+            top: 25px; right: 25px;
+            background: none; border: none;
+            color: #fff; font-size: 2rem; font-weight: bold;
+            cursor: pointer; z-index: 10005;
+        }
+        .mockup-smartphone {
+            width: 280px;
+            height: 500px;
+            border: 4px solid #333;
+            border-radius: 36px;
+            background: #050505;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(255,255,255,0.05);
+            padding: 20px;
+        }
+        .grade-icones-fundo {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            opacity: 0.15;
+            width: 100%;
+            pointer-events: none;
+        }
+        .icone-generico {
+            width: 55px; height: 55px; background: #fff; border-radius: 12px;
+        }
+        .container-icone-virty {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: flutuarIcone 3s ease-in-out infinite;
+        }
+        @keyframes flutuarIcone {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .virty-app-icon {
+            width: 80px;
+            height: 80px;
+            background: #000;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--neon);
+            font-weight: 900;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            border: 1px solid #111;
+            box-shadow: 0 0 25px 8px rgba(255,255,255,0.8);
+        }
+        .seta-indicativa {
+            position: absolute;
+            bottom: 60px;
+            width: 0; height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 25px solid var(--neon);
+            animation: apontarSeta 1s infinite alternate;
+        }
+        @keyframes apontarSeta {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-15px); }
+        }
+        .legenda-popup-virty {
+            color: #fff;
+            font-size: 1.1rem;
+            text-align: center;
+            margin-top: 30px;
+            max-width: 280px;
+            line-height: 1.4;
         }
     </style>
 </head>
@@ -254,43 +297,67 @@
         <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
+    <div id="pop-ajuda-instalacao" class="popup-instalacao">
+        <button class="btn-fechar-pop" onclick="fecharInstrucaoInstalacao()">X</button>
+        <div class="mockup-smartphone">
+            <div class="grade-icones-fundo">
+                <div class="icone-generico"></div><div class="icone-generico"></div><div class="icone-generico"></div>
+                <div class="icone-generico"></div><div class="icone-generico"></div><div class="icone-generico"></div>
+            </div>
+            <div class="container-icone-virty">
+                <div class="virty-app-icon">VIRTY</div>
+            </div>
+            <div class="seta-indicativa"></div>
+        </div>
+        <div class="legenda-popup-virty">Procure pelo ícone do aplicativo na tela inicial do seu celular.</div>
+    </div>
+
     <div id="s-boasvindas" class="screen active">
         <div class="virty-header">
             <h1>VIRTY ACCESS DOOR</h1>
             <div>Acesso inteligente</div>
         </div>
 
-        <div class="btn-ativar-container">
-            <div class="pronome-projeto">O projeto</div>
-            <button class="btn-pulsante" onclick="iniciarFluxoSistema()">Aceitar e iniciar</button>
+        <div class="conteudo-central" style="gap:25px;">
+            <button class="btn" style="background:#fff; color:#000; border-radius:16px; font-size:1.2rem; height:75px;" onclick="iniciarFluxoSequencial()">Acessar</button>
+            <button class="btn-pulsante" onclick="dispararInstalacaoPWA()">App acesso rápido</button>
         </div>
+        <div></div>
     </div>
 
     <div id="s-inicio" class="screen">
         <div class="virty-header">
-            <h2 class="texto-neon-verde" style="font-size: 1.6rem; margin: 0;">IDENTIFICAÇÃO VIRTUAL</h2>
-            <div style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">RECONHECIMENTO OBRIGATÓRIO PARA ENTRADA</div>
+            <h2 id="titulo-wizard" class="texto-neon-verde" style="font-size: 1.4rem; margin: 0; text-transform:uppercase;">PASSO 1 DE 3</h2>
+            <div id="subtitulo-wizard" style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">RECONHECIMENTO FACIAL OBRIGATÓRIO</div>
         </div>
 
         <div class="conteudo-central">
-            <div class="area-camera-virty">
-                <div style="width:50px;"></div> 
-                <div class="video-box">
-                    <video id="v-vis" autoplay playsinline muted></video>
-                    <canvas id="c-vis"></canvas>
+            <div id="sub-passo-foto" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:20px;">
+                <div class="area-camera-virty">
+                    <div style="width:55px;"></div> 
+                    <div class="video-box">
+                        <video id="v-vis" autoplay playsinline muted></video>
+                        <canvas id="c-vis"></canvas>
+                    </div>
+                    <button class="btn-inverter" onclick="forcarLenteSelfie()">
+                        <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
+                    </button>
                 </div>
-                <button class="btn-inverter" onclick="alternarLenteCamera()">
-                    <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
-                </button>
+                <button id="btn-tirar-foto" class="btn" style="background:#fff; color:#000; max-width:280px;" onclick="fotoVis()">📸 CAPTURAR MINHA FOTO</button>
             </div>
-            
-            <input type="number" id="v-un" placeholder="Número do Apt / Casa">
-            <input type="text" id="v-texto" placeholder="Recado rápido (Opcional)">
+
+            <div id="sub-passo-unidade" style="width:100%; display:none;">
+                <input type="number" id="v-un" placeholder="Número do Apt / Casa">
+            </div>
+
+            <div id="sub-passo-texto" style="width:100%; display:none;">
+                <input type="text" id="v-texto" placeholder="Recado rápido (Opcional)">
+            </div>
         </div>
 
         <div class="rodape-tela">
-            <button class="btn" style="background:#fff; color:#000; margin-bottom: 12px;" onclick="fotoVis()">📸 CAPTURAR MINHA FOTO</button>
-            <button class="btn" style="background:transparent; border:2px solid var(--red); color:var(--red);" onclick="resetarFluxoVisitante()">CANCELAR</button>
+            <button id="btn-wizard-voltar" class="btn" style="background:transparent; border:2px solid var(--gray); color:#fff;" onclick="voltarPassoWizard()">Voltar</button>
+            <button id="btn-wizard-proximo" class="btn" style="background:var(--neon); color:#000;" onclick="avancarPassoWizard()">Próximo</button>
         </div>
     </div>
 
@@ -302,17 +369,15 @@
         </div>
 
         <div class="rodape-tela">
-            <button class="btn btn-perigo" onclick="cancelarInterfone()">DESCONECTAR INTERFONE</button>
+            <button class="btn" style="background:var(--red); color:#fff; box-shadow: 0 4px 15px rgba(255, 49, 49, 0.2);" onclick="cancelarInterfone()">DESCONECTAR INTERFONE</button>
         </div>
     </div>
 
     <div id="s-feedback" class="screen">
         <div></div>
-
         <div class="conteudo-central">
             <h1 id="titulo-feedback" class="texto-neon-azul" style="font-size: 2.5rem; margin: 0 0 20px 0;">RECADO RECEBIDO</h1>
             <p id="msg-feedback" style="color:#aaa; font-style: italic; font-size: 1.3rem; margin-bottom: 25px;">"Áudio enviado"</p>
-            
             <audio id="audio-player-v" style="width: 100%; border-radius: 30px;"></audio>
         </div>
 
@@ -329,12 +394,16 @@
     const db = firebase.database();
 
     let streamCameraAtiva = null;
-    let usarLenteFrontal = false;
+    let usarLenteFrontal = true; // Iniciando obrigatoriamente na lente interna/selfie
     let visitanteFotoBase64 = "";
-    let llamadaIdGlobal = "";
+    let chamadaIdGlobal = "";
     let escutadorFirebaseAtivo = null;
     let timerRegressivoInterval = null;
     let tempoRestanteChamada = 90;
+    
+    // Controle do Wizard Sequencial
+    let passoAtualWizard = 1; 
+    let deferredPrompt = null;
 
     function gerarFingerprintDispositivo() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
@@ -350,10 +419,97 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    // Controla o acionamento do botão inicial gerando o fingerprint e chamando a câmera de forma limpa
-    function iniciarFluxoSistema() {
+    // Gerenciador nativo de captura do gatilho de instalação PWA
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+    });
+
+    function dispararInstalacaoPWA() {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    resetarFluxoVisitante();
+                    document.getElementById('pop-ajuda-instalacao').style.display = 'flex';
+                }
+                deferredPrompt = null;
+            });
+        } else {
+            // Caso o prompt não esteja disponível, simula a instrução diretamente
+            resetarFluxoVisitante();
+            document.getElementById('pop-ajuda-instalacao').style.display = 'flex';
+        }
+    }
+
+    function fecharInstrucaoInstalacao() {
+        document.getElementById('pop-ajuda-instalacao').style.display = 'none';
+    }
+
+    // Controle do Motor de Etapas (Wizard de Telas)
+    function iniciarFluxoSequencial() {
+        passoAtualWizard = 1;
         mudarTela('s-inicio');
-        inicializarCapturaVideo();
+        atualizarVisualWizard();
+    }
+
+    function atualizarVisualWizard() {
+        const tit = document.getElementById('titulo-wizard');
+        const subtit = document.getElementById('subtitulo-wizard');
+        const btnProx = document.getElementById('btn-wizard-proximo');
+        
+        document.getElementById('sub-passo-foto').style.display = "none";
+        document.getElementById('sub-passo-unidade').style.display = "none";
+        document.getElementById('sub-passo-texto').style.display = "none";
+
+        if(passoAtualWizard === 1) {
+            tit.innerText = "PASSO 1 DE 3";
+            subtit.innerText = "RECONHECIMENTO FACIAL OBRIGATÓRIO";
+            document.getElementById('sub-passo-foto').style.display = "flex";
+            btnProx.innerText = "Próximo";
+            inicializarCapturaVideo();
+        }
+        else if(passoAtualWizard === 2) {
+            tit.innerText = "PASSO 2 DE 3";
+            subtit.innerText = "DIGITE O NÚMERO DA SUA UNIDADE";
+            document.getElementById('sub-passo-unidade').style.display = "block";
+            btnProx.innerText = "Próximo";
+            pararTracksCamera();
+            setTimeout(() => document.getElementById('v-un').focus(), 200);
+        }
+        else if(passoAtualWizard === 3) {
+            tit.innerText = "PASSO 3 DE 3";
+            subtit.innerText = "REVISÃO E RECADO COMPLEMENTAR";
+            document.getElementById('sub-passo-texto').style.display = "block";
+            btnProx.innerText = "Chamar";
+            setTimeout(() => document.getElementById('v-texto').focus(), 200);
+        }
+    }
+
+    function avancarPassoWizard() {
+        if(passoAtualWizard === 1) {
+            if(!visitanteFotoBase64) return virtyAlert("Capture sua foto antes de avançar!");
+            passoAtualWizard = 2;
+            atualizarVisualWizard();
+        }
+        else if(passoAtualWizard === 2) {
+            const un = document.getElementById('v-un').value.trim();
+            if(!un) return virtyAlert("O número da casa ou apt é obrigatório!");
+            passoAtualWizard = 3;
+            atualizarVisualWizard();
+        }
+        else if(passoAtualWizard === 3) {
+            dispararInterfone(); // Disparo definitivo
+        }
+    }
+
+    function voltarPassoWizard() {
+        if(passoAtualWizard === 1) {
+            cancelarInterfone();
+        } else {
+            passoAtualWizard--;
+            atualizarVisualWizard();
+        }
     }
 
     function inicializarCapturaVideo() {
@@ -366,18 +522,21 @@
             video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
         }).catch(e => {
             console.log("Erro câmera:", e);
-            virtyAlert("Câmera indisponível ou permissão negada neste ambiente de testes.");
+            virtyAlert("Câmera indisponível ou permissão negada.");
         });
     }
 
-    function alternarLenteCamera() {
-        usarLenteFrontal = !usarLenteFrontal;
+    // Botão inteligente: FORÇA a câmera de selfie independente de cliques alternados
+    function forcarLenteSelfie() {
+        usarLenteFrontal = true;
+        document.getElementById('c-vis').style.display = "none";
+        document.getElementById('v-vis').style.display = "block";
         inicializarCapturaVideo();
     }
 
     function fotoVis() {
         const v = document.getElementById('v-vis'), c = document.getElementById('c-vis');
-        if(!v.videoWidth) return virtyAlert("Aguarde o feed da câmera carregar.");
+        if(!v.videoWidth) return virtyAlert("Aguarde o carregamento do vídeo.");
         c.width = v.videoWidth; c.height = v.videoHeight;
         const ctx = c.getContext('2d');
         if(usarLenteFrontal) { ctx.translate(c.width, 0); ctx.scale(-1, 1); }
@@ -385,18 +544,19 @@
         ctx.setTransform(1,0,0,1,0,0);
         visitanteFotoBase64 = c.toDataURL('image/jpeg', 0.5);
         c.style.display = "block"; v.style.display = "none";
-        
-        // Mantendo seu comportamento original de parar os tracks e disparar o interfone automaticamente se validado
-        if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
-        dispararInterfone();
+        pararTracksCamera();
     }
 
+    function pararTracksCamera() {
+        const v = document.getElementById('v-vis');
+        if(v && v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
+        if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; }
+    }
+
+    // Lógica intocada de segurança e comunicação com Firebase
     function dispararInterfone() {
         const un = document.getElementById('v-un').value.trim();
         const recado = document.getElementById('v-texto').value.trim();
-
-        if(!visitanteFotoBase64) return virtyAlert("Por favor, capture sua foto antes de interfonar!");
-        if(!un) return virtyAlert("Digite o número da unidade (Casa/Apt)!");
 
         db.ref(`bloqueados/${un}/${meu_fingerprint}`).once('value', bSnap => {
             if(bSnap.exists()) {
@@ -428,15 +588,11 @@
                     iniciarTimerRegressivo();
                     escutarRespostaMorador();
                 }).catch(err => {
-                    virtyAlert("Erro de conexão ao iniciar chamada:\n" + err.message);
+                    virtyAlert("Erro de conexão com o servidor:\n" + err.message);
                 });
             });
         });
     }
-
-    document.getElementById('v-un').addEventListener('keyup', (e) => {
-        if(e.key === 'Enter') dispararInterfone();
-    });
 
     function iniciarTimerRegressivo() {
         tempoRestanteChamada = 90;
@@ -521,8 +677,10 @@
     function resetarFluxoVisitante() {
         clearInterval(timerRegressivoInterval);
         if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
+        pararTracksCamera();
         
         visitanteFotoBase64 = "";
+        passoAtualWizard = 1;
         document.getElementById('v-un').value = "";
         document.getElementById('v-texto').value = "";
         document.getElementById('c-vis').style.display = "none";
@@ -534,10 +692,7 @@
     function mudarTela(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(id !== 's-inicio' && streamCameraAtiva) {
-            streamCameraAtiva.getTracks().forEach(t => t.stop());
-            streamCameraAtiva = null;
-        }
+        if(id !== 's-inicio') { pararTracksCamera(); }
     }
 </script>
 </body>
