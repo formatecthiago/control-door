@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY PORTARIA v3.0.1 - Módulo 1</title>
+    <title>VIRTY PORTARIA v3.0.2 - Módulo 1 (Ajuste de Base)</title>
     
     <link rel="manifest" href="manifest.json">
     
@@ -29,12 +29,15 @@
             user-select: none; 
         }
 
-        /* 📐 PADRÃO DE GRID VIRTY COM 5% DE MARGEM GLOBAL */
+        /* 📐 NOVO GRIP VIRTY CALIBRADO COM 15% NA BASE INFERIOR */
         .screen { 
             display: none; 
             width: 100vw; 
             height: 100vh; 
-            padding: 5vh 5vw; 
+            padding-top: 5vh;
+            padding-bottom: 15vh; /* Ampliado para 15% para dar total visibilidade aos botões */
+            padding-left: 5vw;
+            padding-right: 5vw;
             flex-direction: column; 
             justify-content: space-between; 
             align-items: center; 
@@ -42,7 +45,7 @@
         }
         .active { display: flex; }
 
-        /* Estilo do Topo */
+        /* Estilo do Topo (Margem superior estável) */
         .virty-header {
             text-align: center;
             width: 100%;
@@ -68,6 +71,17 @@
             color: #333;
             font-size: 0.75rem;
             font-weight: bold;
+            margin-top: 20px;
+        }
+
+        /* Posicionamento Estratégico dos Botões Principais */
+        .virty-action-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: auto; /* Empurra o container de botões para assentar exatamente acima da base de 15% */
         }
 
         /* Botão Pulsante de Alta Segurança */
@@ -77,6 +91,7 @@
             justify-content: center;
             flex-direction: column;
             width: 100%;
+            margin-top: auto; /* Garante o alinhamento perfeito na base */
         }
         .btn-pulsante {
             width: 100%;
@@ -112,15 +127,19 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
         }
 
-        .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px 0; width: 100%; }
+        /* Organização do Miolo das Telas */
+        .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: auto 0; width: 100%; }
         .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 4px solid var(--neon); box-shadow: 0 0 25px rgba(57,255,20,0.4); background:#111; position:relative; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; transform: scaleX(-1); }
         .btn-inverter { background: #111; border: 2px solid var(--neon); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
         
+        .area-input-virty { width: 100%; max-width: 300px; text-align: center; margin: auto 0; }
         .virty-input { width: 100%; padding: 20px; background: #111; border: 2px solid var(--neon); color: #fff; text-align: center; font-size: 2rem; font-weight: bold; border-radius: 15px; outline: none; }
-        .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; text-align: center; width: 85%; max-width: 340px; }
+        
+        #resposta-container { width:100%; max-width:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin: auto 0; }
+        .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 166px; font-size: 1.3rem; font-weight: bold; z-index: 5000; text-align: center; width: 85%; max-width: 340px; }
     </style>
 </head>
 <body>
@@ -131,6 +150,7 @@
         <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
+    <!-- TELA 1: NOVA FRONTEIRA DE ATIVAÇÃO E IDENTIFICAÇÃO -->
     <div id="s-ativacao" class="screen active">
         <div class="virty-header">
             <h1>VIRTY</h1>
@@ -139,14 +159,14 @@
         
         <div class="btn-ativar-container">
             <button class="btn-pulsante" onclick="executarBotaoInicialAtivar()">🔓 CONECTAR INTERFONE</button>
-            <p style="color: var(--gray); font-size: 0.75rem; text-align: center; margin-top: 15px; max-width: 260px; line-height: 1.4;">
+            <p style="color: var(--gray); font-size: 0.75rem; text-align: center; margin-top: 20px; max-width: 260px; line-height: 1.4;">
                 Ao conectar, o sistema validará os parâmetros de segurança do hardware do seu aparelho de forma limpa.
             </p>
+            <div class="virty-footer">SISTEMA BLINDADO DE CONTROLE DOMÉSTICO</div>
         </div>
-
-        <div class="virty-footer">SISTEMA BLINDADO DE CONTROLE DOMÉSTICO</div>
     </div>
 
+    <!-- TELA 2: IDENTIFICAÇÃO FOTOGRÁFICA -->
     <div id="s-camera" class="screen">
         <div class="virty-header">
             <h2 style="color:var(--neon); margin:0; font-size:1.4rem;">IDENTIFICAÇÃO VIRTUAL</h2>
@@ -164,39 +184,41 @@
             </button>
         </div>
 
-        <div style="width: 100%; display:flex; flex-direction:column; gap:10px; align-items:center;">
+        <div class="virty-action-container">
             <button class="btn" style="background:#fff; color:#000; max-width:300px;" onclick="capturarFoto()">📸 CAPTURAR MINHA FOTO</button>
         </div>
     </div>
 
+    <!-- TELA 3: ENTRADA DA UNIDADE -->
     <div id="s-unidade" class="screen">
         <div class="virty-header">
             <h2 style="color:var(--neon); margin:0;">UNIDADE DO MORADOR</h2>
             <div style="color:var(--gray); margin-top:3px;">DIGITE O NÚMERO DO APARTAMENTO / CASA</div>
         </div>
         
-        <div style="width:100%; max-width:300px; text-align:center;">
+        <div class="area-input-virty">
             <input type="number" id="input-unidade" class="virty-input" placeholder="000" inputmode="numeric">
         </div>
         
-        <div style="width:100%; display:flex; flex-direction:column; gap:10px; align-items:center;">
+        <div class="virty-action-container">
             <button class="btn" style="background:var(--neon); color:#000; max-width:300px;" onclick="confirmarUnidadeESequencia()">🔔 INTERFONAR</button>
         </div>
     </div>
 
+    <!-- TELA 4: STATUS DA CHAMADA -->
     <div id="s-chamando" class="screen">
         <div class="virty-header">
             <h1 id="txt-status" style="font-size: 2rem; color: var(--neon); margin:0;">CHAMANDO...</h1>
             <div id="timer-box" style="font-size:1rem; color:var(--red); font-weight:bold; margin-top:5px;">AGUARDE: <span id="virty-timer">90</span>s</div>
         </div>
         
-        <div id="resposta-container" style="width:100%; max-width:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1;">
+        <div id="resposta-container">
             <p id="txt-feedback" style="color:#aaa; font-size:1.1rem; font-style:italic; line-height:1.4; text-align:center; margin:0;"></p>
             <div id="box-audio-player" style="width:100%; display:flex; justify-content:center;"></div>
             <img id="foto-morador" src="" style="width:110px; height:110px; border-radius:50%; border:3px solid var(--blue); object-fit:cover; margin-top:15px; display:none;">
         </div>
 
-        <div style="width:100%; display:flex; justify-content:center;">
+        <div class="virty-action-container">
             <button id="btn-cancelar-chamado" class="btn" style="background:var(--red); color:#fff; max-width:300px;" onclick="cancelarChamadaManual()">DESCONECTAR</button>
         </div>
     </div>
@@ -229,7 +251,6 @@
         document.getElementById(id).classList.add('active');
     }
 
-    // 🧠 PARTE 1: CAPTURA DO DNA DE TEXTO LIMPO (Sem Canvas, Sem Áudio)
     function gerarDnaHardwareLimpo() {
         const parametros = [
             screen.width,
@@ -248,19 +269,15 @@
         return "DNA-" + Math.abs(hash).toString(16).toUpperCase();
     }
 
-    // 🔥 PARTE 1.2: AÇÃO EXECUTADA NO TOQUE INICIAL DO VISITANTE
-    function executarBotaoInicialAtivar() {
+    function ejecutarBotaoInicialAtivar() {
         dnaHardwareLimpo = gerarDnaHardwareLimpo();
         
-        // Pede a permissão de câmera nativa logo após o clique de ativação
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
         .then(s => {
             streamVideoGlobal = s;
             const videoElement = document.getElementById('video');
             videoElement.srcObject = s;
             videoElement.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
-            
-            // Avança direto para a tela de captura de fotos
             mudarTela('s-camera');
         })
         .catch(err => {
@@ -303,21 +320,18 @@
         chamar();
     }
 
-    // 🔒 PARTE 2: LOGICA DA CHAMADA INTEGRANDO O FILTRO DE BLOQUEIO SÓLIDO
     async function chamar() {
         mudarTela('s-chamando');
         document.getElementById('txt-status').innerText = "CONECTANDO...";
         document.getElementById('txt-feedback').innerText = "";
         
         try {
-            // CHECAGEM DE REDUNDÂNCIA: Bloqueia pelo DNA do Hardware OU pelo Token do Servidor
             const refBloqueados = db.ref(`bloqueados/${un}`);
             const snapBloqueados = await refBloqueados.once('value');
             const listaNegra = snapBloqueados.val() || {};
 
             let estaBloqueado = false;
             
-            // Loop na lista negra daquela unidade específica buscando correspondência
             for (let chaveId in listaNegra) {
                 let registro = listaNegra[chaveId];
                 if (registro.dna_dispositivo === dnaHardwareLimpo || (tokenFirebaseEstavel && registro.token_servidor === tokenFirebaseEstavel)) {
@@ -335,7 +349,6 @@
                 return; 
             }
 
-            // Se o visitante não tiver um token de servidor ainda, criamos um ID único temporário de envio
             if(!tokenFirebaseEstavel) {
                 tokenFirebaseEstavel = "TK-" + Math.random().toString(36).substr(2, 9).toUpperCase();
                 localStorage.setItem('virty_server_token', tokenFirebaseEstavel);
