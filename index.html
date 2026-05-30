@@ -44,7 +44,7 @@
         }
         .active { display: flex; }
 
-        /* Cabeçalho do Sistema Solicitado */
+        /* Cabeçalho do Sistema */
         .virty-header {
             text-align: center;
             width: 100%;
@@ -70,7 +70,7 @@
             justify-content: center;
             flex-direction: column;
             width: 100%;
-            margin: auto 0; /* Centraliza perfeitamente no meio do espaço vertical */
+            margin: auto 0; 
         }
         
         .pronome-projeto {
@@ -104,7 +104,7 @@
             100% { box-shadow: 0 0 5px rgba(57,255,20,0.2); transform: scale(1); border-color: var(--neon); color: var(--neon); }
         }
 
-        /* Containers de Ação das Próximas Telas assentados na linha de 15% */
+        /* Containers de Ação assentados na linha de 15% */
         .virty-action-container {
             width: 100%;
             display: flex;
@@ -147,6 +147,7 @@
         <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
+    <!-- TELA 1: NOME, PRONOME DO PROJETO E BOTÃO AO MEIO DA TELA -->
     <div id="s-ativacao" class="screen active">
         <div class="virty-header">
             <h1>VIRTY ACCESS DOOR</h1>
@@ -159,6 +160,7 @@
         </div>
     </div>
 
+    <!-- TELA 2: IDENTIFICAÇÃO FOTOGRÁFICA -->
     <div id="s-camera" class="screen">
         <div class="virty-header">
             <h2 style="color:var(--neon); margin:0; font-size:1.4rem;">IDENTIFICAÇÃO VIRTUAL</h2>
@@ -180,6 +182,7 @@
         </div>
     </div>
 
+    <!-- TELA 3: ENTRADA DA UNIDADE -->
     <div id="s-unidade" class="screen">
         <div class="virty-header">
             <h2 style="color:var(--neon); margin:0;">UNIDADE DO MORADOR</h2>
@@ -194,6 +197,7 @@
         </div>
     </div>
 
+    <!-- TELA 4: STATUS DA CHAMADA -->
     <div id="s-chamando" class="screen">
         <div class="virty-header">
             <h1 id="txt-status" style="font-size: 2rem; color: var(--neon); margin:0;">CHAMANDO...</h1>
@@ -260,17 +264,35 @@
     function ejecutarBotaoInicialAtivar() {
         dnaHardwareLimpo = gerarDnaHardwareLimpo();
         
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-        .then(s => {
-            streamVideoGlobal = s;
-            const videoElement = document.getElementById('video');
-            videoElement.srcObject = s;
-            videoElement.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
-            mudarTela('s-camera');
-        })
-        .catch(err => {
-            virtyAlert("Para utilizar o Interfone Digital é obrigatório dar permissão à câmera.");
-        });
+        // Tentativa de ativação de câmera com tratamento de erro tolerante
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(s => {
+                streamVideoGlobal = s;
+                const videoElement = document.getElementById('video');
+                videoElement.srcObject = s;
+                videoElement.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
+                mudarTela('s-camera');
+            })
+            .catch(err => {
+                // Se der erro de HTTPS ou permissão negada, avisa o usuário mas avança para não travar o teste
+                console.warn("Câmera indisponível no ambiente atual:", err.message);
+                virtyAlert("Câmera indisponível ou permissão negada. Avançando para digitação da unidade.");
+                setTimeout(() => {
+                    fecharAlertCustomizado();
+                    mudarTela('s-unidade');
+                    document.getElementById('input-unidade').focus();
+                }, 2500);
+            });
+        } else {
+            // Navegador sem suporte à API de mídia (ex: HTTP simples)
+            virtyAlert("Navegador sem suporte direto a mídia. Avançando para digitação.");
+            setTimeout(() => {
+                fecharAlertCustomizado();
+                mudarTela('s-unidade');
+                document.getElementById('input-unidade').focus();
+            }, 2500);
+        }
     }
 
     function alternarLenteCamera() {
