@@ -399,6 +399,15 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
+    // REGISTRO OBRIGATÓRIO DO SERVICE WORKER (VÍNCULO COM O SW.JS DO SEU SERVIDOR)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker registrado com sucesso para o PWA!', reg.scope))
+                .catch(err => console.log('Falha ao registrar o Service Worker:', err));
+        });
+    }
+
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
