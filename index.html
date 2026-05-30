@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY PORTARIA v3.0.2 - Módulo 1 (Ajuste de Base)</title>
+    <title>VIRTY ACCESS DOOR</title>
     
     <link rel="manifest" href="manifest.json">
     
@@ -14,7 +14,6 @@
             --red: #FF3131; 
             --blue: #007BFF; 
             --gray: #666; 
-            --dark-card: #0d0d0d;
         }
         *, *::before, *::after { box-sizing: border-box; }
         
@@ -29,13 +28,13 @@
             user-select: none; 
         }
 
-        /* 📐 NOVO GRIP VIRTY CALIBRADO COM 15% NA BASE INFERIOR */
+        /* 📐 GRID VIRTY: 5% LATERAIS E TOPO, 15% NA BASE INFERIOR */
         .screen { 
             display: none; 
             width: 100vw; 
             height: 100vh; 
             padding-top: 5vh;
-            padding-bottom: 15vh; /* Ampliado para 15% para dar total visibilidade aos botões */
+            padding-bottom: 15vh; 
             padding-left: 5vw;
             padding-right: 5vw;
             flex-direction: column; 
@@ -45,54 +44,44 @@
         }
         .active { display: flex; }
 
-        /* Estilo do Topo (Margem superior estável) */
+        /* Cabeçalho do Sistema Solicitado */
         .virty-header {
             text-align: center;
             width: 100%;
         }
         .virty-header h1 {
             color: var(--neon);
-            font-size: 2.6rem;
-            letter-spacing: 4px;
+            font-size: 2.2rem;
+            letter-spacing: 2px;
             margin: 0 0 5px 0;
             text-shadow: 0 0 10px rgba(57,255,20,0.3);
         }
         .virty-header div {
-            color: var(--gray);
-            font-size: 0.85rem;
-            font-weight: bold;
-            letter-spacing: 2px;
+            color: #fff;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            font-weight: normal;
         }
 
-        /* Estilo da Base */
-        .virty-footer {
-            text-align: center;
-            width: 100%;
-            color: #333;
-            font-size: 0.75rem;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-
-        /* Posicionamento Estratégico dos Botões Principais */
-        .virty-action-container {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin-top: auto; /* Empurra o container de botões para assentar exatamente acima da base de 15% */
-        }
-
-        /* Botão Pulsante de Alta Segurança */
+        /* Container de Ativação - Centralizado ao Meio da Tela */
         .btn-ativar-container {
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
             width: 100%;
-            margin-top: auto; /* Garante o alinhamento perfeito na base */
+            margin: auto 0; /* Centraliza perfeitamente no meio do espaço vertical */
         }
+        
+        .pronome-projeto {
+            color: var(--gray);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
         .btn-pulsante {
             width: 100%;
             max-width: 300px;
@@ -100,7 +89,7 @@
             background: none;
             border: 2px solid var(--neon);
             color: var(--neon);
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             font-weight: bold;
             letter-spacing: 1px;
             border-radius: 20px;
@@ -115,6 +104,15 @@
             100% { box-shadow: 0 0 5px rgba(57,255,20,0.2); transform: scale(1); border-color: var(--neon); color: var(--neon); }
         }
 
+        /* Containers de Ação das Próximas Telas assentados na linha de 15% */
+        .virty-action-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: auto; 
+        }
+
         .btn { 
             width: 100%; 
             padding: 20px; 
@@ -127,7 +125,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
         }
 
-        /* Organização do Miolo das Telas */
         .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: auto 0; width: 100%; }
         .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 4px solid var(--neon); box-shadow: 0 0 25px rgba(57,255,20,0.4); background:#111; position:relative; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
@@ -139,7 +136,7 @@
         .virty-input { width: 100%; padding: 20px; background: #111; border: 2px solid var(--neon); color: #fff; text-align: center; font-size: 2rem; font-weight: bold; border-radius: 15px; outline: none; }
         
         #resposta-container { width:100%; max-width:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin: auto 0; }
-        .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 166px; font-size: 1.3rem; font-weight: bold; z-index: 5000; text-align: center; width: 85%; max-width: 340px; }
+        .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; text-align: center; width: 85%; max-width: 340px; }
     </style>
 </head>
 <body>
@@ -150,27 +147,21 @@
         <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
-    <!-- TELA 1: NOVA FRONTEIRA DE ATIVAÇÃO E IDENTIFICAÇÃO -->
     <div id="s-ativacao" class="screen active">
         <div class="virty-header">
-            <h1>VIRTY</h1>
-            <div>PORTARIA DIGITAL v3.0</div>
+            <h1>VIRTY ACCESS DOOR</h1>
+            <div>Acesso inteligente</div>
         </div>
         
         <div class="btn-ativar-container">
-            <button class="btn-pulsante" onclick="executarBotaoInicialAtivar()">🔓 CONECTAR INTERFONE</button>
-            <p style="color: var(--gray); font-size: 0.75rem; text-align: center; margin-top: 20px; max-width: 260px; line-height: 1.4;">
-                Ao conectar, o sistema validará os parâmetros de segurança do hardware do seu aparelho de forma limpa.
-            </p>
-            <div class="virty-footer">SISTEMA BLINDADO DE CONTROLE DOMÉSTICO</div>
+            <div class="pronome-projeto">O projeto</div>
+            <button class="btn-pulsante" onclick="executarBotaoInicialAtivar()">Aceitar e iniciar</button>
         </div>
     </div>
 
-    <!-- TELA 2: IDENTIFICAÇÃO FOTOGRÁFICA -->
     <div id="s-camera" class="screen">
         <div class="virty-header">
             <h2 style="color:var(--neon); margin:0; font-size:1.4rem;">IDENTIFICAÇÃO VIRTUAL</h2>
-            <div style="color:var(--gray); font-size:0.75rem; margin-top:3px;">RECONHECIMENTO OBRIGATÓRIO</div>
         </div>
         
         <div class="area-camera-virty">
@@ -189,11 +180,9 @@
         </div>
     </div>
 
-    <!-- TELA 3: ENTRADA DA UNIDADE -->
     <div id="s-unidade" class="screen">
         <div class="virty-header">
             <h2 style="color:var(--neon); margin:0;">UNIDADE DO MORADOR</h2>
-            <div style="color:var(--gray); margin-top:3px;">DIGITE O NÚMERO DO APARTAMENTO / CASA</div>
         </div>
         
         <div class="area-input-virty">
@@ -205,7 +194,6 @@
         </div>
     </div>
 
-    <!-- TELA 4: STATUS DA CHAMADA -->
     <div id="s-chamando" class="screen">
         <div class="virty-header">
             <h1 id="txt-status" style="font-size: 2rem; color: var(--neon); margin:0;">CHAMANDO...</h1>
