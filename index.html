@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY VISITANTE v1.9.9</title>
     
-    <!-- Configurações PWA nativas direcionadas para a raiz -->
-    <link rel="manifest" href="./manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
@@ -309,7 +308,6 @@
         <div class="legenda-popup-virty">Procure pelo ícone do aplicativo na tela inicial do seu celular.</div>
     </div>
 
-    <!-- TELA 1 -->
     <div id="s-boasvindas" class="screen active">
         <div class="virty-header">
             <h1>VIRTY ACCESS DOOR</h1>
@@ -322,7 +320,6 @@
         <div></div>
     </div>
 
-    <!-- TELA 2 -->
     <div id="s-inicio" class="screen">
         <div class="virty-header">
             <h2 id="titulo-wizard" class="texto-neon-verde" style="font-size: 1.4rem; margin: 0; text-transform:uppercase;">PASSO 1 DE 3</h2>
@@ -355,7 +352,6 @@
         </div>
     </div>
 
-    <!-- TELA 3 -->
     <div id="s-chamando" class="screen">
         <div></div> 
         <div class="conteudo-central">
@@ -367,7 +363,6 @@
         </div>
     </div>
 
-    <!-- TELA 4 -->
     <div id="s-feedback" class="screen">
         <div></div>
         <div class="conteudo-central">
@@ -383,7 +378,15 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
-    // AJUSTE DE ESCOPO PARA A RAIZ (/)
+    // 1. CAPTURA O GATILHO DE INSTALAÇÃO IMEDIATAMENTE NA CARGA DA PÁGINA
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        console.log("Navegador liberou o evento de instalação.");
+    });
+
+    // REGISTRO DO SERVICE WORKER NO ESCOPO CORRETO DA RAIZ
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js', { scope: '/' })
@@ -404,7 +407,6 @@
     let timerRegressivoInterval = null;
     let tempoRestanteChamada = 90;
     let passoAtualWizard = 1; 
-    let deferredPrompt = null;
 
     function gerarFingerprintDispositivo() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
@@ -420,17 +422,18 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-    });
-
+    // 2. CORREÇÃO SUTIL DO BOTÃO: CHAMA O NATIVO SEM CONFUNDIR O NAVEGADOR COM MUDANÇAS DE TELA
     function dispararInstalacaoPWA() {
         if (deferredPrompt) {
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then((choiceResult) => {
-                document.getElementById('pop-ajuda-instalacao').style.display = 'flex';
-                deferredPrompt = null;
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('Usuário aceitou a instalação.');
+                    deferredPrompt = null;
+                } else {
+                    console.log('Usuário recusou. Abrindo ajuda visual.');
+                    document.getElementById('pop-ajuda-instalacao').style.display = 'flex';
+                }
             });
         } else {
             document.getElementById('pop-ajuda-instalacao').style.display = 'flex';
