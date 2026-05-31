@@ -1,20 +1,12 @@
 {
-  "name": "Virty Morador",
+  "name": "Virty Access Door - Morador",
   "short_name": "Virty Morador",
-  "start_url": "index.html",
+  "start_url": "/morador/index.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#39FF14",
   "icons": [
-    {
-      "src": "../icone192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "../icone512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+    { "src": "icone192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icone512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
