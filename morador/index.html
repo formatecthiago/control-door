@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Virty Morador">
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/000000/39FF14?text=VIRTY">
+    <link class="apple-touch-icon" href="https://placehold.co/192x192/000000/39FF14?text=VIRTY">
 
     <style>
         :root { 
@@ -33,9 +33,8 @@
             user-select: none;
         }
         
-        /* 🚫 CSS DA TELA DE BLOQUEIO WEB OBRIGATÓRIO */
         #tela-bloqueio-instalar {
-            display: none; /* Controlado via JavaScript */
+            display: none; 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #000; color: #fff; z-index: 99999;
             flex-direction: column; align-items: center; justify-content: center;
@@ -55,7 +54,6 @@
             max-width: 320px; font-size: 0.95rem; line-height: 1.5; text-align: left;
         }
 
-        /* 📱 CSS DAS TELAS DO APLICATIVO REAL */
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
         
@@ -128,7 +126,7 @@
         .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
 
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
-        .linha-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
+        .indigo-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
     </style>
 </head>
 <body>
@@ -223,7 +221,7 @@
         
         <div class="painel-controles-chamada">
             <button class="btn" style="background:var(--red); color:#fff; margin:0;" onclick="responder('recusado')">RECUSAR CHAMADA</button>
-            <div class="linha-interacao-meio">
+            <div class="indigo-interacao-meio">
                 <button class="btn" style="background:var(--blue); color:#fff; flex: 1; margin:0;" onclick="abrirPainelTexto()">MENSAGEM</button>
                 <button id="btn-mic" class="btn-voz" 
                         ontouchstart="eventoMicStart(event)" ontouchend="eventoMicEnd(event)" 
@@ -283,7 +281,7 @@
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
 
-    // 🔒 CONTROLE DE TRAVA - DETECTA SE ESTÁ RODANDO INSTALADO COMO APP (STANDALONE)
+    // 🔒 CHECAGEM STANDALONE CORRIGIDA PARA A PASTA DE ORIGEM
     const instaladoComoApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     let capturaEventoInstalacao = null;
 
@@ -301,27 +299,21 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    // Executado ao carregar a página
     window.onload = () => {
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
 
         if (!instaladoComoApp) {
-            // Se NÃO estiver instalado, bloqueia tudo imediatamente e força a tela de instalação
             document.getElementById('tela-bloqueio-instalar').style.display = 'flex';
-            
-            // Tratamento visual para iPhones (iOS)
             const ehIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
             if (ehIphone) {
                 document.getElementById('bloco-ios-tutorial').style.display = 'block';
             }
         } else {
-            // Se estiver instalado como App, roda o fluxo normal do sistema
             verificarStatus();
         }
     };
 
-    // Escuta o gatilho nativo de instalação do Android/Chrome
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         capturaEventoInstalacao = e;
@@ -330,7 +322,6 @@
         }
     });
 
-    // Clique no botão de instalar do Android
     document.getElementById('btn-pwa-instalar-nativo').addEventListener('click', async () => {
         if (capturaEventoInstalacao) {
             capturaEventoInstalacao.prompt();
@@ -515,17 +506,8 @@
                 if(tempoVoz <= 0) stopRec();
             }, 1000);
 
-            mediaRecorder.ondataavailable = e => chunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'audio/webm' });
-                const reader = new FileReader(); reader.readAsDataURL(blob);
-                reader.onloadend = () => {
-                    db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: "Áudio enviado", audio_b64: reader.result, data_hora: obterDataHora() });
-                    popup.style.display = 'none'; responder('mensagem');
-                };
-            };
             mediaRecorder.start();
-        } catch(e) { virtyAlert("Permita o uso do microfone!"); estaGravando = false; }
+        } catch(e) { virtyAlert("Permita o microfone!"); estaGravando = false; }
     }
 
     function stopRec() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); clearInterval(timerVozInterval); estaGravando = false; } }
@@ -560,7 +542,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = child.val();
+                    let dadosFilho = filho.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
@@ -700,7 +682,7 @@
         } catch(err) {}
     }
 
-    // Registro do Service Worker do PWA
+    // Registro referenciando o sw.js na raiz
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js').catch(err => console.log('Erro SW:', err));
