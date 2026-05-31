@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Isolado de Instalação PWA</title>
+    
+    <link rel="manifest" href="manifest.json">
+    
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .btn-teste {
+            background-color: #39FF14;
+            color: #000;
+            border: none;
+            padding: 20px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 0 15px #39FF14;
+        }
+        #status {
+            margin-top: 20px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Instalação Virty</h1>
+    <p>Este HTML serve apenas para testar o gatilho do navegador.</p>
+    
+    <button class="btn-teste" onclick="testarInstalacao()">TESTAR INSTALAÇÃO AGORA</button>
+    
+    <div id="status">Aguardando o navegador liberar o PWA...</div>
+<script>
+    let meuPromptDeInstalacao = null;
+    const campoStatus = document.getElementById('status');
+    // 1. Registra o Service Worker obrigatoriamente
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => {
+                    console.log('SW Registrado no teste:', reg.scope);
+                    campoStatus.innerText = "Service Worker ativo. Aguardando validação do navegador...";
+                })
+                .catch(err => {
+                    campoStatus.style.color = "red";
+                    campoStatus.innerText = "Erro ao registrar SW: " + err;
+                });
+        });
+    }
+    // 2. Captura o evento nativo do sistema operacional
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Impede o navegador de mostrar a barra automática padrão lá embaixo
+        e.preventDefault();
+        
+        // Guarda o evento na nossa variável para usarmos no clique do botão
+        meuPromptDeInstalacao = e;
+        
+        campoStatus.style.color = "#39FF14";
+        campoStatus.innerText = "Pronto! O navegador validou o PWA. O botão vai funcionar.";
+        console.log("Evento 'beforeinstallprompt' foi disparado com sucesso!");
+    });
+    // 3. A função pura do botão
+    function testarInstalacao() {
+        // Se a variável estiver preenchida, o navegador deu permissão para instalar
+        if (meuPromptDeInstalacao) {
+            
+            // Abre a caixinha oficial do Google Chrome / Edge / Safari
+            meuPromptDeInstalacao.prompt();
+            
+            // Analisa o que o usuário escolheu (Se aceitou ou cancelou)
+            meuPromptDeInstalacao.userChoice.then((escolha) => {
+                if (escolha.outcome === 'accepted') {
+                    campoStatus.innerText = "Usuário aceitou a instalação!";
+                } else {
+                    campoStatus.innerText = "Usuário recusou a instalação.";
+                }
+                // Limpa a variável pois o prompt só pode ser usado uma vez por carregamento
+                meuPromptDeInstalacao = null;
+            });
+            
+        } else {
+            // Se caiu aqui, o navegador recusou de antemão o app por falta de HTTPS ou app já instalado
+            alert("O navegador ainda NÃO disparou o evento de instalação.\n\nMotivos possíveis:\n1. Você não está usando HTTPS.\n2. O App já está instalado neste aparelho.\n3. O arquivo sw.js ou manifest.json não foi encontrado na mesma pasta.");
+            campoStatus.style.color = "orange";
+            campoStatus.innerText = "Navegador bloqueou o gatilho. Verifique HTTPS ou se já está instalado.";
+        }
+    }
+</script>
+</body>
+</html>
