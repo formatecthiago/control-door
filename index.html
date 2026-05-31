@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY VISITANTE v1.9.9</title>
     
-    <!-- Configurações PWA nativas para rodar em tela cheia -->
-    <link rel="manifest" href="manifest.json">
+    <!-- Configurações PWA nativas direcionadas para a raiz -->
+    <link rel="manifest" href="./manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
@@ -32,7 +32,6 @@
             user-select: none;
         }
         
-        /* ESTRUTURA BASE DA GRID: 5% TOPO E LATERAIS, 15% NA BASE INFERIOR */
         .screen { 
             display: none; 
             width: 100vw;
@@ -63,7 +62,6 @@
             font-weight: normal;
         }
 
-        /* Miolo Centralizado para as Telas de Fluxo (70% Proporcional) */
         .conteudo-central {
             width: 100%;
             max-width: 400px;
@@ -77,7 +75,6 @@
             margin: auto 0;
         }
 
-        /* Rodapé de Ação assentado na linha de 15% */
         .rodape-tela {
             width: 100%;
             max-width: 400px;
@@ -196,7 +193,6 @@
         .pulsar { animation: pulseBlink 2s infinite; }
         @keyframes pulseBlink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-        /* POP-UP ILUSTRATIVO DE INSTALAÇÃO DO SMARTPHONE */
         .popup-instalacao {
             display: none;
             position: fixed;
@@ -292,14 +288,12 @@
 </head>
 <body>
 
-    <!-- Alerta Customizado Interno -->
     <div id="custom-alert" class="virty-popup">
         <div style="color:var(--neon); font-size:0.9rem; letter-spacing:2px; margin-bottom:15px; font-weight:bold;">VIRTY ACCESS DOOR</div>
         <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4; margin-bottom:20px;"></div>
         <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
-    <!-- POP-UP INSTRUTIVO DA ÁREA DE TRABALHO DO SMARTPHONE -->
     <div id="pop-ajuda-instalacao" class="popup-instalacao">
         <button class="btn-fechar-pop" onclick="fecharInstrucaoInstalacao()">X</button>
         <div class="mockup-smartphone">
@@ -315,13 +309,12 @@
         <div class="legenda-popup-virty">Procure pelo ícone do aplicativo na tela inicial do seu celular.</div>
     </div>
 
-    <!-- TELA 1: ESCOLHA DE INTERFONE OU INSTALAÇÃO -->
+    <!-- TELA 1 -->
     <div id="s-boasvindas" class="screen active">
         <div class="virty-header">
             <h1>VIRTY ACCESS DOOR</h1>
             <div>Acesso inteligente</div>
         </div>
-
         <div class="conteudo-central" style="gap:25px;">
             <button class="btn" style="background:#fff; color:#000; border-radius:16px; font-size:1.2rem; height:75px;" onclick="iniciarFluxoSequencial()">Acessar</button>
             <button class="btn-pulsante" onclick="dispararInstalacaoPWA()">App acesso rápido</button>
@@ -329,15 +322,13 @@
         <div></div>
     </div>
 
-    <!-- TELA 2: FLUXO DE CADASTRO EM ETAPAS (WIZARD) -->
+    <!-- TELA 2 -->
     <div id="s-inicio" class="screen">
         <div class="virty-header">
             <h2 id="titulo-wizard" class="texto-neon-verde" style="font-size: 1.4rem; margin: 0; text-transform:uppercase;">PASSO 1 DE 3</h2>
             <div id="subtitulo-wizard" style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">RECONHECIMENTO FACIAL OBRIGATÓRIO</div>
         </div>
-
         <div class="conteudo-central">
-            <!-- Sub-Passo 1: Câmera -->
             <div id="sub-passo-foto" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:20px;">
                 <div class="area-camera-virty">
                     <div style="width:55px;"></div> 
@@ -351,38 +342,32 @@
                 </div>
                 <button id="btn-tirar-foto" class="btn" style="background:#fff; color:#000; max-width:280px;" onclick="fotoVis()">📸 CAPTURAR MINHA FOTO</button>
             </div>
-
-            <!-- Sub-Passo 2: Unidade -->
             <div id="sub-passo-unidade" style="width:100%; display:none;">
                 <input type="number" id="v-un" placeholder="Número do Apt / Casa">
             </div>
-
-            <!-- Sub-Passo 3: Mensagem -->
             <div id="sub-passo-texto" style="width:100%; display:none;">
                 <input type="text" id="v-texto" placeholder="Recado rápido (Opcional)">
             </div>
         </div>
-
         <div class="rodape-tela">
             <button id="btn-wizard-voltar" class="btn" style="background:transparent; border:2px solid var(--gray); color:#fff;" onclick="voltarPassoWizard()">Voltar</button>
             <button id="btn-wizard-proximo" class="btn" style="background:var(--neon); color:#000;" onclick="avancarPassoWizard()">Próximo</button>
         </div>
     </div>
 
-    <!-- TELA 3: MONITOR DE CHAMADA ATIVA -->
+    <!-- TELA 3 -->
     <div id="s-chamando" class="screen">
         <div></div> 
         <div class="conteudo-central">
             <h1 id="texto-unidade-chamando" class="texto-neon-verde pulsar" style="font-size: 2.6rem; margin: 0; line-height: 1.2;">CHAMANDO<br>UNIDADE</h1>
             <div id="timer-chamada">AGUARDE: 90s</div>
         </div>
-
         <div class="rodape-tela">
-            <button class="btn" style="background:var(--red); color:#fff; box-shadow: 0 4px 15px rgba(255, 49, 49, 0.2);" onclick="cancelarInterfone()">DESCONECTAR INTERFONE</button>
+            <button class="btn" style="background:var(--red); color:#fff;" onclick="cancelarInterfone()">DESCONECTAR INTERFONE</button>
         </div>
     </div>
 
-    <!-- TELA 4: FEEDBACK DO MORADOR -->
+    <!-- TELA 4 -->
     <div id="s-feedback" class="screen">
         <div></div>
         <div class="conteudo-central">
@@ -390,7 +375,6 @@
             <p id="msg-feedback" style="color:#aaa; font-style: italic; font-size: 1.3rem; margin-bottom: 25px;">"Áudio enviado"</p>
             <audio id="audio-player-v" style="width: 100%; border-radius: 30px;"></audio>
         </div>
-
         <div class="rodape-tela">
             <button id="btn-voltar-feedback" class="btn" style="background: var(--blue); color: #fff;" onclick="resetarFluxoVisitante()">FECHAR RECADO</button>
         </div>
@@ -399,12 +383,12 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
-    // REGISTRO OBRIGATÓRIO DO SERVICE WORKER (VÍNCULO COM O SW.JS DO SEU SERVIDOR)
+    // AJUSTE DE ESCOPO PARA A RAIZ (/)
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('Service Worker registrado com sucesso para o PWA!', reg.scope))
-                .catch(err => console.log('Falha ao registrar o Service Worker:', err));
+            navigator.serviceWorker.register('./sw.js', { scope: '/' })
+                .then(reg => console.log('SW Visitante Registrado na Raiz!', reg.scope))
+                .catch(err => console.log('Falha no SW do Visitante:', err));
         });
     }
 
@@ -419,7 +403,6 @@
     let escutadorFirebaseAtivo = null;
     let timerRegressivoInterval = null;
     let tempoRestanteChamada = 90;
-    
     let passoAtualWizard = 1; 
     let deferredPrompt = null;
 
@@ -437,16 +420,12 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    // Captura o evento de instalação do navegador
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
     });
 
-    // Dispara a instalação ou abre o pop-up com a Home de fundo limpa
     function dispararInstalacaoPWA() {
-        resetarFluxoVisitante();
-
         if (deferredPrompt) {
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then((choiceResult) => {
@@ -458,12 +437,10 @@
         }
     }
 
-    // Fecha a animação do smartphone e mantém o controle na Home limpa
     function fecharInstrucaoInstalacao() {
         document.getElementById('pop-ajuda-instalacao').style.display = 'none';
     }
 
-    // Controle do Motor de Etapas (Wizard de Telas)
     function iniciarFluxoSequencial() {
         passoAtualWizard = 1;
         mudarTela('s-inicio');
@@ -538,7 +515,6 @@
             video.srcObject = s;
             video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
         }).catch(e => {
-            console.log("Erro câmera:", e);
             virtyAlert("Câmera indisponível ou permissão negada.");
         });
     }
