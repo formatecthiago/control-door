@@ -2,7 +2,7 @@
   "name": "VIRTY MORADOR",
   "short_name": "VirtyMorador",
   "description": "Aplicativo de monitoramento e liberação de acesso residencial",
-  "start_url": "/morador.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#39FF14",
