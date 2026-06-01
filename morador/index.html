@@ -155,7 +155,7 @@
     </div>
 
     <div id="custom-alert" class="virty-popup">
-        <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:12px;">VIRTY ACCESS DOOR</div>
+        <div style="color:var(--neon); font-size:0.8rem; letter-spacing:12px; margin-bottom:12px;">VIRTY ACCESS DOOR</div>
         <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4;"></div>
         <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
@@ -286,7 +286,6 @@
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
 
-    // 🔒 VALIDAÇÃO DE APP CORRIGIDA (SEM TRAVAR EXECUÇÃO DO BANCO)
     const instaladoComoApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     let capturaEventoInstalacao = null;
 
@@ -304,15 +303,12 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    // 🌟 FLUXO DE INICIALIZAÇÃO CORRIGIDO 
     window.onload = () => {
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
 
-        // Sempre roda o validador do Firebase em segundo plano
         verificarStatus();
 
-        // Se não for PWA, exibe a camada de aviso, mas permite ignorar para testes
         if (!instaladoComoApp) {
             document.getElementById('tela-bloqueio-instalar').style.display = 'flex';
             const ehIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -325,9 +321,7 @@
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         capturaEventoInstalacao = e;
-        if (!instaladoComoApp) {
-            document.getElementById('btn-pwa-instalar-nativo').style.display = 'block';
-        }
+        document.getElementById('btn-pwa-instalar-nativo').style.display = 'block';
     });
 
     document.getElementById('btn-pwa-instalar-nativo').addEventListener('click', async () => {
@@ -338,6 +332,8 @@
                 document.getElementById('tela-bloqueio-instalar').style.display = 'none';
             }
             capturaEventoInstalacao = null;
+        } else {
+            virtyAlert("O navegador ainda não disparou o gatilho de instalação. Certifique-se de que o manifest.json e o sw.js estão na raiz do servidor.");
         }
     });
 
@@ -353,7 +349,7 @@
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => { micStreamGlobal = stream; })
-                    .catch(e => console.log("Microfone recusado."));
+                    .catch(e => console.log("Microfone recusado de início."));
                 }
             } else { 
                 db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).on('value', snap => {
@@ -491,6 +487,9 @@
 
     async function startRec() {
         try {
+            if (audioCtx && audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
             const stream = micStreamGlobal || await navigator.mediaDevices.getUserMedia({ audio: true });
             if(!micStreamGlobal) micStreamGlobal = stream;
 
@@ -515,7 +514,10 @@
             }, 1000);
 
             mediaRecorder.start();
-        } catch(e) { virtyAlert("Permita o microfone!"); estaGravando = false; }
+        } catch(e) { 
+            virtyAlert("Permita o microfone nas configurações do app!"); 
+            estaGravando = false; 
+        }
     }
 
     function stopRec() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); clearInterval(timerVozInterval); estaGravando = false; } }
@@ -533,7 +535,6 @@
             const d = snap.val();
             if(d) {
                 if(st !== 'cinza') ref.update({ status: st });
-                // Estrutura de extração robusta do DNA do dispositivo emissor
                 const dnaChave = d.dna_dispositivo || (d.v_id ? d.v_id.substring(0, 11) : "UNKNOWN-DNA");
                 gravarHist(d.v_id || "virty_visit", d.foto, st, dnaChave);
                 setTimeout(() => ref.remove(), 1200);
@@ -551,7 +552,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = child.val();
+                    let dadosFilho = filho.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
@@ -672,23 +673,49 @@
     function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); btn.innerText = modoAlerta === 1 ? "🔊" : modoAlerta === 2 ? "📳🔊" : "📳"; }
     
     function gerenciarAlerta(acao) {
-        clearInterval(somInterval); if(audioCtx) { try { audioCtx.close(); } catch(e){} audioCtx = null; }
-        if(acao === 'stop') { navigator.vibrate(0); return; }
+        clearInterval(somInterval); 
+        if(audioCtx) { 
+            try { 
+                audioCtx.close(); 
+            } catch(e){ console.log("Erro ao fechar AudioContext:", e); } 
+            audioCtx = null; 
+        }
+        if(acao === 'stop') { 
+            try { navigator.vibrate(0); } catch(e){}
+            return; 
+        }
         if(somSilenciadoPorInteracao) return;
-        if(modoAlerta === 3) { navigator.vibrate([400, 200, 400]); return; }
+        if(modoAlerta === 3) { 
+            try { navigator.vibrate([400, 200, 400]); } catch(e){}
+            return; 
+        }
+        
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if(modoAlerta === 2) navigator.vibrate([400, 200, 400]);
+            if(modoAlerta === 2) { try { navigator.vibrate([400, 200, 400]); } catch(e){} }
             let f1 = 440 + (somAtual * 40), f2 = f1 * 1.25; 
+            
             somInterval = setInterval(() => {
-                if(!audioCtx || somSilenciadoPorInteracao) return;
-                let osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-                osc.type = somAtual % 2 === 0 ? 'sine' : 'triangle';
-                osc.frequency.setValueAtTime(f1, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(f2, audioCtx.currentTime + 0.4);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+                if(!audioCtx || audioCtx.state === 'suspended' || somSilenciadoPorInteracao) return;
+                
+                try {
+                    let osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                    osc.type = somAtual % 2 === 0 ? 'sine' : 'triangle';
+                    osc.frequency.setValueAtTime(f1, audioCtx.currentTime); 
+                    osc.frequency.exponentialRampToValueAtTime(f2, audioCtx.currentTime + 0.4);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime); 
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    osc.connect(gain); 
+                    gain.connect(audioCtx.destination); 
+                    osc.start(); 
+                    osc.stop(audioCtx.currentTime + 0.5);
+                } catch(oscError) {
+                    console.log("Falha silenciosa no som da chamada:", oscError);
+                }
             }, 600);
-        } catch(err) {}
+        } catch(err) {
+            console.log("AudioContext bloqueado aguardando clique:", err);
+        }
     }
 
     if ('serviceWorker' in navigator) {
