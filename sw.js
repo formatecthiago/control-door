@@ -1,4 +1,4 @@
-const CACHE_NAME = 'virty-visitante-cache-v1'; // Nome diferente para não chocar com o do morador
+const CACHE_NAME = 'virty-visitante-cache-v1';
 const urlsToCache = [
   './index.html',
   './manifest.json'
