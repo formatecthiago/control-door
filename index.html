@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v2.0.0</title>
+    <title>VIRTY VISITANTE</title>
+    <link class="apple-touch-icon" href="https://placehold.co/192x192/000000/39FF14?text=VIRTY">
+    <link rel="manifest" href="manifest.json">
     <style>
         :root { 
             --neon: #39FF14; 
@@ -39,15 +41,44 @@
             width: 100%; max-width: 320px;
             padding: 18px; border-radius: 30px; border: none; 
             font-weight: bold; cursor: pointer; text-transform: uppercase; 
-            margin: 10px 0; font-size: 1.1rem; letter-spacing: 1px;
+            margin: 8px 0; font-size: 1.1rem; letter-spacing: 1px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        /* Botão 1: Iniciar (Estático) */
+        .btn-static {
+            background: #111;
+            color: #aaa;
+            border: 1px solid #222;
+        }
+
+        /* Botão 2: App Início Rápido (Pulsante e Atraente) */
+        .btn-pulse {
+            background: transparent;
+            border: 2px solid var(--neon);
+            color: var(--neon);
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 10px rgba(57, 255, 20, 0.2); transform: scale(1); }
+            50% { box-shadow: 0 0 22px rgba(57, 255, 20, 0.5); transform: scale(1.02); }
+            100% { box-shadow: 0 0 10px rgba(57, 255, 20, 0.2); transform: scale(1); }
         }
 
         .area-camera { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .video-box { width: 200px; height: 200px; border-radius: 50%; overflow: hidden; border: 4px solid var(--neon); box-shadow: 0 0 20px rgba(57,255,20,0.3); background:#111; position:relative; }
+        .video-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; border: 4px solid var(--neon); box-shadow: 0 0 20px rgba(57,255,20,0.3); background:#111; position:relative; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; transform: scaleX(-1); }
 
+        /* Animação do Smartphone Tutorial */
+        .tutorial-container { display: flex; flex-direction: column; align-items: center; margin: 30px 0; }
+        .phone-mockup { width: 60px; height: 110px; border: 3px solid #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #111; }
+        .phone-icon { width: 35px; height: 35px; border: 2px solid var(--neon); border-radius: 8px; color: var(--neon); font-size: 8px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+        .animated-arrow { font-size: 2rem; color: var(--neon); margin-top: 10px; animation: bounce 1.5s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
+
+        /* Timer circular */
         .timer-circular { position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 25px; }
         .canvas-circular { transform: rotate(-90deg); width: 180px; height: 180px; }
         .circle-bg { fill: none; stroke: #111; stroke-width: 10; }
@@ -55,43 +86,72 @@
         .texto-timer { position: absolute; font-size: 2.5rem; font-weight: bold; }
 
         .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.2rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
-        
         .foto-v { width: 150px; height: 150px; border-radius: 50%; border: 3px solid var(--neon); object-fit: cover; margin-bottom: 15px; }
         .status-msg { font-size: 1.4rem; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; }
+
+        /* Caixa de Áudio Customizada */
+        .audio-box { background: #0d0d0d; border: 1px solid #222; padding: 15px; border-radius: 16px; width: 100%; max-width: 320px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .audio-preview { width: 100%; height: 40px; display: none; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <!-- POP-UP DE ALERTA -->
     <div id="custom-alert" class="virty-popup">
         <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:12px;">VIRTY SYSTEM</div>
         <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4;"></div>
         <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px; width:auto;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
-    <!-- TELA 1: DIGITAR UNIDADE -->
-    <div id="s-inicio" class="screen active">
-        <h1 style="color:var(--neon); margin-bottom:5px; letter-spacing:2px;">VIRTY INTERFONE</h1>
-        <div style="text-transform: uppercase; font-size: 0.8rem; color: #666; font-weight: bold; letter-spacing: 2px; margin-bottom: 40px;">Painel de Entrada</div>
+    <div id="s-welcome" class="screen">
+        <div style="text-align: center; margin-top: 10px;">
+            <h1 style="font-size: 2.2rem; font-weight: 900; color: var(--neon); letter-spacing: 2px; margin: 0; line-height: 1.1;">VIRTY ACCESS DOOR</h1>
+            <p style="font-size: 1rem; font-weight: bold; color: #FFFFFF; letter-spacing: 4px; margin: 8px 0 0 0; text-transform: uppercase;">VISITANTE</p>
+        </div>
+        <div class="tutorial-container">
+            <div class="phone-mockup"><div class="phone-icon">VIRTY</div></div>
+            <div class="animated-arrow">↓</div>
+            <p style="font-size: 0.85rem; color: #aaa; margin-top: 15px; padding: 0 20px;">Para garantir a comunicação estável, execute como aplicativo.</p>
+        </div>
+        <button class="btn btn-static" id="btn-web-start">Iniciar</button>
+        <button class="btn btn-pulse" id="btn-pwa-start">App Início Rápido</button>
+    </div>
+
+    <div id="s-inicio" class="screen">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-size: 2.2rem; font-weight: 900; color: var(--neon); letter-spacing: 2px; margin: 0; line-height: 1.1;">VIRTY ACCESS DOOR</h1>
+            <p style="font-size: 1rem; font-weight: bold; color: #FFFFFF; letter-spacing: 4px; margin: 8px 0 0 0; text-transform: uppercase;">VISITANTE</p>
+        </div>
         <input type="number" id="v-unidade" placeholder="Digite o Apt ou Casa" inputmode="numeric">
         <button class="btn" style="background:var(--neon); color:#000;" onclick="avancarParaCamera()">Avançar ➔</button>
     </div>
 
-    <!-- TELA 2: CAPTURAR FOTO E RECOGNICÃO -->
     <div id="s-camera" class="screen">
-        <h2 style="color:var(--neon); margin-bottom:20px; letter-spacing:1px;">IDENTIFICAÇÃO VIRTUAL</h2>
+        <h2 style="color:var(--neon); margin-bottom:10px; letter-spacing:1px; text-transform: uppercase;">Olhe para a câmera</h2>
+        <p style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">Aguarde o disparo automático...</p>
         <div class="area-camera">
             <div class="video-box">
                 <video id="video-stream" autoplay playsinline muted></video>
                 <canvas id="canvas-foto"></canvas>
             </div>
         </div>
-        <input type="text" id="v-recado" placeholder="Mensagem / Seu Nome (Opcional)" maxlength="60">
-        <button class="btn" style="background:#fff; color:#000;" onclick="efetuarChamada()">🔔 TOCAR INTERFONE</button>
-        <button class="btn" style="background:#111; color:#666; border:1px solid #222;" onclick="mudarTela('s-inicio')">Voltar</button>
+        <div id="camera-status" style="color:var(--neon); font-weight:bold; font-size:1.1rem; height:25px;">Estabilizando...</div>
     </div>
 
-    <!-- TELA 3: AGUARDANDO RESPOSTA DO MORADOR -->
+    <div id="s-media-opcional" class="screen">
+        <h2 style="color:var(--neon); margin-bottom:5px; text-transform: uppercase; letter-spacing:1px;">Conteúdo Opcional</h2>
+        <p style="color:#aaa; font-size:0.9rem; margin-bottom:20px; max-width:300px;">Se desejar, envie um áudio ou recado escrito para o morador.</p>
+        
+        <div class="audio-box">
+            <button id="btn-audio-record" class="btn" style="background:var(--red); color:#fff; margin:0; padding:14px; font-size:1rem;">🎤 Gravar Áudio (Opcional)</button>
+            <audio id="audio-playback" class="audio-preview" controls></audio>
+        </div>
+
+        <input type="text" id="v-recado" placeholder="Mensagem de texto (Opcional)" maxlength="60">
+        
+        <button class="btn" style="background:var(--neon); color:#000; font-size:1.3rem; margin-top:15px; box-shadow: 0 0 15px rgba(57,255,20,0.4);" onclick="efetuarChamada()">🔔 CHAMAR</button>
+        <button class="btn" style="background:#111; color:#666; border:1px solid #222; padding:12px; font-size:0.9rem;" onclick="mudarTela('s-inicio')">Voltar ao Início</button>
+    </div>
+
     <div id="s-chamando" class="screen">
         <div class="timer-circular">
             <svg class="canvas-circular">
@@ -105,7 +165,6 @@
         <button id="btn-cancelar-chamada" class="btn" style="background:var(--red); color:#fff;" onclick="cancelarChamadaPeloVisitante()">CANCELAR</button>
     </div>
 
-    <!-- TELA 4: RESULTADO FINAL (LIBERADO, RECUSADO OU TIMEOUT) -->
     <div id="s-resultado" class="screen">
         <img id="res-foto" class="foto-v" src="">
         <div id="res-titulo" class="status-msg">---</div>
@@ -127,6 +186,48 @@
     let timerRegressivoInterfone, audioContextAtivo, somChamandoInterval;
     let tempoRestante = 90;
     const circunferenciaArco = 2 * Math.PI * 80;
+
+    // Variáveis do Gravador de Áudio
+    let mediaRecorder;
+    let audioChunks = [];
+    let audioB64Data = "";
+    let estaGravando = false;
+
+    let deferredPrompt;
+    const btnPwaStart = document.getElementById('btn-pwa-start');
+    const btnWebStart = document.getElementById('btn-web-start');
+
+    // Inicialização de Telas Baseado no Modo PWA (Standalone)
+    window.addEventListener('DOMContentLoaded', () => {
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            mudarTela('s-inicio');
+        } else {
+            mudarTela('s-welcome');
+        }
+    });
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+    });
+
+    // Ação do Botão Estático "Iniciar" (Avança normal na página)
+    btnWebStart.addEventListener('click', () => {
+        mudarTela('s-inicio');
+    });
+
+    // Ação do Botão Pulsante "App Início Rápido" (Tenta a Instalação)
+    btnPwaStart.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                deferredPrompt = null;
+                return;
+            }
+        }
+        mudarTela('s-inicio');
+    });
 
     function virtyAlert(msg) {
         document.getElementById('custom-alert-msg').innerText = msg;
@@ -157,7 +258,6 @@
         alvoUnidade = document.getElementById('v-unidade').value.trim();
         if (!alvoUnidade) return virtyAlert("Por favor, digite o número da unidade!");
         
-        // Verifica primeiro se o morador existe e está validado
         db.ref('moradores_validados/' + alvoUnidade).once('value', snap => {
             if (!snap.exists()) {
                 return virtyAlert("Unidade não encontrada ou sem moradores ativos.");
@@ -169,29 +269,34 @@
     function iniciarCameraDispositivo() {
         document.getElementById('video-stream').style.display = "block";
         document.getElementById('canvas-foto').style.display = "none";
+        document.getElementById('camera-status').innerText = "Estabilizando...";
         fotoVisitanteB64 = "";
 
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
         .then(stream => {
             streamVideo = stream;
             document.getElementById('video-stream').srcObject = stream;
+            
+            // Disparo automático sem clique após 2 segundos de estabilização
+            setTimeout(() => {
+                capturarFotoAutomatica();
+            }, 2000);
+
         }).catch(() => {
             virtyAlert("Necessitamos da câmera para efetuar a identificação e chamada.");
             mudarTela('s-inicio');
         });
     }
 
-    function fecharCameraDispositivo() {
-        if (streamVideo) {
-            streamVideo.getTracks().forEach(track => track.stop());
-            streamVideo = null;
-        }
-    }
-
-    function efetuarChamada() {
+    function capturarFotoAutomatica() {
         const video = document.getElementById('video-stream');
         const canvas = document.getElementById('canvas-foto');
-        if (!video.videoWidth) return virtyAlert("Aguarde o carregamento completo da câmera.");
+        if (!video || !video.videoWidth) {
+            mudarTela('s-inicio');
+            return;
+        }
+
+        document.getElementById('camera-status').innerText = "Capturando!";
 
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -207,14 +312,84 @@
 
         fecharCameraDispositivo();
 
-        // Verifica se o morador está bloqueando este DNA
+        setTimeout(() => {
+            mudarTela('s-media-opcional');
+            inicializarGerenciadorAudio();
+        }, 300);
+    }
+
+    function fecharCameraDispositivo() {
+        if (streamVideo) {
+            streamVideo.getTracks().forEach(track => track.stop());
+            streamVideo = null;
+        }
+    }
+
+    function inicializarGerenciadorAudio() {
+        const btnAudio = document.getElementById('btn-audio-record');
+        const playback = document.getElementById('audio-playback');
+        
+        audioChunks = [];
+        audioB64Data = "";
+        estaGravando = false;
+        btnAudio.innerText = "🎤 Gravar Áudio (Opcional)";
+        btnAudio.style.background = "var(--red)";
+        playback.style.display = "none";
+
+        btnAudio.onclick = async () => {
+            if (!estaGravando) {
+                try {
+                    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(audioStream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = e => {
+                        if (e.data.size > 0) audioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        playback.src = audioUrl;
+                        playback.style.display = "block";
+
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = () => {
+                            audioB64Data = reader.result;
+                        };
+
+                        audioStream.getTracks().forEach(t => t.stop());
+                    };
+
+                    mediaRecorder.start();
+                    estaGravando = true;
+                    btnAudio.innerText = "⏹ Parar Gravação";
+                    btnAudio.style.background = "#fff";
+                    btnAudio.style.color = "#000";
+                } catch (err) {
+                    virtyAlert("Permissão de microfone negada ou indisponível.");
+                }
+            } else {
+                if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                    mediaRecorder.stop();
+                }
+                estaGravando = false;
+                btnAudio.innerText = "🎤 Gravar Novamente";
+                btnAudio.style.background = "var(--blue)";
+                btnAudio.style.color = "#fff";
+            }
+        };
+    }
+
+    function efetuarChamada() {
+        if (!fotoVisitanteB64) return mudarTela('s-inicio');
+
         db.ref(`bloqueados/${alvoUnidade}/${dnaDispositivoGerado}`).once('value', bSnap => {
             if (bSnap.exists()) {
-                // Simula comportamento de chamando, mas rejeita automaticamente após alguns segundos de forma silenciosa
                 mudarTela('s-chamando');
                 iniciarContagemEfeitosInterfone(true); 
             } else {
-                // Fluxo Normal: cria a chamada ativa no nó esperado pelo morador
                 const recado = document.getElementById('v-recado').value.trim();
                 const v_id_unico = "VISIT-" + Date.now();
 
@@ -222,7 +397,8 @@
                     v_id: v_id_unico,
                     dna_dispositivo: dnaDispositivoGerado,
                     foto: fotoVisitanteB64,
-                    texto: recado || "Visitante tocando o interfone",
+                    audio: audioB64Data || "",
+                    texto: recado || "Visitante chamando",
                     status: "chamando"
                 }).then(() => {
                     mudarTela('s-chamando');
@@ -251,10 +427,9 @@
             let percentual = (90 - tempoRestante) / 90;
             document.getElementById('arco-tempo').style.strokeDashoffset = circunferenciaArco * percentual;
 
-            if (tempoRestante <= 30 && tempoRestante > 10) document.getElementById('arco-tempo').style.stroke = "var(--yellow)";
+            if (tempoRestante <= 30 && tempoRestante > 10) document.getElementById('arco-tempo').style.stroke = "#FFC107";
             if (tempoRestante <= 10) document.getElementById('arco-tempo').style.stroke = "var(--red)";
 
-            // Se for um bloco fake (DNA bloqueado), ejeta com timeout/recusado após 15 segundos sem incomodar o morador
             if (isBloqueadoFake && tempoRestante === 75) {
                 finalizarChamadaUI('cinza');
             }
@@ -265,11 +440,9 @@
         }, 1000);
 
         if (!isBloqueadoFake) {
-            // Fica escutando as mudanças de status aplicadas pelo app do Morador
             db.ref('chamadas_ativas/' + alvoUnidade).on('value', snap => {
                 const dados = snap.val();
                 if (!dados) {
-                    // Se o nó sumiu repentinamente, assume encerramento sem resposta
                     finalizarChamadaUI('cinza');
                     return;
                 }
@@ -303,7 +476,7 @@
         if (statusFinal === 'liberado') {
             tit.innerText = "ENTRADA AUTORIZADA";
             tit.style.color = "var(--neon)";
-            sub.innerText = " O portão eletrônico foi liberado. Pode entrar!";
+            sub.innerText = "O portão eletrônico foi liberado. Pode entrar!";
         } else if (statusFinal === 'recusado') {
             tit.innerText = "ACESSO NEGADO";
             tit.style.color = "var(--red)";
@@ -332,7 +505,12 @@
     function reiniciarPainelInterfone() {
         document.getElementById('v-unidade').value = "";
         document.getElementById('v-recado').value = "";
-        mudarTela('s-inicio');
+        audioB64Data = "";
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            mudarTela('s-inicio');
+        } else {
+            mudarTela('s-welcome');
+        }
     }
 
     function gerarEfeitoSonoroInterfone(acao) {
