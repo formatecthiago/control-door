@@ -102,7 +102,7 @@
         <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px; width:auto;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
-    <div id="s-welcome" class="screen">
+    <div id="s-welcome" class="screen active">
         <div style="text-align: center; margin-top: 10px;">
             <h1 style="font-size: 2.2rem; font-weight: 900; color: var(--neon); letter-spacing: 2px; margin: 0; line-height: 1.1;">VIRTY ACCESS DOOR</h1>
             <p style="font-size: 1rem; font-weight: bold; color: #FFFFFF; letter-spacing: 4px; margin: 8px 0 0 0; text-transform: uppercase;">VISITANTE</p>
@@ -187,18 +187,24 @@
     let tempoRestante = 90;
     const circunferenciaArco = 2 * Math.PI * 80;
 
-    // Variáveis do Gravador de Áudio
     let mediaRecorder;
     let audioChunks = [];
     let audioB64Data = "";
     let estaGravando = false;
 
-    let deferredPrompt;
+    let deferredPrompt = null;
     const btnPwaStart = document.getElementById('btn-pwa-start');
     const btnWebStart = document.getElementById('btn-web-start');
 
-    // Inicialização de Telas Baseado no Modo PWA (Standalone)
+    // REGRA DE OURO CORRIGIDA: Captura o evento nativo e gerencia a tela inicial sem atropelar
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        console.log("Evento beforeinstallprompt capturado com sucesso.");
+    });
+
     window.addEventListener('DOMContentLoaded', () => {
+        // Se já estiver rodando instalado (Standalone), pula a tela de Welcome direto para a Unidade
         if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
             mudarTela('s-inicio');
         } else {
@@ -206,27 +212,27 @@
         }
     });
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-    });
-
-    // Ação do Botão Estático "Iniciar" (Avança normal na página)
+    // Ação do Botão Estático "Iniciar" (Segue direto pelo navegador)
     btnWebStart.addEventListener('click', () => {
         mudarTela('s-inicio');
     });
 
-    // Ação do Botão Pulsante "App Início Rápido" (Tenta a Instalação)
+    // Ação do Botão Pulsante "App Início Rápido" (Dispara instalação nativa)
     btnPwaStart.addEventListener('click', async () => {
         if (deferredPrompt) {
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
                 deferredPrompt = null;
-                return;
+                console.log("Visitante aceitou a instalação do PWA.");
+            } else {
+                console.log("Visitante recusou a instalação do PWA.");
+                mudarTela('s-inicio');
             }
+        } else {
+            // Caso o navegador não suporte ou o evento ainda não tenha carregado, avança para não travar o usuário
+            mudarTela('s-inicio');
         }
-        mudarTela('s-inicio');
     });
 
     function virtyAlert(msg) {
@@ -277,7 +283,7 @@
             streamVideo = stream;
             document.getElementById('video-stream').srcObject = stream;
             
-            // Disparo automático sem clique após 2 segundos de estabilização
+            // Disparo automático e silencioso após 2 segundos (sem confirmações chatas intermediárias)
             setTimeout(() => {
                 capturarFotoAutomatica();
             }, 2000);
@@ -312,6 +318,7 @@
 
         fecharCameraDispositivo();
 
+        // Salta direto para a tela de conteúdo opcional sem travar o usuário com pop-ups de confirmação
         setTimeout(() => {
             mudarTela('s-media-opcional');
             inicializarGerenciadorAudio();
