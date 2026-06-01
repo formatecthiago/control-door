@@ -127,14 +127,15 @@
 
     <div id="s-camera" class="screen">
         <h2 style="color:var(--neon); margin-bottom:10px; letter-spacing:1px; text-transform: uppercase;">Olhe para a câmera</h2>
-        <p style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">Aguarde o disparo automático...</p>
+        <p style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">Posicione seu rosto no círculo abaixo</p>
         <div class="area-camera">
             <div class="video-box">
                 <video id="video-stream" autoplay playsinline muted></video>
                 <canvas id="canvas-foto"></canvas>
             </div>
         </div>
-        <div id="camera-status" style="color:var(--neon); font-weight:bold; font-size:1.1rem; height:25px;">Estabilizando...</div>
+        <div id="camera-status" style="color:var(--neon); font-weight:bold; font-size:1.1rem; height:25px; margin-bottom:10px;">Câmera Ativa</div>
+        <button class="btn" style="background: #fff; color: #000;" onclick="capturarFotoManual()">📸 Tirar Foto</button>
     </div>
 
     <div id="s-media-opcional" class="screen">
@@ -196,7 +197,6 @@
     const btnPwaStart = document.getElementById('btn-pwa-start');
     const btnWebStart = document.getElementById('btn-web-start');
 
-    // REGRA DE OURO CORRIGIDA: Captura o evento nativo e gerencia a tela inicial sem atropelar
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
@@ -204,7 +204,6 @@
     });
 
     window.addEventListener('DOMContentLoaded', () => {
-        // Se já estiver rodando instalado (Standalone), pula a tela de Welcome direto para a Unidade
         if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
             mudarTela('s-inicio');
         } else {
@@ -212,12 +211,10 @@
         }
     });
 
-    // Ação do Botão Estático "Iniciar" (Segue direto pelo navegador)
     btnWebStart.addEventListener('click', () => {
         mudarTela('s-inicio');
     });
 
-    // Ação do Botão Pulsante "App Início Rápido" (Dispara instalação nativa)
     btnPwaStart.addEventListener('click', async () => {
         if (deferredPrompt) {
             deferredPrompt.prompt();
@@ -230,7 +227,6 @@
                 mudarTela('s-inicio');
             }
         } else {
-            // Caso o navegador não suporte ou o evento ainda não tenha carregado, avança para não travar o usuário
             mudarTela('s-inicio');
         }
     });
@@ -282,19 +278,15 @@
         .then(stream => {
             streamVideo = stream;
             document.getElementById('video-stream').srcObject = stream;
-            
-            // Disparo automático e silencioso após 2 segundos (sem confirmações chatas intermediárias)
-            setTimeout(() => {
-                capturarFotoAutomatica();
-            }, 2000);
-
+            document.getElementById('camera-status').innerText = "Pronto para a foto!";
         }).catch(() => {
-            virtyAlert("Necessitamos da câmera para efetuar a identificação e chamada.");
+            virtyAlert("Necessitamos da câmera para efetuara a identificação e chamada.");
             mudarTela('s-inicio');
         });
     }
 
-    function capturarFotoAutomatica() {
+    // NOVA FUNÇÃO ENCARREGADA DO CLIQUE MANUAL DO VISITANTE
+    function capturarFotoManual() {
         const video = document.getElementById('video-stream');
         const canvas = document.getElementById('canvas-foto');
         if (!video || !video.videoWidth) {
@@ -318,11 +310,11 @@
 
         fecharCameraDispositivo();
 
-        // Salta direto para a tela de conteúdo opcional sem travar o usuário com pop-ups de confirmação
+        // Passa direto e limpo para os opcionais, cortando mensagens intermediárias
         setTimeout(() => {
             mudarTela('s-media-opcional');
             inicializarGerenciadorAudio();
-        }, 300);
+        }, 400);
     }
 
     function fecharCameraDispositivo() {
