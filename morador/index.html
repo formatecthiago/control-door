@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY MORADOR v2.0.0 - App Mode</title>
     
-    <link class="manifest" href="/manifest.json">
+    <!-- CORRIGIDO: Atributo rel="manifest" e href relativo para a mesma pasta -->
+    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Virty Morador">
+    <meta name="apple-mobile-web-app-title" content="VIRTY MORADOR">
     <link class="apple-touch-icon" href="https://placehold.co/192x192/000000/39FF14?text=VIRTY">
 
     <style>
@@ -333,7 +334,7 @@
             }
             capturaEventoInstalacao = null;
         } else {
-            virtyAlert("O navegador ainda não disparou o gatilho de instalação. Certifique-se de que o manifest.json e o sw.js estão na raiz do servidor.");
+            virtyAlert("O gatilho de instalação não respondeu. Certifique-se de que o sw.js está ativo e rodando em ambiente HTTPS ou Localhost.");
         }
     });
 
@@ -552,7 +553,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = filho.val();
+                    let dadosFilho = snapshot.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
@@ -720,7 +721,7 @@
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js').catch(err => console.log('Erro SW:', err));
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('Erro SW:', err));
         });
     }
 </script>
