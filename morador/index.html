@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY MORADOR v2.0.0 - App Mode</title>
     
-    <link rel="manifest" href="/manifest.json">
+    <link class="manifest" href="/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Virty Morador">
@@ -147,6 +147,11 @@
             2. Role a lista para baixo e toque em <b>Adicionar à Tela de Início</b> <span style="font-size: 1.2rem;">⨁</span>.<br>
             3. Confirme clicando em <b>Adicionar</b> no canto superior direito.
         </div>
+
+        <button class="btn" style="background:#111; color:#555; margin-top:25px; font-size:0.8rem; width:auto; padding:10px 20px; border:1px dashed #333;" 
+                onclick="document.getElementById('tela-bloqueio-instalar').style.display='none'">
+            ⚠️ Ignorar (Ambiente de Teste)
+        </button>
     </div>
 
     <div id="custom-alert" class="virty-popup">
@@ -281,7 +286,7 @@
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
 
-    // 🔒 CHECAGEM STANDALONE CORRIGIDA PARA A PASTA DE ORIGEM
+    // 🔒 VALIDAÇÃO DE APP CORRIGIDA (SEM TRAVAR EXECUÇÃO DO BANCO)
     const instaladoComoApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     let capturaEventoInstalacao = null;
 
@@ -299,18 +304,21 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
+    // 🌟 FLUXO DE INICIALIZAÇÃO CORRIGIDO 
     window.onload = () => {
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
 
+        // Sempre roda o validador do Firebase em segundo plano
+        verificarStatus();
+
+        // Se não for PWA, exibe a camada de aviso, mas permite ignorar para testes
         if (!instaladoComoApp) {
             document.getElementById('tela-bloqueio-instalar').style.display = 'flex';
             const ehIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
             if (ehIphone) {
                 document.getElementById('bloco-ios-tutorial').style.display = 'block';
             }
-        } else {
-            verificarStatus();
         }
     };
 
@@ -525,8 +533,9 @@
             const d = snap.val();
             if(d) {
                 if(st !== 'cinza') ref.update({ status: st });
-                const dnaChave = d.dna_dispositivo || d.v_id.substring(0, 11);
-                gravarHist(d.v_id, d.foto, st, dnaChave);
+                // Estrutura de extração robusta do DNA do dispositivo emissor
+                const dnaChave = d.dna_dispositivo || (d.v_id ? d.v_id.substring(0, 11) : "UNKNOWN-DNA");
+                gravarHist(d.v_id || "virty_visit", d.foto, st, dnaChave);
                 setTimeout(() => ref.remove(), 1200);
             }
         });
@@ -542,7 +551,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = filho.val();
+                    let dadosFilho = child.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
@@ -682,7 +691,6 @@
         } catch(err) {}
     }
 
-    // Registro referenciando o sw.js na raiz
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js').catch(err => console.log('Erro SW:', err));
