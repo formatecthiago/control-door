@@ -346,6 +346,7 @@
                 document.getElementById('txt-un').innerText = "CASA " + my_un; 
                 escutarChamadas(); 
                 renderizarDadosAbas(); 
+                solicitarPermissaoNotificacao(); // Função acoplada para autorizar o Web Push do SW
                 
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -719,9 +720,22 @@
         }
     }
 
+    // Função de suporte acoplada para solicitar permissão nativa de Web Push
+    function solicitarPermissaoNotificacao() {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    console.log('VIRTY: Permissão para alertas em segundo plano concedida!');
+                }
+            });
+        }
+    }
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log('Erro SW:', err));
+            navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('VIRTY: Service Worker Ativo no escopo:', reg.scope))
+            .catch(err => console.log('Erro SW:', err));
         });
     }
 </script>
