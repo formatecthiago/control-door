@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY MORADOR v2.0.0 - App Mode</title>
     
-    <!-- CORRIGIDO: Atributo rel="manifest" e href relativo para a mesma pasta -->
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -346,7 +345,7 @@
                 document.getElementById('txt-un').innerText = "CASA " + my_un; 
                 escutarChamadas(); 
                 renderizarDadosAbas(); 
-                solicitarPermissaoNotificacao(); // Função acoplada para autorizar o Web Push do SW
+                solicitarPermissaoNotificacao();
                 
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -555,7 +554,7 @@
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
                     let dadosFilho = snapshot.val();
-                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
+                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = child.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
             }
@@ -603,8 +602,8 @@
         const list = document.getElementById('lista-bloqueados'); list.innerHTML = "";
         const chaves = Object.keys(mapaBloqueados);
         if(chaves.length === 0) { list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum dispositivo bloqueado.</p>`; return; }
-        const listaOrdenada = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
-        listaOrdenada.forEach(d => { list.innerHTML += criarCardHTML(d, true); });
+        const mapaOrdenado = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
+        mapaOrdenado.forEach(d => { list.innerHTML += criarCardHTML(d, true); });
     }
 
     function criarCardHTML(d, estaBloqueado) {
@@ -720,7 +719,6 @@
         }
     }
 
-    // Função de suporte acoplada para solicitar permissão nativa de Web Push
     function solicitarPermissaoNotificacao() {
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission().then(permission => {
@@ -731,10 +729,25 @@
         }
     }
 
+    // REGISTRO ATUALIZADO COM COMUNICAÇÃO ATIVA (postMessage) PARA O SERVICE WORKER
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('VIRTY: Service Worker Ativo no escopo:', reg.scope))
+            .then(reg => {
+                console.log('VIRTY: Service Worker Ativo!', reg.scope);
+                
+                // Dispara o número da unidade para sincronizar o sw.js assim que o app carrega
+                if (my_un) {
+                    setTimeout(() => {
+                        if (navigator.serviceWorker.controller) {
+                            navigator.serviceWorker.controller.postMessage({
+                                type: 'SET_UNIDADE',
+                                unidade: my_un
+                            });
+                        }
+                    }, 1200);
+                }
+            })
             .catch(err => console.log('Erro SW:', err));
         });
     }
