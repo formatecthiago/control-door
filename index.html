@@ -169,7 +169,13 @@
     <div id="s-resultado" class="screen">
         <img id="res-foto" class="foto-v" src="">
         <div id="res-titulo" class="status-msg">---</div>
-        <p id="res-subtitulo" style="color:#aaa; max-width:300px; font-size:1.1rem; line-height:1.4; margin-bottom:40px;"></p>
+        <p id="res-subtitulo" style="color:#aaa; max-width:300px; font-size:1.1rem; line-height:1.4; margin-bottom:20px;"></p>
+        
+        <div id="bloco-audio-retorno" style="display:none; background:#0d0d0d; border:1px solid var(--blue); padding:15px; border-radius:16px; width:100%; max-width:320px; margin-bottom:30px; flex-direction:column; align-items:center; gap:8px;">
+            <span style="color:var(--blue); font-size:0.8rem; font-weight:bold; letter-spacing:1px;">▶️ OUÇA O MORADOR</span>
+            <audio id="audio-retorno-player" style="width:100%; height:40px;" controls></audio>
+        </div>
+
         <button class="btn" style="background:#222; color:#fff;" onclick="reiniciarPainelInterfone()">VOLTAR AO INÍCIO</button>
     </div>
 
@@ -196,6 +202,15 @@
     let deferredPrompt = null;
     const btnPwaStart = document.getElementById('btn-pwa-start');
     const btnWebStart = document.getElementById('btn-web-start');
+
+    // Registro nativo do Service Worker na raiz
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('VIRTY: SW registrado com sucesso!', reg.scope))
+            .catch(err => console.error('VIRTY: Falha ao registrar SW:', err));
+        });
+    }
 
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
@@ -280,12 +295,11 @@
             document.getElementById('video-stream').srcObject = stream;
             document.getElementById('camera-status').innerText = "Pronto para a foto!";
         }).catch(() => {
-            virtyAlert("Necessitamos da câmera para efetuara a identificação e chamada.");
+            virtyAlert("Necessitamos da câmera para efetuar a identificação e chamada.");
             mudarTela('s-inicio');
         });
     }
 
-    // NOVA FUNÇÃO ENCARREGADA DO CLIQUE MANUAL DO VISITANTE
     function capturarFotoManual() {
         const video = document.getElementById('video-stream');
         const canvas = document.getElementById('canvas-foto');
@@ -310,7 +324,6 @@
 
         fecharCameraDispositivo();
 
-        // Passa direto e limpo para os opcionais, cortando mensagens intermediárias
         setTimeout(() => {
             mudarTela('s-media-opcional');
             inicializarGerenciadorAudio();
@@ -398,7 +411,8 @@
                     foto: fotoVisitanteB64,
                     audio: audioB64Data || "",
                     texto: recado || "Visitante chamando",
-                    status: "chamando"
+                    status: "chamando",
+                    timestamp: Date.now()
                 }).then(() => {
                     mudarTela('s-chamando');
                     iniciarContagemEfeitosInterfone(false);
@@ -466,31 +480,45 @@
     function finalizarChamadaUI(statusFinal, msgDoMorador) {
         clearInterval(timerRegressivoInterfone);
         gerarEfeitoSonoroInterfone('stop');
-        db.ref('chamadas_ativas/' + alvoUnidade).off('value');
 
-        document.getElementById('res-foto').src = fotoVisitanteB64;
-        const tit = document.getElementById('res-titulo');
-        const sub = document.getElementById('res-subtitulo');
+        db.ref('chamadas_ativas/' + alvoUnidade).once('value', snap => {
+            const dadosCompletos = snap.val() || {};
+            db.ref('chamadas_ativas/' + alvoUnidade).off('value');
 
-        if (statusFinal === 'liberado') {
-            tit.innerText = "ENTRADA AUTORIZADA";
-            tit.style.color = "var(--neon)";
-            sub.innerText = "O portão eletrônico foi liberado. Pode entrar!";
-        } else if (statusFinal === 'recusado') {
-            tit.innerText = "ACESSO NEGADO";
-            tit.style.color = "var(--red)";
-            sub.innerText = "A entrada não foi autorizada pelo morador neste momento.";
-        } else if (statusFinal === 'mensagem') {
-            tit.innerText = "RECADO DO MORADOR";
-            tit.style.color = "var(--blue)";
-            sub.innerText = msgDoMorador ? `"${msgDoMorador}"` : "O morador enviou um aviso mas o texto estava vazio.";
-        } else {
-            tit.innerText = "SEM RESPOSTA";
-            tit.style.color = "#666";
-            sub.innerText = "O morador não pôde atender a chamada. Tente novamente mais tarde.";
-        }
+            document.getElementById('res-foto').src = fotoVisitanteB64;
+            const tit = document.getElementById('res-titulo');
+            const sub = document.getElementById('res-subtitulo');
+            const blocoAudio = document.getElementById('bloco-audio-retorno');
+            const playerAudio = document.getElementById('audio-retorno-player');
 
-        mudarTela('s-resultado');
+            blocoAudio.style.display = "none";
+            playerAudio.src = "";
+
+            if (statusFinal === 'liberado') {
+                tit.innerText = "ENTRADA AUTORIZADA";
+                tit.style.color = "var(--neon)";
+                sub.innerText = "O portão eletrônico foi liberado. Pode entrar!";
+            } else if (statusFinal === 'recusado') {
+                tit.innerText = "ACESSO NEGADO";
+                tit.style.color = "var(--red)";
+                sub.innerText = "A entrada não foi autorizada pelo morador neste momento.";
+            } else if (statusFinal === 'mensagem') {
+                tit.innerText = "RECADO DO MORADOR";
+                tit.style.color = "var(--blue)";
+                sub.innerText = msgDoMorador ? `"${msgDoMorador}"` : "Mensagem de texto recebida.";
+
+                if (dadosCompletos.audio_morador) {
+                    playerAudio.src = dadosCompletos.audio_morador;
+                    blocoAudio.style.display = "flex";
+                }
+            } else {
+                tit.innerText = "SEM RESPOSTA";
+                tit.style.color = "#666";
+                sub.innerText = "O morador não pôde atender a chamada. Tente novamente mais tarde.";
+            }
+
+            mudarTela('s-resultado');
+        });
     }
 
     function cancelarChamadaPeloVisitante() {
