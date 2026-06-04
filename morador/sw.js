@@ -11,50 +11,69 @@ if (!firebase.apps.length) {
 }
 const db = firebase.database();
 
-// Variável para sabermos qual unidade este aparelho controla (evita olhar o condomínio inteiro)
-let minhaUnidadeLocal = null;
+let unidadeMonitorada = null;
 let ultimaNotificacaoTs = 0;
 
-// Ouve as mensagens vindas da tela principal (HTML) para descobrir qual é a unidade do morador
+// Recupera a unidade salva na memória persistente do Service Worker assim que ele liga
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        caches.open('virty-config').then(cache => {
+            return cache.match('unidade').then(response => {
+                if (response) {
+                    return response.text().then(un => {
+                        unidadeMonitorada = un;
+                        inicializarEscutaMestre(un);
+                    });
+                }
+            });
+        })
+    );
+});
+
+// Ouve o HTML apenas para salvar ou atualizar a unidade na memória persistente
 self.addEventListener('message', event => {
     if (event.data && event.data.type === 'SET_UNIDADE') {
-        minhaUnidadeLocal = event.data.unidade;
-        inicializarEscutaFirebase(minhaUnidadeLocal);
+        const un = event.data.unidade;
+        unidadeMonitorada = un;
+        
+        // Grava no CacheStorage do Service Worker de forma permanente
+        caches.open('virty-config').then(cache => {
+            cache.put('unidade', new Response(un));
+        });
+        
+        inicializarEscutaMestre(un);
     }
 });
 
-function inicializarEscutaFirebase(unidade) {
+function inicializarEscutaMestre(unidade) {
     if (!unidade) return;
 
-    // Monitora estritamente a unidade DESTE morador (evita travar o app com dados de vizinhos)
+    // Escuta direta e limpa do Firebase em segundo plano
     db.ref('chamadas_ativas/' + unidade).on('value', snapshot => {
         const dados = snapshot.val();
         
-        // Se a unidade estiver chamando
         if (dados && dados.status === 'chamando') {
-            
-            // Debounce: Evita disparar 50 notificações seguidas para a mesma chamada
             const agora = Date.now();
-            if (agora - ultimaNotificacaoTs < 5000) return; 
+            if (agora - ultimaNotificacaoTs < 5000) return; // Evita spams de notificações tratadas
             ultimaNotificacaoTs = agora;
 
-            // Verifica se o app já está aberto na cara do usuário para não duplicar o som
+            // Verifica o estado das janelas
             clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
                 const appVisivel = clientList.some(c => c.visibilityState === 'visible');
-                if (appVisivel) return; // Se a tela tá aberta, o seu HTML maravilhoso cuida de tudo
+                
+                // Se o app já está aberto na cara do usuário, não exibe o balão superior
+                if (appVisivel) return;
 
-                // 🔔 NOTIFICAÇÃO DIFERENCIADA QUE VOCÊ PEDIU
+                // Força a exibição da Notificação Nativa do Sistema Operacional (Push superior)
                 const title = '🚨 INTERFONE VIRTY';
                 const options = {
-                    body: `CHAMADA ATIVA NA PORTARIA!\nAlguém está solicitando acesso à sua unidade.`,
+                    body: `CHAMADA ATIVA NA PORTARIA!\nToque abaixo para atender o visitante.`,
                     icon: 'https://placehold.co/192x192/000000/39FF14?text=VIRTY',
                     badge: 'https://placehold.co/192x192/000000/39FF14?text=VIRTY',
-                    tag: 'virty-alerta-urgente',
+                    tag: 'virty-push-urgente',
                     renotify: true,
-                    requireInteraction: true, // Fica travada na tela até o clique
-                    vibrate: [600, 300, 600, 300, 600, 300, 600, 300, 600], // Padrão pesado de chamada telefônica
-                    
-                    // O Botão único diferenciado para ir direto para o aplicativo
+                    requireInteraction: true, // Mantém o alerta preso no topo do Android/iOS até responder
+                    vibrate: [500, 300, 500, 300, 500, 300, 500], // Vibração nativa disparada pelo sistema operacional
                     actions: [
                         {
                             action: 'abrir_painel',
@@ -70,20 +89,17 @@ function inicializarEscutaFirebase(unidade) {
     });
 }
 
-// Controla o clique na Notificação ou no Botão "ATENDER"
+// Resposta ao clique na notificação ou no botão superior "ATENDER"
 self.addEventListener('notificationclick', event => {
-    event.notification.close(); // Fecha o balão de alerta imediatamente
+    event.notification.close();
 
-    // Executa a ação de abrir/focar o PWA do morador
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-            // Se o app já estiver aberto em segundo plano, traz ele para a frente
             for (let client of clientList) {
                 if ('focus' in client) {
                     return client.focus();
                 }
             }
-            // Se estava fechado, abre o PWA do zero na raiz
             if (clients.openWindow) {
                 return clients.openWindow('./');
             }
