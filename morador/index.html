@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Virty Access - Morador</title>
+    <link class="apple-touch-icon" href="https://placehold.co/192x192/000000/39FF14?text=VIRTY">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -49,7 +50,7 @@
         .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .btn-config { background: var(--surface-card); border: 1px solid #222; color: #fff; padding: 14px; border-radius: 12px; font-size: 0.85rem; display: flex; flex-direction: column; align-items: center; gap: 6px; font-weight: bold; }
 
-        /* Painel Flutuante de Chamada Ativa (O mais crítico) */
+        /* Painel Flutuante de Chamada Ativa */
         #painel-chamada { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 9999; flex-direction: column; padding: 20px; justify-content: space-between; }
         .visitante-stream-box { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
         .visitante-foto-grande { width: 180px; height: 180px; border-radius: 50%; object-fit: cover; border: 4px solid var(--neon); box-shadow: 0 0 25px rgba(57,255,20,0.3); margin-bottom: 15px; }
@@ -99,7 +100,7 @@
         <button onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
-    <!-- Bloqueio de Segurança para Instalação Obligatória do PWA -->
+    <!-- Bloqueio de Segurança para Instalação Obrigatória do PWA -->
     <div id="tela-bloqueio-instalar">
         <h2 style="font-size:1.5rem; margin-bottom:10px;">🚨 INSTALAÇÃO OBRIGATÓRIA</h2>
         <p style="color:var(--gray); font-size:0.9rem; line-height:1.4; margin-bottom:15px;">Para receber alertas de chamadas no topo da sua tela em tempo real, adicione o Virty à sua tela inicial.</p>
@@ -215,7 +216,7 @@
         </div>
     </div>
 
-    <!-- POPUP INTERNO: GRAVAÇÃO DE ÁUDIO ATIVA (NÃO TRAVA A INTERFACE) -->
+    <!-- POPUP INTERNO: GRAVAÇÃO DE ÁUDIO ATIVA -->
     <div id="popup-voz" class="overlay-popup">
         <div class="circular-progress-box">
             <svg>
@@ -250,6 +251,7 @@
         let streamCameraAtiva = null;
         let usarLenteFrontal = true;
         let micStreamGlobal = null;
+        let base64AudioMoradorData = "";
 
         let limiteExibicaoHist = 5;
         let cacheBloqueadosGlobais = {};
@@ -312,6 +314,14 @@
                     renderizarDadosAbas(); 
                     solicitarPermissaoNotificacao();
                     
+                    // Notifica o service worker imediatamente sobre a unidade vinculada
+                    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({
+                            type: 'SET_UNIDADE',
+                            unidade: my_un
+                        });
+                    }
+
                     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                         navigator.mediaDevices.getUserMedia({ audio: true })
                         .then(stream => { micStreamGlobal = stream; })
@@ -452,7 +462,9 @@
                 if(!micStreamGlobal) micStreamGlobal = stream;
 
                 mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 16000 });
-                chunks = []; estaGravando = true; 
+                chunks = []; 
+                estaGravando = true; 
+                base64AudioMoradorData = "";
                 
                 db.ref('chamadas_ativas/' + my_un).child('status').set('gravando');
                 
@@ -470,6 +482,28 @@
                     if(tempoVoz <= 0) stopRec();
                 }, 1000);
 
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) chunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(chunks, { type: 'audio/mp3' });
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = () => {
+                        base64AudioMoradorData = reader.result;
+                        // Atualiza com a gravação injetada antes de concluir a resposta
+                        db.ref('chamadas_ativas/' + my_un).update({
+                            status: 'mensagem',
+                            audio_morador: base64AudioMoradorData,
+                            msg_morador: "Mensagem de voz enviada",
+                            data_hora: obterDataHora()
+                        }).then(() => {
+                            responder('mensagem');
+                        });
+                    };
+                };
+
                 mediaRecorder.start();
             } catch(e) { 
                 virtyAlert("Permita o uso do microfone para responder por voz."); 
@@ -479,12 +513,10 @@
 
         function stopRec() { 
             if(mediaRecorder && mediaRecorder.state !== 'inactive') { 
-                mediaRecorder.stop(); 
                 clearInterval(timerVozInterval); 
                 estaGravando = false;
                 document.getElementById('popup-voz').style.display = 'none';
-                
-                setTimeout(() => { responder('mensagem'); }, 500);
+                mediaRecorder.stop(); 
             } 
         }
 
@@ -500,10 +532,10 @@
             ref.once('value', snap => {
                 const d = snap.val();
                 if(d) {
-                    if(st !== 'cinza') ref.update({ status: st });
+                    if(st !== 'cinza' && st !== 'mensagem') ref.update({ status: st });
                     const dnaChave = d.dna_dispositivo || (d.v_id ? d.v_id.substring(0, 11) : "UNKNOWN-DNA");
                     gravarHist(d.v_id || "virty_visit", d.foto, st, dnaChave);
-                    setTimeout(() => ref.remove(), 800);
+                    setTimeout(() => ref.remove(), 1000);
                 }
             });
         }
@@ -575,7 +607,7 @@
             }); 
         }
 
-        function limparHist() { if(confirm("Deseja realmente limpar o histórico recente?")) db.ref(`historico/${my_un}`).remove(); }
+        function limpiarHist() { if(confirm("Deseja realmente limpar o histórico recente?")) db.ref(`historico/${my_un}`).remove(); }
         function mudarTela(id) { 
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
             document.getElementById(id).classList.add('active'); 
