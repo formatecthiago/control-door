@@ -14,7 +14,6 @@ const db = firebase.database();
 let unidadeMonitorada = null;
 let ultimaNotificacaoTs = 0;
 
-// Recupera a unidade salva na memória persistente do Service Worker assim que ele liga
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.open('virty-config').then(cache => {
@@ -30,17 +29,13 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Ouve o HTML apenas para salvar ou atualizar a unidade na memória persistente
 self.addEventListener('message', event => {
     if (event.data && event.data.type === 'SET_UNIDADE') {
         const un = event.data.unidade;
         unidadeMonitorada = un;
-        
-        // Grava no CacheStorage do Service Worker de forma permanente
         caches.open('virty-config').then(cache => {
             cache.put('unidade', new Response(un));
         });
-        
         inicializarEscutaMestre(un);
     }
 });
@@ -48,32 +43,29 @@ self.addEventListener('message', event => {
 function inicializarEscutaMestre(unidade) {
     if (!unidade) return;
 
-    // Escuta direta e limpa do Firebase em segundo plano
     db.ref('chamadas_ativas/' + unidade).on('value', snapshot => {
         const dados = snapshot.val();
         
         if (dados && dados.status === 'chamando') {
             const agora = Date.now();
-            if (agora - ultimaNotificacaoTs < 5000) return; // Evita spams de notificações tratadas
+            if (agora - ultimaNotificacaoTs < 5000) return; 
             ultimaNotificacaoTs = agora;
 
-            // Verifica o estado das janelas
             clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
                 const appVisivel = clientList.some(c => c.visibilityState === 'visible');
                 
-                // Se o app já está aberto na cara do usuário, não exibe o balão superior
+                // Se o app já está visível em primeiro plano, deixa o banner em tempo real do HTML agir
                 if (appVisivel) return;
 
-                // Força a exibição da Notificação Nativa do Sistema Operacional (Push superior)
                 const title = '🚨 INTERFONE VIRTY';
                 const options = {
-                    body: `CHAMADA ATIVA NA PORTARIA!\nToque abaixo para atender o visitante.`,
+                    body: `CHAMADA ATIVA NA PORTARIA!\nToque para abrir o painel de atendimento.`,
                     icon: 'https://placehold.co/192x192/000000/39FF14?text=VIRTY',
                     badge: 'https://placehold.co/192x192/000000/39FF14?text=VIRTY',
                     tag: 'virty-push-urgente',
                     renotify: true,
-                    requireInteraction: true, // Mantém o alerta preso no topo do Android/iOS até responder
-                    vibrate: [500, 300, 500, 300, 500, 300, 500], // Vibração nativa disparada pelo sistema operacional
+                    requireInteraction: true, 
+                    vibrate: [500, 300, 500, 300, 500, 300, 500],
                     actions: [
                         {
                             action: 'abrir_painel',
@@ -89,10 +81,8 @@ function inicializarEscutaMestre(unidade) {
     });
 }
 
-// Resposta ao clique na notificação ou no botão superior "ATENDER"
 self.addEventListener('notificationclick', event => {
     event.notification.close();
-
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
             for (let client of clientList) {
