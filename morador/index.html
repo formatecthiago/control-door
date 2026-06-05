@@ -25,20 +25,33 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); overflow: hidden; position: fixed; width: 100vw; height: 100vh; }
 
-        /* Estrutura de Telas PWA */
         .screen { display: none; width: 100vw; height: 100vh; flex-direction: column; position: absolute; top:0; left:0; background: var(--bg); }
         .screen.active { display: flex; }
 
-        header { height: 60px; background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #222; }
+        header { height: 60px; background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #222; position: relative; }
         .logo { font-size: 1.1rem; font-weight: 900; letter-spacing: 1px; color: var(--text); }
         .logo span { color: var(--neon); }
         .unidade-tag { background: #222; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; border: 1px solid var(--neon); color: var(--neon); }
 
-        /* Container de Abas e Listas */
+        /* COMPONENTE EXCLUSIVO: 4 Bolinhas Indicadoras de Chamadas no Topo */
+        .painel-bolinhas-status { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 10px auto; padding: 6px 16px; background: #0a0a0a; border: 1px solid #222; border-radius: 20px; width: fit-content; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #222; border: 1px solid #444; transition: all 0.3s ease; }
+        .dot.active-chamando { background: var(--neon); box-shadow: 0 0 10px var(--neon); border-color: #fff; }
+        .dot.active-escrevendo { background: var(--blue); box-shadow: 0 0 10px var(--blue); border-color: #fff; }
+        .dot.active-gravando { background: var(--red); box-shadow: 0 0 10px var(--red); border-color: #fff; }
+
+        /* BANNER CRÍTICO INJETADO: Notificação Superior Persistente Interna */
+        #banner-alerta-superior { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 65px; background: #0a0a0a; border-bottom: 2px solid var(--neon); z-index: 10005; align-items: center; justify-content: space-between; padding: 0 14px; box-shadow: 0 5px 20px rgba(57,255,20,0.3); animation: flash-alerta-topo 1.5s infinite alternate; }
+        @keyframes flash-alerta-topo { from { border-bottom-color: var(--neon); } to { border-bottom-color: #000; } }
+        .banner-info { display: flex; align-items: center; gap: 10px; }
+        .banner-foto-mini { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; }
+        .banner-texto { font-size: 0.85rem; font-weight: bold; color: #fff; line-height: 1.2; }
+        .banner-botoes { display: flex; gap: 6px; }
+        .btn-banner-acao { border: none; padding: 8px 12px; font-size: 0.75rem; font-weight: bold; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
+
         .content-scroll { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 90px; }
         .secao-titulo { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); margin-bottom: 12px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
 
-        /* Cards do Histórico */
         .hist-card { background: var(--surface-card); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; border: 1px solid #222; }
         .foto-box { width: 50px; height: 50px; border-radius: 8px; background: #222; overflow: hidden; position: relative; }
         .foto-hist { width: 100%; height: 100%; object-fit: cover; }
@@ -46,47 +59,37 @@
         .status-desbloqueado { background: #222; border: 1px solid #444; }
         .status-bloqueio-ativo { background: rgba(255,49,49,0.1); border: 1px solid var(--red); }
 
-        /* Controles Inferiores de Configuração */
         .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .btn-config { background: var(--surface-card); border: 1px solid #222; color: #fff; padding: 14px; border-radius: 12px; font-size: 0.85rem; display: flex; flex-direction: column; align-items: center; gap: 6px; font-weight: bold; }
 
-        /* Painel Flutuante de Chamada Ativa */
         #painel-chamada { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 9999; flex-direction: column; padding: 20px; justify-content: space-between; }
         .visitante-stream-box { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
         .visitante-foto-grande { width: 180px; height: 180px; border-radius: 50%; object-fit: cover; border: 4px solid var(--neon); box-shadow: 0 0 25px rgba(57,255,20,0.3); margin-bottom: 15px; }
         .alerta-texto-visitante { background: rgba(255,255,255,0.05); padding: 12px 20px; border-radius: 12px; font-size: 0.95rem; text-align: center; max-width: 85%; border: 1px solid #333; color: #ddd; }
         
-        /* Cronômetro Flutuante */
         .timer-flutuante { position: absolute; top: 10px; right: 10px; background: rgba(255,49,49,0.2); border: 1px solid var(--red); color: var(--red); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
 
-        /* Grade de Botões de Ação do Morador */
         .acoes-chamada-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
         .btn-acao { height: 56px; border-radius: 14px; border: none; font-size: 0.95rem; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; color: #fff; cursor: pointer; }
         .btn-recusar { background: #222; border: 1px solid var(--red); color: var(--red); }
         .btn-texto { background: #222; border: 1px solid var(--blue); color: var(--blue); }
         .btn-aceitar { background: var(--neon); color: #000; grid-column: span 2; height: 62px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Botão de Segurar para Falar (Microfone) */
         .container-central-mic { display: flex; justify-content: center; align-items: center; margin: 15px 0; }
-        .btn-mic-segurar { width: 80px; height: 80px; border-radius: 50%; background: #222; border: 2px solid var(--blue); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: var(--blue); touch-action: none; position: relative; }
-        .btn-mic-segurar:active { background: var(--blue); color: #000; box-shadow: 0 0 20px rgba(0,229,255,0.4); }
+        .btn-mic-segurar { width: 80px; height: 80px; border-radius: 50%; background: #222; border: 2px solid var(--blue); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: var(--blue); touch-action: none; position: relative; user-select: none; -webkit-user-select: none; }
 
-        /* Modais, Overlays e Popups Internos */
         .overlay-popup { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .box-digitar-resposta { background: var(--surface); width: 100%; max-width: 400px; border-radius: 16px; padding: 20px; border: 1px solid #333; }
         .campo-input-virty { width: 100%; background: #000; border: 1px solid #444; border-radius: 8px; padding: 12px; color: #fff; font-size: 1rem; margin-bottom: 15px; outline: none; }
         .campo-input-virty:focus { border-color: var(--blue); }
 
-        /* Animação Circular do Gravador de Voz */
         .circular-progress-box { position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; }
         .circular-progress-box svg { position: absolute; width: 100%; height: 100%; transform: rotate(-90deg); }
         .progresso-timer-texto { font-size: 2rem; font-weight: 800; color: #fff; }
 
-        /* Bloqueio de Instalação PWA */
         #tela-bloqueio-instalar { display: none; position: fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:11000; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; }
         .btn-instalar-pwa { background:var(--neon); color:#000; border:none; padding:15px 30px; border-radius:30px; font-size:1.1rem; font-weight:bold; margin-top:20px; display:none; width:100%; max-width:280px; }
 
-        /* Custom Alert */
         #custom-alert { display: none; position: fixed; top: 20px; left: 5%; width: 90%; background: #222; border: 1px solid var(--neon); border-radius: 8px; padding: 15px; z-index: 12000; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; }
         #custom-alert p { font-size: 0.9rem; margin-bottom: 10px; color: #fff; }
         #custom-alert button { background: var(--neon); color: #000; border: none; padding: 6px 15px; font-weight: bold; border-radius: 4px; }
@@ -98,6 +101,21 @@
     <div id="custom-alert">
         <p id="custom-alert-msg"></p>
         <button onclick="fecharAlertCustomizado()">OK</button>
+    </div>
+
+    <!-- BANNER DE NOTIFICAÇÃO DO TOPO (Injetado e Persistente) -->
+    <div id="banner-alerta-superior">
+        <div class="banner-info">
+            <img id="banner-foto" src="" class="banner-foto-mini">
+            <div class="banner-texto">
+                <span style="color:var(--neon);">🚨 VISITANTE NOVO</span><br>
+                <span id="banner-subtexto" style="color:var(--gray); font-size:0.75rem;">Chamando...</span>
+            </div>
+        </div>
+        <div class="banner-botoes">
+            <button class="btn-banner-acao" style="background:var(--red); color:#fff;" onclick="recusarPeloBanner()">Recusar</button>
+            <button class="btn-banner-acao" style="background:var(--neon); color:#000;" onclick="abrirPainelPeloBanner()">Atender</button>
+        </div>
     </div>
 
     <!-- Bloqueio de Segurança para Instalação Obrigatória do PWA -->
@@ -150,7 +168,15 @@
             <div id="txt-un" class="unidade-tag">CASA --</div>
         </header>
         
-        <div class="content-scroll">
+        <!-- Painel de Controle de 4 Bolinhas de Monitoramento Sólido -->
+        <div class="painel-bolinhas-status">
+            <div id="dot-1" class="dot"></div>
+            <div id="dot-2" class="dot"></div>
+            <div id="dot-3" class="dot"></div>
+            <div id="dot-4" class="dot"></div>
+        </div>
+
+        <div class="content-scroll" style="padding-top:5px;">
             <div class="secao-titulo">⚙️ PREFERÊNCIAS DE ALERTA</div>
             <div class="config-grid">
                 <button class="btn-config" onclick="proximoSom()">
@@ -165,7 +191,8 @@
 
             <div class="secao-titulo">
                 <span>📋 VISITANTES RECENTES</span>
-                <span onclick="limparHist()" style="color:var(--red); font-size:0.7rem; cursor:pointer;">LIMPAR TUDO</span>
+                <!-- CORREÇÃO EXPLICITA: Limpa apenas o histórico de visitas comuns -->
+                <span onclick="limparHist()" style="color:var(--red); font-size:0.7rem; cursor:pointer; font-weight:bold;">LIMPAR TUDO</span>
             </div>
             <div id="lista-hist"></div>
 
@@ -174,7 +201,7 @@
         </div>
     </div>
 
-    <!-- PAINEL CRÍTICO: INTERFACE DE RECEBIMENTO DE CHAMADA EM TEMPO REAL -->
+    <!-- PAINEL DE INTERFACE DE RECEBIMENTO DE CHAMADA EM TEMPO REAL -->
     <div id="painel-chamada" onclick="verificarToqueEnvioMaoLivre(event)">
         <div class="visitante-stream-box">
             <div class="timer-flutuante">TEMPO RESTANTE: <span id="timer-flutuante-texto">90s</span></div>
@@ -182,21 +209,16 @@
             <div id="msg-v" class="alerta-texto-visitante">Aguardando dados...</div>
         </div>
 
-        <!-- Feedback de Gravação de Voz Otimizado -->
         <div style="text-align:center; margin-bottom:5px; color:var(--gray); font-size:0.75rem;">
             TEMPO DE SESSÃO: <span id="timer-regressivo" style="color:#fff; font-weight:bold;">90</span>s
         </div>
 
-        <!-- Área Dinâmica do Microfone -->
+        <!-- Área do Microfone (Duplo Modo: Pressionar / Toque Livre) -->
         <div class="container-central-mic">
-            <button id="btn-comunicador-voz" class="btn-mic-segurar" 
-                    onmousedown="eventoMicStart(event)" onmouseup="eventoMicEnd(event)"
-                    ontouchstart="eventoMicStart(event)" ontouchend="eventoMicEnd(event)">
-                🎙️
-            </button>
+            <button id="btn-comunicador-voz" class="btn-mic-segurar">🎙️</button>
         </div>
 
-        <!-- Botões Rápidos de Resposta Manual -->
+        <!-- Grade de Ações do Morador -->
         <div class="acoes-chamada-grid">
             <button class="btn-acao btn-recusar" onclick="responder('recusado')">❌ RECUSAR</button>
             <button class="btn-acao btn-texto" onclick="abrirPainelTexto()">💬 TEXTO</button>
@@ -228,7 +250,6 @@
         <p id="label-modo-gravacao" style="margin-top:20px; text-align:center; font-weight:bold; letter-spacing:1px; font-size:0.9rem;">SEGURE PARA GRAVAR...</p>
     </div>
 
-    <!-- LOGICA SCRIPT EMBUTIDA E UNIFICADA -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
@@ -277,6 +298,7 @@
             document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
             atualizarInterfaceAlerta();
             verificarStatus();
+            configurarEventosMicrofoneHibrido();
 
             if (!instaladoComoApp) {
                 document.getElementById('tela-bloqueio-instalar').style.display = 'flex';
@@ -314,7 +336,6 @@
                     renderizarDadosAbas(); 
                     solicitarPermissaoNotificacao();
                     
-                    // Notifica o service worker imediatamente sobre a unidade vinculada
                     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                         navigator.serviceWorker.controller.postMessage({
                             type: 'SET_UNIDADE',
@@ -325,7 +346,7 @@
                     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                         navigator.mediaDevices.getUserMedia({ audio: true })
                         .then(stream => { micStreamGlobal = stream; })
-                        .catch(e => console.log("Microfone recusado ou indisponível de início."));
+                        .catch(e => console.log("Microfone em espera ativo."));
                     }
                 } else { 
                     db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).on('value', snap => {
@@ -391,14 +412,42 @@
 
         function escutarChamadas() {
             db.ref('chamadas_ativas/' + my_un).on('value', s => {
-                const d = s.val(); const painel = document.getElementById('painel-chamada');
+                const d = s.val(); 
+                const painel = document.getElementById('painel-chamada');
+                const banner = document.getElementById('banner-alerta-superior');
+                
+                // Reset das 4 bolinhas de monitoramento
+                document.querySelectorAll('.dot').forEach(el => el.className = 'dot');
+
                 if(d && (d.status === 'chamando' || d.status === 'escrevendo' || d.status === 'gravando')) {
                     
+                    // Sincronismo das 4 bolinhas baseado no status real vindo da portaria
+                    if (d.status === 'chamando') {
+                        document.getElementById('dot-1').classList.add('active-chamando');
+                        document.getElementById('dot-2').classList.add('active-chamando');
+                        document.getElementById('banner-subtexto').innerText = d.texto || "Visitante interfonando...";
+                    } else if (d.status === 'escrevendo') {
+                        document.getElementById('dot-1').classList.add('active-escrevendo');
+                        document.getElementById('dot-2').classList.add('active-escrevendo');
+                        document.getElementById('dot-3').classList.add('active-escrevendo');
+                        document.getElementById('banner-subtexto').innerText = "Digitando recado...";
+                    } else if (d.status === 'gravando') {
+                        document.getElementById('dot-1').classList.add('active-gravando');
+                        document.getElementById('dot-2').classList.add('active-gravando');
+                        document.getElementById('dot-3').classList.add('active-gravando');
+                        document.getElementById('dot-4').classList.add('active-gravando');
+                        document.getElementById('banner-subtexto').innerText = "Gravando áudio...";
+                    }
+
                     document.getElementById('foto-v').src = d.foto;
+                    document.getElementById('banner-foto').src = d.foto;
                     document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
                     
+                    // GERENCIADOR DE VISIBILIDADE DO BANNER DE ALERTA NO TOPO
                     if (painel.style.display !== 'flex') {
-                        painel.style.display = 'flex';
+                        banner.style.display = 'flex'; // Torna o Alerta visível no topo imediatamente
+                    } else {
+                        banner.style.display = 'none'; // Esconde se a tela cheia já estiver aberta
                     }
                     
                     if((d.status === 'escrevendo' || d.status === 'gravando' || somSilenciadoPorInteracao)) {
@@ -420,6 +469,7 @@
                 } else { 
                     if (!estaGravando && !estaDigitando) {
                         painel.style.display = 'none'; 
+                        banner.style.display = 'none';
                         fecharPainelTexto(); 
                         gerenciarAlerta('stop'); 
                         clearInterval(timerPerdida); 
@@ -429,6 +479,14 @@
                 }
             });
         }
+
+        // Funções de controle acionadas diretamente pelo Banner Superior
+        function abrirPainelPoleBanner() {
+            document.getElementById('banner-alerta-superior').style.display = 'none';
+            document.getElementById('painel-chamada').style.display = 'flex';
+        }
+        function abrirPainelPeloBanner() { abrirPainelPoleBanner(); }
+        function recusarPeloBanner() { responder('recusado'); }
 
         function abrirPainelTexto() {
             estaDigitando = true; somSilenciadoPorInteracao = true; gerenciarAlerta('stop');
@@ -451,9 +509,44 @@
             document.getElementById('campo-texto-interno').value = ""; responder('mensagem');
         }
 
-        function eventoMicStart(e) { e.preventDefault(); if(estaGravando) return; timePressStart = Date.now(); modoMaoLivre = false; somSilenciadoPorInteracao = true; gerenciarAlerta('stop'); startRec(); }
-        function eventoMicEnd(e) { e.preventDefault(); let duration = Date.now() - timePressStart; if(duration < 400) { modoMaoLivre = true; document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque na tela para enviar</span>"; } else { if(!modoMaoLivre) stopRec(); } }
-        function verificarToqueEnvioMaoLivre(e) { if(modoMaoLivre && estaGravando) { e.stopPropagation(); stopRec(); } }
+        // CONTROLE DO MICROFONE HÍBRIDO (Duplo Modo: Pressionar 30s ou Mãos Livres)
+        function configurarEventosMicrofoneHibrido() {
+            const btnMic = document.getElementById('btn-comunicador-voz');
+            
+            const iniciarToque = (e) => {
+                e.preventDefault();
+                if(estaGravando) return;
+                timePressStart = Date.now();
+                modoMaoLivre = false;
+                somSilenciadoPorInteracao = true;
+                gerenciarAlerta('stop');
+                startRec();
+            };
+
+            const encerrarToque = (e) => {
+                e.preventDefault();
+                let duracaoClick = Date.now() - timePressStart;
+                if(duracaoClick < 400) {
+                    // Modo Mão Livre ativado via clique rápido
+                    modoMaoLivre = true;
+                    document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque na tela em qualquer lugar para enviar</span>";
+                } else {
+                    if(!modoMaoLivre) stopRec(); // Envia automaticamente ao soltar o dedo
+                }
+            };
+
+            btnMic.addEventListener('mousedown', iniciarToque);
+            btnMic.addEventListener('mouseup', encerrarToque);
+            btnMic.addEventListener('touchstart', iniciarToque);
+            btnMic.addEventListener('touchend', encerrarToque);
+        }
+
+        function verificarToqueEnvioMaoLivre(e) { 
+            if(modoMaoLivre && estaGravando) { 
+                e.stopPropagation(); 
+                stopRec(); 
+            } 
+        }
 
         async function startRec() {
             try {
@@ -473,7 +566,7 @@
                 popup.style.display = 'flex';
                 
                 let tempoVoz = 30; texto.innerText = "30s"; arco.style.strokeDashoffset = 0; arco.style.stroke = "var(--neon)";
-                const circunferencia = 2 * Math.PI * 90;
+                const circunferencia = 2 * Math.PI * 80;
                 
                 clearInterval(timerVozInterval);
                 timerVozInterval = setInterval(() => {
@@ -492,7 +585,6 @@
                     reader.readAsDataURL(audioBlob);
                     reader.onloadend = () => {
                         base64AudioMoradorData = reader.result;
-                        // Atualiza com a gravação injetada antes de concluir a resposta
                         db.ref('chamadas_ativas/' + my_un).update({
                             status: 'mensagem',
                             audio_morador: base64AudioMoradorData,
@@ -506,7 +598,7 @@
 
                 mediaRecorder.start();
             } catch(e) { 
-                virtyAlert("Permita o uso do microfone para responder por voz."); 
+                virtyAlert("Habilite o microfone para responder."); 
                 estaGravando = false; 
             }
         }
@@ -523,6 +615,7 @@
         function responder(st) {
             estaGravando = false; estaDigitando = false; modoMaoLivre = false; somSilenciadoPorInteracao = false;
             document.getElementById('painel-chamada').style.display = 'none';
+            document.getElementById('banner-alerta-superior').style.display = 'none';
             document.getElementById('container-digitar-texto').style.display = 'none';
             document.getElementById('popup-voz').style.display = 'none';
             gerenciarAlerta('stop');
@@ -607,7 +700,13 @@
             }); 
         }
 
-        function limpiarHist() { if(confirm("Deseja realmente limpar o histórico recente?")) db.ref(`historico/${my_un}`).remove(); }
+        // CORREÇÃO DA REGRA DE NEGÓCIO: Limpa apenas o histórico comum
+        function limparHist() { 
+            if(confirm("Deseja realmente limpar o histórico recente?")) {
+                db.ref(`historico/${my_un}`).remove(); 
+            }
+        }
+        
         function mudarTela(id) { 
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
             document.getElementById(id).classList.add('active'); 
@@ -624,7 +723,7 @@
             if(acao === 'stop') return;
             
             if(modoAlerta === 2 || modoAlerta === 3) { 
-                try { navigator.vibrate([300, 100, 300]); } catch(e){ console.log("Vibração via navegador barrada ou indisponível."); } 
+                try { navigator.vibrate([300, 100, 300]); } catch(e){} 
             }
             if(modoAlerta === 3) return;
             
@@ -651,7 +750,7 @@
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
                 .then(reg => {
-                    console.log('VIRTY: SW Conectado com Sucesso');
+                    console.log('VIRTY: SW Conectado');
                     if (my_un) {
                         setTimeout(() => {
                             if (navigator.serviceWorker.controller) {
