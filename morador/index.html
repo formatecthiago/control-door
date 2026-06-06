@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Virty Access - Morador</title>
-    <!-- Configurações PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a0a0c">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -138,7 +137,7 @@
             fill: currentColor;
         }
 
-        /* Seções e Componentes do Painel */
+        /* Seções e Componentes do Panel */
         .secao-titulo {
             font-size: 0.75rem;
             color: var(--gray);
@@ -240,13 +239,11 @@
 </head>
 <body>
 
-    <!-- Topbar Fixa Global -->
     <div class="topbar">
         <div class="topbar-titulo">VIRT-Y ACCESS</div>
         <div id="badge-conexao" class="status-badge online">CONECTADO</div>
     </div>
 
-    <!-- TELA 1: HOME (Painel Geral) -->
     <div id="s-home" class="screen active">
         <div class="content-scroll" style="padding-top:5px;">
             
@@ -262,222 +259,8 @@
                 </button>
             </div>
 
-            <!-- BLOCO DINÂMICO DE INSTALAÇÃO PWA (HOME) -->
             <div id="bloco-instalacao-home" style="display: none; margin-bottom: 25px;">
                 <div class="secao-titulo">📲 APLICATIVO WEB</div>
                 <button id="btn-instalar-home" class="btn-acao btn-aceitar" style="height: 52px; font-size: 0.9rem; border-radius: 12px;">
                     📥 INSTALAR APP NO CELULAR
-                </button>
-                <div id="tutorial-ios-home" style="display: none; margin-top: 8px; background: #111; padding: 12px; border-radius: 12px; border: 1px solid #333;">
-                    <p style="font-size: 0.8rem; color: #fff; text-align: center; line-height: 1.4;">
-                        No iPhone: Toque no botão de <b>Compartilhar 📤</b> na barra do Safari e depois em <b>"Adicionar à Tela de Início"</b>.
-                    </p>
-                </div>
-            </div>
-
-            <div class="secao-titulo">
-                <span>📋 VISITANTES RECENTES</span>
-                <span onclick="limparHist()" style="color:var(--red); font-size:0.7rem; cursor:pointer; font-weight:bold;">LIMPAR TUDO</span>
-            </div>
-            <div id="lista-hist"></div>
-        </div>
-    </div>
-
-    <!-- TELA 2: QR CODES -->
-    <div id="s-qr" class="screen">
-        <div class="content-scroll">
-            <div class="secao-titulo">🔑 MEUS CONVITES / QR CODES</div>
-            <p style="color: var(--gray); font-size: 0.9rem; margin-bottom: 15px;">Gere chaves de acesso temporárias para seus convidados.</p>
-            <button class="btn-acao btn-aceitar" onclick="alert('Funcionalidade de QR Code em desenvolvimento.')">Novo Convite QR</button>
-        </div>
-    </div>
-
-    <!-- TELA 3: PERFIL -->
-    <div id="s-perfil" class="screen">
-        <div class="content-scroll">
-            <div class="secao-titulo">👤 DADOS DA UNIDADE</div>
-            <div style="background: var(--surface); padding: 15px; border-radius: 14px; border: 1px solid var(--border);">
-                <p style="margin-bottom: 8px;"><b>Morador:</b> Usuário Demonstrativo</p>
-                <p><b>Apartamento / Bloco:</b> Apt 102 - Bloco B</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE CHAMADA EM TEMPO REAL (INTERFONE) -->
-    <div id="tela-chamada">
-        <div style="font-size: 4rem; margin-bottom: 10px; animation: pulse 1.5s infinite;">🔔</div>
-        <h2 style="font-size: 1.6rem; margin-bottom: 5px;">INTERFONE TOCANDO</h2>
-        <p id="chamada-subtitulo" style="color: var(--gray); font-size: 1rem; margin-bottom: 40px;">Carregando dados da portaria...</p>
-        
-        <div style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
-            <button class="btn-acao btn-aceitar" onclick="responderChamada('liberado')">👍 PERMITIR ENTRADA</button>
-            <button class="btn-acao btn-recusar" onclick="responderChamada('recusado')">🚫 RECUSAR / DESLIGAR</button>
-        </div>
-    </div>
-
-    <!-- TELA DE BLOQUEIO CRÍTICO: ADIÇÃO COMPULSÓRIA DO PWA (ERRO DA IMAGEM 40100.jpg RESOLVIDO) -->
-    <div id="tela-bloqueio-instalar">
-        <h2 style="font-size:1.6rem; margin-bottom:12px;">🚨 INSTALAÇÃO OBRIGATÓRIA</h2>
-        <p style="color:var(--gray); font-size:0.95rem; line-height:1.4; margin-bottom:20px; max-width:300px;">Para receber alertas de chamadas no topo da sua tela em tempo real, adicione o Virty à sua tela inicial.</p>
-        
-        <!-- Botão nativo de instalação automática -->
-        <button id="btn-pwa-instalar-nativo" class="btn-instalar-pwa">ADICIONAR AO CELULAR</button>
-        
-        <!-- Painel de Contingência para Navegadores Internos ocultos (Instagram, Zap, Files) -->
-        <div id="ajuda-navegador-incompativel" style="margin-top: 20px; background: #141417; padding: 16px; border-radius: 14px; border: 1px solid var(--red); width: 100%; max-width: 320px;">
-            <p style="font-size: 0.9rem; color: var(--red); font-weight: bold; margin-bottom: 10px;">⚠️ Navegador Interno Detectado</p>
-            <p style="font-size: 0.8rem; color: var(--gray); line-height: 1.4; margin-bottom: 12px; text-align: left;">Você abriu o app por um link temporário. Para conseguir instalar:</p>
-            <p style="font-size: 0.8rem; color: #fff; text-align: left; line-height: 1.5;">
-                1. Toque nos <b>três pontinhos (⋮)</b> no topo direito do seu celular.<br>
-                2. Escolha a opção <b>"Abrir no Chrome"</b> ou <b>"Abrir no Navegador"</b>.<br>
-                3. A tela será liberada para instalação imediata!
-            </p>
-        </div>
-
-        <!-- Instruções dedicadas para usuários Apple Safari -->
-        <div id="bloco-ios-tutorial" style="display:none; margin-top:20px; background:#141417; padding:16px; border-radius:14px; border:1px solid #333; width:100%; max-width:320px;">
-            <p style="font-size:0.9rem; color:#fff; font-weight:bold; margin-bottom:8px;">Aparelho Apple (iOS)</p>
-            <p style="font-size:0.8rem; color:var(--gray); text-align:left; line-height:1.4;">1. Toque no ícone de <b>Compartilhar 📤</b> (no menu inferior ou superior do Safari).<br>2. Escolha a opção <b>"Adicionar à Tela de Início"</b>.</p>
-        </div>
-    </div>
-
-    <!-- Barra de Navegação Inferior -->
-    <div class="navbar">
-        <div class="nav-item active" onclick="mudarTela('home', this)">
-            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            Início
-        </div>
-        <div class="nav-item" onclick="mudarTela('qr', this)">
-            <svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zm2 2v3h3V6zm0 7h7v7H4zm2 2v3h3v-3zm7-11h7v7h-7zm2 2v3h3V6zm0 7h3v3h-3zm3 3h3v3h-3zm-3 3h3v3h-3zm3-3h3v-3h-3zm0-3h3v-3h-3z"/></svg>
-            Convites
-        </div>
-        <div class="nav-item" onclick="mudarTela('perfil', this)">
-            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            Perfil
-        </div>
-    </div>
-
-    <!-- Lógica Operacional do Sistema -->
-    <script>
-        let capturaEventoInstalacao = null;
-        // Verifica se o app já está rodando standalone (instalado)
-        const instaladoComoApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-
-        // Gerenciamento de Telas
-        function mudarTela(destino, elemento) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            
-            document.getElementById(`s-${destino}`).classList.add('active');
-            elemento.classList.add('active');
-        }
-
-        // Histórico Simulado de Testes locais
-        let historico = [
-            { nome: "Entregador Mercado Livre", data: "Hoje às 11:24", status: "Entrada Liberada" },
-            { nome: "Prestador (Copasa/Manutenção)", data: "Ontem às 15:40", status: "Entrada Liberada" }
-        ];
-
-        function renderizarHist() {
-            const container = document.getElementById('lista-hist');
-            if (historico.length === 0) {
-                container.innerHTML = `<div style="color:var(--gray); font-size:0.85rem; text-align:center; padding:20px;">Nenhum registro recente encontrado.</div>`;
-                return;
-            }
-            container.innerHTML = historico.map(item => `
-                <div class="card-historico">
-                    <div>
-                        <div style="font-weight:600; font-size:0.9rem; margin-bottom:2px;">${item.nome}</div>
-                        <div style="color:var(--gray); font-size:0.75rem;">${item.data}</div>
-                    </div>
-                    <div style="color:var(--neon); font-size:0.75rem; font-weight:bold; text-transform:uppercase;">${item.status}</div>
-                </div>
-            `).join('');
-        }
-
-        function limparHist() {
-            historico = [];
-            renderizarHist();
-        }
-
-        // Preferências de áudio
-        let somAtual = 1;
-        function proximoSom() {
-            somAtual = somAtual >= 3 ? 1 : somAtual + 1;
-            document.getElementById('label-som').innerText = `🎼 ${somAtual}`;
-        }
-
-        let modoAlerta = true;
-        function alternarAlerta() {
-            modoAlerta = !modoAlerta;
-            document.getElementById('btn-alerta').innerText = modoAlerta ? "📳🔊" : "📳";
-        }
-
-        // LÓGICA DE GERENCIAMENTO DO PWA E SEGURANÇA CONTRA NAVEGADORES INTERNOS
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            capturaEventoInstalacao = e;
-            
-            // Navegador compatível e evento capturado: Libera e exibe os botões nativos
-            document.getElementById('btn-pwa-instalar-nativo').style.display = 'block';
-            document.getElementById('ajuda-navegador-incompativel').style.display = 'none';
-            document.getElementById('bloco-instalacao-home').style.display = 'block';
-        });
-
-        // Configura gatilho nos botões de instalação
-        document.getElementById('btn-pwa-instalar-nativo').addEventListener('click', executarPromptInstalacao);
-        document.getElementById('btn-instalar-home').addEventListener('click', executarPromptInstalacao);
-
-        async function executarPromptInstalacao() {
-            if (capturaEventoInstalacao) {
-                capturaEventoInstalacao.prompt();
-                const { outcome } = await capturaEventoInstalacao.userChoice;
-                if (outcome === 'accepted') {
-                    document.getElementById('tela-bloqueio-instalar').style.display = 'none';
-                    document.getElementById('bloco-instalacao-home').style.display = 'none';
-                }
-                capturaEventoInstalacao = null;
-            }
-        }
-
-        // Inicialização de ciclo de vida do App
-        const antigoOnload = window.onload;
-        window.onload = () => {
-            if (typeof antigoOnload === 'function') antigoOnload();
-            renderizarHist();
-
-            const ehIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            
-            if (!instaladoComoApp) {
-                // Se NÃO está instalado, ativa a tela de interrupção
-                document.getElementById('tela-bloqueio-instalar').style.display = 'flex';
-                
-                if (ehIphone) {
-                    // Esconde layout Android e injeta tutorial nativo do Safari
-                    document.getElementById('ajuda-navegador-incompativel').style.display = 'none';
-                    document.getElementById('bloco-ios-tutorial').style.display = 'block';
-                    document.getElementById('bloco-instalacao-home').style.display = 'block';
-                    document.getElementById('tutorial-ios-home').style.display = 'block';
-                } else {
-                    // Temporizador de segurança Android: se após 2.5 segundos o navegador não disparar
-                    // o instalador nativo, mantém a instrução de contingência para abrir via Chrome externo.
-                    setTimeout(() => {
-                        if (!capturaEventoInstalacao) {
-                            document.getElementById('ajuda-navegador-incompativel').style.display = 'block';
-                        }
-                    }, 2500);
-                }
-            } else {
-                // Caso o PWA já esteja instalado e rodando em modo nativo, remove qualquer bloqueio
-                document.getElementById('tela-bloqueio-instalar').style.display = 'none';
-            }
-        };
-
-        // Simulação do comportamento de resposta do morador
-        function responderChamada(statusVeredito) {
-            document.getElementById('tela-chamada').style.display = 'none';
-            alert(`Chamada encerrada. Acesso: ${statusVeredito.toUpperCase()}`);
-        }
-    </script>
-</body>
-</html>
+                </
