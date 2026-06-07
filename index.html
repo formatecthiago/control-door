@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v2.0.0 - Web Pura</title>
+    <title>VIRTY VISITANTE v2.5.0 - Fluxo Avançado</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -33,7 +33,7 @@
             justify-content: space-between; 
             align-items: center; 
             box-sizing: border-box; 
-            padding: 5vh 5% 15vh 5%; 
+            padding: 5vh 5% 10vh 5%; 
         }
         .active { display: flex; }
 
@@ -157,8 +157,8 @@
             width: 100%; 
         }
         .video-box { 
-            width: 180px; 
-            height: 180px; 
+            width: 220px; 
+            height: 220px; 
             border-radius: 50%; 
             overflow: hidden; 
             border: 3px solid var(--neon); 
@@ -207,6 +207,28 @@
         #timer-chamada { font-size: 1.3rem; color: var(--red); font-weight: bold; margin-top: 10px; }
         .pulsar { animation: pulseBlink 2s infinite; }
         @keyframes pulseBlink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        
+        /* Container específico para as ações seguras de áudio */
+        .audio-container-seguro {
+            width: 100%;
+            margin: 15px 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-ouvir {
+            background: var(--neon);
+            color: #000;
+            font-weight: bold;
+            padding: 14px;
+            border-radius: 20px;
+            width: 80%;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(57,255,20,0.4);
+        }
     </style>
 </head>
 <body>
@@ -223,15 +245,15 @@
             <div>Acesso inteligente</div>
         </div>
         <div class="btn-ativar-container">
-            <div class="pronome-projeto">O projeto</div>
-            <button class="btn-pulsante" onclick="iniciarFluxoSistema()">Aceitar e iniciar</button>
+            <div class="pronome-projeto">Seja Bem-Vindo</div>
+            <button class="btn-pulsante" onclick="avancarParaCamera()">Aceitar e iniciar</button>
         </div>
     </div>
 
-    <div id="s-inicio" class="screen">
+    <div id="s-camera" class="screen">
         <div class="virty-header">
-            <h2 class="texto-neon-verde" style="font-size: 1.6rem; margin: 0;">IDENTIFICAÇÃO VIRTUAL</h2>
-            <div style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">RECONHECIMENTO OBRIGATÓRIO PARA ENTRADA</div>
+            <h2 class="texto-neon-verde" style="font-size: 1.6rem; margin: 0;">RECONHECIMENTO VISUAL</h2>
+            <div style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">TIRE UMA FOTO PARA SE IDENTIFICAR</div>
         </div>
         <div class="conteudo-central">
             <div class="area-camera-virty">
@@ -244,11 +266,24 @@
                     <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
                 </button>
             </div>
-            <input type="number" id="v-un" placeholder="Número do Apt / Casa">
-            <input type="text" id="v-texto" placeholder="Recado rápido (Opcional)">
+            <div id="status-foto" style="color:var(--neon); font-size:1.1rem; font-weight:bold; height:20px;"></div>
         </div>
         <div class="rodape-tela">
-            <button class="btn" style="background:#fff; color:#000; margin-bottom: 12px;" onclick="fotoVis()">📸 CAPTURAR MINHA FOTO</button>
+            <button id="btn-bater-selfie" class="btn" style="background:#fff; color:#000; margin-bottom: 12px;" onclick="capturarSelfieAutomatica()">📸 BATER A SELFIE</button>
+        </div>
+    </div>
+
+    <div id="s-inicio" class="screen">
+        <div class="virty-header">
+            <h2 class="texto-neon-verde" style="font-size: 1.6rem; margin: 0;">INFORMAÇÕES DE ACESSO</h2>
+            <div style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">DIGITE O LOCAL E ENVIE SEU RECADO</div>
+        </div>
+        <div class="conteudo-central">
+            <input type="number" id="v-un" placeholder="Número do Apt / Casa">
+            <input type="text" id="v-texto" placeholder="Mensagem / Identificação (Opcional)">
+        </div>
+        <div class="rodape-tela">
+            <button class="btn" style="background:var(--neon); color:#000; margin-bottom: 12px; font-size:1.2rem;" onclick="dispararInterfone()">🔔 CHAMAR</button>
             <button class="btn" style="background:transparent; border:2px solid var(--red); color:var(--red);" onclick="resetarFluxoVisitante()">CANCELAR</button>
         </div>
     </div>
@@ -260,7 +295,7 @@
             <div id="timer-chamada">AGUARDE: 90s</div>
         </div>
         <div class="rodape-tela">
-            <button class="btn btn-perigo" onclick="cancelarInterfone()">DESCONECTAR INTERFONE</button>
+            <button class="btn btn-perigo" onclick="cancelarInterfone()">CANCELAR CHAMADA</button>
         </div>
     </div>
 
@@ -268,39 +303,41 @@
         <div></div>
         <div class="conteudo-central">
             <h1 id="titulo-feedback" class="texto-neon-azul" style="font-size: 2.5rem; margin: 0 0 20px 0;">RECADO RECEBIDO</h1>
-            <p id="msg-feedback" style="color:#aaa; font-style: italic; font-size: 1.3rem; margin-bottom: 25px;">"Áudio enviado"</p>
-            <audio id="audio-player-v" style="width: 100%; border-radius: 30px;"></audio>
+            <p id="msg-feedback" style="color:#aaa; font-style: italic; font-size: 1.3rem; margin-bottom: 25px;">"Processando resposta..."</p>
+            
+            <div id="area-audio-ouvir" class="audio-container-seguro">
+                <button class="btn-ouvir" onclick="reproduzirAudioProtegido()">▶️ OUVIR ÁUDIO DO MORADOR</button>
+                <audio id="audio-player-v" style="display:none;"></audio>
+            </div>
         </div>
         <div class="rodape-tela">
-            <button id="btn-voltar-feedback" class="btn" style="background: var(--blue); color: #fff;" onclick="resetarFluxoVisitante()">FECHAR RECADO</button>
+            <button id="btn-voltar-feedback" class="btn" style="background: #222; color: #fff;" onclick="resetarFluxoVisitante()">VOLTAR PARA O INÍCIO</button>
         </div>
     </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
+    // Configuração Firebase (Inalterada)
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
     let streamCameraAtiva = null;
-    let usarLenteFrontal = false;
+    let usarLenteFrontal = true; // Por padrão, selfie ativa a frontal
     let visitanteFotoBase64 = "";
     let llamadaIdGlobal = "";
     let escutadorFirebaseAtivo = null;
     let timerRegressivoInterval = null;
     let tempoRestanteChamada = 90;
+    let cacheAudioUrl = ""; // Guarda a URL do áudio localmente de forma segura
 
-    // 🌟 PRIVILÉGIO WEB EXTRA: GERAÇÃO DE ID/FINGERPRINT POTENTE POTENCIALIZADO
+    // Identificação do dispositivo
     function gerarFingerprintDispositivo() {
         const componentesHardware = [
-            screen.width, 
-            screen.height, 
-            screen.devicePixelRatio, 
-            navigator.hardwareConcurrency || 4, 
-            navigator.language,
-            navigator.maxTouchPoints || 0,
-            new Date().getTimezoneOffset()
+            screen.width, screen.height, screen.devicePixelRatio, 
+            navigator.hardwareConcurrency || 4, navigator.language,
+            navigator.maxTouchPoints || 0, new Date().getTimezoneOffset()
         ];
         const meta = componentesHardware.join('||');
         let hash = 0;
@@ -315,8 +352,9 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    function iniciarFluxoSistema() {
-        mudarTela('s-inicio');
+    // Avança para a Tela 2 e ativa a câmera
+    function avancarParaCamera() {
+        mudarTela('s-camera');
         inicializarCapturaVideo();
     }
 
@@ -339,31 +377,52 @@
         inicializarCapturaVideo();
     }
 
-    function fotoVis() {
+    // TELA 2: Captura foto, conta 1.5s e pula automático para a Tela 3
+    function capturarSelfieAutomatica() {
         const v = document.getElementById('v-vis'), c = document.getElementById('c-vis');
         if(!v.videoWidth) return virtyAlert("Aguarde o feed da câmera carregar.");
+        
         c.width = v.videoWidth; c.height = v.videoHeight;
         const ctx = c.getContext('2d');
         if(usarLenteFrontal) { ctx.translate(c.width, 0); ctx.scale(-1, 1); }
         ctx.drawImage(v, 0, 0);
         ctx.setTransform(1,0,0,1,0,0);
-        visitanteFotoBase64 = c.toDataURL('image/jpeg', 0.5);
-        c.style.display = "block"; v.style.display = "none";
         
-        if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
-        dispararInterfone();
+        visitanteFotoBase64 = c.toDataURL('image/jpeg', 0.5);
+        c.style.display = "block"; 
+        v.style.display = "none";
+        
+        // Desativa a transmissão da câmera para poupar energia do hardware
+        if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); streamCameraAtiva = null; }
+
+        document.getElementById('status-foto').innerText = "FOTO CAPTURADA!";
+        document.getElementById('btn-bater-selfie').style.display = "none";
+
+        // Transição automática de 1.5 segundos (1500 milissegundos) para a terceira tela
+        setTimeout(() => {
+            mudarTela('s-inicio');
+        }, 1500);
     }
 
+    // TELA 3: Coleta informações e inicia chamada
     function dispararInterfone() {
         const un = document.getElementById('v-un').value.trim();
         const recado = document.getElementById('v-texto').value.trim();
 
-        if(!visitanteFotoBase64) return virtyAlert("Por favor, capture sua foto antes de interfonar!");
+        if(!visitanteFotoBase64) {
+            virtyAlert("Erro no fluxo: Foto ausente. Voltando para a câmera.");
+            document.getElementById('btn-bater-selfie').style.display = "block";
+            document.getElementById('c-vis').style.display = "none";
+            document.getElementById('v-vis').style.display = "block";
+            document.getElementById('status-foto').innerText = "";
+            avancarParaCamera();
+            return;
+        }
         if(!un) return virtyAlert("Digite o número da unidade (Casa/Apt)!");
 
         db.ref(`bloqueados/${un}/${meu_fingerprint}`).once('value', bSnap => {
             if(bSnap.exists()) {
-                exibirFeedbackCustomizado('recusado', "ACESSO BLOQUEADO", "Totem de acesso restrito.");
+                exibirFeedbackFinal('recusado', "ACESSO BLOQUEADO", "Totem de acesso restrito.");
                 return;
             }
 
@@ -410,11 +469,12 @@
             document.getElementById('timer-chamada').innerText = `AGUARDE: ${tempoRestanteChamada}s`;
             if(tempoRestanteChamada <= 0) {
                 cancelarInterfone();
-                exibirFeedbackCustomizado('cinza', "SEM RESPOSTA", "O morador não pôde atender no momento.");
+                exibirFeedbackFinal('cinza', "SEM RESPOSTA", "O morador não pôde atender no momento.");
             }
         }, 1000);
     }
 
+    // Escuta em tempo real o retorno do Firebase
     function escutarRespostaMorador() {
         if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
         escutadorFirebaseAtivo = db.ref(`chamadas_ativas/${chamadaIdGlobal}`);
@@ -425,27 +485,40 @@
 
             if(d.status === 'liberado') {
                 clearInterval(timerRegressivoInterval);
-                exibirFeedbackCustomizado('liberado', "ENTRADA AUTORIZADA", "Porta liberada. Seja bem-vindo!");
-                fecharEscutadorAposTempo(4000);
+                exibirFeedbackFinal('liberado', "ENTRADA AUTORIZADA", "Porta liberada. Seja bem-vindo!");
+                limparNoFirebaseRemotamente(4000);
             }
             else if(d.status === 'recusado') {
                 clearInterval(timerRegressivoInterval);
-                exibirFeedbackCustomizado('recusado', "ENTRADA RECUSADA", "A solicitação foi recusada.");
-                fecharEscutadorAposTempo(4000);
+                exibirFeedbackFinal('recusado', "ENTRADA RECUSADA", "A solicitação foi recusada.");
+                limparNoFirebaseRemotamente(4000);
             }
             else if(d.status === 'mensagem') {
                 clearInterval(timerRegressivoInterval);
-                if(d.audio_b64) {
-                    exibirFeedbackCustomizado('mensagem', "RECADO RECEBIDO", '"Áudio enviado"');
-                    const player = document.getElementById('audio-player-v');
-                    player.src = d.audio_b64;
-                    player.setAttribute('controls', 'controls');
-                    player.play();
+                // Checa com precisão se existe áudio codificado na resposta do morador
+                if(d.audio_b64 && d.audio_b64.trim() !== "") {
+                    cacheAudioUrl = d.audio_b64; // Salva na variável global segura
+                    exibirFeedbackFinal('mensagem', "RECADO RECEBIDO", '"O morador deixou um áudio para você"');
                 } else {
-                    exibirFeedbackCustomizado('mensagem', "RECADO MORADOR", `"${d.msg_morador}"`);
+                    exibirFeedbackFinal('mensagem', "RECADO MORADOR", `"${d.msg_morador || 'Sem texto enviado'}"`);
                 }
-                fecharEscutadorAposTempo(20000);
+                limparNoFirebaseRemotamente(25000);
             }
+        });
+    }
+
+    // Ação acionada pelo clique do usuário na tela morta (Contorna restrições do Safari e Chrome Mobile)
+    function reproduzirAudioProtegido() {
+        if(!cacheAudioUrl) return;
+        const player = document.getElementById('audio-player-v');
+        player.src = cacheAudioUrl;
+        player.setAttribute('controls', 'controls');
+        player.style.display = "block";
+        
+        // Tenta tocar o áudio e intercepta erros de mídia do navegador se houver
+        player.play().catch(err => {
+            console.log("Erro de reprodução nativa:", err);
+            virtyAlert("Clique no play do reprodutor para escutar.");
         });
     }
 
@@ -456,39 +529,78 @@
         resetarFluxoVisitante();
     }
 
-    function fecharEscutadorAposTempo(ms) {
+    function limparNoFirebaseRemotamente(ms) {
         setTimeout(() => {
             if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
             if(chamadaIdGlobal) db.ref(`chamadas_ativas/${chamadaIdGlobal}`).remove();
         }, ms);
     }
 
-    function exibirFeedbackCustomizado(tipo, titulo, mensagem) {
+    // Exibe os estados finais da tela "morta", mantendo sempre o botão "Voltar para o Início" visível abaixo
+    function exibirFeedbackFinal(tipo, titulo, mensagem) {
         mudarTela('s-feedback');
         const txtTitulo = document.getElementById('titulo-feedback');
         const txtMsg = document.getElementById('msg-feedback');
         const btnVoltar = document.getElementById('btn-voltar-feedback');
+        const areaAudio = document.getElementById('area-audio-ouvir');
         const player = document.getElementById('audio-player-v');
 
-        player.removeAttribute('controls');
+        // Limpa estados anteriores do player
+        areaAudio.style.display = "none";
+        player.style.display = "none";
         player.src = "";
-        txtTitulo.innerText = titulo;
-        txtMsg.innerText = mensaje;
+        cacheAudioUrl = "";
 
-        if(tipo === 'liberado') { txtTitulo.className = "texto-neon-verde"; btnVoltar.style.background = "var(--neon)"; btnVoltar.style.color = "#000"; }
-        if(tipo === 'recusado') { txtTitulo.className = "texto-neon-vermelho"; btnVoltar.style.background = "var(--red)"; btnVoltar.style.color = "#fff"; }
-        if(tipo === 'mensagem') { txtTitulo.className = "texto-neon-azul"; btnVoltar.style.background = "var(--blue)"; btnVoltar.style.color = "#fff"; }
+        txtTitulo.innerText = titulo;
+        txtMsg.innerText = mensagem;
+
+        if(tipo === 'liberado') { 
+            txtTitulo.className = "texto-neon-verde"; 
+            btnVoltar.style.background = "var(--neon)"; 
+            btnVoltar.style.color = "#000"; 
+        }
+        if(tipo === 'recusado') { 
+            txtTitulo.className = "texto-neon-vermelho"; 
+            btnVoltar.style.background = "var(--red)"; 
+            btnVoltar.style.color = "#fff"; 
+        }
+        if(tipo === 'mensagem') { 
+            txtTitulo.className = "texto-neon-azul"; 
+            btnVoltar.style.background = "var(--blue)"; 
+            btnVoltar.style.color = "#fff"; 
+            // Se possuir áudio salvo no cache da requisição, libera o botão de ouvir áudio
+            if (mensagem.includes("áudio")) {
+                areaAudio.style.display = "flex";
+            }
+        }
+        if(tipo === 'cinza') {
+            txtTitulo.className = "texto-neon-azul";
+            btnVoltar.style.background = "#333";
+            btnVoltar.style.color = "#fff";
+        }
     }
 
+    // Reseta completamente o sistema voltando para a primeira tela
     function resetarFluxoVisitante() {
         clearInterval(timerRegressivoInterval);
         if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
         
+        // Destruir streams residuais de câmera se houver
+        if(streamCameraAtiva) {
+            streamCameraAtiva.getTracks().forEach(t => t.stop());
+            streamCameraAtiva = null;
+        }
+
         visitanteFotoBase64 = "";
+        cacheAudioUrl = "";
         document.getElementById('v-un').value = "";
         document.getElementById('v-texto').value = "";
+        
+        // Restaura elementos visuais da tela da câmera
         document.getElementById('c-vis').style.display = "none";
         document.getElementById('v-vis').style.display = "block";
+        document.getElementById('btn-bater-selfie').style.display = "block";
+        document.getElementById('status-foto').innerText = "";
         
         mudarTela('s-boasvindas');
     }
@@ -496,10 +608,6 @@
     function mudarTela(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(id !== 's-inicio' && streamCameraAtiva) {
-            streamCameraAtiva.getTracks().forEach(t => t.stop());
-            streamCameraAtiva = null;
-        }
     }
 </script>
 </body>
