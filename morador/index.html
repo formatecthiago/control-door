@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0.0 - Web Pura</title>
+    <title>VIRTY MORADOR v2.0.0 - App Mode</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VIRTY MORADOR">
+    <link class="apple-touch-icon" href="https://placehold.co/192x192/000000/39FF14?text=VIRTY">
+
     <style>
         :root { 
             --neon: #39FF14; 
@@ -26,6 +33,27 @@
             user-select: none;
         }
         
+        #tela-bloqueio-instalar {
+            display: none; 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000; color: #fff; z-index: 99999;
+            flex-direction: column; align-items: center; justify-content: center;
+            padding: 30px; box-sizing: border-box; text-align: center;
+        }
+        .instalar-btn-virty {
+            background: var(--neon); color: #000;
+            padding: 20px; border-radius: 15px; font-weight: bold;
+            font-size: 1.2rem; border: none; cursor: pointer;
+            width: 100%; max-width: 300px; margin-top: 25px;
+            text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(57,255,20,0.4);
+        }
+        .tutorial-ios {
+            display: none; background: #0d0d0d; border: 1px solid #222;
+            padding: 20px; border-radius: 16px; margin-top: 20px;
+            max-width: 320px; font-size: 0.95rem; line-height: 1.5; text-align: left;
+        }
+
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex; }
         
@@ -102,6 +130,30 @@
     </style>
 </head>
 <body>
+
+    <div id="tela-bloqueio-instalar">
+        <h1 style="color: #39FF14; font-size: 2rem; margin-bottom: 5px; letter-spacing: 2px;">VIRTY MORADOR</h1>
+        <div style="text-transform: uppercase; font-size: 0.8rem; color: #666; font-weight: bold; letter-spacing: 2px; margin-bottom: 30px;">Instalação Obrigatória</div>
+        
+        <p style="color: #aaa; font-size: 1.1rem; max-width: 320px; margin: 0 auto 10px auto;">
+            Para garantir que você receba os alertas do interfone em tempo real, este sistema precisa ser executado como aplicativo.
+        </p>
+
+        <button id="btn-pwa-instalar-nativo" class="instalar-btn-virty" style="display: none;">Instalar Aplicativo</button>
+
+        <div id="bloco-ios-tutorial" class="tutorial-ios">
+            <b style="color: #39FF14;">Passos para Instalação no iPhone:</b><br><br>
+            1. Toque no botão de <b>Compartilhar</b> <span style="font-size: 1.2rem;">⎋</span> (na barra inferior do navegador).<br>
+            2. Role a lista para baixo e toque em <b>Adicionar à Tela de Início</b> <span style="font-size: 1.2rem;">⨁</span>.<br>
+            3. Confirme clicando em <b>Adicionar</b> no canto superior direito.
+        </div>
+
+        <button class="btn" style="background:#111; color:#555; margin-top:25px; font-size:0.8rem; width:auto; padding:10px 20px; border:1px dashed #333;" 
+                onclick="document.getElementById('tela-bloqueio-instalar').style.display='none'">
+            ⚠️ Ignorar (Ambiente de Teste)
+        </button>
+    </div>
+
     <div id="custom-alert" class="virty-popup">
         <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:12px;">VIRTY ACCESS DOOR</div>
         <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4;"></div>
@@ -234,6 +286,9 @@
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
 
+    const instaladoComoApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    let capturaEventoInstalacao = null;
+
     function gerarFingerprintMorador() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
         let hash = 0;
@@ -252,7 +307,34 @@
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
         verificarStatus();
+
+        if (!instaladoComoApp) {
+            document.getElementById('tela-bloqueio-instalar').style.display = 'flex';
+            const ehIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            if (ehIphone) {
+                document.getElementById('bloco-ios-tutorial').style.display = 'block';
+            }
+        }
     };
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        capturaEventoInstalacao = e;
+        document.getElementById('btn-pwa-instalar-nativo').style.display = 'block';
+    });
+
+    document.getElementById('btn-pwa-instalar-nativo').addEventListener('click', async () => {
+        if (capturaEventoInstalacao) {
+            capturaEventoInstalacao.prompt();
+            const { outcome } = await capturaEventoInstalacao.userChoice;
+            if (outcome === 'accepted') {
+                document.getElementById('tela-bloqueio-instalar').style.display = 'none';
+            }
+            capturaEventoInstalacao = null;
+        } else {
+            virtyAlert("O gatilho de instalação não respondeu. Verifique as configurações de HTTPS.");
+        }
+    });
 
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
@@ -307,7 +389,6 @@
         
         my_foto = c.toDataURL('image/jpeg', 0.5); 
         c.style.display = "block"; v.style.display = "none"; 
-        
         if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
         virtyAlert("Selfie de cadastro capturada!"); 
     }
@@ -456,8 +537,8 @@
             const d = snap.val();
             if(d) {
                 if(st !== 'cinza') ref.update({ status: st });
-                const dnaChave = d.dna_dispositivo || d.v_id.substring(0, 11);
-                gravarHist(d.v_id, d.foto, st, dnaChave);
+                const dnaChave = d.dna_dispositivo || (d.v_id ? d.v_id.substring(0, 11) : "DESCONHECIDO");
+                gravarHist(d.v_id || "virty_visit", d.foto, st, dnaChave);
                 setTimeout(() => ref.remove(), 1200);
             }
         });
@@ -595,12 +676,12 @@
     
     function gerenciarAlerta(acao) {
         clearInterval(somInterval); if(audioCtx) { try { audioCtx.close(); } catch(e){} audioCtx = null; }
-        if(acao === 'stop') { navigator.vibrate(0); return; }
+        if(acao === 'stop') { try { navigator.vibrate(0); } catch(e){} return; }
         if(somSilenciadoPorInteracao) return;
-        if(modoAlerta === 3) { navigator.vibrate([400, 200, 400]); return; }
+        if(modoAlerta === 3) { try { navigator.vibrate([400, 200, 400]); } catch(e){} return; }
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if(modoAlerta === 2) navigator.vibrate([400, 200, 400]);
+            if(modoAlerta === 2) { try { navigator.vibrate([400, 200, 400]); } catch(e){} }
             let f1 = 440 + (somAtual * 40), f2 = f1 * 1.25; 
             somInterval = setInterval(() => {
                 if(!audioCtx || somSilenciadoPorInteracao) return;
@@ -611,6 +692,12 @@
                 osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
             }, 600);
         } catch(err) {}
+    }
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('Erro SW:', err));
+        });
     }
 </script>
 </body>
