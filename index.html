@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v2.6.1 - Tela Preta Corrigida</title>
+    <title>VIRTY VISITANTE v2.6.2 - Feedback Tempo Real Corrigido</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -35,7 +35,6 @@
             box-sizing: border-box; 
             padding: 5vh 5% 15vh 5%; 
         }
-        /* Adicionado !important para blindar a exibição da tela ativa contra qualquer erro de leitura */
         .active { display: flex !important; }
 
         .virty-header {
@@ -196,6 +195,10 @@
         .texto-neon-vermelho { color: var(--red); text-shadow: 0 0 15px rgba(255, 49, 49, 0.6); font-weight: bold; letter-spacing: 1px; margin: 5px 0; }
 
         #timer-chamada { font-size: 1.3rem; color: var(--red); font-weight: bold; margin-top: 10px; }
+        
+        /* Nova classe de estilo dedicada para o feedback em tempo real */
+        #virty-status-tempo-real { font-size: 1.4rem; font-weight: bold; margin-top: 25px; height: 30px; letter-spacing: 1px; }
+        
         .pulsar { animation: pulseBlink 2s infinite; }
         @keyframes pulseBlink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
         
@@ -281,8 +284,10 @@
     <div id="s-chamando" class="screen">
         <div></div> 
         <div class="conteudo-central">
-            <h1 id="texto-unidade-chamando" class="texto-neon-verde pulsar" style="font-size: 2.6rem; margin: 0; line-height: 1.2;">CHAMANDO<br>UNIDADE</h1>
+            <h1 id="texto-unidade-chamando" class="texto-neon-verde pulsar" style="font-size: 2.6rem; margin: 0; line-height: 1.2; text-align: center;">CHAMANDO<br>UNIDADE</h1>
             <div id="timer-chamada">AGUARDE: 90s</div>
+            
+            <div id="virty-status-tempo-real"></div>
         </div>
         <div class="rodape-tela">
             <button class="btn btn-perigo" onclick="cancelarInterfone()">CANCELAR CHAMADA</button>
@@ -421,8 +426,11 @@
                 
                 const txtStatusChamada = document.getElementById('texto-unidade-chamando');
                 txtStatusChamada.innerHTML = `CHAMANDO<br>UNIDADE ${un}`;
-                txtStatusChamada.className = "texto-neon-verde pulsar";
                 
+                // Limpa o contêiner de status tempo real ao iniciar uma nova chamada
+                document.getElementById('virty-status-tempo-real').innerText = "";
+                document.getElementById('virty-status-tempo-real').className = "";
+
                 const dadosChamada = {
                     v_id: meu_fingerprint,
                     dna_dispositivo: meu_fingerprint,
@@ -461,6 +469,7 @@
         }, 1000);
     }
 
+    // Lógica JavaScript corrigida e isolada para gerenciar os feedbacks em tempo real sem conflito
     function escutarRespostaMorador() {
         if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
         escutadorFirebaseAtivo = db.ref(`chamadas_ativas/${chamadaIdGlobal}`);
@@ -469,17 +478,18 @@
             const d = snap.val();
             if(!d) return;
 
+            // Tratamento isolado do status_morador (Interage exclusivamente com o contêiner de feedback tempo real)
             if (d.status === 'chamando') {
-                const txtStatus = document.getElementById('texto-unidade-chamando');
+                const liveStatusBox = document.getElementById('virty-status-tempo-real');
                 if (d.status_morador === 'gravando') {
-                    txtStatus.innerHTML = "MORADOR<br>GRAVANDO...";
-                    txtStatus.className = "texto-neon-azul pulsar";
+                    liveStatusBox.innerText = "MORADOR GRAVANDO ÁUDIO...";
+                    liveStatusBox.className = "texto-neon-azul pulsar";
                 } else if (d.status_morador === 'digitando') {
-                    txtStatus.innerHTML = "MORADOR<br>DIGITANDO...";
-                    txtStatus.className = "texto-neon-azul pulsar";
+                    liveStatusBox.innerText = "MORADOR ESCREVENDO MENSAGEM...";
+                    liveStatusBox.className = "texto-neon-azul pulsar";
                 } else {
-                    txtStatus.innerHTML = `CHAMANDO<br>UNIDADE ${chamadaIdGlobal}`;
-                    txtStatus.className = "texto-neon-verde pulsar";
+                    liveStatusBox.innerText = "";
+                    liveStatusBox.className = "";
                 }
             }
 
@@ -593,6 +603,10 @@
         document.getElementById('v-vis').style.display = "block";
         document.getElementById('btn-bater-selfie').style.display = "block";
         document.getElementById('status-foto').innerText = "";
+        
+        // Reseta o elemento de feedback tempo real
+        document.getElementById('virty-status-tempo-real').innerText = "";
+        document.getElementById('virty-status-tempo-real').className = "";
         
         mudarTela('s-boasvindas');
     }
