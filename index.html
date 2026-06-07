@@ -1,207 +1,506 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY ACCESS DOOR - Visitante</title>
-    
-    <!-- Link para o Manifesto PWA -->
-    <link rel="manifest" href="./manifest.json">
-    
-    <!-- SDKs do Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-
+    <title>VIRTY VISITANTE v2.0.0 - Web Pura</title>
     <style>
-        :root {
-            --primary: #d32f2f;
-            --dark: #121212;
-            --light: #f5f5f5;
+        :root { 
+            --neon: #39FF14; 
+            --bg: #000; 
+            --red: #FF3131; 
+            --blue: #007BFF; 
+            --gray: #666; 
+            --dark-card: #0d0d0d; 
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { 
+            background: var(--bg); 
+            color: #fff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            -webkit-user-select: none;
+            user-select: none;
         }
         
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .screen { 
+            display: none; 
+            width: 100vw;
+            height: 100vh; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-sizing: border-box; 
+            padding: 5vh 5% 15vh 5%; 
+        }
+        .active { display: flex; }
+
+        .virty-header {
+            text-align: center; 
+            width: 100%;
+        }
+        .virty-header h1 {
+            color: var(--neon);
+            font-size: 2.2rem;
+            letter-spacing: 2px;
+            margin: 0 0 5px 0;
+            text-shadow: 0 0 10px rgba(57,255,20,0.3);
+        }
+        .virty-header div {
+            color: #fff;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            font-weight: normal;
+        }
+
+        .conteudo-central {
+            width: 100%;
+            max-width: 400px;
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; 
+            text-align: center;
+            gap: 20px;
+            margin: auto 0;
+        }
+
+        .btn-ativar-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            width: 100%;
+            margin: auto 0;
+        }
         
-        body { background-color: var(--dark); color: var(--light); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        .pronome-projeto {
+            color: var(--gray);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .btn-pulsante {
+            width: 100%;
+            max-width: 300px;
+            height: 100px;
+            background: none;
+            border: 2px solid var(--neon);
+            color: var(--neon);
+            font-size: 1.3rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(57,255,20,0.1);
+            animation: pulsarVirty 2s infinite;
+        }
+        @keyframes pulsarVirty {
+            0% { box-shadow: 0 0 5px rgba(57,255,20,0.2); transform: scale(1); }
+            50% { box-shadow: 0 0 25px rgba(57,255,20,0.6); transform: scale(1.02); border-color: #fff; color: #fff; }
+            100% { box-shadow: 0 0 5px rgba(57,255,20,0.2); transform: scale(1); border-color: var(--neon); color: var(--neon); }
+        }
+
+        .rodape-tela {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: auto;
+        }
         
-        .container { width: 90%; max-width: 400px; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; }
+        input { 
+            width: 100%; 
+            padding: 16px; 
+            margin: 4px 0; 
+            border-radius: 12px; 
+            border: 2px solid #222; 
+            background: #111; 
+            color: #fff; 
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        input:focus { border-color: var(--neon); outline: none; }
         
-        h2 { margin-bottom: 20px; color: var(--primary); }
+        .btn { 
+            width: 100%; 
+            padding: 18px; 
+            border-radius: 30px; 
+            border: none; 
+            font-weight: bold; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .btn-perigo {
+            background: var(--red);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 49, 49, 0.2);
+        }
+
+        .area-camera-virty { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 15px; 
+            width: 100%; 
+        }
+        .video-box { 
+            width: 180px; 
+            height: 180px; 
+            border-radius: 50%; 
+            overflow: hidden; 
+            border: 3px solid var(--neon); 
+            box-shadow: 0 0 15px rgba(57,255,20,0.3); 
+            background:#111; 
+            position:relative; 
+        }
+        .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; transform: scaleX(-1); }
         
-        .step { display: none; }
-        .step.active { display: block; animation: fadeIn 0.3s; }
-        
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #333; background: #2a2a2a; color: white; font-size: 16px; }
-        
-        button { width: 100%; padding: 14px; margin-top: 15px; border: none; border-radius: 6px; background-color: var(--primary); color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
-        button:active { background-color: #b71c1c; }
-        
-        #camera-container { position: relative; width: 100%; max-width: 300px; margin: 0 auto; border-radius: 8px; overflow: hidden; background: #000; }
-        video { width: 100%; display: block; }
-        canvas { display: none; }
-        
-        .loader { border: 4px solid #333; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .btn-inverter { 
+            background: #111; 
+            border: 2px solid var(--neon); 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+        }
+        .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
+
+        .virty-popup { 
+            display: none; 
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: #0a0a0a; 
+            border: 2px solid var(--neon); 
+            color: #fff; 
+            padding: 25px; 
+            border-radius: 16px; 
+            z-index: 5000; 
+            box-shadow: 0 0 35px rgba(57,255,20,0.4); 
+            text-align: center; 
+            width: 90%; 
+            max-width: 340px; 
+        }
+
+        .texto-neon-verde { color: var(--neon); text-shadow: 0 0 15px rgba(57, 255, 20, 0.6); font-weight: bold; letter-spacing: 1px; margin: 5px 0; }
+        .texto-neon-azul { color: var(--blue); text-shadow: 0 0 15px rgba(0, 123, 255, 0.6); font-weight: bold; letter-spacing: 1px; margin: 5px 0; }
+        .texto-neon-vermelho { color: var(--red); text-shadow: 0 0 15px rgba(255, 49, 49, 0.6); font-weight: bold; letter-spacing: 1px; margin: 5px 0; }
+
+        #timer-chamada { font-size: 1.3rem; color: var(--red); font-weight: bold; margin-top: 10px; }
+        .pulsar { animation: pulseBlink 2s infinite; }
+        @keyframes pulseBlink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- ETAPA 1 -->
-        <div id="step-1" class="step active">
-            <h2>VIRTY ACCESS DOOR</h2>
-            <p>Por favor, identifique-se.</p>
-            <input type="text" id="nomeVisitante" placeholder="Seu Nome Completo" required>
-            <input type="number" id="unidadeDestino" placeholder="Número do Apartamento" required>
-            <button onclick="avancarParaCamera()">Continuar</button>
-        </div>
+    <div id="custom-alert" class="virty-popup">
+        <div style="color:var(--neon); font-size:0.9rem; letter-spacing:2px; margin-bottom:15px; font-weight:bold;">VIRTY ACCESS DOOR</div>
+        <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4; margin-bottom:20px;"></div>
+        <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
+    </div>
 
-        <!-- ETAPA 2 -->
-        <div id="step-2" class="step">
-            <h2>Reconhecimento</h2>
-            <p>Posicione seu rosto na câmera.</p>
-            <div id="camera-container">
-                <video id="videoElement" autoplay playsinline></video>
-                <canvas id="canvasElement"></canvas>
-            </div>
-            <button onclick="capturarEEnviar()">Capturar e Tocar Campainha</button>
+    <div id="s-boasvindas" class="screen active">
+        <div class="virty-header">
+            <h1>VIRTY ACCESS DOOR</h1>
+            <div>Acesso inteligente</div>
         </div>
-
-        <!-- ETAPA 3 -->
-        <div id="step-3" class="step">
-            <h2>Aguarde...</h2>
-            <div class="loader"></div>
-            <p id="statusTexto">Enviando notificação para o morador...</p>
-            <p style="margin-top: 15px; font-size: 12px; color: #888;" id="displayDna"></p>
+        <div class="btn-ativar-container">
+            <div class="pronome-projeto">O projeto</div>
+            <button class="btn-pulsante" onclick="iniciarFluxoSistema()">Aceitar e iniciar</button>
         </div>
     </div>
 
-    <script>
-        // FIREBASE CONFIG
-        const firebaseConfig = {
-            apiKey: "SUA_API_KEY",
-            authDomain: "seu-projeto.firebaseapp.com",
-            databaseURL: "https://seu-projeto.firebaseio.com",
-            projectId: "seu-projeto",
-            storageBucket: "seu-projeto.appspot.com",
-            messagingSenderId: "SEU_SENDER_ID",
-            appId: "SEU_APP_ID"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+    <div id="s-inicio" class="screen">
+        <div class="virty-header">
+            <h2 class="texto-neon-verde" style="font-size: 1.6rem; margin: 0;">IDENTIFICAÇÃO VIRTUAL</h2>
+            <div style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">RECONHECIMENTO OBRIGATÓRIO PARA ENTRADA</div>
+        </div>
+        <div class="conteudo-central">
+            <div class="area-camera-virty">
+                <div style="width:50px;"></div> 
+                <div class="video-box">
+                    <video id="v-vis" autoplay playsinline muted></video>
+                    <canvas id="c-vis"></canvas>
+                </div>
+                <button class="btn-inverter" onclick="alternarLenteCamera()">
+                    <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
+                </button>
+            </div>
+            <input type="number" id="v-un" placeholder="Número do Apt / Casa">
+            <input type="text" id="v-texto" placeholder="Recado rápido (Opcional)">
+        </div>
+        <div class="rodape-tela">
+            <button class="btn" style="background:#fff; color:#000; margin-bottom: 12px;" onclick="fotoVis()">📸 CAPTURAR MINHA FOTO</button>
+            <button class="btn" style="background:transparent; border:2px solid var(--red); color:var(--red);" onclick="resetarFluxoVisitante()">CANCELAR</button>
+        </div>
+    </div>
 
-        // GERAÇÃO DO DNA
-        function gerarDnaVisitante() {
-            const dados = navigator.userAgent + screen.width + 'x' + screen.height + navigator.language + navigator.hardwareConcurrency;
-            let hash = 0;
-            for (let i = 0; i < dados.length; i++) {
-                const char = dados.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-            }
-            return 'V-' + Math.abs(hash).toString(16);
-        }
+    <div id="s-chamando" class="screen">
+        <div></div> 
+        <div class="conteudo-central">
+            <h1 id="texto-unidade-chamando" class="texto-neon-verde pulsar" style="font-size: 2.6rem; margin: 0; line-height: 1.2;">CHAMANDO<br>UNIDADE</h1>
+            <div id="timer-chamada">AGUARDE: 90s</div>
+        </div>
+        <div class="rodape-tela">
+            <button class="btn btn-perigo" onclick="cancelarInterfone()">DESCONECTAR INTERFONE</button>
+        </div>
+    </div>
 
-        const v_id = gerarDnaVisitante();
+    <div id="s-feedback" class="screen">
+        <div></div>
+        <div class="conteudo-central">
+            <h1 id="titulo-feedback" class="texto-neon-azul" style="font-size: 2.5rem; margin: 0 0 20px 0;">RECADO RECEBIDO</h1>
+            <p id="msg-feedback" style="color:#aaa; font-style: italic; font-size: 1.3rem; margin-bottom: 25px;">"Áudio enviado"</p>
+            <audio id="audio-player-v" style="width: 100%; border-radius: 30px;"></audio>
+        </div>
+        <div class="rodape-tela">
+            <button id="btn-voltar-feedback" class="btn" style="background: var(--blue); color: #fff;" onclick="resetarFluxoVisitante()">FECHAR RECADO</button>
+        </div>
+    </div>
 
-        // CONTROLE DE CÂMERA
-        const video = document.getElementById('videoElement');
-        const canvas = document.getElementById('canvasElement');
-        let fotoBase64 = "";
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script>
+    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    const db = firebase.database();
 
-        function avancarParaCamera() {
-            const nome = document.getElementById('nomeVisitante').value;
-            const unidade = document.getElementById('unidadeDestino').value;
+    let streamCameraAtiva = null;
+    let usarLenteFrontal = false;
+    let visitanteFotoBase64 = "";
+    let llamadaIdGlobal = "";
+    let escutadorFirebaseAtivo = null;
+    let timerRegressivoInterval = null;
+    let tempoRestanteChamada = 90;
 
-            if(!nome || !unidade) {
-                alert("Preencha todos os campos!");
+    // 🌟 PRIVILÉGIO WEB EXTRA: GERAÇÃO DE ID/FINGERPRINT POTENTE POTENCIALIZADO
+    function gerarFingerprintDispositivo() {
+        const componentesHardware = [
+            screen.width, 
+            screen.height, 
+            screen.devicePixelRatio, 
+            navigator.hardwareConcurrency || 4, 
+            navigator.language,
+            navigator.maxTouchPoints || 0,
+            new Date().getTimezoneOffset()
+        ];
+        const meta = componentesHardware.join('||');
+        let hash = 0;
+        for (let i = 0; i < meta.length; i++) { hash = (hash << 5) - hash + meta.charCodeAt(i); hash |= 0; }
+        return "V-" + Math.abs(hash).toString(16).toUpperCase();
+    }
+    const meu_fingerprint = gerarFingerprintDispositivo();
+
+    function virtyAlert(msg) {
+        document.getElementById('custom-alert-msg').innerText = msg;
+        document.getElementById('custom-alert').style.display = 'block';
+    }
+    function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
+
+    function iniciarFluxoSistema() {
+        mudarTela('s-inicio');
+        inicializarCapturaVideo();
+    }
+
+    function inicializarCapturaVideo() {
+        if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); }
+        const constraints = { video: { facingMode: usarLenteFrontal ? "user" : "environment" } };
+        navigator.mediaDevices.getUserMedia(constraints).then(s => {
+            streamCameraAtiva = s;
+            const video = document.getElementById('v-vis');
+            video.srcObject = s;
+            video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
+        }).catch(e => {
+            console.log("Erro câmera:", e);
+            virtyAlert("Câmera indisponível ou permissão negada.");
+        });
+    }
+
+    function alternarLenteCamera() {
+        usarLenteFrontal = !usarLenteFrontal;
+        inicializarCapturaVideo();
+    }
+
+    function fotoVis() {
+        const v = document.getElementById('v-vis'), c = document.getElementById('c-vis');
+        if(!v.videoWidth) return virtyAlert("Aguarde o feed da câmera carregar.");
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        const ctx = c.getContext('2d');
+        if(usarLenteFrontal) { ctx.translate(c.width, 0); ctx.scale(-1, 1); }
+        ctx.drawImage(v, 0, 0);
+        ctx.setTransform(1,0,0,1,0,0);
+        visitanteFotoBase64 = c.toDataURL('image/jpeg', 0.5);
+        c.style.display = "block"; v.style.display = "none";
+        
+        if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
+        dispararInterfone();
+    }
+
+    function dispararInterfone() {
+        const un = document.getElementById('v-un').value.trim();
+        const recado = document.getElementById('v-texto').value.trim();
+
+        if(!visitanteFotoBase64) return virtyAlert("Por favor, capture sua foto antes de interfonar!");
+        if(!un) return virtyAlert("Digite o número da unidade (Casa/Apt)!");
+
+        db.ref(`bloqueados/${un}/${meu_fingerprint}`).once('value', bSnap => {
+            if(bSnap.exists()) {
+                exibirFeedbackCustomizado('recusado', "ACESSO BLOQUEADO", "Totem de acesso restrito.");
                 return;
             }
 
-            document.getElementById('step-1').classList.remove('active');
-            document.getElementById('step-2').classList.add('active');
-
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
-                .then(stream => { video.srcObject = stream; })
-                .catch(err => {
-                    console.error("Erro na câmera: ", err);
-                    alert("Permissão de câmera negada.");
-                });
-        }
-
-        function capturarEEnviar() {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-            
-            let stream = video.srcObject;
-            let tracks = stream.getTracks();
-            tracks.forEach(track => track.stop());
-            video.srcObject = null;
-
-            document.getElementById('step-2').classList.remove('active');
-            document.getElementById('step-3').classList.add('active');
-            document.getElementById('displayDna').innerText = "Seu ID: " + v_id;
-
-            enviarParaFirebase();
-        }
-
-        // COMUNICAÇÃO COM FIREBASE
-        function enviarParaFirebase() {
-            const nome = document.getElementById('nomeVisitante').value;
-            const unidade = document.getElementById('unidadeDestino').value;
-            const timestamp = Date.now();
-
-            const pacoteChamada = {
-                id_visitante: v_id,
-                nome: nome,
-                unidade: unidade,
-                foto: fotoBase64,
-                status: "aguardando",
-                timestamp: timestamp
-            };
-
-            db.ref('chamadas_ativas/' + v_id).set(pacoteChamada)
-                .then(() => { escutarRespostaMorador(); })
-                .catch((error) => {
-                    console.error("Erro:", error);
-                    document.getElementById('statusTexto').innerText = "Erro ao conectar.";
-                });
-        }
-
-        function escutarRespostaMorador() {
-            const chamadaRef = db.ref('chamadas_ativas/' + v_id);
-            chamadaRef.on('value', (snapshot) => {
-                const dados = snapshot.val();
-                if(dados) {
-                    if(dados.status === "liberado") {
-                        document.getElementById('statusTexto').innerText = "Acesso Liberado!";
-                        document.getElementById('statusTexto').style.color = "#4CAF50";
-                    } else if (dados.status === "negado") {
-                        document.getElementById('statusTexto').innerText = "Acesso Recusado.";
-                        document.getElementById('statusTexto').style.color = "#d32f2f";
-                    }
+            db.ref(`moradores_validados/${un}`).once('value', mSnap => {
+                if(!mSnap.exists()) {
+                    virtyAlert("Unidade não cadastrada ou sem moradores ativos.");
+                    resetarFluxoVisitante();
+                    return;
                 }
-            });
-        }
-    </script>
 
-    <!-- Registro do Service Worker -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registrado no escopo: ', registration.scope);
-                    })
-                    .catch(err => {
-                        console.error('Falha ao registrar o ServiceWorker: ', err);
-                    });
+                chamadaIdGlobal = un;
+                document.getElementById('texto-unidade-chamando').innerHTML = `CHAMANDO<br>UNIDADE ${un}`;
+                
+                const dadosChamada = {
+                    v_id: meu_fingerprint,
+                    dna_dispositivo: meu_fingerprint,
+                    foto: visitanteFotoBase64,
+                    texto: recado || "Visitante aguardando resposta",
+                    status: "chamando",
+                    ts: Date.now()
+                };
+
+                db.ref(`chamadas_ativas/${un}`).set(dadosChamada).then(() => {
+                    mudarTela('s-chamando');
+                    iniciarTimerRegressivo();
+                    escutarRespostaMorador();
+                }).catch(err => {
+                    virtyAlert("Erro de conexão ao iniciar chamada:\n" + err.message);
+                });
             });
+        });
+    }
+
+    document.getElementById('v-un').addEventListener('keyup', (e) => {
+        if(e.key === 'Enter') dispararInterfone();
+    });
+
+    function iniciarTimerRegressivo() {
+        tempoRestanteChamada = 90;
+        document.getElementById('timer-chamada').innerText = `AGUARDE: ${tempoRestanteChamada}s`;
+        clearInterval(timerRegressivoInterval);
+        timerRegressivoInterval = setInterval(() => {
+            tempoRestanteChamada--;
+            document.getElementById('timer-chamada').innerText = `AGUARDE: ${tempoRestanteChamada}s`;
+            if(tempoRestanteChamada <= 0) {
+                cancelarInterfone();
+                exibirFeedbackCustomizado('cinza', "SEM RESPOSTA", "O morador não pôde atender no momento.");
+            }
+        }, 1000);
+    }
+
+    function escutarRespostaMorador() {
+        if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
+        escutadorFirebaseAtivo = db.ref(`chamadas_ativas/${chamadaIdGlobal}`);
+        
+        escutadorFirebaseAtivo.on('value', snap => {
+            const d = snap.val();
+            if(!d) return;
+
+            if(d.status === 'liberado') {
+                clearInterval(timerRegressivoInterval);
+                exibirFeedbackCustomizado('liberado', "ENTRADA AUTORIZADA", "Porta liberada. Seja bem-vindo!");
+                fecharEscutadorAposTempo(4000);
+            }
+            else if(d.status === 'recusado') {
+                clearInterval(timerRegressivoInterval);
+                exibirFeedbackCustomizado('recusado', "ENTRADA RECUSADA", "A solicitação foi recusada.");
+                fecharEscutadorAposTempo(4000);
+            }
+            else if(d.status === 'mensagem') {
+                clearInterval(timerRegressivoInterval);
+                if(d.audio_b64) {
+                    exibirFeedbackCustomizado('mensagem', "RECADO RECEBIDO", '"Áudio enviado"');
+                    const player = document.getElementById('audio-player-v');
+                    player.src = d.audio_b64;
+                    player.setAttribute('controls', 'controls');
+                    player.play();
+                } else {
+                    exibirFeedbackCustomizado('mensagem', "RECADO MORADOR", `"${d.msg_morador}"`);
+                }
+                fecharEscutadorAposTempo(20000);
+            }
+        });
+    }
+
+    function cancelarInterfone() {
+        clearInterval(timerRegressivoInterval);
+        if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
+        if(chamadaIdGlobal) db.ref(`chamadas_ativas/${chamadaIdGlobal}`).remove();
+        resetarFluxoVisitante();
+    }
+
+    function fecharEscutadorAposTempo(ms) {
+        setTimeout(() => {
+            if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
+            if(chamadaIdGlobal) db.ref(`chamadas_ativas/${chamadaIdGlobal}`).remove();
+        }, ms);
+    }
+
+    function exibirFeedbackCustomizado(tipo, titulo, mensagem) {
+        mudarTela('s-feedback');
+        const txtTitulo = document.getElementById('titulo-feedback');
+        const txtMsg = document.getElementById('msg-feedback');
+        const btnVoltar = document.getElementById('btn-voltar-feedback');
+        const player = document.getElementById('audio-player-v');
+
+        player.removeAttribute('controls');
+        player.src = "";
+        txtTitulo.innerText = titulo;
+        txtMsg.innerText = mensaje;
+
+        if(tipo === 'liberado') { txtTitulo.className = "texto-neon-verde"; btnVoltar.style.background = "var(--neon)"; btnVoltar.style.color = "#000"; }
+        if(tipo === 'recusado') { txtTitulo.className = "texto-neon-vermelho"; btnVoltar.style.background = "var(--red)"; btnVoltar.style.color = "#fff"; }
+        if(tipo === 'mensagem') { txtTitulo.className = "texto-neon-azul"; btnVoltar.style.background = "var(--blue)"; btnVoltar.style.color = "#fff"; }
+    }
+
+    function resetarFluxoVisitante() {
+        clearInterval(timerRegressivoInterval);
+        if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
+        
+        visitanteFotoBase64 = "";
+        document.getElementById('v-un').value = "";
+        document.getElementById('v-texto').value = "";
+        document.getElementById('c-vis').style.display = "none";
+        document.getElementById('v-vis').style.display = "block";
+        
+        mudarTela('s-boasvindas');
+    }
+
+    function mudarTela(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id !== 's-inicio' && streamCameraAtiva) {
+            streamCameraAtiva.getTracks().forEach(t => t.stop());
+            streamCameraAtiva = null;
         }
-    </script>
+    }
+</script>
 </body>
 </html>
