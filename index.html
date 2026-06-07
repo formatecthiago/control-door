@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v2.5.0 - Fluxo Avançado</title>
+    <title>VIRTY VISITANTE v2.5.1 - Ajustado</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -33,7 +33,7 @@
             justify-content: space-between; 
             align-items: center; 
             box-sizing: border-box; 
-            padding: 5vh 5% 10vh 5%; 
+            padding: 5vh 5% 8vh 5%; 
         }
         .active { display: flex; }
 
@@ -58,13 +58,12 @@
         .conteudo-central {
             width: 100%;
             max-width: 400px;
-            height: 70vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center; 
             text-align: center;
-            gap: 20px;
+            gap: 15px;
             margin: auto 0;
         }
 
@@ -121,7 +120,7 @@
         input { 
             width: 100%; 
             padding: 16px; 
-            margin: 4px 0; 
+            margin: 2px 0; 
             border-radius: 12px; 
             border: 2px solid #222; 
             background: #111; 
@@ -208,7 +207,6 @@
         .pulsar { animation: pulseBlink 2s infinite; }
         @keyframes pulseBlink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
         
-        /* Container específico para as ações seguras de áudio */
         .audio-container-seguro {
             width: 100%;
             margin: 15px 0;
@@ -223,7 +221,7 @@
             font-weight: bold;
             padding: 14px;
             border-radius: 20px;
-            width: 80%;
+            width: 85%;
             border: none;
             cursor: pointer;
             text-transform: uppercase;
@@ -236,7 +234,7 @@
     <div id="custom-alert" class="virty-popup">
         <div style="color:var(--neon); font-size:0.9rem; letter-spacing:2px; margin-bottom:15px; font-weight:bold;">VIRTY ACCESS DOOR</div>
         <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4; margin-bottom:20px;"></div>
-        <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
+        <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px warm;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
     <div id="s-boasvindas" class="screen active">
@@ -278,14 +276,16 @@
             <h2 class="texto-neon-verde" style="font-size: 1.6rem; margin: 0;">INFORMAÇÕES DE ACESSO</h2>
             <div style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">DIGITE O LOCAL E ENVIE SEU RECADO</div>
         </div>
-        <div class="conteudo-central">
+        
+        <div class="conteudo-central" style="gap: 12px; margin: auto 0; width: 100%;">
             <input type="number" id="v-un" placeholder="Número do Apt / Casa">
             <input type="text" id="v-texto" placeholder="Mensagem / Identificação (Opcional)">
-        </div>
-        <div class="rodape-tela">
-            <button class="btn" style="background:var(--neon); color:#000; margin-bottom: 12px; font-size:1.2rem;" onclick="dispararInterfone()">🔔 CHAMAR</button>
+            
+            <button class="btn" style="background:var(--neon); color:#000; margin-top: 15px; font-size:1.2rem;" onclick="dispararInterfone()">🔔 CHAMAR</button>
             <button class="btn" style="background:transparent; border:2px solid var(--red); color:var(--red);" onclick="resetarFluxoVisitante()">CANCELAR</button>
         </div>
+        
+        <div style="height: 1px;"></div> 
     </div>
 
     <div id="s-chamando" class="screen">
@@ -318,21 +318,19 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
-    // Configuração Firebase (Inalterada)
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
     let streamCameraAtiva = null;
-    let usarLenteFrontal = true; // Por padrão, selfie ativa a frontal
+    let usarLenteFrontal = true; // Força inicialização com câmera frontal ativa
     let visitanteFotoBase64 = "";
-    let llamadaIdGlobal = "";
+    let chamadaIdGlobal = "";
     let escutadorFirebaseAtivo = null;
     let timerRegressivoInterval = null;
     let tempoRestanteChamada = 90;
-    let cacheAudioUrl = ""; // Guarda a URL do áudio localmente de forma segura
+    let cacheAudioUrl = ""; 
 
-    // Identificação do dispositivo
     function gerarFingerprintDispositivo() {
         const componentesHardware = [
             screen.width, screen.height, screen.devicePixelRatio, 
@@ -352,7 +350,6 @@
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
-    // Avança para a Tela 2 e ativa a câmera
     function avancarParaCamera() {
         mudarTela('s-camera');
         inicializarCapturaVideo();
@@ -360,7 +357,9 @@
 
     function inicializarCapturaVideo() {
         if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); }
-        const constraints = { video: { facingMode: usarLenteFrontal ? "user" : "environment" } };
+        // CORREÇÃO DA CÂMERA FRONTAL: Usa propriedade 'ideal' para forçar a lente correta nos celulares
+        const constraints = { video: { facingMode: { ideal: usarLenteFrontal ? "user" : "environment" } } };
+        
         navigator.mediaDevices.getUserMedia(constraints).then(s => {
             streamCameraAtiva = s;
             const video = document.getElementById('v-vis');
@@ -377,7 +376,6 @@
         inicializarCapturaVideo();
     }
 
-    // TELA 2: Captura foto, conta 1.5s e pula automático para a Tela 3
     function capturarSelfieAutomatica() {
         const v = document.getElementById('v-vis'), c = document.getElementById('c-vis');
         if(!v.videoWidth) return virtyAlert("Aguarde o feed da câmera carregar.");
@@ -392,19 +390,16 @@
         c.style.display = "block"; 
         v.style.display = "none";
         
-        // Desativa a transmissão da câmera para poupar energia do hardware
         if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); streamCameraAtiva = null; }
 
         document.getElementById('status-foto').innerText = "FOTO CAPTURADA!";
         document.getElementById('btn-bater-selfie').style.display = "none";
 
-        // Transição automática de 1.5 segundos (1500 milissegundos) para a terceira tela
         setTimeout(() => {
             mudarTela('s-inicio');
         }, 1500);
     }
 
-    // TELA 3: Coleta informações e inicia chamada
     function dispararInterfone() {
         const un = document.getElementById('v-un').value.trim();
         const recado = document.getElementById('v-texto').value.trim();
@@ -474,7 +469,6 @@
         }, 1000);
     }
 
-    // Escuta em tempo real o retorno do Firebase
     function escutarRespostaMorador() {
         if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
         escutadorFirebaseAtivo = db.ref(`chamadas_ativas/${chamadaIdGlobal}`);
@@ -495,10 +489,9 @@
             }
             else if(d.status === 'mensagem') {
                 clearInterval(timerRegressivoInterval);
-                // Checa com precisão se existe áudio codificado na resposta do morador
+                // CORREÇÃO DO ÁUDIO: Encaminha a string em Base64 diretamente como parâmetro seguro
                 if(d.audio_b64 && d.audio_b64.trim() !== "") {
-                    cacheAudioUrl = d.audio_b64; // Salva na variável global segura
-                    exibirFeedbackFinal('mensagem', "RECADO RECEBIDO", '"O morador deixou um áudio para você"');
+                    exibirFeedbackFinal('mensagem', "RECADO RECEBIDO", "ÁUDIO ENVIADO PELO MORADOR", d.audio_b64);
                 } else {
                     exibirFeedbackFinal('mensagem', "RECADO MORADOR", `"${d.msg_morador || 'Sem texto enviado'}"`);
                 }
@@ -507,18 +500,16 @@
         });
     }
 
-    // Ação acionada pelo clique do usuário na tela morta (Contorna restrições do Safari e Chrome Mobile)
     function reproduzirAudioProtegido() {
-        if(!cacheAudioUrl) return;
+        if(!cacheAudioUrl || cacheAudioUrl === "") return virtyAlert("Nenhum áudio em cache para reproduzir.");
         const player = document.getElementById('audio-player-v');
         player.src = cacheAudioUrl;
         player.setAttribute('controls', 'controls');
         player.style.display = "block";
         
-        // Tenta tocar o áudio e intercepta erros de mídia do navegador se houver
         player.play().catch(err => {
-            console.log("Erro de reprodução nativa:", err);
-            virtyAlert("Clique no play do reprodutor para escutar.");
+            console.log("Falha no play automático:", err);
+            virtyAlert("Pressione o botão PLAY no reprodutor abaixo para escutar.");
         });
     }
 
@@ -536,8 +527,8 @@
         }, ms);
     }
 
-    // Exibe os estados finais da tela "morta", mantendo sempre o botão "Voltar para o Início" visível abaixo
-    function exibirFeedbackFinal(tipo, titulo, mensagem) {
+    // CORREÇÃO DO FLUXO DE CACHE: A função agora aceita a string de áudio e injeta no momento exato sem resetar antes da hora
+    function exibirFeedbackFinal(tipo, titulo, mensagem, audioUrl = "") {
         mudarTela('s-feedback');
         const txtTitulo = document.getElementById('titulo-feedback');
         const txtMsg = document.getElementById('msg-feedback');
@@ -545,11 +536,12 @@
         const areaAudio = document.getElementById('area-audio-ouvir');
         const player = document.getElementById('audio-player-v');
 
-        // Limpa estados anteriores do player
         areaAudio.style.display = "none";
         player.style.display = "none";
         player.src = "";
-        cacheAudioUrl = "";
+        
+        // Define o cache recebido sem deletar o estado da variável
+        cacheAudioUrl = audioUrl;
 
         txtTitulo.innerText = titulo;
         txtMsg.innerText = mensagem;
@@ -568,8 +560,7 @@
             txtTitulo.className = "texto-neon-azul"; 
             btnVoltar.style.background = "var(--blue)"; 
             btnVoltar.style.color = "#fff"; 
-            // Se possuir áudio salvo no cache da requisição, libera o botão de ouvir áudio
-            if (mensagem.includes("áudio")) {
+            if (audioUrl && audioUrl !== "") {
                 areaAudio.style.display = "flex";
             }
         }
@@ -580,23 +571,21 @@
         }
     }
 
-    // Reseta completamente o sistema voltando para a primeira tela
     function resetarFluxoVisitante() {
         clearInterval(timerRegressivoInterval);
         if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
         
-        // Destruir streams residuais de câmera se houver
         if(streamCameraAtiva) {
             streamCameraAtiva.getTracks().forEach(t => t.stop());
             streamCameraAtiva = null;
         }
 
+        usarLenteFrontal = true; // Garante o reset voltando sempre para a frontal
         visitanteFotoBase64 = "";
         cacheAudioUrl = "";
         document.getElementById('v-un').value = "";
         document.getElementById('v-texto').value = "";
         
-        // Restaura elementos visuais da tela da câmera
         document.getElementById('c-vis').style.display = "none";
         document.getElementById('v-vis').style.display = "block";
         document.getElementById('btn-bater-selfie').style.display = "block";
