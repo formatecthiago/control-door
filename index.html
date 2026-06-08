@@ -196,7 +196,6 @@
 
         #timer-chamada { font-size: 1.3rem; color: var(--red); font-weight: bold; margin-top: 10px; }
         
-        /* Nova classe de estilo dedicada para o feedback em tempo real */
         #virty-status-tempo-real { font-size: 1.4rem; font-weight: bold; margin-top: 25px; height: 30px; letter-spacing: 1px; }
         
         .pulsar { animation: pulseBlink 2s infinite; }
@@ -320,7 +319,7 @@
     let streamCameraAtiva = null;
     let usarLenteFrontal = true;
     let visitanteFotoBase64 = "";
-    let chamadaIdGlobal = "";
+    let llamadaIdGlobal = "";
     let escutadorFirebaseAtivo = null;
     let timerRegressivoInterval = null;
     let tempoRestanteChamada = 90;
@@ -417,7 +416,7 @@
 
             db.ref(`moradores_validados/${un}`).once('value', mSnap => {
                 if(!mSnap.exists()) {
-                    virtyAlert("Unidade não cadastrada ou sem moradores ativos.");
+                    virtyAlert("Unidade não cadastrada ou sem moradores activos.");
                     resetarFluxoVisitante();
                     return;
                 }
@@ -427,7 +426,6 @@
                 const txtStatusChamada = document.getElementById('texto-unidade-chamando');
                 txtStatusChamada.innerHTML = `CHAMANDO<br>UNIDADE ${un}`;
                 
-                // Limpa o contêiner de status tempo real ao iniciar uma nova chamada
                 document.getElementById('virty-status-tempo-real').innerText = "";
                 document.getElementById('virty-status-tempo-real').className = "";
 
@@ -469,7 +467,6 @@
         }, 1000);
     }
 
-    // Lógica JavaScript corrigida e isolada para gerenciar os feedbacks em tempo real sem conflito
     function escutarRespostaMorador() {
         if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
         escutadorFirebaseAtivo = db.ref(`chamadas_ativas/${chamadaIdGlobal}`);
@@ -478,7 +475,6 @@
             const d = snap.val();
             if(!d) return;
 
-            // Tratamento isolado do status_morador (Interage exclusivamente com o contêiner de feedback tempo real)
             if (d.status === 'chamando') {
                 const liveStatusBox = document.getElementById('virty-status-tempo-real');
                 if (d.status_morador === 'gravando') {
@@ -604,7 +600,6 @@
         document.getElementById('btn-bater-selfie').style.display = "block";
         document.getElementById('status-foto').innerText = "";
         
-        // Reseta o elemento de feedback tempo real
         document.getElementById('virty-status-tempo-real').innerText = "";
         document.getElementById('virty-status-tempo-real').className = "";
         
