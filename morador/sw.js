@@ -1,47 +1,43 @@
-// sw.js - Cache de Longo Prazo para Áudios Locais Virti
-const CACHE_NAME = 'virty-morador-cache-v3'; // Versão atualizada para forçar o celular a recarregar tudo
+const CACHE_NAME = 'virty-morador-cache-v4'; 
 
-// Lista de arquivos vitais que o PWA precisa armazenar no celular
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',      // ADICIONADO: Essencial para validação do PWA
-  './icon-192.png',       // ADICIONADO: Seu novo ícone aprovado
-  './icon-512.png',       // ADICIONADO: Sua nova splash screen aprovada
-  
-  // Lista dos 12 sons locais mapeados estritamente com o index.html
-  './sound/sound1.mp3',
-  './sound/sound2.mp3',
-  './sound/sound3.mp3',
-  './sound/sound4.mp3',
-  './sound/sound5.mp3',
-  './sound/sound6.mp3',
-  './sound/sound7.mp3',
-  './sound/sound8.mp3',
-  './sound/sound9.mp3',
-  './sound/sound10.mp3',
-  './sound/sound11.mp3',
-  './sound/sound12.mp3'
+  '/control-door/morador/',
+  '/control-door/morador/index.html',
+  '/control-door/morador/manifest.json',
+  '/control-door/morador/icon-192.png',
+  '/control-door/morador/icon-512.png',
+  '/control-door/morador/sound/sound1.mp3',
+  '/control-door/morador/sound/sound2.mp3',
+  '/control-door/morador/sound/sound3.mp3',
+  '/control-door/morador/sound/sound4.mp3',
+  '/control-door/morador/sound/sound5.mp3',
+  '/control-door/morador/sound/sound6.mp3',
+  '/control-door/morador/sound/sound7.mp3',
+  '/control-door/morador/sound/sound8.mp3',
+  '/control-door/morador/sound/sound9.mp3',
+  '/control-door/morador/sound/sound10.mp3',
+  '/control-door/morador/sound/sound11.mp3',
+  '/control-door/morador/sound/sound12.mp3'
 ];
 
-// Instalação do Service Worker e Cache dos arquivos
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Virty SW: Armazenando arquivos de interface e áudios em Cache...');
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting()) // Força a atualização imediata
+      return Promise.all(
+        ASSETS_TO_CACHE.map(url => {
+          return cache.add(url).catch(err => console.warn('Falha ao cachear:', url, err));
+        })
+      );
+    }).then(() => self.skipWaiting())
   );
 });
 
-// Ativação e limpeza de caches antigos
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('Virty SW: Removendo cache antigo:', cache);
             return caches.delete(cache);
           }
         })
@@ -50,31 +46,21 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Estratégia de Cache First (Busca no cache primeiro, garante que o som toque instantaneamente)
 self.addEventListener('fetch', (event) => {
-  // Ignora requisições para o Firebase (tempo real não pode ir para o cache)
   if (event.request.url.includes('firebaseio.com') || event.request.url.includes('gstatic.com')) {
     return;
   }
-
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse; // Retorna do cache local do celular de forma instantânea
-      }
-      
-      // Se não estiver no cache, busca na rede
+      if (cachedResponse) return cachedResponse;
       return fetch(event.request).then((networkResponse) => {
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
           return networkResponse;
         }
-
-        // Clona e salva dinamicamente novos arquivos locais caso apareçam
         const responseToCache = networkResponse.clone();
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, responseToCache);
         });
-
         return networkResponse;
       });
     })
