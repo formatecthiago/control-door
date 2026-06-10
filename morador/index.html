@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY MORADOR v2.0.0 - Web Pura</title>
     
-    <link rel="manifest" href="./manifest.json">
+    <link rel="manifest" href="/control-door/morador/manifest.json">
     <meta name="theme-color" content="#39FF14">
 
     <style>
@@ -228,9 +228,9 @@
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
 
-    // CORREÇÃO: Inicialização do Service Worker do PWA Morador com Escopo Fixo para o GitHub Pages
+    // CORREÇÃO: Inicialização do Service Worker do PWA Morador com Escopo Fixo Absoluto para o GitHub Pages
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js', { scope: '/control-door/morador/' })
+        navigator.serviceWorker.register('/control-door/morador/sw.js', { scope: '/control-door/morador/' })
         .then(reg => console.log('Virty: Central de Toques Pronta (12 sons locais). Escopo definido.'))
         .catch(err => console.error('Erro Service Worker:', err));
     }
@@ -462,7 +462,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = child.val();
+                    let dadosFilho = filho.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
@@ -508,8 +508,8 @@
         const list = document.getElementById('lista-bloqueados'); list.innerHTML = "";
         const chaves = Object.keys(mapaBloqueados);
         if(chaves.length === 0) { list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum dispositivo bloqueado.</p>`; return; }
-        const listaOrdenada = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
-        listaOrdenada.forEach(d => { list.innerHTML += criarCardHTML(d, true); });
+        const mapaOrdenado = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
+        mapaOrdenado.forEach(d => { list.innerHTML += criarCardHTML(d, true); });
     }
     function criarCardHTML(d, estaBloqueado) {
         return `<div class="hist-card">
@@ -612,7 +612,7 @@
         if(modoAlerta !== 3) {
             const arquivoFinal = arquivoSomOpcional || `sound${somAtual + 1}.mp3`;
             
-            somInterfoneLocal = new Audio(`./sound/${arquivoFinal}`);
+            somInterfoneLocal = new Audio(`/control-door/morador/sound/${arquivoFinal}`);
             somInterfoneLocal.loop = true; // REPRODUÇÃO CONSTANTE E INFINITA ATÉ O FIM DA CHAMADA
             
             somInterfoneLocal.play().catch(erro => {
