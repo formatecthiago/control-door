@@ -1,83 +1,80 @@
-// morador/sw.js - Versão Calibrada para 12 Sons
-const NOME_DO_CACHE = 'virty-sons-v2';
+// sw.js - Cache de Longo Prazo para Áudios Locais Virti
+const CACHE_NAME = 'virty-morador-cache-v2';
 
-// Lista restrita aos seus 12 arquivos reais locais
-const ARQUIVOS_PARA_CACHEAR = [
-    './',
-    './index.html',
-    './manifest.json',
-    // Gera dinamicamente: ./sound/sound1.mp3 até ./sound/sound12.mp3
-    ...Array.from({ length: 12 }, (_, i) => `./sound/sound${i + 1}.mp3`)
+// Lista de arquivos vitais que o PWA precisa armazenar no celular
+const ASSETS_TO_CACHE = [
+  './',
+  './index.html',
+  // Se você tiver um manifest.json ou ícones, adicione aqui (ex: './manifest.json')
+  
+  // Lista dos 12 sons locais mapeados estritamente com o index.html
+  './sound/sound1.mp3',
+  './sound/sound2.mp3',
+  './sound/sound3.mp3',
+  './sound/sound4.mp3',
+  './sound/sound5.mp3',
+  './sound/sound6.mp3',
+  './sound/sound7.mp3',
+  './sound/sound8.mp3',
+  './sound/sound9.mp3',
+  './sound/sound10.mp3',
+  './sound/sound11.mp3',
+  './sound/sound12.mp3'
 ];
 
-// INSTALAÇÃO: Armazena os 12 sons direto no celular do morador
-self.addEventListener('install', function(event) {
-    event.waitUntil(
-        caches.open(NOME_DO_CACHE).then(function(cache) {
-            console.log('VIRTY PWA: Cacheando os 12 arquivos de som locais...');
-            return cache.addAll(ARQUIVOS_PARA_CACHEAR);
-        }).then(() => self.skipWaiting())
-    );
+// Instalação do Service Worker e Cache dos arquivos
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('Virty SW: Armazenando arquivos de interface e áudios em Cache...');
+      return cache.addAll(ASSETS_TO_CACHE);
+    }).then(() => self.skipWaiting()) // Força a atualização imediata
+  );
 });
 
-// ATIVAÇÃO: Assume o controle imediato do PWA
-self.addEventListener('activate', function(event) {
-    event.waitUntil(self.clients.claim());
-});
-
-// INTERCEPTAÇÃO: Entrega os áudios instantaneamente do cache (Sem gastar internet)
-self.addEventListener('fetch', function(event) {
-    event.respondWith(
-        caches.match(event.request).then(function(response) {
-            return response || fetch(event.request);
+// Ativação e limpeza de caches antigos
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            console.log('Virty SW: Removendo cache antigo:', cache);
+            return caches.delete(cache);
+          }
         })
-    );
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
-// ESCUTA DO GATILHO (PUSH NOTIFICATION) - Quando o app está fechado
-self.addEventListener('push', function(event) {
-    let dados = { som: "sound1.mp3", unidade: "VIRTY" };
-    try { dados = event.data.json(); } catch(e) {}
+// Estratégia de Cache First (Busca no cache primeiro, garante que o som toque instantaneamente)
+self.addEventListener('fetch', (event) => {
+  // Ignora requisições para o Firebase (tempo real não pode ir para o cache)
+  if (event.request.url.includes('firebaseio.com') || event.request.url.includes('gstatic.com')) {
+    return;
+  }
 
-    const options = {
-        body: `⚠️ CHAMADA EM CURSO! Clique aqui para atender imediatamente.`,
-        icon: './icon.png', 
-        badge: './badge.png',
-        tag: 'chamada-virty-urgente',
-        renotify: true,
-        requireInteraction: true, // ⚠️ OBRIGA O USUÁRIO A CLICAR (Não some da barra)
-        vibrate: [600, 300, 600, 300, 600, 300, 600, 300, 600], // Vibração contínua e pesada
-        data: { url_destino: self.location.origin + '/morador/index.html' }
-    };
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse; // Retorna do cache local do celular de forma instantânea
+      }
+      
+      // Se não estiver no cache, busca na rede
+      return fetch(event.request).then((networkResponse) => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          return networkResponse;
+        }
 
-    // Alerta sonoro nativo via Push se suportado, senão a vibração estendida assume
-    try {
-        const audioChamada = new Audio(`./sound/${dados.som}`);
-        audioChamada.loop = true;
-        audioChamada.play();
-        self.audioAtivo = audioChamada;
-    } catch (err) {
-        console.log("Áudio em BG dependente da abertura da janela.");
-    }
+        // Clona e salva dinamicamente novos arquivos locais caso apareçam
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
 
-    event.waitUntil(self.registration.showNotification(`📞 VIRTY ACCESS DOOR`, options));
-});
-
-// CLIQUE NA NOTIFICAÇÃO: Abre o app na hora e desliga o barulho de fundo
-self.addEventListener('notificationclick', function(event) {
-    event.notification.close();
-    
-    if (self.audioAtivo) { try { self.audioAtivo.pause(); } catch(e){} }
-    
-    event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients) {
-            for (var i = 0; i < windowClients.length; i++) {
-                var client = windowClients[i];
-                if (client.url === event.notification.data.url_destino && 'focus' in client) {
-                    return client.focus();
-                }
-            }
-            if (clients.openWindow) return clients.openWindow(event.notification.data.url_destino);
-        })
-    );
+        return networkResponse;
+      });
+    })
+  );
 });
