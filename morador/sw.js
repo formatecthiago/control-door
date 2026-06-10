@@ -1,11 +1,13 @@
 // sw.js - Cache de Longo Prazo para Áudios Locais Virti
-const CACHE_NAME = 'virty-morador-cache-v2';
+const CACHE_NAME = 'virty-morador-cache-v3'; // Versão atualizada para forçar o celular a recarregar tudo
 
 // Lista de arquivos vitais que o PWA precisa armazenar no celular
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  // Se você tiver um manifest.json ou ícones, adicione aqui (ex: './manifest.json')
+  './manifest.json',      // ADICIONADO: Essencial para validação do PWA
+  './icon-192.png',       // ADICIONADO: Seu novo ícone aprovado
+  './icon-512.png',       // ADICIONADO: Sua nova splash screen aprovada
   
   // Lista dos 12 sons locais mapeados estritamente com o index.html
   './sound/sound1.mp3',
