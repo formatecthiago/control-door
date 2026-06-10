@@ -13,7 +13,8 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "./index.html",
+  "start_url": "/control-door/morador/index.html",
+  "scope": "/control-door/morador/",
   "background_color": "#000000",
   "theme_color": "#39FF14",
   "display": "standalone",
