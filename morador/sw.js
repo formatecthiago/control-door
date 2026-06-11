@@ -1,30 +1,20 @@
-const CACHE_NAME = 'virty-morador-v3';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
-  './sound/sound01.mp3',
-  './sound/sound02.mp3',
-  './sound/sound03.mp3',
-  './sound/sound04.mp3',
-  './sound/sound05.mp3',
-  './sound/sound06.mp3',
-  './sound/sound07.mp3',
-  './sound/sound08.mp3',
-  './sound/sound09.mp3',
-  './sound/sound10.mp3',
-  './sound/sound11.mp3',
-  './sound/sound12.mp3'
-];
+const CACHE_NAME = 'virty-morador-vfinal';
 
+// Instalação direta e limpa
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+  self.skipWaiting();
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => response || fetch(event.request))
+// Ativação limpando qualquer lixo antigo
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((key) => caches.delete(key)));
+    }).then(() => self.clients.claim())
   );
+});
+
+// Busca direta na rede (Garante que o áudio toque buscando direto do GitHub)
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request));
 });
