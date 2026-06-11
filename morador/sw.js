@@ -1,6 +1,4 @@
-const CACHE_NAME = 'virty-morador-v2';
-
-// Lista de arquivos mapeada exatamente com caminhos relativos ao escopo
+const CACHE_NAME = 'virty-morador-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -21,47 +19,12 @@ const ASSETS = [
   './sound/sound12.mp3'
 ];
 
-// Instalação do Service Worker e armazenamento em cache
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('Virty SW: Armazenando todos os arquivos no cache...');
-      return cache.addAll(ASSETS);
-    }).then(() => self.skipWaiting())
-  );
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
 });
 
-// Ativação e limpeza de caches antigos
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('Virty SW: Limpando cache antigo:', key);
-            return caches.delete(key);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
-});
-
-// Estratégia de busca: Tenta a rede primeiro, se falhar (offline), busca no cache
-self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET') return;
-
-  e.respondWith(
-    fetch(e.request).then((response) => {
-      if (response && response.status === 200) {
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(e.request, responseClone);
-        });
-      }
-      return response;
-    }).catch(() => {
-      return caches.match(e.request);
-    })
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => response || fetch(event.request))
   );
 });
