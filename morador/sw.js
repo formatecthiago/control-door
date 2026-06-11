@@ -1,44 +1,45 @@
-const CACHE_NAME = 'virty-morador-cache-v4'; 
+const CACHE_NAME = 'virty-morador-v2';
 
-const ASSETS_TO_CACHE = [
-  '/control-door/morador/',
-  '/control-door/morador/index.html',
-  '/control-door/morador/manifest.json',
-  '/control-door/morador/icon-192.png',
-  '/control-door/morador/icon-512.png',
-  '/control-door/morador/sound/sound1.mp3',
-  '/control-door/morador/sound/sound2.mp3',
-  '/control-door/morador/sound/sound3.mp3',
-  '/control-door/morador/sound/sound4.mp3',
-  '/control-door/morador/sound/sound5.mp3',
-  '/control-door/morador/sound/sound6.mp3',
-  '/control-door/morador/sound/sound7.mp3',
-  '/control-door/morador/sound/sound8.mp3',
-  '/control-door/morador/sound/sound9.mp3',
-  '/control-door/morador/sound/sound10.mp3',
-  '/control-door/morador/sound/sound11.mp3',
-  '/control-door/morador/sound/sound12.mp3'
+// Lista de arquivos mapeada exatamente com caminhos relativos ao escopo
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  './sound/sound01.mp3',
+  './sound/sound02.mp3',
+  './sound/sound03.mp3',
+  './sound/sound04.mp3',
+  './sound/sound05.mp3',
+  './sound/sound06.mp3',
+  './sound/sound07.mp3',
+  './sound/sound08.mp3',
+  './sound/sound09.mp3',
+  './sound/sound10.mp3',
+  './sound/sound11.mp3',
+  './sound/sound12.mp3'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
+// Instalação do Service Worker e armazenamento em cache
+self.addEventListener('install', (e) => {
+  e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return Promise.all(
-        ASSETS_TO_CACHE.map(url => {
-          return cache.add(url).catch(err => console.warn('Falha ao cachear:', url, err));
-        })
-      );
+      console.log('Virty SW: Armazenando todos os arquivos no cache...');
+      return cache.addAll(ASSETS);
     }).then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
+// Ativação e limpeza de caches antigos
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => {
       return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log('Virty SW: Limpando cache antigo:', key);
+            return caches.delete(key);
           }
         })
       );
@@ -46,23 +47,21 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  if (event.request.url.includes('firebaseio.com') || event.request.url.includes('gstatic.com')) {
-    return;
-  }
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
-        }
-        const responseToCache = networkResponse.clone();
+// Estratégia de busca: Tenta a rede primeiro, se falhar (offline), busca no cache
+self.addEventListener('fetch', (e) => {
+  if (e.request.method !== 'GET') return;
+
+  e.respondWith(
+    fetch(e.request).then((response) => {
+      if (response && response.status === 200) {
+        const responseClone = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+          cache.put(e.request, responseClone);
         });
-        return networkResponse;
-      });
+      }
+      return response;
+    }).catch(() => {
+      return caches.match(e.request);
     })
   );
 });
