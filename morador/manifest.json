@@ -1,22 +1,24 @@
 {
   "short_name": "Virty Morador",
-  "name": "VIRTY ACCESS DOOR - Morador",
+  "name": "Virty: Central de Toques Morador",
   "icons": [
     {
-      "src": "/control-door/morador/icon-192.png",
+      "src": "./icon-192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
-      "src": "/control-door/morador/icon-512.png",
+      "src": "./icon-512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": "/control-door/morador/index.html",
-  "scope": "/control-door/morador/",
-  "background_color": "#000000",
-  "theme_color": "#39FF14",
+  "start_url": "./index.html",
+  "background_color": "#ffffff",
   "display": "standalone",
-  "orientation": "portrait"
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "scope": "./"
 }
