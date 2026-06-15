@@ -102,9 +102,9 @@
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
         .linha-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
 
-        /* ESTILOS CUSTOMIZADOS DA TELA DE INSTALAÇÃO (BASEADO NA IMAGEM 41554.png) */
+        /* ESTILOS CUSTOMIZADOS DA TELA DE INSTALAÇÃO */
         .virty-bg-screen {
-            background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.9)), url('41554.png') center/cover no-repeat;
+            background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.9));
             justify-content: center;
             align-items: center;
             text-align: center;
@@ -131,14 +131,14 @@
             box-shadow: none;
             max-width: 300px;
             transition: all 0.3s ease;
-            pointer-events: none; /* Bloqueia cliques enquanto inativo */
+            pointer-events: none;
         }
         /* ESTADO ATIVO DO BOTÃO (VERDE NEON VIVO) */
         .btn-install-virty.ready-neon {
             background: var(--neon);
             color: #000;
             box-shadow: 0 0 25px rgba(57,255,20,0.6);
-            pointer-events: auto; /* Libera cliques */
+            pointer-events: auto;
             cursor: pointer;
         }
         /* ESTADO TEXTO DO SUB-STATUS */
@@ -151,15 +151,12 @@
     </style>
 </head>
 <body>
-    <!-- 0. TELA DE INSTALAÇÃO CUSTOMIZADA WEB -->
     <div id="s-instalacao" class="screen virty-bg-screen">
         <h1 class="virty-title-neon">VIRTY ACCESS DOOR</h1>
         <div class="virty-subtitle">Acesso Digital</div>
         
-        <!-- Botão Dinâmico que muda de comportamento de acordo com o estado -->
         <button id="btn-instalar-pwa" class="btn btn-install-virty">INSTALAR APP</button>
         
-        <!-- Frase de porte médio em branco que muda dinamicamente -->
         <p id="msg-status-virty" class="txt-virty-status-medio">Aguarde...</p>
     </div>
 
@@ -316,7 +313,6 @@
             verificarStatus();
         } else {
             mudarTela('s-instalacao');
-            
             if (localStorage.getItem('virty_pwa_instalado') === 'true') {
                 configurarTelaComoInstalado();
             } else {
@@ -325,7 +321,7 @@
         }
     };
 
-    /* CONTROLE DINÂMICO DOS ESTADOS DE INSTALAÇÃO */
+    /* CONTROLE DINÂMICO DOS ESTADOS DE INSTALAÇÃO - REDIRECIONA PARA O LINK SE JÁ INSTALADO */
     function configurarFluxoInstalacao() {
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -344,21 +340,21 @@
         });
 
         document.getElementById('btn-instalar-pwa').addEventListener('click', async () => {
-            // Se o app já está instalado, o clique no botão verde abre diretamente o link do PWA
+            // AÇÃO DO BOTÃO ALTERADA: Se já foi marcado como instalado ou se o botão diz "ABRIR", abre o link imediatamente
             if (localStorage.getItem('virty_pwa_instalado') === 'true') {
-                window.location.href = "https://formatecthiago.github.io/control-door/morador/index.html";
+                window.open('https://formatecthiago.github.io/control-door/morador/index.html', '_blank');
                 return;
             }
 
-            if (!deferredPrompt) return;
+            if (!deferredPrompt) {
+                // Fallback de segurança se o prompt não disparou mas o botão foi clicado
+                window.open('https://formatecthiago.github.io/control-door/morador/index.html', '_blank');
+                return;
+            }
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
                 configurarTelaComoInstalado();
-                // Redireciona imediatamente após o aceite da instalação para abrir o PWA de pronto
-                setTimeout(() => {
-                    window.location.href = "https://formatecthiago.github.io/control-door/morador/index.html";
-                }, 500);
             }
             deferredPrompt = null;
         });
@@ -368,7 +364,6 @@
         });
     }
 
-    /* ALTERA A PÁGINA PARA O MODO "APP INSTALADO" SEM OPÇÃO DE DESINSTALAR */
     function configurarTelaComoInstalado() {
         localStorage.setItem('virty_pwa_instalado', 'true');
         
@@ -378,6 +373,10 @@
         if(btn) {
             btn.classList.add('ready-neon');
             btn.innerText = "ABRIR O VIRTY ACCESS DOOR";
+            // Remove ouvintes antigos e adiciona o redirecionamento limpo
+            btn.onclick = () => {
+                window.open('https://formatecthiago.github.io/control-door/morador/index.html', '_blank');
+            };
         }
         if(msg) {
             msg.innerText = "App instalado";
@@ -423,10 +422,10 @@
         inicializarCapturaVideo();
     }
     
-    /* CAPTURA E AVANÇA SOZINHO PARA O CAMPO DE NOME */
+    /* CAPTURA A SELFIE E PULA DIRETO PARA O PRÓXIMO CAMPO SEM POP-UPS */
     function fotoCad() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
-        if(!v.videoWidth) return virtyAlert("Aguarde a câmera iniciar totalmente.");
+        if(!v.videoWidth) return;
         c.width = v.videoWidth; c.height = v.videoHeight;
         
         const ctx = c.getContext('2d');
@@ -439,7 +438,7 @@
         
         if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
         
-        // Pula o popup chato e coloca o cursor em foco direto no campo de Nome Completo
+        // PULA AUTOMATICAMENTE PARA O PRÓXIMO CAMPO (Foca no input de Nome Completo)
         document.getElementById('c-nome').focus();
     }
     
@@ -802,4 +801,3 @@
 </script>
 </body>
 </html>
-
