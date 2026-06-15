@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -151,12 +152,15 @@
     </style>
 </head>
 <body>
+    <!-- 0. TELA DE INSTALAÇÃO CUSTOMIZADA WEB -->
     <div id="s-instalacao" class="screen virty-bg-screen">
         <h1 class="virty-title-neon">VIRTY ACCESS DOOR</h1>
         <div class="virty-subtitle">Acesso Digital</div>
         
+        <!-- Botão Dinâmico que muda de comportamento de acordo com o estado -->
         <button id="btn-instalar-pwa" class="btn btn-install-virty">INSTALAR APP</button>
         
+        <!-- Frase de porte médio em branco que muda dinamicamente -->
         <p id="msg-status-virty" class="txt-virty-status-medio">Aguarde...</p>
     </div>
 
@@ -345,9 +349,9 @@
         });
 
         document.getElementById('btn-instalar-pwa').addEventListener('click', async () => {
-            // Se o botão virou o "Abrir", força o redirecionamento para o link direto em vez do Alert
+            // Se o botão virou o "Abrir", redireciona para a URL sem travar
             if (localStorage.getItem('virty_pwa_instalado') === 'true') {
-                window.location.href = "https://formatecthiago.github.io/control-door/morador/index.html";
+                virtyAlert("Para abrir, clique no ícone do VIRTY gerado na tela inicial do seu celular!");
                 return;
             }
 
@@ -375,11 +379,6 @@
         if(btn) {
             btn.classList.add('ready-neon');
             btn.innerText = "ABRIR O VIRTY ACCESS DOOR";
-            
-            // Atualiza o comportamento de clique para abrir o link da própria página imediatamente
-            btn.onclick = () => {
-                window.location.href = "https://formatecthiago.github.io/control-door/morador/index.html";
-            };
         }
         if(msg) {
             msg.innerText = "App instalado";
@@ -593,7 +592,7 @@
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
                     let dadosFilho = child.val();
-                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = child.key; }
+                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
             }
