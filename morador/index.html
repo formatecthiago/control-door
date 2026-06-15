@@ -101,9 +101,58 @@
         .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
         .linha-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
+
+        /* ESTILOS CUSTOMIZADOS DA TELA DE INSTALAÇÃO (BASEADO NA IMAGEM 41554.png) */
+        .virty-bg-screen {
+            background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.9)), url('41554.png') center/cover no-repeat;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .virty-title-neon {
+            font-size: 2.3rem;
+            font-weight: 900;
+            color: var(--neon);
+            text-shadow: 0 0 15px rgba(57,255,20,0.7);
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+        .virty-subtitle {
+            font-size: 1.2rem;
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 50px;
+        }
+        .btn-install-virty {
+            background: var(--neon);
+            color: #000;
+            box-shadow: 0 0 25px rgba(57,255,20,0.5);
+            max-width: 300px;
+            transition: 0.2s;
+        }
+        .btn-uninstall-virty {
+            background: #111;
+            border: 2px solid var(--red);
+            color: var(--red);
+            box-shadow: 0 0 15px rgba(255,49,49,0.3);
+            max-width: 300px;
+        }
     </style>
 </head>
 <body>
+    <!-- 0. TELA DE INSTALAÇÃO PADRÃO WEB (BASEADA NA IDENTIDADE DA IMAGEM 41554.png) -->
+    <div id="s-instalacao" class="screen virty-bg-screen">
+        <h1 class="virty-title-neon">VIRTY ACCESS DOOR</h1>
+        <div class="virty-subtitle">Acesso Digital</div>
+        <p style="color: #aaa; font-size: 0.95rem; max-width: 290px; margin-bottom: 30px; line-height: 1.5;">
+            Detectamos que o aplicativo ainda não está instalado em seu dispositivo. Clique abaixo para iniciar.
+        </p>
+        <button id="btn-instalar-pwa" class="btn btn-install-virty" style="display: none;">INSTALAR APP</button>
+        <p id="msg-carregando-prompt" style="color: var(--gray); font-size: 0.8rem; font-weight: bold;">
+            Aguardando suporte de instalação do sistema...
+        </p>
+    </div>
+
     <div id="custom-alert" class="virty-popup">
         <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:12px;">VIRTY ACCESS DOOR</div>
         <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4;"></div>
@@ -215,10 +264,9 @@
     let tempoGeralRegressivo = 90;
     let timePressStart = 0;
     
-    // VARIÁVEIS DO NOVO SISTEMA DE SOM REPRODUZIDO POR AUDIO MP3 LOCAL DO INSTAGRAM/PWA
     let somInterfoneLocal = null;
     let piscaTituloInterval = null;
-    let somAtual = parseInt(localStorage.getItem('virty_som')) || 0; // Armazena índice de 0 a 11 (1 a 12 sons)
+    let somAtual = parseInt(localStorage.getItem('virty_som')) || 0; 
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
     
     let streamCameraAtiva = null;
@@ -227,8 +275,8 @@
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
+    let deferredPrompt = null; // Variável para controlar o prompt do PWA
 
-    // CORREÇÃO: Inicialização do Service Worker do PWA Morador com Escopo Fixo Absoluto para o GitHub Pages
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/control-door/morador/sw.js', { scope: '/control-door/morador/' })
         .then(reg => console.log('Virty: Central de Toques Pronta (12 sons locais). Escopo definido.'))
@@ -251,8 +299,67 @@
     window.onload = () => {
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
-        verificarStatus();
+        
+        // REGRA CRUCIAL: Captura se está abrindo nativamente como APP PWA ou no navegador comum
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        
+        if (isStandalone) {
+            // Se for PWA nativo, ignora tela de instalação e chama a validação do Firebase normal
+            verificarStatus();
+        } else {
+            // Se for acessado via Web comum, força a exibição estrita da tela de instalação customizada
+            mudarTela('s-instalacao');
+            configurarFluxoInstalacao();
+        }
     };
+
+    /* SISTEMA DE CONTROLE DE INSTALAÇÃO DO APP */
+    function configurarFluxoInstalacao() {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            const btn = document.getElementById('btn-instalar-pwa');
+            const msg = document.getElementById('msg-carregando-prompt');
+            if(btn) btn.style.display = 'block';
+            if(msg) msg.style.display = 'none';
+        });
+
+        document.getElementById('btn-instalar-pwa').addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                inutilizarPaginaWeb();
+            }
+            deferredPrompt = null;
+        });
+
+        window.addEventListener('appinstalled', () => {
+            inutilizarPaginaWeb();
+        });
+    }
+
+    /* INUTILIZA A PÁGINA WEB IMEDIATAMENTE APÓS O ACEITE DA INSTALAÇÃO */
+    function inutilizarPaginaWeb() {
+        document.body.innerHTML = `
+            <div class="screen active virty-bg-screen" style="height: 100vh; width: 100vw; position: fixed; top:0; left:0; z-index:999999;">
+                <h1 class="virty-title-neon">VIRTY ACCESS DOOR</h1>
+                <div class="virty-subtitle">Acesso Digital</div>
+                <div style="font-size: 4rem; color: var(--neon); margin-bottom: 15px;">✓</div>
+                <h2 style="color: var(--neon); margin-bottom: 10px; font-weight: bold;">APLICATIVO INSTALADO!</h2>
+                <p style="color: #ccc; max-width: 300px; line-height: 1.6; font-size: 0.95rem; margin-bottom: 40px;">
+                    Esta página web foi permanentemente desativada. Para usar o sistema, feche esta aba e abra o aplicativo diretamente através do ícone gerado na tela inicial do seu aparelho.
+                </p>
+                <button class="btn btn-uninstall-virty" onclick="alert('Para desinstalar, utilize as configurações padrão do seu sistema Android segurando o ícone do aplicativo.')">DESINSTALAR APP</button>
+            </div>
+        `;
+        // Trava o botão "Voltar" nativo do smartphone
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = function () {
+            window.history.go(1);
+        };
+    }
     
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
@@ -347,11 +454,9 @@
                 document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
                 painel.style.display = 'flex';
                 
-                // CONTROLE INTEGRADO DE SOM CONSTANTE DE 12 SONS (.MP3)
                 if((d.status === 'escrevendo' || d.status === 'gravando' || somSilenciadoPorInteracao)) {
                     gerenciarAlerta('stop');
                 } else if(d.status === 'chamando' && !estaGravando && !estaDigitando && !somSilenciadoPorInteracao) {
-                    // Pega o som configurado vindo do banco ou assume o padrão dinâmico local do morador
                     const somSelecionado = d.som_chamada || `sound${somAtual + 1}.mp3`;
                     gerenciarAlerta('start', somSelecionado);
                 }
@@ -524,7 +629,7 @@
             </div>
             <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
                 <b style="font-size:0.75rem; color:#aaa;">DNA: ${d.dna_dispositivo}</b>
-                <small style="color:var(--neon); font-size:0.7rem; font-weight:bold;">${(d.ultima || 'Bloqueado').toUpperCase()}</small>
+                <small style="color:var(--neon); font-size:0.7..; font-weight:bold;">${(d.ultima || 'Bloqueado').toUpperCase()}</small>
                 <span style="font-size:0.65rem; color:#444;">${d.data_hora || ''}</span>
             </div>
             <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.dna_dispositivo}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
@@ -556,9 +661,12 @@
         });
     }
     function limparHist() { if(confirm("Deseja limpar seu histórico?")) db.ref(`historico/${my_un}`).remove(); }
+    
     function mudarTela(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        const targetScreen = document.getElementById(id);
+        if(targetScreen) targetScreen.classList.add('active');
+        
         if(id === 's-cadastro') { document.getElementById('v-cad').style.display = "block"; document.getElementById('c-cad').style.display = "none"; inicializarCapturaVideo(); }
         else if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; }
     }
@@ -569,13 +677,10 @@
         }
     }
     
-    // MUDANÇA DE TOQUES DA INTERFACE - SELECIONA DE 1 ATÉ 12 SONS MP3 LOCAIS
     function proximoSom() { 
-        somAtual = (somAtual + 1) % 12; // Modulado estritamente para os 12 arquivos reais salvos
+        somAtual = (somAtual + 1) % 12; 
         localStorage.setItem('virty_som', somAtual); 
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1); 
-        
-        // Executa uma demonstração rápida do áudio escolhido
         gerenciarAlerta('start', `sound${somAtual + 1}.mp3`); 
         setTimeout(() => { if(!somSilenciadoPorInteracao) gerenciarAlerta('stop'); }, 2000); 
     }
@@ -583,15 +688,12 @@
     function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
     function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); btn.innerText = modoAlerta === 1 ? "🔊" : modoAlerta === 2 ? "📳🔊" : "📳"; }
     
-    // MOTOR DE ÁUDIO REAL DE ALTA INTENSIDADE (.MP3 INTERNO LOOP)
     function gerenciarAlerta(acao, arquivoSomOpcional) {
-        // Desliga o áudio antigo se estiver tocando
         if(somInterfoneLocal) {
             try { somInterfoneLocal.pause(); somInterfoneLocal.currentTime = 0; } catch(e){}
             somInterfoneLocal = null;
         }
         
-        // Limpa o título piscante e alertas visuais de travamento
         if(acao === 'stop') { 
             navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
@@ -603,25 +705,20 @@
         
         if(somSilenciadoPorInteracao) return;
         
-        // Configuração de vibração pesada (Modos 2 e 3)
         if(modoAlerta === 2 || modoAlerta === 3) {
             navigator.vibrate([500, 300, 500, 300, 500, 300, 500]);
         }
         
-        // Execução do Áudio MP3 Se não estiver no modo apenas vibrar (Modo 3)
         if(modoAlerta !== 3) {
             const arquivoFinal = arquivoSomOpcional || `sound${somAtual + 1}.mp3`;
-            
             somInterfoneLocal = new Audio(`/control-door/morador/sound/${arquivoFinal}`);
-            somInterfoneLocal.loop = true; // REPRODUÇÃO CONSTANTE E INFINITA ATÉ O FIM DA CHAMADA
-            
+            somInterfoneLocal.loop = true; 
             somInterfoneLocal.play().catch(erro => {
                 console.log("Bloqueio de Autoplay. Injetando banner intermitente.");
                 criarAlertaVisualIntermitente();
             });
         }
 
-        // Ativa o título piscante agressivo na aba do navegador
         if (!piscaTituloInterval) {
             let alternar = false;
             piscaTituloInterval = setInterval(() => {
@@ -631,7 +728,6 @@
         }
     }
 
-    // BANNER VERMELHO DE EMERGÊNCIA (Cobre a tela se o navegador bloquear o som em background)
     function criarAlertaVisualIntermitente() {
         if (document.getElementById('banner-urgente-virty')) return;
         
