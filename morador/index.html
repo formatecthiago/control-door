@@ -151,12 +151,15 @@
     </style>
 </head>
 <body>
+    <!-- 0. TELA DE INSTALAÇÃO CUSTOMIZADA WEB -->
     <div id="s-instalacao" class="screen virty-bg-screen">
         <h1 class="virty-title-neon">VIRTY ACCESS DOOR</h1>
         <div class="virty-subtitle">Acesso Digital</div>
         
+        <!-- Botão Dinâmico que muda de comportamento de acordo com o estado -->
         <button id="btn-instalar-pwa" class="btn btn-install-virty">INSTALAR APP</button>
         
+        <!-- Frase de porte médio em branco que muda dinamicamente -->
         <p id="msg-status-virty" class="txt-virty-status-medio">Aguarde...</p>
     </div>
 
@@ -310,12 +313,13 @@
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         
         if (isStandalone) {
-            // Aberto diretamente do Ícone APP do Celular -> Segue fluxo normal do sistema
+            // Aberto diretamente do Ícone APP do Celular -> Segue fluxo
             verificarStatus();
         } else {
-            // Acessado do Navegador -> Exibe Tela Base de Instalação obrigatoriamente
+            // Acessado do Navegador -> Exibe Tela Base de Instalação
             mudarTela('s-instalacao');
             
+            // Verificação de persistência se o app já foi devidamente instalado anteriormente nesta URL
             if (localStorage.getItem('virty_pwa_instalado') === 'true') {
                 configurarTelaComoInstalado();
             } else {
@@ -326,49 +330,45 @@
 
     /* CONTROLE DINÂMICO DOS ESTADOS DE INSTALAÇÃO */
     function configurarFluxoInstalacao() {
-        // Exibe o botão de forma amigável imediatamente enquanto o prompt carrega
-        const btn = document.getElementById('btn-instalar-pwa');
-        const msg = document.getElementById('msg-status-virty');
-        
-        if(btn && !btn.classList.contains('ready-neon')) {
-            btn.classList.add('ready-neon');
-            btn.innerText = "INSTALAR APP";
-        }
-        if(msg) {
-            msg.innerText = "Clique para adicionar à tela inicial";
-        }
-
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
+            
+            // Ativa visualmente o botão (Muda para Verde Neon Vivo e ativo)
+            const btn = document.getElementById('btn-instalar-pwa');
+            const msg = document.getElementById('msg-status-virty');
+            
+            if(btn) {
+                btn.classList.add('ready-neon');
+                btn.innerText = "INSTALAR APP";
+            }
+            if(msg) {
+                msg.innerText = "Pronto para instalar";
+            }
         });
 
-        document.getElementById('btn-instalar-pwa').onclick = async () => {
+        document.getElementById('btn-instalar-pwa').addEventListener('click', async () => {
+            // Se o botão virou o "Abrir", redireciona para a URL sem travar
             if (localStorage.getItem('virty_pwa_instalado') === 'true') {
-                // Redirecionamento correto para seguir o fluxo sem recarregar a tela em loop estático
-                verificarStatus();
+                virtyAlert("Para abrir, clique no ícone do VIRTY gerado na tela inicial do seu celular!");
                 return;
             }
 
-            if (!deferredPrompt) {
-                // Caso o navegador não ofereça suporte ao prompt automático (Ex: iOS Safari)
-                virtyAlert("Para instalar: toque no botão de compartilhamento do seu navegador e escolha 'Adicionar à Tela de Início'.");
-                return;
-            }
+            if (!deferredPrompt) return;
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
                 configurarTelaComoInstalado();
             }
             deferredPrompt = null;
-        };
+        });
 
         window.addEventListener('appinstalled', () => {
             configurarTelaComoInstalado();
         });
     }
 
-    /* ALTERA A PÁGINA PARA O MODO "APP INSTALADO" SEM REDIRECIONAR EM LOOP */
+    /* ALTERA A PÁGINA PARA O MODO "APP INSTALADO" SEM OPÇÃO DE DESINSTALAR */
     function configurarTelaComoInstalado() {
         localStorage.setItem('virty_pwa_instalado', 'true');
         
@@ -380,14 +380,7 @@
             btn.innerText = "ABRIR O VIRTY ACCESS DOOR";
         }
         if(msg) {
-            msg.innerText = "App instalado com sucesso";
-        }
-
-        // Configura o clique do botão verde para avançar para o fluxo do app em vez de recarregar a URL
-        if(btn) {
-            btn.onclick = () => {
-                verificarStatus();
-            };
+            msg.innerText = "App instalado";
         }
     }
     
@@ -443,8 +436,7 @@
         c.style.display = "block"; v.style.display = "none";
         
         if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
-        
-        document.getElementById('c-nome').focus();
+        virtyAlert("Selfie de cadastro capturada!");
     }
     function enviarCadastro() {
         const un = document.getElementById('c-un').value,
