@@ -123,34 +123,44 @@
             letter-spacing: 2px;
             margin-bottom: 50px;
         }
+        
+        /* ESTADO INATIVO DO BOTÃO (PADRÃO INICIAL) */
         .btn-install-virty {
+            background: #222;
+            color: #555;
+            box-shadow: none;
+            max-width: 300px;
+            transition: all 0.3s ease;
+            pointer-events: none; /* Bloqueia cliques enquanto inativo */
+        }
+        /* ESTADO ATIVO DO BOTÃO (VERDE NEON VIVO) */
+        .btn-install-virty.ready-neon {
             background: var(--neon);
             color: #000;
-            box-shadow: 0 0 25px rgba(57,255,20,0.5);
-            max-width: 300px;
-            transition: 0.2s;
+            box-shadow: 0 0 25px rgba(57,255,20,0.6);
+            pointer-events: auto; /* Libera cliques */
+            cursor: pointer;
         }
-        .btn-uninstall-virty {
-            background: #111;
-            border: 2px solid var(--red);
-            color: var(--red);
-            box-shadow: 0 0 15px rgba(255,49,49,0.3);
-            max-width: 300px;
+        /* ESTADO TEXTO DO SUB-STATUS */
+        .txt-virty-status-medio {
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
-    <!-- 0. TELA DE INSTALAÇÃO PADRÃO WEB (BASEADA NA IDENTIDADE DA IMAGEM 41554.png) -->
+    <!-- 0. TELA DE INSTALAÇÃO CUSTOMIZADA WEB -->
     <div id="s-instalacao" class="screen virty-bg-screen">
         <h1 class="virty-title-neon">VIRTY ACCESS DOOR</h1>
         <div class="virty-subtitle">Acesso Digital</div>
-        <p style="color: #aaa; font-size: 0.95rem; max-width: 290px; margin-bottom: 30px; line-height: 1.5;">
-            Detectamos que o aplicativo ainda não está instalado em seu dispositivo. Clique abaixo para iniciar.
-        </p>
-        <button id="btn-instalar-pwa" class="btn btn-install-virty" style="display: none;">INSTALAR APP</button>
-        <p id="msg-carregando-prompt" style="color: var(--gray); font-size: 0.8rem; font-weight: bold;">
-            Aguardando suporte de instalação do sistema...
-        </p>
+        
+        <!-- Botão Dinâmico que muda de comportamento de acordo com o estado -->
+        <button id="btn-instalar-pwa" class="btn btn-install-virty">INSTALAR APP</button>
+        
+        <!-- Frase de porte médio em branco que muda dinamicamente -->
+        <p id="msg-status-virty" class="txt-virty-status-medio">Aguarde...</p>
     </div>
 
     <div id="custom-alert" class="virty-popup">
@@ -275,11 +285,11 @@
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
-    let deferredPrompt = null; // Variável para controlar o prompt do PWA
+    let deferredPrompt = null; 
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/control-door/morador/sw.js', { scope: '/control-door/morador/' })
-        .then(reg => console.log('Virty: Central de Toques Pronta (12 sons locais). Escopo definido.'))
+        .then(reg => console.log('Virty: Central de Toques Pronta.'))
         .catch(err => console.error('Erro Service Worker:', err));
     }
 
@@ -300,65 +310,78 @@
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
         
-        // REGRA CRUCIAL: Captura se está abrindo nativamente como APP PWA ou no navegador comum
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         
         if (isStandalone) {
-            // Se for PWA nativo, ignora tela de instalação e chama a validação do Firebase normal
+            // Aberto diretamente do Ícone APP do Celular -> Segue fluxo
             verificarStatus();
         } else {
-            // Se for acessado via Web comum, força a exibição estrita da tela de instalação customizada
+            // Acessado do Navegador -> Exibe Tela Base de Instalação
             mudarTela('s-instalacao');
-            configurarFluxoInstalacao();
+            
+            // Verificação de persistência se o app já foi devidamente instalado anteriormente nesta URL
+            if (localStorage.getItem('virty_pwa_instalado') === 'true') {
+                configurarTelaComoInstalado();
+            } else {
+                configurarFluxoInstalacao();
+            }
         }
     };
 
-    /* SISTEMA DE CONTROLE DE INSTALAÇÃO DO APP */
+    /* CONTROLE DINÂMICO DOS ESTADOS DE INSTALAÇÃO */
     function configurarFluxoInstalacao() {
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
             
+            // Ativa visualmente o botão (Muda para Verde Neon Vivo e ativo)
             const btn = document.getElementById('btn-instalar-pwa');
-            const msg = document.getElementById('msg-carregando-prompt');
-            if(btn) btn.style.display = 'block';
-            if(msg) msg.style.display = 'none';
+            const msg = document.getElementById('msg-status-virty');
+            
+            if(btn) {
+                btn.classList.add('ready-neon');
+                btn.innerText = "INSTALAR APP";
+            }
+            if(msg) {
+                msg.innerText = "Pronto para instalar";
+            }
         });
 
         document.getElementById('btn-instalar-pwa').addEventListener('click', async () => {
+            // Se o botão virou o "Abrir", redireciona para a URL sem travar
+            if (localStorage.getItem('virty_pwa_instalado') === 'true') {
+                virtyAlert("Para abrir, clique no ícone do VIRTY gerado na tela inicial do seu celular!");
+                return;
+            }
+
             if (!deferredPrompt) return;
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
-                inutilizarPaginaWeb();
+                configurarTelaComoInstalado();
             }
             deferredPrompt = null;
         });
 
         window.addEventListener('appinstalled', () => {
-            inutilizarPaginaWeb();
+            configurarTelaComoInstalado();
         });
     }
 
-    /* INUTILIZA A PÁGINA WEB IMEDIATAMENTE APÓS O ACEITE DA INSTALAÇÃO */
-    function inutilizarPaginaWeb() {
-        document.body.innerHTML = `
-            <div class="screen active virty-bg-screen" style="height: 100vh; width: 100vw; position: fixed; top:0; left:0; z-index:999999;">
-                <h1 class="virty-title-neon">VIRTY ACCESS DOOR</h1>
-                <div class="virty-subtitle">Acesso Digital</div>
-                <div style="font-size: 4rem; color: var(--neon); margin-bottom: 15px;">✓</div>
-                <h2 style="color: var(--neon); margin-bottom: 10px; font-weight: bold;">APLICATIVO INSTALADO!</h2>
-                <p style="color: #ccc; max-width: 300px; line-height: 1.6; font-size: 0.95rem; margin-bottom: 40px;">
-                    Esta página web foi permanentemente desativada. Para usar o sistema, feche esta aba e abra o aplicativo diretamente através do ícone gerado na tela inicial do seu aparelho.
-                </p>
-                <button class="btn btn-uninstall-virty" onclick="alert('Para desinstalar, utilize as configurações padrão do seu sistema Android segurando o ícone do aplicativo.')">DESINSTALAR APP</button>
-            </div>
-        `;
-        // Trava o botão "Voltar" nativo do smartphone
-        window.history.pushState(null, null, window.location.href);
-        window.onpopstate = function () {
-            window.history.go(1);
-        };
+    /* ALTERA A PÁGINA PARA O MODO "APP INSTALADO" SEM OPÇÃO DE DESINSTALAR */
+    function configurarTelaComoInstalado() {
+        localStorage.setItem('virty_pwa_instalado', 'true');
+        
+        const btn = document.getElementById('btn-instalar-pwa');
+        const msg = document.getElementById('msg-status-virty');
+        
+        if(btn) {
+            btn.classList.add('ready-neon');
+            btn.innerText = "ABRIR O VIRTY ACCESS DOOR";
+        }
+        if(msg) {
+            msg.innerText = "App instalado";
+        }
     }
     
     function verificarStatus() {
@@ -567,7 +590,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = filho.val();
+                    let dadosFilho = child.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
@@ -629,7 +652,7 @@
             </div>
             <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
                 <b style="font-size:0.75rem; color:#aaa;">DNA: ${d.dna_dispositivo}</b>
-                <small style="color:var(--neon); font-size:0.7..; font-weight:bold;">${(d.ultima || 'Bloqueado').toUpperCase()}</small>
+                <small style="color:var(--neon); font-size:0.75rem; font-weight:bold;">${(d.ultima || 'Bloqueado').toUpperCase()}</small>
                 <span style="font-size:0.65rem; color:#444;">${d.data_hora || ''}</span>
             </div>
             <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.dna_dispositivo}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
@@ -714,7 +737,7 @@
             somInterfoneLocal = new Audio(`/control-door/morador/sound/${arquivoFinal}`);
             somInterfoneLocal.loop = true; 
             somInterfoneLocal.play().catch(erro => {
-                console.log("Bloqueio de Autoplay. Injetando banner intermitente.");
+                console.log("Autoplay bloqueado.");
                 criarAlertaVisualIntermitente();
             });
         }
