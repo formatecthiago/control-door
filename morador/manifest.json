@@ -1,22 +1,24 @@
 {
-  "name": "Virty Morador",
-  "short_name": "Virty",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#0d0e11",
   "theme_color": "#0d0e11",
+  "background_color": "#0d0e11",
+  "display": "standalone",
+  "scope": "/control-door/morador/",
+  "start_url": "/control-door/morador/index.html",
+  "name": "Virty Morador",
+  "short_name": "Virty Morador",
+  "description": "Ecossistema inteligente de controle de acesso",
   "icons": [
     {
-      "src": "43183.jpg", 
-      "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "any"
+      "src": "/control-door/morador/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "43183.jpg",
+      "src": "/control-door/morador/icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "maskable"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
