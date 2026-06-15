@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0.0 - Web Pura</title>
+    <title>VIRTY MORADOR v2.0.1 - Notificações Pro</title>
     
     <link rel="manifest" href="/control-door/morador/manifest.json">
     <meta name="theme-color" content="#39FF14">
@@ -89,7 +89,6 @@
         .circle-progress { fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 0; transition: stroke 0.3s, stroke-dashoffset 0.1s linear; }
         #texto-timer-voz { position: absolute; font-size: 2.2rem; font-weight: bold; color: #fff; }
         
-        .virty-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); color: #fff; padding: 30px; border-radius: 16px; font-size: 1.3rem; font-weight: bold; z-index: 5000; box-shadow: 0 0 35px rgba(57,255,20,0.4); text-align: center; width: 85%; max-width: 340px; }
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
         .btn-voz svg { width: 32px; height: 32px; fill: #000; }
         
@@ -102,7 +101,6 @@
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
         .linha-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
 
-        /* ESTILOS CUSTOMIZADOS DA TELA DE INSTALAÇÃO (BASEADO NA IMAGEM 41554.png) */
         .virty-bg-screen {
             background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.9)), url('41554.png') center/cover no-repeat;
             justify-content: center;
@@ -124,24 +122,21 @@
             margin-bottom: 50px;
         }
         
-        /* ESTADO INATIVO DO BOTÃO (PADRÃO INICIAL) */
         .btn-install-virty {
             background: #222;
             color: #555;
             box-shadow: none;
             max-width: 300px;
             transition: all 0.3s ease;
-            pointer-events: none; /* Bloqueia cliques enquanto inativo */
+            pointer-events: none;
         }
-        /* ESTADO ATIVO DO BOTÃO (VERDE NEON VIVO) */
         .btn-install-virty.ready-neon {
             background: var(--neon);
             color: #000;
             box-shadow: 0 0 25px rgba(57,255,20,0.6);
-            pointer-events: auto; /* Libera cliques */
+            pointer-events: auto;
             cursor: pointer;
         }
-        /* ESTADO TEXTO DO SUB-STATUS */
         .txt-virty-status-medio {
             color: #fff;
             font-size: 1.1rem;
@@ -155,19 +150,10 @@
     <div id="s-instalacao" class="screen virty-bg-screen">
         <h1 class="virty-title-neon">VIRTY ACCESS DOOR</h1>
         <div class="virty-subtitle">Acesso Digital</div>
-        
-        <!-- Botão Dinâmico que muda de comportamento de acordo com o estado -->
         <button id="btn-instalar-pwa" class="btn btn-install-virty">INSTALAR APP</button>
-        
-        <!-- Frase de porte médio em branco que muda dinamicamente -->
         <p id="msg-status-virty" class="txt-virty-status-medio">Aguarde...</p>
     </div>
 
-    <div id="custom-alert" class="virty-popup">
-        <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:12px;">VIRTY ACCESS DOOR</div>
-        <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4;"></div>
-        <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
-    </div>
     <div id="s-cadastro" class="screen">
         <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
         <div class="area-camera-virty">
@@ -197,7 +183,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.0</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.1</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -259,6 +245,7 @@
         </div>
         <p id="label-modo-gravacao" style="color:var(--red); font-weight:bold; margin-top:25px; letter-spacing:1px; text-align:center; padding:0 20px; line-height:1.4;"></p>
     </div>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
@@ -287,9 +274,28 @@
     let cacheBloqueadosGlobais = {};
     let deferredPrompt = null; 
 
+    // LIMPEZA FORÇADA DE CACHE POR CONTROLE DE VERSÃO
+    async function limparCacheEResiduosGlobais() {
+        if ('caches' in window) {
+            const chavesCache = await caches.keys();
+            await Promise.all(chavesCache.map(chave => caches.delete(chave)));
+        }
+        if ('serviceWorker' in navigator) {
+            const registros = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registros.map(reg => reg.unregister()));
+        }
+        console.log("VIRTY: Armazenamento e caches limpos com sucesso.");
+    }
+
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/control-door/morador/sw.js', { scope: '/control-door/morador/' })
-        .then(reg => console.log('Virty: Central de Toques Pronta.'))
+        .then(reg => {
+            console.log('Virty: Central de Toques Ativa.');
+            // Pede permissão para notificações persistentes nativas na barra do sistema
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        })
         .catch(err => console.error('Erro Service Worker:', err));
     }
 
@@ -300,11 +306,6 @@
         return "M-" + Math.abs(hash).toString(16).toUpperCase();
     }
     const my_fingerprint = gerarFingerprintMorador();
-    function virtyAlert(msg) {
-        document.getElementById('custom-alert-msg').innerText = msg;
-        document.getElementById('custom-alert').style.display = 'block';
-    }
-    function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
     
     window.onload = () => {
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
@@ -312,14 +313,20 @@
         
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         
+        // Controle do expurgo de lixo e atualização do app
+        const VERSAO_SISTEMA = "2.0.1";
+        if (localStorage.getItem('virty_versao_instalada') !== VERSAO_SISTEMA) {
+            limparCacheEResiduosGlobais().then(() => {
+                localStorage.setItem('virty_versao_instalada', VERSAO_SISTEMA);
+                window.location.reload();
+            });
+            return;
+        }
+
         if (isStandalone) {
-            // Aberto diretamente do Ícone APP do Celular -> Segue fluxo
             verificarStatus();
         } else {
-            // Acessado do Navegador -> Exibe Tela Base de Instalação
             mudarTela('s-instalacao');
-            
-            // Verificação de persistência se o app já foi devidamente instalado anteriormente nesta URL
             if (localStorage.getItem('virty_pwa_instalado') === 'true') {
                 configurarTelaComoInstalado();
             } else {
@@ -328,32 +335,21 @@
         }
     };
 
-    /* CONTROLE DINÂMICO DOS ESTADOS DE INSTALAÇÃO */
     function configurarFluxoInstalacao() {
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            
-            // Ativa visualmente o botão (Muda para Verde Neon Vivo e ativo)
             const btn = document.getElementById('btn-instalar-pwa');
             const msg = document.getElementById('msg-status-virty');
-            
             if(btn) {
                 btn.classList.add('ready-neon');
                 btn.innerText = "INSTALAR APP";
             }
-            if(msg) {
-                msg.innerText = "Pronto para instalar";
-            }
+            if(msg) msg.innerText = "Pronto para instalar";
         });
 
         document.getElementById('btn-instalar-pwa').addEventListener('click', async () => {
-            // Se o botão virou o "Abrir", redireciona para a URL sem travar
-            if (localStorage.getItem('virty_pwa_instalado') === 'true') {
-                virtyAlert("Para abrir, clique no ícone do VIRTY gerado na tela inicial do seu celular!");
-                return;
-            }
-
+            if (localStorage.getItem('virty_pwa_instalado') === 'true') return;
             if (!deferredPrompt) return;
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
@@ -367,32 +363,23 @@
             configurarTelaComoInstalado();
         });
     }
-
-    /* ALTERA A PÁGINA PARA O MODO "APP INSTALADO" SEM OPÇÃO DE DESINSTALAR */
     
     function configurarTelaComoInstalado() {
         localStorage.setItem('virty_pwa_instalado', 'true');
-    
         const btn = document.getElementById('btn-instalar-pwa');
         const msg = document.getElementById('msg-status-virty');
     
-        // A checagem do IF deve envolver tudo que mexe no botão
         if (btn) {
             btn.classList.add('ready-neon');
             btn.innerText = "ABRIR O VIRTY ACCESS DOOR";
-            // linkar botao à pagina do app
-            btn.addEventListener("click", function() {
-                window.location.href = "https://formatecthiago.github.io/control-door/morador/index.html";
-            });
+            btn.onclick = () => {
+                const cacheBuster = Date.now();
+                window.location.replace("https://formatecthiago.github.io/control-door/morador/index.html?v=" + cacheBuster);
+            };
         }
-    
-        if (msg) {
-            msg.innerText = "App instalado";
-        }
+        if (msg) msg.innerText = "App instalado";
     }
 
-        
-    
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
         db.ref('moradores_validados/' + my_un).on('value', s => {
@@ -405,7 +392,7 @@
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => { micStreamGlobal = stream; })
-                    .catch(e => console.log("Microfone recusado."));
+                    .catch(e => console.log("Microfone offline."));
                 }
             } else {
                 db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).on('value', snap => {
@@ -417,6 +404,13 @@
             }
         });
     }
+
+    // GERA A VARIÁVEL DE TEXTO COM DOIS DÍGITOS DA FORMA CORRETA (EX: sound01.mp3)
+    function obterNomeSomFormatado(indexSom) {
+        const numeroFormatado = String(indexSom + 1).padStart(2, '0');
+        return `sound${numeroFormatado}.mp3`;
+    }
+
     function inicializarCapturaVideo() {
         if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); }
         const constraints = { video: { facingMode: usarLenteFrontal ? "user" : "environment" } };
@@ -433,7 +427,7 @@
     }
     function fotoCad() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
-        if(!v.videoWidth) return virtyAlert("Aguarde a câmera iniciar totalmente.");
+        if(!v.videoWidth) return;
         c.width = v.videoWidth; c.height = v.videoHeight;
         
         const ctx = c.getContext('2d');
@@ -445,14 +439,13 @@
         c.style.display = "block"; v.style.display = "none";
         
         if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
-        virtyAlert("Selfie de cadastro capturada!");
     }
     function enviarCadastro() {
         const un = document.getElementById('c-un').value,
               cpf = document.getElementById('c-cpf').value.trim(),
               nome = document.getElementById('c-nome').value.trim();
               
-        if(!my_foto || !un || !cpf || !nome) return virtyAlert("Preencha todos os dados e capture a Selfie!");
+        if(!my_foto || !un || !cpf || !nome) return;
         
         db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
             const moradoresExistentes = snap.val() || {};
@@ -460,10 +453,10 @@
             const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
             
             if (!jaExisteEsseAparelho) {
-                if(chaves.length >= 5) return virtyAlert("Limite de moradores atingido.");
+                if(chaves.length >= 5) return;
                 for (let k in moradoresExistentes) {
                     let m = moradoresExistentes[k];
-                    if(m.cpf === cpf || m.nome.toLowerCase() === nome.toLowerCase()) return virtyAlert("Dados já cadastrados nesta unidade.");
+                    if(m.cpf === cpf || m.nome.toLowerCase() === nome.toLowerCase()) return;
                 }
             }
             
@@ -472,9 +465,8 @@
             }).then(() => {
                 my_un = un;
                 localStorage.setItem('my_un', un);
-                virtyAlert("Solicitação enviada!");
                 verificarStatus();
-            }).catch(err => virtyAlert("Erro: " + err.message));
+            }).catch(err => console.error(err));
         });
     }
 
@@ -489,7 +481,7 @@
                 if((d.status === 'escrevendo' || d.status === 'gravando' || somSilenciadoPorInteracao)) {
                     gerenciarAlerta('stop');
                 } else if(d.status === 'chamando' && !estaGravando && !estaDigitando && !somSilenciadoPorInteracao) {
-                    const somSelecionado = d.som_chamada || `sound${somAtual + 1}.mp3`;
+                    const somSelecionado = d.som_chamada || obterNomeSomFormatado(somAtual);
                     gerenciarAlerta('start', somSelecionado);
                 }
 
@@ -528,7 +520,7 @@
     }
     function enviarTextoInternal() {
         const txt = document.getElementById('campo-texto-interno').value;
-        if(!txt) return virtyAlert("Digite algo!");
+        if(!txt) return;
         db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: txt, data_hora: obterDataHora() });
         document.getElementById('campo-texto-interno').value = ""; responder('mensagem');
     }
@@ -568,7 +560,7 @@
                 };
             };
             mediaRecorder.start();
-        } catch(e) { virtyAlert("Permita o uso do microfone!"); estaGravando = false; }
+        } catch(e) { estaGravando = false; }
     }
     function stopRec() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); clearInterval(timerVozInterval); estaGravando = false; } }
     
@@ -592,6 +584,7 @@
         mudarTela('s-home');
     }
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
+    
     function gravarHist(vid, foto, st, dna) {
         const baseRef = db.ref(`historico/${my_un}`);
         baseRef.once('value', snapshot => {
@@ -599,7 +592,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = child.val();
+                    let dadosFilho = filho.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
@@ -713,7 +706,7 @@
         somAtual = (somAtual + 1) % 12; 
         localStorage.setItem('virty_som', somAtual); 
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1); 
-        gerenciarAlerta('start', `sound${somAtual + 1}.mp3`); 
+        gerenciarAlerta('start', obterNomeSomFormatado(somAtual)); 
         setTimeout(() => { if(!somSilenciadoPorInteracao) gerenciarAlerta('stop'); }, 2000); 
     }
     
@@ -729,9 +722,7 @@
         if(acao === 'stop') { 
             navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
-            document.title = "VIRTY MORADOR v2.0.0 - Web Pura";
-            const banner = document.getElementById('banner-urgente-virty');
-            if (banner) banner.remove();
+            document.title = "VIRTY MORADOR v2.0.1 - Notificações Pro";
             return; 
         }
         
@@ -742,13 +733,10 @@
         }
         
         if(modoAlerta !== 3) {
-            const arquivoFinal = arquivoSomOpcional || `sound${somAtual + 1}.mp3`;
+            const arquivoFinal = arquivoSomOpcional || obterNomeSomFormatado(somAtual);
             somInterfoneLocal = new Audio(`/control-door/morador/sound/${arquivoFinal}`);
             somInterfoneLocal.loop = true; 
-            somInterfoneLocal.play().catch(erro => {
-                console.log("Autoplay bloqueado.");
-                criarAlertaVisualIntermitente();
-            });
+            somInterfoneLocal.play().catch(erro => console.log("Autoplay retido pelo sistema. Foco na notificação de barra."));
         }
 
         if (!piscaTituloInterval) {
@@ -758,50 +746,6 @@
                 alternar = !alternar;
             }, 500);
         }
-    }
-
-    function criarAlertaVisualIntermitente() {
-        if (document.getElementById('banner-urgente-virty')) return;
-        
-        const banner = document.createElement('div');
-        banner.id = 'banner-urgente-virty';
-        banner.style = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(255, 0, 0, 0.95); z-index: 99999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: white; font-family: sans-serif; font-weight: bold; text-align: center;
-            animation: piscarFundoVermelho 1s infinite;
-        `;
-        
-        const estiloAnimacao = document.createElement('style');
-        estiloAnimacao.id = 'animacao-virty-style';
-        estiloAnimacao.innerHTML = `
-            @keyframes piscarFundoVermelho {
-                0% { background: rgba(255, 0, 0, 0.95); }
-                50% { background: rgba(0, 0, 0, 0.95); }
-                100% { background: rgba(255, 0, 0, 0.95); }
-            }
-        `;
-        if(!document.getElementById('animacao-virty-style')) document.head.appendChild(estiloAnimacao);
-
-        banner.innerHTML = `
-            <h1 style="font-size: 2.5rem; margin-bottom: 10px; padding: 0 10px;">🔔 INTERFONE TOCANDO</h1>
-            <p style="font-size: 1.1rem; margin-bottom: 30px; padding: 0 15px;">CLIQUE NO BOTÃO ABAIXO PARA LIBERAR O SOM</p>
-            <button style="
-                padding: 20px 40px; font-size: 1.3rem; font-weight: bold;
-                background: #39FF14; color: black; border: none; border-radius: 50px;
-                box-shadow: 0 0 20px #39FF14; cursor: pointer; text-transform: uppercase;
-            " onclick="destravarSomEFecharBanner()">🎚️ ATIVAR ÁUDIO E ATENDER</button>
-        `;
-        document.body.appendChild(banner);
-    }
-
-    function destravarSomEFecharBanner() {
-        if (somInterfoneLocal) {
-            somInterfoneLocal.play().catch(e => console.log(e));
-        }
-        const banner = document.getElementById('banner-urgente-virty');
-        if (banner) banner.remove();
     }
 </script>
 </body>
