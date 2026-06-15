@@ -6,7 +6,7 @@
     <title>VIRTY MORADOR v2.0.0 - Web Pura</title>
     
     <link rel="manifest" href="/control-door/morador/manifest.json">
-    <meta name="theme-color" content="#0d0e11">
+    <meta name="theme-color" content="#39FF14">
 
     <style>
         :root {
@@ -101,258 +101,105 @@
         .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
         .linha-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
-
-        /* --- TELA DE INSTALAÇÃO EXCLUSIVA PWA --- */
-        #s-instalacao-obrigatoria {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: url('43183.jpg') no-repeat center center;
-            background-size: cover;
-            z-index: 999999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 40px 24px;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-        }
-
-        #s-instalacao-obrigatoria::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(180deg, rgba(13, 14, 17, 0.85) 0%, rgba(13, 14, 17, 0.98) 100%);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            z-index: -1;
-        }
-
-        .instalar-topo {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .instalar-badge {
-            background: rgba(57, 255, 20, 0.15);
-            color: var(--neon);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: bold;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            border: 1px solid rgba(57, 255, 20, 0.3);
-            display: inline-block;
-            margin-bottom: 15px;
-        }
-
-        .instalar-logo-virty {
-            width: 120px;
-            height: 120px;
-            border-radius: 24px;
-            box-shadow: 0 0 30px rgba(57, 255, 20, 0.3);
-            margin-bottom: 10px;
-        }
-
-        .instalar-centro {
-            text-align: center;
-            max-width: 320px;
-        }
-
-        .instalar-centro h1 {
-            color: #ffffff;
-            font-size: 28px;
-            font-weight: 700;
-            margin: 0 0 12px 0;
-            letter-spacing: -0.5px;
-        }
-
-        .instalar-centro p {
-            color: #a0aec0;
-            font-size: 14px;
-            line-height: 1.6;
-            margin: 0;
-        }
-
-        .instalar-alerta-caixa {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 16px;
-            margin-top: 24px;
-            text-align: left;
-        }
-
-        .instalar-alerta-caixa span {
-            color: #e2e8f0;
-            font-size: 13px;
-            display: block;
-            line-height: 1.5;
-        }
-
-        .instalar-btn {
-            background: var(--neon);
-            color: #050505;
-            border: none;
-            width: 100%;
-            max-width: 320px;
-            padding: 18px;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            box-shadow: 0 8px 24px rgba(57, 255, 20, 0.4);
-            transition: transform 0.2s, background 0.2s;
-            text-transform: uppercase;
-        }
-
-        .instalar-btn:active {
-            transform: scale(0.98);
-            background: #2cd40f;
-        }
-
-        .instalar-rodape {
-            color: #718096;
-            font-size: 11px;
-            margin-top: 15px;
-            text-align: center;
-        }
-        
-        .app-container-sistema {
-            width: 100%;
-            min-height: 100vh;
-        }
     </style>
 </head>
 <body>
-
-    <div id="s-instalacao-obrigatoria" style="display: none;">
-        <div class="instalar-topo">
-            <div class="instalar-badge">🔒 Conexão Segura</div>
-            <div>
-                <img src="43183.jpg" class="instalar-logo-virty" alt="Virty Logo" onerror="this.src='https://placehold.co/120x120/0a0a0a/39FF14?text=VIRTY'">
-            </div>
-        </div>
-
-        <div class="instalar-centro">
-            <h1>Instale o VIRTY</h1>
-            <p>O ecossistema inteligente de controle de acesso do seu condomínio.</p>
-            
-            <div class="instalar-alerta-caixa">
-                <span>Para garantir a estabilidade das chamadas de vídeo, recebimento de toques constantes e total segurança dos seus dados, este sistema opera exclusivamente como aplicativo dedicado.</span>
-            </div>
-        </div>
-
-        <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-            <button id="btn-instalar-obrigatorio" class="instalar-btn">📥 Instalar Aplicativo Virty</button>
-            <div class="instalar-rodape">Leva menos de 3 segundos • Não ocupa memória</div>
-        </div>
+    <div id="custom-alert" class="virty-popup">
+        <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:12px;">VIRTY ACCESS DOOR</div>
+        <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4;"></div>
+        <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
-
-    <div class="app-container-sistema">
-        <div id="custom-alert" class="virty-popup">
-            <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:12px;">VIRTY ACCESS DOOR</div>
-            <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4;"></div>
-            <button class="btn" style="background:#fff; color:#000; padding:10px; margin-top:20px; font-size:0.85rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
+    <div id="s-cadastro" class="screen">
+        <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
+        <div class="area-camera-virty">
+            <div style="width:50px;"></div>
+            <div class="video-box">
+                <video id="v-cad" autoplay playsinline muted></video>
+                <canvas id="c-cad"></canvas>
+            </div>
+            <button class="btn-inverter" onclick="alternarLenteCamera()">
+                <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
+            </button>
         </div>
-        <div id="s-cadastro" class="screen">
-            <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
-            <div class="area-camera-virty">
-                <div style="width:50px;"></div>
-                <div class="video-box">
-                    <video id="v-cad" autoplay playsinline muted></video>
-                    <canvas id="c-cad"></canvas>
-                </div>
-                <button class="btn-inverter" onclick="alternarLenteCamera()">
-                    <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
+        <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR SELFIE</button>
+        <input type="text" id="c-nome" placeholder="Nome Completo">
+        <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
+        <input type="number" id="c-un" placeholder="Número da Casa/Apt">
+        <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
+    </div>
+    <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
+        <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
+        <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
+        <p style="color:#aaa; font-size:1.1rem; max-width:300px; line-height:1.5;">Olá! Os seus dados foram enviados para a administração do condomínio. Aguarde a liberação do seu acesso doméstico.</p>
+        <div style="margin-top:40px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
+        <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
+    </div>
+    <div id="s-home" class="screen">
+        <div class="header">
+            <div>
+                <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.0</small>
+            </div>
+            <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
+        </div>
+        
+        <div class="controles-alerta">
+            <button class="btn-mini" id="label-som" onclick="proximoSom()">🎼 1</button>
+            <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()">🔊</button>
+        </div>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <span id="titulo-secao-atual" style="font-size:0.85rem; color:var(--gray); font-weight:bold; letter-spacing:0.5px; text-transform: uppercase;">HISTÓRICO DE CHAMADAS</span>
+            <button id="btn-limpar-tudo" onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.75rem; font-weight:bold; cursor:pointer;">LIMPAR TUDO</button>
+        </div>
+        <div id="container-historico-normal">
+            <div id="lista-hist"></div>
+            <button id="btn-ver-mais" class="btn-expansor" style="display:none;" onclick="expandirHistorico()">VER MAIS</button>
+        </div>
+        
+        <div id="container-lista-bloqueados" style="display:none;">
+            <div id="lista-bloqueados"></div>
+        </div>
+        <button id="btn-toggle-bloqueados" class="btn-secundario" style="margin-top: 15px;" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
+    </div>
+    <div id="painel-chamada">
+        <div id="timer-regressivo">90</div>
+        <img id="foto-v" class="foto-v" src="">
+        <h3 style="color:var(--neon); margin:5px 0; letter-spacing:1px;">VISITANTE NA PORTA</h3>
+        <p id="msg-v" style="font-style:italic; color:#aaa; margin-bottom:25px; text-align:center; padding:0 20px; font-size:1.1rem; min-height:20px;"></p>
+        
+        <div class="painel-controles-chamada">
+            <button class="btn" style="background:var(--red); color:#fff; margin:0;" onclick="responder('recusado')">RECUSAR CHAMADA</button>
+            <div class="linha-interacao-meio">
+                <button class="btn" style="background:var(--blue); color:#fff; flex: 1; margin:0;" onclick="abrirPainelTexto()">MENSAGEM</button>
+                <button id="btn-mic" class="btn-voz"
+                        ontouchstart="eventoMicStart(event)" ontouchend="eventoMicEnd(event)"
+                        onmousedown="eventoMicStart(event)" onmouseup="eventoMicEnd(event)">
+                    <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
                 </button>
             </div>
-            <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR SELFIE</button>
-            <input type="text" id="c-nome" placeholder="Nome Completo">
-            <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
-            <input type="number" id="c-un" placeholder="Número da Casa/Apt">
-            <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
-        </div>
-        <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
-            <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
-            <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
-            <p style="color:#aaa; font-size:1.1rem; max-width:300px; line-height:1.5;">Olá! Os seus dados foram enviados para a administração do condomínio. Aguarde a liberação do seu acesso doméstico.</p>
-            <div style="margin-top:40px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
-            <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
-        </div>
-        <div id="s-home" class="screen">
-            <div class="header">
-                <div>
-                    <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                    <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.0</small>
-                </div>
-                <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
-            </div>
-            
-            <div class="controles-alerta">
-                <button class="btn-mini" id="label-som" onclick="proximoSom()">🎼 1</button>
-                <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()">🔊</button>
-            </div>
-            
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <span id="titulo-secao-atual" style="font-size:0.85rem; color:var(--gray); font-weight:bold; letter-spacing:0.5px; text-transform: uppercase;">HISTÓRICO DE CHAMADAS</span>
-                <button id="btn-limpar-tudo" onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.75rem; font-weight:bold; cursor:pointer;">LIMPAR TUDO</button>
-            </div>
-            <div id="container-historico-normal">
-                <div id="lista-hist"></div>
-                <button id="btn-ver-mais" class="btn-expansor" style="display:none;" onclick="expandirHistorico()">VER MAIS</button>
-            </div>
-            
-            <div id="container-lista-bloqueados" style="display:none;">
-                <div id="lista-bloqueados"></div>
-            </div>
-            <button id="btn-toggle-bloqueados" class="btn-secundario" style="margin-top: 15px;" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
-        </div>
-        <div id="painel-chamada">
-            <div id="timer-regressivo">90</div>
-            <img id="foto-v" class="foto-v" src="">
-            <h3 style="color:var(--neon); margin:5px 0; letter-spacing:1px;">VISITANTE NA PORTA</h3>
-            <p id="msg-v" style="font-style:italic; color:#aaa; margin-bottom:25px; text-align:center; padding:0 20px; font-size:1.1rem; min-height:20px;"></p>
-            
-            <div class="painel-controles-chamada">
-                <button class="btn" style="background:var(--red); color:#fff; margin:0;" onclick="responder('recusado')">RECUSAR CHAMADA</button>
-                <div class="linha-interacao-meio">
-                    <button class="btn" style="background:var(--blue); color:#fff; flex: 1; margin:0;" onclick="abrirPainelTexto()">MENSAGEM</button>
-                    <button id="btn-mic" class="btn-voz"
-                            ontouchstart="eventoMicStart(event)" ontouchend="eventoMicEnd(event)"
-                            onmousedown="eventoMicStart(event)" onmouseup="eventoMicEnd(event)">
-                        <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
-                    </button>
-                </div>
-                <button class="btn" style="background:var(--neon); color:#000; margin:0;" onclick="responder('liberado')">AUTORIZAR ENTRADA</button>
-            </div>
-        </div>
-        <div id="container-digitar-texto" onclick="verificarToqueEnvioMaoLivre(event)">
-            <div id="timer-flutuante-texto">90s</div>
-            <h3 style="color:var(--blue); margin-bottom:15px; letter-spacing:1px;">DIGITAR MENSAGEM</h3>
-            <input type="text" id="campo-texto-interno" placeholder="Escreva a mensagem aqui..." style="width:100%; max-width:320px; text-align:center;">
-            <div style="display:flex; gap:10px; width:100%; max-width:320px; margin-top:15px;">
-                <button class="btn" style="background:var(--blue); color:#fff; margin:0; flex:1;" onclick="enviarTextoInternal()">ENVIAR</button>
-                <button class="btn" style="background:var(--gray); color:#fff; margin:0; flex:1;" onclick="fecharPainelTexto()">VOLTAR</button>
-            </div>
-        </div>
-        <div id="popup-voz" onclick="verificarToqueEnvioMaoLivre(event)">
-            <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-                <svg class="canvas-circular">
-                    <circle class="circle-bg" cx="100" cy="100" r="90"></circle>
-                    <circle id="arco-progresso" class="circle-progress" cx="100" cy="100" r="90"></circle>
-                </svg>
-                <div id="texto-timer-voz">30s</div>
-            </div>
-            <p id="label-modo-gravacao" style="color:var(--red); font-weight:bold; margin-top:25px; letter-spacing:1px; text-align:center; padding:0 20px; line-height:1.4;"></p>
+            <button class="btn" style="background:var(--neon); color:#000; margin:0;" onclick="responder('liberado')">AUTORIZAR ENTRADA</button>
         </div>
     </div>
-
+    <div id="container-digitar-texto" onclick="verificarToqueEnvioMaoLivre(event)">
+        <div id="timer-flutuante-texto">90s</div>
+        <h3 style="color:var(--blue); margin-bottom:15px; letter-spacing:1px;">DIGITAR MENSAGEM</h3>
+        <input type="text" id="campo-texto-interno" placeholder="Escreva a mensagem aqui..." style="width:100%; max-width:320px; text-align:center;">
+        <div style="display:flex; gap:10px; width:100%; max-width:320px; margin-top:15px;">
+            <button class="btn" style="background:var(--blue); color:#fff; margin:0; flex:1;" onclick="enviarTextoInternal()">ENVIAR</button>
+            <button class="btn" style="background:var(--gray); color:#fff; margin:0; flex:1;" onclick="fecharPainelTexto()">VOLTAR</button>
+        </div>
+    </div>
+    <div id="popup-voz" onclick="verificarToqueEnvioMaoLivre(event)">
+        <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+            <svg class="canvas-circular">
+                <circle class="circle-bg" cx="100" cy="100" r="90"></circle>
+                <circle id="arco-progresso" class="circle-progress" cx="100" cy="100" r="90"></circle>
+            </svg>
+            <div id="texto-timer-voz">30s</div>
+        </div>
+        <p id="label-modo-gravacao" style="color:var(--red); font-weight:bold; margin-top:25px; letter-spacing:1px; text-align:center; padding:0 20px; line-height:1.4;"></p>
+    </div>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
@@ -368,9 +215,10 @@
     let tempoGeralRegressivo = 90;
     let timePressStart = 0;
     
+    // VARIÁVEIS DO NOVO SISTEMA DE SOM REPRODUZIDO POR AUDIO MP3 LOCAL DO INSTAGRAM/PWA
     let somInterfoneLocal = null;
     let piscaTituloInterval = null;
-    let somAtual = parseInt(localStorage.getItem('virty_som')) || 0; 
+    let somAtual = parseInt(localStorage.getItem('virty_som')) || 0; // Armazena índice de 0 a 11 (1 a 12 sons)
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
     
     let streamCameraAtiva = null;
@@ -380,8 +228,7 @@
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
 
-    let deferredPrompt = null;
-
+    // CORREÇÃO: Inicialização do Service Worker do PWA Morador com Escopo Fixo Absoluto para o GitHub Pages
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/control-door/morador/sw.js', { scope: '/control-door/morador/' })
         .then(reg => console.log('Virty: Central de Toques Pronta (12 sons locais). Escopo definido.'))
@@ -395,50 +242,17 @@
         return "M-" + Math.abs(hash).toString(16).toUpperCase();
     }
     const my_fingerprint = gerarFingerprintMorador();
-    
     function virtyAlert(msg) {
         document.getElementById('custom-alert-msg').innerText = msg;
         document.getElementById('custom-alert').style.display = 'block';
     }
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
     
-    // CONTROLE FLUTUANTE DE AMBIENTE: ALINHA REQUISITOS DO GOOGLE CHROME
     window.onload = () => {
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
-
-        const rodandoComoApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-        if (rodandoComoApp) {
-            document.getElementById('s-instalacao-obrigatoria').style.display = 'none';
-            verificarStatus();
-        } else {
-            document.getElementById('s-instalacao-obrigatoria').style.display = 'flex';
-        }
+        verificarStatus();
     };
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        const btnInstalar = document.getElementById('btn-instalar-obrigatorio');
-        if (btnInstalar) {
-            btnInstalar.onclick = () => {
-                if (!deferredPrompt) return;
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        setTimeout(() => { window.location.reload(); }, 800);
-                    }
-                    deferredPrompt = null;
-                });
-            };
-        }
-    });
-
-    window.addEventListener('appinstalled', (evt) => {
-        window.location.reload();
-    });
     
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
@@ -464,7 +278,6 @@
             }
         });
     }
-
     function inicializarCapturaVideo() {
         if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); }
         const constraints = { video: { facingMode: usarLenteFrontal ? "user" : "environment" } };
@@ -534,9 +347,11 @@
                 document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
                 painel.style.display = 'flex';
                 
+                // CONTROLE INTEGRADO DE SOM CONSTANTE DE 12 SONS (.MP3)
                 if((d.status === 'escrevendo' || d.status === 'gravando' || somSilenciadoPorInteracao)) {
                     gerenciarAlerta('stop');
                 } else if(d.status === 'chamando' && !estaGravando && !estaDigitando && !somSilenciadoPorInteracao) {
+                    // Pega o som configurado vindo do banco ou assume o padrão dinâmico local do morador
                     const somSelecionado = d.som_chamada || `sound${somAtual + 1}.mp3`;
                     gerenciarAlerta('start', somSelecionado);
                 }
@@ -648,7 +463,7 @@
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
                     let dadosFilho = filho.val();
-                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = child.key; }
+                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
             }
@@ -754,11 +569,13 @@
         }
     }
     
+    // MUDANÇA DE TOQUES DA INTERFACE - SELECIONA DE 1 ATÉ 12 SONS MP3 LOCAIS
     function proximoSom() { 
-        somAtual = (somAtual + 1) % 12; 
+        somAtual = (somAtual + 1) % 12; // Modulado estritamente para os 12 arquivos reais salvos
         localStorage.setItem('virty_som', somAtual); 
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1); 
         
+        // Executa uma demonstração rápida do áudio escolhido
         gerenciarAlerta('start', `sound${somAtual + 1}.mp3`); 
         setTimeout(() => { if(!somSilenciadoPorInteracao) gerenciarAlerta('stop'); }, 2000); 
     }
@@ -766,12 +583,15 @@
     function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
     function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); btn.innerText = modoAlerta === 1 ? "🔊" : modoAlerta === 2 ? "📳🔊" : "📳"; }
     
+    // MOTOR DE ÁUDIO REAL DE ALTA INTENSIDADE (.MP3 INTERNO LOOP)
     function gerenciarAlerta(acao, arquivoSomOpcional) {
+        // Desliga o áudio antigo se estiver tocando
         if(somInterfoneLocal) {
             try { somInterfoneLocal.pause(); somInterfoneLocal.currentTime = 0; } catch(e){}
             somInterfoneLocal = null;
         }
         
+        // Limpa o título piscante e alertas visuais de travamento
         if(acao === 'stop') { 
             navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
@@ -783,15 +603,17 @@
         
         if(somSilenciadoPorInteracao) return;
         
+        // Configuração de vibração pesada (Modos 2 e 3)
         if(modoAlerta === 2 || modoAlerta === 3) {
             navigator.vibrate([500, 300, 500, 300, 500, 300, 500]);
         }
         
+        // Execução do Áudio MP3 Se não estiver no modo apenas vibrar (Modo 3)
         if(modoAlerta !== 3) {
             const arquivoFinal = arquivoSomOpcional || `sound${somAtual + 1}.mp3`;
             
             somInterfoneLocal = new Audio(`/control-door/morador/sound/${arquivoFinal}`);
-            somInterfoneLocal.loop = true; 
+            somInterfoneLocal.loop = true; // REPRODUÇÃO CONSTANTE E INFINITA ATÉ O FIM DA CHAMADA
             
             somInterfoneLocal.play().catch(erro => {
                 console.log("Bloqueio de Autoplay. Injetando banner intermitente.");
@@ -799,6 +621,7 @@
             });
         }
 
+        // Ativa o título piscante agressivo na aba do navegador
         if (!piscaTituloInterval) {
             let alternar = false;
             piscaTituloInterval = setInterval(() => {
@@ -808,6 +631,7 @@
         }
     }
 
+    // BANNER VERMELHO DE EMERGÊNCIA (Cobre a tela se o navegador bloquear o som em background)
     function criarAlertaVisualIntermitente() {
         if (document.getElementById('banner-urgente-virty')) return;
         
