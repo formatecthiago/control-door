@@ -313,13 +313,10 @@
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         
         if (isStandalone) {
-            // Aberto diretamente do Ícone APP do Celular -> Segue fluxo
             verificarStatus();
         } else {
-            // Acessado do Navegador -> Exibe Tela Base de Instalação
             mudarTela('s-instalacao');
             
-            // Verificação de persistência se o app já foi devidamente instalado anteriormente nesta URL
             if (localStorage.getItem('virty_pwa_instalado') === 'true') {
                 configurarTelaComoInstalado();
             } else {
@@ -334,7 +331,6 @@
             e.preventDefault();
             deferredPrompt = e;
             
-            // Ativa visualmente o botão (Muda para Verde Neon Vivo e ativo)
             const btn = document.getElementById('btn-instalar-pwa');
             const msg = document.getElementById('msg-status-virty');
             
@@ -348,9 +344,9 @@
         });
 
         document.getElementById('btn-instalar-pwa').addEventListener('click', async () => {
-            // Se o botão virou o "Abrir", redireciona para a URL sem travar
+            // Se o app já está instalado, o clique no botão verde abre diretamente o link do PWA
             if (localStorage.getItem('virty_pwa_instalado') === 'true') {
-                virtyAlert("Para abrir, clique no ícone do VIRTY gerado na tela inicial do seu celular!");
+                window.location.href = "https://formatecthiago.github.io/control-door/morador/index.html";
                 return;
             }
 
@@ -359,6 +355,10 @@
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
                 configurarTelaComoInstalado();
+                // Redireciona imediatamente após o aceite da instalação para abrir o PWA de pronto
+                setTimeout(() => {
+                    window.location.href = "https://formatecthiago.github.io/control-door/morador/index.html";
+                }, 500);
             }
             deferredPrompt = null;
         });
@@ -422,6 +422,8 @@
         usarLenteFrontal = !usarLenteFrontal;
         inicializarCapturaVideo();
     }
+    
+    /* CAPTURA E AVANÇA SOZINHO PARA O CAMPO DE NOME */
     function fotoCad() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
         if(!v.videoWidth) return virtyAlert("Aguarde a câmera iniciar totalmente.");
@@ -436,8 +438,11 @@
         c.style.display = "block"; v.style.display = "none";
         
         if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
-        virtyAlert("Selfie de cadastro capturada!");
+        
+        // Pula o popup chato e coloca o cursor em foco direto no campo de Nome Completo
+        document.getElementById('c-nome').focus();
     }
+    
     function enviarCadastro() {
         const un = document.getElementById('c-un').value,
               cpf = document.getElementById('c-cpf').value.trim(),
@@ -590,7 +595,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = child.val();
+                    let dadosFilho = filho.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
@@ -797,3 +802,4 @@
 </script>
 </body>
 </html>
+
