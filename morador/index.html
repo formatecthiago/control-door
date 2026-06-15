@@ -369,20 +369,29 @@
     }
 
     /* ALTERA A PÁGINA PARA O MODO "APP INSTALADO" SEM OPÇÃO DE DESINSTALAR */
+    
     function configurarTelaComoInstalado() {
         localStorage.setItem('virty_pwa_instalado', 'true');
-        
+    
         const btn = document.getElementById('btn-instalar-pwa');
         const msg = document.getElementById('msg-status-virty');
-        
-        if(btn) {
+    
+        // A checagem do IF deve envolver tudo que mexe no botão
+        if (btn) {
             btn.classList.add('ready-neon');
             btn.innerText = "ABRIR O VIRTY ACCESS DOOR";
+            // linkar botao à pagina do app
+            btn.addEventListener("click", function() {
+                window.location.href = "https://formatecthiago.github.io/control-door/morador/index.html";
+            });
         }
-        if(msg) {
+    
+        if (msg) {
             msg.innerText = "App instalado";
         }
     }
+
+        
     
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
