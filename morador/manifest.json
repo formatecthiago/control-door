@@ -1,22 +1,22 @@
 {
-  "short_name": "Virty Morador",
-  "name": "Virty: Central de Toques Morador",
+  "name": "Virty Morador",
+  "short_name": "Virty",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0d0e11",
+  "theme_color": "#0d0e11",
   "icons": [
     {
-      "src": "./icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
+      "src": "43183.jpg", 
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
     },
     {
-      "src": "./icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "43183.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "maskable"
     }
-  ],
-  "start_url": "./index.html",
-  "background_color": "#ffffff",
-  "display": "standalone",
-  "theme_color": "#000000",
-  "orientation": "portrait",
-  "scope": "./"
+  ]
 }
