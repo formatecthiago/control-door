@@ -26,7 +26,22 @@ jobs:
         run: |
           npm install @capacitor/core @capacitor/cli
           npm install @capacitor/android
-          npx cap init "Virty Morador" "com.virty.controldoor" --web-dir="morador" || true
+
+      - name: Configurar e Forçar URL do Morador no Capacitor
+        run: |
+          echo '{
+            "appId": "com.virty.controldoor",
+            "appName": "Virty Morador",
+            "webDir": "morador",
+            "server": {
+              "url": "https://formatecthiago.github.io/control-door/morador/index.html",
+              "cleartext": true
+            },
+            "android": {
+              "allowMixedContent": true,
+              "captureInput": true
+            }
+          }' > capacitor.config.json
 
       - name: Set up JDK 21 (Alinhado com Capacitor Novo)
         uses: actions/setup-java@v4
