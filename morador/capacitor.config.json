@@ -1,0 +1,13 @@
+{
+  "appId": "com.virty.controldoor",
+  "appName": "Virty Morador",
+  "webDir": "morador",
+  "server": {
+    "url": "https://formatecthiago.github.io/control-door/morador/index.html",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true
+  }
+}
