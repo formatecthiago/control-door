@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TESTE DE TOQUE VIRTY</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#39FF14">
+    <style>
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; }
+        .icon { font-size: 80px; margin-bottom: 20px; text-shadow: 0 0 20px #39FF14; }
+        .btn { background: #39FF14; color: #000; border: none; padding: 20px 40px; font-size: 1.2rem; font-weight: bold; border-radius: 50px; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 15px rgba(57,255,20,0.5); }
+        #status { margin-top: 20px; color: #888; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <div class="icon">🔊</div>
+    <h2>Ambiente de Teste de Áudio</h2>
+    <p style="max-width: 280px; color: #aaa;">Clique abaixo para simular a permissão inicial e ativar o canal de áudio.</p>
+    
+    <button class="btn" onclick="testarAudioLocal()">Ativar e Testar</button>
+    <div id="status">Aguardando interação...</div>
+
+<script>
+    let audioTeste = null;
+
+    // Registra o Service Worker de Teste
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+        .then(reg => {
+            console.log('SW de Teste Registrado');
+            // Pede permissão de notificação (essencial para o SW acordar o celular)
+            if ('Notification' in window) {
+                Notification.requestPermission();
+            }
+        });
+    }
+
+    // Função que dá o "gatilho" de som que o Android/iOS exigem
+    function testarAudioLocal() {
+        document.getElementById('status').innerText = "Canal de áudio liberado! Tocando sound01.mp3...";
+        
+        if(audioTeste) { audioTeste.pause(); audioTeste.currentTime = 0; }
+        
+        // Carrega o som no escopo local
+        audioTeste = new Audio('./sound/sound01.mp3');
+        audioTeste.loop = false;
+        audioTeste.play()
+        .then(() => {
+            document.getElementById('status').innerText = "Sucesso! Se ouviu o som, a placa está liberada.";
+        })
+        .catch(err => {
+            document.getElementById('status').innerText = "Erro no Autoplay: " + err.message;
+        });
+    }
+
+    // Escuta ordens vindas diretamente do Service Worker (Simulando segundo plano)
+    navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data && event.data.action === 'tocar_som_pwa') {
+            document.getElementById('status').innerText = "SW ordenou toque em background! Executando...";
+            testarAudioLocal();
+        }
+    });
+</script>
+</body>
+</html>
