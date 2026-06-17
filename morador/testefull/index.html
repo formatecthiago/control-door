@@ -1,21 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TESTE REAL VIRTY MOBILE</title>
+    <link rel="manifest" href="./manifest.json">
+    <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
+    <style>
+        body { background: #111; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; padding: 20px; box-sizing: border-box; }
+        .box { background: #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; width: 100%; max-width: 320px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-green { background: #39FF14; color: #000; border: none; padding: 15px 30px; font-size: 1rem; font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; text-transform: uppercase; margin-bottom: 10px; }
+        .btn-blue { background: #007BFF; color: #fff; border: none; padding: 15px 30px; font-size: 1rem; font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; text-transform: uppercase; }
+        #status { margin-top: 15px; color: #aaa; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <h2>Teste de Chamada Virty</h2>
+
+    <div class="box">
+        <h3>1. Celular do Morador</h3>
+        <p style="font-size: 0.85rem; color: #aaa;">Clique para ativar o áudio e depois minimize o app para testar o background.</p>
+        <button class="btn-green" onclick="ativarCanalAudio()">1º Ativar Áudio</button>
+        <div id="status">Aguardando ativação...</div>
+    </div>
+
+    <div class="box">
+        <h3>2. Simular Visitante</h3>
+        <p style="font-size: 0.85rem; color: #aaa;">Este botão envia o sinal de chamada pela internet para o morador.</p>
+        <button class="btn-blue" onclick="simularVisita()">Disparar Chamada 🔔</button>
+    </div>
+
 <script>
     let audioChamada = new Audio('sound01.mp3');
     let regSW = null;
 
-    // Registra o Service Worker e guarda a instância dele
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').then(reg => {
             regSW = reg;
             if ('Notification' in window) { Notification.requestPermission(); }
-        });
+        }).catch(err => console.log("Erro ao registrar SW:", err));
     }
 
-    const pusher = new Pusher('79998188339b61ed1130', { cluster: 'mt1' });
-    const canal = pusher.subscribe('virty-canal-teste');
-
-    canal.bind('tocar-interfone', function(data) {
-        executarChamadaCompleta();
-    });
+    try {
+        const pusher = new Pusher('79998188339b61ed1130', { cluster: 'mt1' });
+        const canal = pusher.subscribe('virty-canal-teste');
+        canal.bind('tocar-interfone', function(data) {
+            executarChamadaCompleta();
+        });
+    } catch(e) {
+        console.log("Pusher offline, usando modo temporizador local.");
+    }
 
     function activarCanalAudio() {
         audioChamada.play().then(() => {
@@ -28,26 +63,24 @@
 
     function simularVisita() {
         document.getElementById('status').innerText = "Sinal agendado! Minimize em 5 segundos...";
-        
-        // Temporizador de 7 segundos para o teste de mãos livres
         setTimeout(() => {
             executarChamadaCompleta();
         }, 7000);
     }
 
-    // Função centralizada que toca o som e acorda a notificação visual do topo
-    function ejecutarChamadaCompleta() {
-        document.getElementById('status').innerText = "Chamada ativa em background!";
+    function executarChamadaCompleta() {
+        const statusDiv = document.getElementById('status');
+        if (statusDiv) statusDiv.innerText = "Chamada ativa em background!";
         
-        // 1. Toca o som em background
         audioChamada.currentTime = 0;
-        audioChamada.play().catch(e => console.log("Áudio background retido"));
+        audioChamada.play().catch(e => console.log("Áudio retido ou rodando de fundo"));
 
-        // 2. Envia a ordem para o Service Worker criar a notificação persistente
-        if (navigator.serviceWorker.controller) {
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
                 action: 'criar_notificacao_virty'
             });
         }
     }
 </script>
+</body>
+</html>
