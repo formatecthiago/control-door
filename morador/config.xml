@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.virty.controldoor" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Virty Morador</name>
+    <description>Aplicativo de Monitoramento e Interfone Virtual Virty</description>
+    <author email="suporte@virty.com" href="https://virty.com">Thiago Formatec</author>
+    
+    <content src="https://formatecthiago.github.io/control-door/morador/index.html" />
+    
+    <!-- Permissões Críticas do Android para Acender a Tela e Dar Alarme -->
+    <config-file target="AndroidManifest.xml" parent="/*">
+        <uses-permission android:name="android.permission.WAKE_LOCK" />
+        <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+        <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+        <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
+    </config-file>
+
+    <!-- Permissões de Áudio e Câmera para a chamada -->
+    <plugin name="cordova-plugin-camera" spec="^7.0.0" />
+    <plugin name="cordova-plugin-media-capture" spec="^5.0.0" />
+    
+    <preference name="KeepRunning" value="true" />
+    <preference name="ShowSplashScreen" value="false" />
+</widget>
