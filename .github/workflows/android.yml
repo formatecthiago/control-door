@@ -28,11 +28,11 @@ jobs:
           npm install @capacitor/android
           npx cap init "Virty Morador" "com.virty.controldoor" --web-dir="morador" || true
 
-      - name: Set up JDK 17 (Requisito do Android)
+      - name: Set up JDK 21 (Alinhado com Capacitor Novo)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -41,6 +41,13 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+
+      - name: Injetar Permissões de Acender Tela no AndroidManifest
+        run: |
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST_PATH" ]; then
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.WAKE_LOCK" />\n    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />\n    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />' $MANIFEST_PATH
+          fi
 
       - name: Build APK com Gradle
         run: |
