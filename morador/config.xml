@@ -6,12 +6,21 @@
     
     <content src="https://formatecthiago.github.io/control-door/morador/index.html" />
     
-    <!-- Permissões Críticas do Android para Acender a Tela e Dar Alarme -->
+    <!-- Permissões Críticas do Android para Acender a Tela, Dar Alarme, Câmera e Áudio -->
     <config-file target="AndroidManifest.xml" parent="/*">
         <uses-permission android:name="android.permission.WAKE_LOCK" />
         <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
         <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
         <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
+        <uses-permission android:name="android.permission.CAMERA" />
+        <uses-permission android:name="android.permission.RECORD_AUDIO" />
+        <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    </config-file>
+
+    <!-- Recursos de hardware obrigatórios para o funcionamento da câmera -->
+    <config-file target="AndroidManifest.xml" parent="/manifest">
+        <uses-feature android:name="android.hardware.camera" android:required="false" />
+        <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
     </config-file>
 
     <!-- Permissões de Áudio e Câmera para a chamada -->
