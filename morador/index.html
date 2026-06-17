@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0.1 - Notificações Pro</title>
+    <title>VIRTY MORADOR v2.0.1 - Nativo APK</title>
     
-    <link rel="manifest" href="/control-door/morador/manifest.json">
     <meta name="theme-color" content="#39FF14">
 
     <style>
@@ -100,60 +99,11 @@
         .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
         .linha-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
-
-        .virty-bg-screen {
-            background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.9)), url('41554.png') center/cover no-repeat;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-        .virty-title-neon {
-            font-size: 2.3rem;
-            font-weight: 900;
-            color: var(--neon);
-            text-shadow: 0 0 15px rgba(57,255,20,0.7);
-            letter-spacing: 1px;
-            margin-bottom: 2px;
-        }
-        .virty-subtitle {
-            font-size: 1.2rem;
-            color: #fff;
-            letter-spacing: 2px;
-            margin-bottom: 50px;
-        }
-        
-        .btn-install-virty {
-            background: #222;
-            color: #555;
-            box-shadow: none;
-            max-width: 300px;
-            transition: all 0.3s ease;
-            pointer-events: none;
-        }
-        .btn-install-virty.ready-neon {
-            background: var(--neon);
-            color: #000;
-            box-shadow: 0 0 25px rgba(57,255,20,0.6);
-            pointer-events: auto;
-            cursor: pointer;
-        }
-        .txt-virty-status-medio {
-            color: #fff;
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin-top: 15px;
-        }
     </style>
 </head>
 <body>
-    <!-- 0. TELA DE INSTALAÇÃO CUSTOMIZADA WEB -->
-    <div id="s-instalacao" class="screen virty-bg-screen">
-        <h1 class="virty-title-neon">VIRTY ACCESS DOOR</h1>
-        <div class="virty-subtitle">Acesso Digital</div>
-        <button id="btn-instalar-pwa" class="btn btn-install-virty">INSTALAR APP</button>
-        <p id="msg-status-virty" class="txt-virty-status-medio">Aguarde...</p>
-    </div>
 
+    <!-- 1. TELA DE CADASTRO (Cai aqui caso não tenha o número da unidade salvo localmente) -->
     <div id="s-cadastro" class="screen">
         <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
         <div class="area-camera-virty">
@@ -172,6 +122,8 @@
         <input type="number" id="c-un" placeholder="Número da Casa/Apt">
         <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
     </div>
+
+    <!-- 2. TELA DE AGUARDO / ANÁLISE -->
     <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
         <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
         <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
@@ -179,6 +131,8 @@
         <div style="margin-top:40px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
         <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
     </div>
+
+    <!-- 3. TELA PRINCIPAL (HOME DO MORADOR) -->
     <div id="s-home" class="screen">
         <div class="header">
             <div>
@@ -207,6 +161,8 @@
         </div>
         <button id="btn-toggle-bloqueados" class="btn-secundario" style="margin-top: 15px;" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
     </div>
+
+    <!-- INTERFONE EM EXECUÇÃO -->
     <div id="painel-chamada">
         <div id="timer-regressivo">90</div>
         <img id="foto-v" class="foto-v" src="">
@@ -226,6 +182,8 @@
             <button class="btn" style="background:var(--neon); color:#000; margin:0;" onclick="responder('liberado')">AUTORIZAR ENTRADA</button>
         </div>
     </div>
+
+    <!-- MENSAGEM ESCRITA -->
     <div id="container-digitar-texto" onclick="verificarToqueEnvioMaoLivre(event)">
         <div id="timer-flutuante-texto">90s</div>
         <h3 style="color:var(--blue); margin-bottom:15px; letter-spacing:1px;">DIGITAR MENSAGEM</h3>
@@ -235,6 +193,8 @@
             <button class="btn" style="background:var(--gray); color:#fff; margin:0; flex:1;" onclick="fecharPainelTexto()">VOLTAR</button>
         </div>
     </div>
+
+    <!-- GRAVADOR DE VOZ -->
     <div id="popup-voz" onclick="verificarToqueEnvioMaoLivre(event)">
         <div style="position: relative; display: flex; align-items: center; justify-content: center;">
             <svg class="canvas-circular">
@@ -272,32 +232,7 @@
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
-    let deferredPrompt = null; 
-
-    // LIMPEZA FORÇADA DE CACHE POR CONTROLE DE VERSÃO
-    async function limparCacheEResiduosGlobais() {
-        if ('caches' in window) {
-            const chavesCache = await caches.keys();
-            await Promise.all(chavesCache.map(chave => caches.delete(chave)));
-        }
-        if ('serviceWorker' in navigator) {
-            const registros = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(registros.map(reg => reg.unregister()));
-        }
-        console.log("VIRTY: Armazenamento e caches limpos com sucesso.");
-    }
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/control-door/morador/sw.js', { scope: '/control-door/morador/' })
-        .then(reg => {
-            console.log('Virty: Central de Toques Ativa.');
-            // Pede permissão para notificações persistentes nativas na barra do sistema
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission();
-            }
-        })
-        .catch(err => console.error('Erro Service Worker:', err));
-    }
+    let my_fingerprint = "";
 
     function gerarFingerprintMorador() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
@@ -305,80 +240,15 @@
         for (let i = 0; i < meta.length; i++) { hash = (hash << 5) - hash + meta.charCodeAt(i); hash |= 0; }
         return "M-" + Math.abs(hash).toString(16).toUpperCase();
     }
-    const my_fingerprint = gerarFingerprintMorador();
     
     window.onload = () => {
+        my_fingerprint = gerarFingerprintMorador();
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
         
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-        
-        // Controle do expurgo de lixo e atualização do app
-        const VERSAO_SISTEMA = "2.0.1";
-        if (localStorage.getItem('virty_versao_instalada') !== VERSAO_SISTEMA) {
-            limparCacheEResiduosGlobais().then(() => {
-                localStorage.setItem('virty_versao_instalada', VERSAO_SISTEMA);
-                window.location.reload();
-            });
-            return;
-        }
-
-        if (isStandalone) {
-            verificarStatus();
-        } else {
-            mudarTela('s-instalacao');
-            if (localStorage.getItem('virty_pwa_instalado') === 'true') {
-                configurarTelaComoInstalado();
-            } else {
-                configurarFluxoInstalacao();
-            }
-        }
+        // Roda a verificação de status direto sem depender de PWA
+        verificarStatus();
     };
-
-    function configurarFluxoInstalacao() {
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const btn = document.getElementById('btn-instalar-pwa');
-            const msg = document.getElementById('msg-status-virty');
-            if(btn) {
-                btn.classList.add('ready-neon');
-                btn.innerText = "INSTALAR APP";
-            }
-            if(msg) msg.innerText = "Pronto para instalar";
-        });
-
-        document.getElementById('btn-instalar-pwa').addEventListener('click', async () => {
-            if (localStorage.getItem('virty_pwa_instalado') === 'true') return;
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                configurarTelaComoInstalado();
-            }
-            deferredPrompt = null;
-        });
-
-        window.addEventListener('appinstalled', () => {
-            configurarTelaComoInstalado();
-        });
-    }
-    
-    function configurarTelaComoInstalado() {
-        localStorage.setItem('virty_pwa_instalado', 'true');
-        const btn = document.getElementById('btn-instalar-pwa');
-        const msg = document.getElementById('msg-status-virty');
-    
-        if (btn) {
-            btn.classList.add('ready-neon');
-            btn.innerText = "ABRIR O VIRTY ACCESS DOOR";
-            btn.onclick = () => {
-                const cacheBuster = Date.now();
-                window.location.replace("https://formatecthiago.github.io/control-door/morador/index.html?v=" + cacheBuster);
-            };
-        }
-        if (msg) msg.innerText = "App instalado";
-    }
 
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
@@ -405,7 +275,6 @@
         });
     }
 
-    // GERA A VARIÁVEL DE TEXTO COM DOIS DÍGITOS DA FORMA CORRETA (EX: sound01.mp3)
     function obterNomeSomFormatado(indexSom) {
         const numeroFormatado = String(indexSom + 1).padStart(2, '0');
         return `sound${numeroFormatado}.mp3`;
@@ -592,7 +461,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = filho.val();
+                    let dadosFilho = child.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
@@ -722,7 +591,7 @@
         if(acao === 'stop') { 
             navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
-            document.title = "VIRTY MORADOR v2.0.1 - Notificações Pro";
+            document.title = "VIRTY MORADOR v2.0.1 - Nativo APK";
             return; 
         }
         
@@ -736,7 +605,7 @@
             const arquivoFinal = arquivoSomOpcional || obterNomeSomFormatado(somAtual);
             somInterfoneLocal = new Audio(`/control-door/morador/sound/${arquivoFinal}`);
             somInterfoneLocal.loop = true; 
-            somInterfoneLocal.play().catch(erro => console.log("Autoplay retido pelo sistema. Foco na notificação de barra."));
+            somInterfoneLocal.play().catch(erro => console.log("Autoplay retido pelo sistema."));
         }
 
         if (!piscaTituloInterval) {
