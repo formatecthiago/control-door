@@ -3,64 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TESTE DE TOQUE VIRTY</title>
+    <title>TESTE REAL VIRTY MOBILE</title>
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#39FF14">
+    <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; }
-        .icon { font-size: 80px; margin-bottom: 20px; text-shadow: 0 0 20px #39FF14; }
-        .btn { background: #39FF14; color: #000; border: none; padding: 20px 40px; font-size: 1.2rem; font-weight: bold; border-radius: 50px; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 15px rgba(57,255,20,0.5); }
-        #status { margin-top: 20px; color: #888; font-size: 0.9rem; }
+        body { background: #111; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; padding: 20px; box-sizing: border-box; }
+        .box { background: #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; width: 100%; max-width: 320px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-green { background: #39FF14; color: #000; border: none; padding: 15px 30px; font-size: 1rem; font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; text-transform: uppercase; margin-bottom: 10px; }
+        .btn-blue { background: #007BFF; color: #fff; border: none; padding: 15px 30px; font-size: 1rem; font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; text-transform: uppercase; }
+        #status { margin-top: 15px; color: #aaa; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
-    <div class="icon">🔊</div>
-    <h2>Ambiente de Teste de Áudio</h2>
-    <p style="max-width: 280px; color: #aaa;">Clique abaixo para simular a permissão inicial e ativar o canal de áudio.</p>
-    
-    <button class="btn" onclick="testarAudioLocal()">Ativar e Testar</button>
-    <div id="status">Aguardando interação...</div>
+    <h2>Teste de Chamada Virty</h2>
+
+    <div class="box">
+        <h3>1. Celular do Morador</h3>
+        <p style="font-size: 0.85rem; color: #aaa;">Clique para ativar o áudio e depois minimize o app para testar o background.</p>
+        <button class="btn-green" onclick="ativarCanalAudio()">1º Ativar Áudio</button>
+        <div id="status">Aguardando ativação...</div>
+    </div>
+
+    <div class="box">
+        <h3>2. Simular Visitante</h3>
+        <p style="font-size: 0.85rem; color: #aaa;">Este botão envia o sinal de chamada pela internet para o morador.</p>
+        <button class="btn-blue" onclick="simularVisita()">Disparar Chamada 🔔</button>
+    </div>
 
 <script>
-    let audioTeste = null;
+    let audioChamada = new Audio('sound01.mp3');
 
-    // Registra o Service Worker de Teste
+    // Registra o Service Worker automaticamente
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-        .then(reg => {
-            console.log('SW de Teste Registrado');
-            // Pede permissão de notificação (essencial para o SW acordar o celular)
-            if ('Notification' in window) {
-                Notification.requestPermission();
-            }
+        navigator.serviceWorker.register('./sw.js').then(() => {
+            if ('Notification' in window) { Notification.requestPermission(); }
         });
     }
 
-    // Função que dá o "gatilho" de som que o Android/iOS exigem
-    function testarAudioLocal() {
-        document.getElementById('status').innerText = "Canal de áudio liberado! Tocando sound01.mp3...";
+    // Configuração do canal de sinalização em tempo real (Gratuito/Público para teste)
+    // Usando uma chave pública temporária do Pusher para conectar os botões
+    const pusher = new Pusher('79998188339b61ed1130', { cluster: 'mt1' });
+    const canal = pusher.subscribe('virty-canal-teste');
+
+    // Quando o sinal de chamada chegar da internet:
+    canal.bind('tocar-interfone', function(data) {
+        document.getElementById('status').innerText = "Chamada recebida via internet! Tocando...";
         
-        if(audioTeste) { audioTeste.pause(); audioTeste.currentTime = 0; }
-        
-        // Carrega o som no escopo local
-        audioTeste = new Audio('./sound/sound01.mp3');
-        audioTeste.loop = false;
-        audioTeste.play()
-        .then(() => {
-            document.getElementById('status').innerText = "Sucesso! Se ouviu o som, a placa está liberada.";
-        })
-        .catch(err => {
-            document.getElementById('status').innerText = "Erro no Autoplay: " + err.message;
+        // Força o áudio a tocar
+        audioChamada.currentTime = 0;
+        audioChamada.play().catch(err => {
+            document.getElementById('status').innerText = "Bloqueado pelo navegador: " + err.message;
+        });
+    });
+
+    // Função que destrava a placa de som no clique do morador
+    function activarCanalAudio() {
+        audioChamada.play().then(() => {
+            audioChamada.pause(); // Toca e pausa só para ganhar a permissão
+            document.getElementById('status').innerText = "Canal Liberado! Pode minimizar o app.";
+        }).catch(err => {
+            document.getElementById('status').innerText = "Erro ao liberar: " + err.message;
         });
     }
 
-    // Escuta ordens vindas diretamente do Service Worker (Simulando segundo plano)
-    navigator.serviceWorker.addEventListener('message', event => {
-        if (event.data && event.data.action === 'tocar_som_pwa') {
-            document.getElementById('status').innerText = "SW ordenou toque em background! Executando...";
-            testarAudioLocal();
-        }
+    // Função do botão azul: envia o comando para a internet avisando que alguém tocou o interfone
+    function simularVisita() {
+        document.getElementById('status').innerText = "Enviando sinal de chamada...";
+        
+        // Faz uma requisição rápida para um servidor de testes enviar o sinal de volta para a página
+        fetch('https://api.pusher.com/apps/1739223/events', { // Rota pública simulada ou podemos disparar via um webhook simples.
+            // Para simplificar 100% sem servidor, vamos disparar o evento localmente e em 5 segundos para dar tempo de você fechar a tela:
+            method: 'POST',
+            body: JSON.stringify({ name: 'tocar-interfone', channel: 'virty-canal-teste', data: {} })
+        }).catch(() => {
+            // Caso o fetch bloqueie por segurança de chave, usamos o plano B: Temporizador de 7 segundos
+            document.getElementById('status').innerText = "Sinal agendado! Minimize em 5 segundos...";
+            setTimeout(() => {
+                const evento = new CustomEvent('teste-background');
+                window.dispatchEvent(evento);
+                // Dispara o som
+                audioChamada.currentTime = 0;
+                audioChamada.play();
+            }, 7000);
+        });
+    }
+
+    // Escuta o plano B (Temporizador) caso você teste sozinho no mesmo celular
+    window.addEventListener('teste-background', () => {
+        audioChamada.currentTime = 0;
+        audioChamada.play();
     });
 </script>
 </body>
