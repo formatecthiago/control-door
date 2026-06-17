@@ -1,7 +1,7 @@
 name: Build Android APK
 
 on:
-  workflow_dispatch: # Permite que você clique num botão para gerar o APK quando quiser
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,13 +14,19 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-size: 20
           node-version: 'lts/*'
+
+      - name: Initialize Dummy Package Node
+        run: |
+          if [ ! -f package.json ]; then
+            echo '{"name": "virty-app", "version": "1.0.0"}' > package.json
+          fi
 
       - name: Install Mobile Dependencies
         run: |
           npm install @capacitor/core @capacitor/cli
           npm install @capacitor/android
+          npx cap init "Virty Morador" "com.virty.controldoor" --web-dir="morador" || true
           npx cap android add || true
 
       - name: Set up JDK 17 (Requisito do Android)
@@ -33,7 +39,12 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Sync Capacitor Project
-        run: npx cap sync android
+        run: |
+          npx cap sync android || true
+          if [ ! -d "android" ]; then
+            npx cap android add
+            npx cap sync android
+          fi
 
       - name: Build APK com Gradle
         run: |
