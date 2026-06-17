@@ -27,7 +27,6 @@ jobs:
           npm install @capacitor/core @capacitor/cli
           npm install @capacitor/android
           npx cap init "Virty Morador" "com.virty.controldoor" --web-dir="morador" || true
-          npx cap android add || true
 
       - name: Set up JDK 17 (Requisito do Android)
         uses: actions/setup-java@v4
@@ -38,13 +37,10 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Sync Capacitor Project
+      - name: Add and Sync Android Platform
         run: |
-          npx cap sync android || true
-          if [ ! -d "android" ]; then
-            npx cap android add
-            npx cap sync android
-          fi
+          npx cap add android
+          npx cap sync android
 
       - name: Build APK com Gradle
         run: |
