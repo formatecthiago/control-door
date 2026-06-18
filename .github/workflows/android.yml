@@ -1,4 +1,4 @@
-name: Build Android APK (Cordova Nativo Moderno)
+name: Build Android APK (Reset Definitivo)
 
 on:
   workflow_dispatch:
@@ -11,12 +11,12 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js (Versão Moderna)
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Instalar Cordova Moderno Globalmente
+      - name: Instalar Cordova Globalmente
         run: |
           npm install -g cordova@12.0.0
 
@@ -25,30 +25,25 @@ jobs:
           mkdir -p www
           mkdir -p morador/www
 
-      - name: Set up JDK 17 (Aproveitando o máximo de desempenho e segurança)
+      - name: Set up JDK 17 (Padrão Moderno)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      # Usamos a ação oficial do próprio GitHub para garantir o Android SDK com Java 17
       - name: Setup Android SDK Oficial
         uses: android-actions/setup-android@v3
 
-      - name: Reestruturar Projeto para Cordova Moderno
+      - name: Resetar e Atualizar Dependências do Cordova
         working-directory: ./morador
         run: |
-          # Deleta as pastas de plataformas antigas para não carregar arquivos incompatíveis
           rm -rf platforms/
           rm -rf plugins/
-          
-          # Atualiza o arquivo de configuração interno (package.json) para exigir a plataforma moderna
+          rm -f package-lock.json
           npm install cordova-android@12.0.0 --save-exact
-          
-          # Adiciona a plataforma nativa atualizada, que já vem programada para o Java 17
           cordova platform add android@12.0.0 --no-telemetry
 
-      - name: Build do APK com Cordova Moderno
+      - name: Build do APK Limpo
         working-directory: ./morador
         run: |
           cordova build android --debug --no-telemetry
