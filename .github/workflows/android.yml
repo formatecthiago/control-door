@@ -14,16 +14,17 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # Versão estável e recomendada para o Cordova
+          node-version: '18'
 
       - name: Instalar Cordova Globalmente
         run: |
           npm install -g cordova
 
       - name: Criar Estrutura de Pastas Obrigatória
+        # Se o config.xml estiver na raiz, cria lá. Se estiver na subpasta, cria na subpasta.
         run: |
           mkdir -p www
-          # O Cordova exige uma pasta www local, mesmo que o config.xml aponte para a URL externa
+          mkdir -p morador/www
 
       - name: Set up JDK 17 (Atualizado para compatibilidade com o Android SDK)
         uses: actions/setup-java@v4
@@ -35,10 +36,13 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Adicionar Plataforma Android no Cordova
+        # ATENÇÃO: Se o seu arquivo config.xml estiver dentro de outra pasta (ex: app), mude 'morador' para o nome dela.
+        working-directory: ./morador
         run: |
           cordova platform add android@10.1.2 --no-telemetry
 
       - name: Build do APK com Cordova
+        working-directory: ./morador
         run: |
           cordova build android --debug --no-telemetry
 
@@ -46,4 +50,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: VirtyMorador-APK
-          path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          path: morador/platforms/android/app/build/outputs/apk/debug/app-debug.apk
