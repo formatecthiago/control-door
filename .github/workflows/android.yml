@@ -21,28 +21,33 @@ jobs:
           npm install -g cordova
 
       - name: Criar Estrutura de Pastas Obrigatória
-        # Se o config.xml estiver na raiz, cria lá. Se estiver na subpasta, cria na subpasta.
         run: |
           mkdir -p www
           mkdir -p morador/www
 
-      - name: Set up JDK 17 (Atualizado para compatibilidade com o Android SDK)
+      - name: Set up JDK 11 (Obrigatório para Gradle 7.x)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '11'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Setup Gradle Antigo (Compatível com Cordova Android 10)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '7.1.1'
+
       - name: Adicionar Plataforma Android no Cordova
-        # ATENÇÃO: Se o seu arquivo config.xml estiver dentro de outra pasta (ex: app), mude 'morador' para o nome dela.
         working-directory: ./morador
         run: |
           cordova platform add android@10.1.2 --no-telemetry
 
       - name: Build do APK com Cordova
         working-directory: ./morador
+        env:
+          CORDOVA_ANDROID_GRADLE_DISTRIBUTION_URL: https://services.gradle.org/distributions/gradle-7.1.1-all.zip
         run: |
           cordova build android --debug --no-telemetry
 
