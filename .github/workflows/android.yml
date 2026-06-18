@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK (Cordova Nativo)
 
 on:
   workflow_dispatch:
@@ -14,63 +14,36 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          node-version: '18' # Versão estável e recomendada para o Cordova
 
-      - name: Initialize Dummy Package Node
+      - name: Instalar Cordova Globalmente
         run: |
-          if [ ! -f package.json ]; then
-            echo '{"name": "virty-app", "version": "1.0.0"}' > package.json
-          fi
+          npm install -g cordova
 
-      - name: Install Mobile Dependencies
+      - name: Criar Estrutura de Pastas Obrigatória
         run: |
-          npm install @capacitor/core @capacitor/cli
-          npm install @capacitor/android
+          mkdir -p www
+          # O Cordova exige uma pasta www local, mesmo que o config.xml aponte para a URL externa
 
-      - name: Configurar e Forçar URL do Morador no Capacitor
-        run: |
-          echo '{
-            "appId": "com.virty.controldoor",
-            "appName": "Virty Morador",
-            "webDir": "morador",
-            "server": {
-              "url": "https://formatecthiago.github.io/control-door/morador/index.html",
-              "cleartext": true
-            },
-            "android": {
-              "allowMixedContent": true,
-              "captureInput": true
-            }
-          }' > capacitor.config.json
-
-      - name: Set up JDK 21 (Alinhado com Capacitor Novo)
+      - name: Set up JDK 11 (Ideal para Cordova Android 10+)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '21'
+          java-version: '11'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Add and Sync Android Platform
+      - name: Adicionar Plataforma Android no Cordova
         run: |
-          npx cap add android
-          npx cap sync android
+          cordova platform add android@10.1.2 --no-telemetry
 
-      - name: Injetar Permissões Críticas Nativas (Tela, Câmera e Microfone)
+      - name: Build do APK com Cordova
         run: |
-          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          if [ -f "$MANIFEST_PATH" ]; then
-            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.WAKE_LOCK" />\n    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />\n    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' $MANIFEST_PATH
-          fi
-
-      - name: Build APK com Gradle
-        run: |
-          cd android
-          ./gradlew assembleDebug
+          cordova build android --debug --no-telemetry
 
       - name: Upload APK Result
         uses: actions/upload-artifact@v4
         with:
           name: VirtyMorador-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
