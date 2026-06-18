@@ -14,7 +14,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20' # Versão moderna e estável do Node
 
       - name: Instalar Cordova Globalmente
         run: |
@@ -25,29 +25,24 @@ jobs:
           mkdir -p www
           mkdir -p morador/www
 
-      - name: Set up JDK 11 (Obrigatório para Gradle 7.x)
+      - name: Set up JDK 17 (Compatível com Cordova Moderno e Android SDK)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '11'
+          java-version: '17'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Setup Gradle Antigo (Compatível com Cordova Android 10)
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '7.1.1'
-
       - name: Adicionar Plataforma Android no Cordova
         working-directory: ./morador
         run: |
-          cordova platform add android@10.1.2 --no-telemetry
+          # Remove a versão antiga caso exista e adiciona a versão atual estável
+          cordova platform rm android --noscript || true
+          cordova platform add android@12.0.0 --no-telemetry
 
       - name: Build do APK com Cordova
         working-directory: ./morador
-        env:
-          CORDOVA_ANDROID_GRADLE_DISTRIBUTION_URL: https://services.gradle.org/distributions/gradle-7.1.1-all.zip
         run: |
           cordova build android --debug --no-telemetry
 
