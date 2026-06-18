@@ -14,37 +14,44 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '16' # Versão clássica e estável para o ecossistema Cordova antigo
 
       - name: Instalar Cordova Globalmente
         run: |
-          npm install -g cordova
+          npm install -g cordova@11.1.0
 
       - name: Criar Estrutura de Pastas Obrigatória
         run: |
           mkdir -p www
           mkdir -p morador/www
 
-      - name: Set up JDK 17 (Obrigatório para Cordova 12+)
+      - name: Set up JDK 11 (Obrigatório para compilações estáveis do Cordova)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '11'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Limpar e Adicionar Plataforma Android Atualizada
+      - name: Instalar Gradle Compatível Manualmente
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '7.6' # Última versão estável do Gradle que aceita perfeitamente o XmlParser
+
+      - name: Limpar e Forçar Plataforma Correta
         working-directory: ./morador
         run: |
-          # Remove completamente as pastas antigas para evitar arquivos fantasmas
+          # Remove tudo que possa estar corrompido ou preso na memória da pasta
           rm -rf platforms/
           rm -rf plugins/
-          # Adiciona a versão 12 do zero, que aceita o Gradle moderno perfeitamente
-          cordova platform add android@12.0.0 --no-telemetry
+          # Força o Cordova a aceitar uma versão intermediária totalmente compatível com o JDK 11 e Gradle 7.6
+          cordova platform add android@10.1.2 --no-telemetry
 
       - name: Build do APK com Cordova
         working-directory: ./morador
+        env:
+          CORDOVA_ANDROID_GRADLE_DISTRIBUTION_URL: https://services.gradle.org/distributions/gradle-7.6-bin.zip
         run: |
           cordova build android --debug --no-telemetry
 
