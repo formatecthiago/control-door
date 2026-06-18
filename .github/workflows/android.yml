@@ -1,4 +1,4 @@
-name: Build Android APK (Cordova Nativo)
+name: Build Android APK (Cordova Nativo Moderno)
 
 on:
   workflow_dispatch:
@@ -11,47 +11,45 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Set up Node.js (Versão Moderna)
         uses: actions/setup-node@v4
         with:
-          node-version: '16' # Versão clássica e estável para o ecossistema Cordova antigo
+          node-version: '20'
 
-      - name: Instalar Cordova Globalmente
+      - name: Instalar Cordova Moderno Globalmente
         run: |
-          npm install -g cordova@11.1.0
+          npm install -g cordova@12.0.0
 
       - name: Criar Estrutura de Pastas Obrigatória
         run: |
           mkdir -p www
           mkdir -p morador/www
 
-      - name: Set up JDK 11 (Obrigatório para compilações estáveis do Cordova)
+      - name: Set up JDK 17 (Aproveitando o máximo de desempenho e segurança)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '11'
+          java-version: '17'
 
-      - name: Setup Android SDK
+      # Usamos a ação oficial do próprio GitHub para garantir o Android SDK com Java 17
+      - name: Setup Android SDK Oficial
         uses: android-actions/setup-android@v3
 
-      - name: Instalar Gradle Compatível Manualmente
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '7.6' # Última versão estável do Gradle que aceita perfeitamente o XmlParser
-
-      - name: Limpar e Forçar Plataforma Correta
+      - name: Reestruturar Projeto para Cordova Moderno
         working-directory: ./morador
         run: |
-          # Remove tudo que possa estar corrompido ou preso na memória da pasta
+          # Deleta as pastas de plataformas antigas para não carregar arquivos incompatíveis
           rm -rf platforms/
           rm -rf plugins/
-          # Força o Cordova a aceitar uma versão intermediária totalmente compatível com o JDK 11 e Gradle 7.6
-          cordova platform add android@10.1.2 --no-telemetry
+          
+          # Atualiza o arquivo de configuração interno (package.json) para exigir a plataforma moderna
+          npm install cordova-android@12.0.0 --save-exact
+          
+          # Adiciona a plataforma nativa atualizada, que já vem programada para o Java 17
+          cordova platform add android@12.0.0 --no-telemetry
 
-      - name: Build do APK com Cordova
+      - name: Build do APK com Cordova Moderno
         working-directory: ./morador
-        env:
-          CORDOVA_ANDROID_GRADLE_DISTRIBUTION_URL: https://services.gradle.org/distributions/gradle-7.6-bin.zip
         run: |
           cordova build android --debug --no-telemetry
 
