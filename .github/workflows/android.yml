@@ -1,4 +1,4 @@
-name: Build Android APK
+Name: Build Android APK
 
 on:
   workflow_dispatch:
@@ -57,11 +57,11 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Injetar Permissões de Acender Tela no AndroidManifest
+      - name: Injetar Permissões Críticas Nativas (Tela, Câmera e Microfone)
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST_PATH" ]; then
-            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.WAKE_LOCK" />\n    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />\n    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />' $MANIFEST_PATH
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.WAKE_LOCK" />\n    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />\n    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' $MANIFEST_PATH
           fi
 
       - name: Build APK com Gradle
