@@ -20,10 +20,12 @@ jobs:
         run: |
           npm install -g cordova@12.0.0
 
-      - name: Criar Estrutura de Pastas Obrigatória
+      - name: Criar Estrutura de Pastas e Copiar Ícones
         run: |
-          mkdir -p www
           mkdir -p morador/www
+          # Copia os ícones da raiz para dentro da pasta www para o Cordova encontrar
+          cp morador/icon-192.png morador/www/ || true
+          cp morador/icon-512.png morador/www/ || true
 
       - name: Set up JDK 17 (Padrão Moderno)
         uses: actions/setup-java@v4
