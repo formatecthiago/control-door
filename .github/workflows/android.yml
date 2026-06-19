@@ -1,4 +1,4 @@
-name: Reset Total - Build APK do Zero
+name: Build Android APK (Mudança Total para Capacitor)
 
 on:
   workflow_dispatch:
@@ -11,64 +11,50 @@ jobs:
       - name: 1. Baixar Código Fonte
         uses: actions/checkout@v4
 
-      - name: 2. Configurar Node.js (Ambiente Moderno)
+      - name: 2. Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 3. Instalar Cordova Estável
-        run: npm install -g cordova@12.0.0
-
-      - name: 4. Criar Projeto Novo e Puro do Cordova
-        run: |
-          # Remove completamente a pasta antiga que estava com conflitos
-          rm -rf morador/
-          
-          # Cria um projeto do zero absoluto, limpo e com a estrutura correta nativa
-          cordova create morador com.formatecthiago.controldoor.morador VirtyMorador
-
-      - name: 5. Configurar Java 17
+      - name: 3. Configurar Java 17 (Obrigatório para Android Moderno)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: 6. Configurar Android SDK Oficial
+      - name: 4. Configurar Android SDK Oficial
         uses: android-actions/setup-android@v3
 
-      - name: 7. Injetar Configurações Modernas no Projeto Novo
+      - name: 5. Instalar Ferramentas do Capacitor e Preparar Pastas
+        run: |
+          # Instala o CLI do Capacitor globalmente
+          npm install -g @capacitor/cli @capacitor/core @capacitor/android
+          
+          # Garante que a pasta morador/www exista com pelo menos um arquivo para o build inicial
+          mkdir -p morador/www
+          if [ ! -f morador/www/index.html ]; then
+            echo "<html><body><h1>VirtyMorador</h1></body></html>" > morador/www/index.html
+          fi
+
+      - name: 6. Criar Projeto Nativo com Capacitor (Substituindo o Cordova)
         working-directory: ./morador
         run: |
-          # Sobrescreve o config.xml recém-criado com as preferências modernas de Gradle e SDK
-          cat <<EOF > config.xml
-          <?xml version='1.0' encoding='utf-8'?>
-          <widget id="com.formatecthiago.controldoor.morador" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
-              <name>VirtyMorador</name>
-              <description>Aplicativo do Morador - Control Door</description>
-              <author email="suporte@control-door.com">Thiago</author>
-              <content src="index.html" />
-              <access origin="*" />
-              <allow-intent href="http://*/*" />
-              <allow-intent href="https://*/*" />
-              <platform name="android">
-                  <preference name="AndroidGradlePluginVersion" value="8.1.1" />
-                  <preference name="GradleVersion" value="8.1.1" />
-                  <preference name="android-minSdkVersion" value="24" />
-                  <preference name="android-targetSdkVersion" value="33" />
-              </platform>
-          </widget>
-          EOF
+          # Cria a configuração nativa do Capacitor sem dependências do Cordova
+          npx cap init VirtyMorador com.formatecthiago.controldoor.morador --web-dir=www
+          
+          # Adiciona a plataforma Android moderna e pura
+          npm install @capacitor/android
+          npx cap add android
 
-      - name: 8. Adicionar Plataforma Android Limpa
-        working-directory: ./morador
-        run: cordova platform add android@12.0.0 --no-telemetry
+      - name: 7. Compilar o APK com o Gradle Nativo Estável
+        working-directory: ./morador/android
+        run: |
+          # Executa o build diretamente pelo wrapper estável do Android, sem o intermediário do Cordova
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-      - name: 9. Compilar APK Nativo
-        working-directory: ./morador
-        run: cordova build android --debug --no-telemetry
-
-      - name: 10. Disponibilizar Download do APK
+      - name: 8. Disponibilizar Download do APK Pronto
         uses: actions/upload-artifact@v4
         with:
-          name: VirtyMorador-APK-Puro
-          path: morador/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          name: VirtyMorador-Capacitor-APK
+          path: morador/android/app/build/outputs/apk/debug/app-debug.apk
