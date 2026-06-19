@@ -1,4 +1,4 @@
-name: Build Android APK (Reset Definitivo)
+name: Reset Total - Build APK do Zero
 
 on:
   workflow_dispatch:
@@ -8,50 +8,67 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Source Code
+      - name: 1. Baixar Código Fonte
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: 2. Configurar Node.js (Ambiente Moderno)
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Instalar Cordova Globalmente
-        run: |
-          npm install -g cordova@12.0.0
+      - name: 3. Instalar Cordova Estável
+        run: npm install -g cordova@12.0.0
 
-      - name: Criar Estrutura de Pastas e Copiar Ícones
+      - name: 4. Criar Projeto Novo e Puro do Cordova
         run: |
-          mkdir -p morador/www
-          # Copia os ícones da raiz para dentro da pasta www para o Cordova encontrar
-          cp morador/icon-192.png morador/www/ || true
-          cp morador/icon-512.png morador/www/ || true
+          # Remove completamente a pasta antiga que estava com conflitos
+          rm -rf morador/
+          
+          # Cria um projeto do zero absoluto, limpo e com a estrutura correta nativa
+          cordova create morador com.formatecthiago.controldoor.morador VirtyMorador
 
-      - name: Set up JDK 17 (Padrão Moderno)
+      - name: 5. Configurar Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Android SDK Oficial
+      - name: 6. Configurar Android SDK Oficial
         uses: android-actions/setup-android@v3
 
-      - name: Resetar e Atualizar Dependências do Cordova
+      - name: 7. Injetar Configurações Modernas no Projeto Novo
         working-directory: ./morador
         run: |
-          rm -rf platforms/
-          rm -rf plugins/
-          rm -f package-lock.json
-          npm install cordova-android@12.0.0 --save-exact
-          cordova platform add android@12.0.0 --no-telemetry
+          # Sobrescreve o config.xml recém-criado com as preferências modernas de Gradle e SDK
+          cat <<EOF > config.xml
+          <?xml version='1.0' encoding='utf-8'?>
+          <widget id="com.formatecthiago.controldoor.morador" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
+              <name>VirtyMorador</name>
+              <description>Aplicativo do Morador - Control Door</description>
+              <author email="suporte@control-door.com">Thiago</author>
+              <content src="index.html" />
+              <access origin="*" />
+              <allow-intent href="http://*/*" />
+              <allow-intent href="https://*/*" />
+              <platform name="android">
+                  <preference name="AndroidGradlePluginVersion" value="8.1.1" />
+                  <preference name="GradleVersion" value="8.1.1" />
+                  <preference name="android-minSdkVersion" value="24" />
+                  <preference name="android-targetSdkVersion" value="33" />
+              </platform>
+          </widget>
+          EOF
 
-      - name: Build do APK Limpo
+      - name: 8. Adicionar Plataforma Android Limpa
         working-directory: ./morador
-        run: |
-          cordova build android --debug --no-telemetry
+        run: cordova platform add android@12.0.0 --no-telemetry
 
-      - name: Upload APK Result
+      - name: 9. Compilar APK Nativo
+        working-directory: ./morador
+        run: cordova build android --debug --no-telemetry
+
+      - name: 10. Disponibilizar Download do APK
         uses: actions/upload-artifact@v4
         with:
-          name: VirtyMorador-APK
+          name: VirtyMorador-APK-Puro
           path: morador/platforms/android/app/build/outputs/apk/debug/app-debug.apk
