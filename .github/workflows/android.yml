@@ -16,21 +16,18 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 3. Configurar Java 17 (Obrigatório para Android Moderno)
+      - name: 3. Configurar Java 21 (Alinhado com o Google)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
 
       - name: 4. Configurar Android SDK Oficial
         uses: android-actions/setup-android@v3
 
       - name: 5. Instalar Ferramentas do Capacitor e Preparar Pastas
         run: |
-          # Instala o CLI do Capacitor globalmente
           npm install -g @capacitor/cli @capacitor/core @capacitor/android
-          
-          # Garante que a pasta morador/www exista com pelo menos um arquivo para o build inicial
           mkdir -p morador/www
           if [ ! -f morador/www/index.html ]; then
             echo "<html><body><h1>VirtyMorador</h1></body></html>" > morador/www/index.html
@@ -39,17 +36,13 @@ jobs:
       - name: 6. Criar Projeto Nativo com Capacitor (Substituindo o Cordova)
         working-directory: ./morador
         run: |
-          # Cria a configuração nativa do Capacitor sem dependências do Cordova
           npx cap init VirtyMorador com.formatecthiago.controldoor.morador --web-dir=www
-          
-          # Adiciona a plataforma Android moderna e pura
           npm install @capacitor/android
           npx cap add android
 
       - name: 7. Compilar o APK com o Gradle Nativo Estável
         working-directory: ./morador/android
         run: |
-          # Executa o build diretamente pelo wrapper estável do Android, sem o intermediário do Cordova
           chmod +x gradlew
           ./gradlew assembleDebug
 
