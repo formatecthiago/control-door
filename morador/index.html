@@ -246,16 +246,6 @@
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
         verificarStatus();
-
-        // ATIVIDADE NATVA EM SEGUNDO PLANO (CORDOVA)
-        document.addEventListener('deviceready', function () {
-            if (window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) {
-                // Ativa o serviço persistente nativo do Android
-                window.cordova.plugins.backgroundMode.enable();
-                // Bloqueia o fechamento do app pelo botão voltar físico, jogando-o para background
-                window.cordova.plugins.backgroundMode.overrideBackButton();
-            }
-        }, false);
     };
 
     function verificarStatus() {
@@ -474,7 +464,7 @@
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
                     let dadosFilho = child.val();
-                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
+                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = child.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
             }
