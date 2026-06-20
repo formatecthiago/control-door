@@ -1,4 +1,4 @@
-name: Build Android APK (Mudança Total para Capacitor)
+name: Reset Full - Build APK Capacitor 2026
 
 on:
   workflow_dispatch:
@@ -11,12 +11,12 @@ jobs:
       - name: 1. Baixar Código Fonte
         uses: actions/checkout@v4
 
-      - name: 2. Configurar Node.js
+      - name: 2. Configurar Node.js (Ambiente Estável)
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 3. Configurar Java 21 (Alinhado com o Google)
+      - name: 3. Configurar Java 21 (Exigência do Android Moderno)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -25,29 +25,28 @@ jobs:
       - name: 4. Configurar Android SDK Oficial
         uses: android-actions/setup-android@v3
 
-      - name: 5. Instalar Ferramentas do Capacitor e Preparar Pastas
+      - name: 5. Instalar Dependências do Projeto
+        working-directory: ./morador-apk
         run: |
-          npm install -g @capacitor/cli @capacitor/core @capacitor/android
-          mkdir -p morador/www
-          if [ ! -f morador/www/index.html ]; then
-            echo "<html><body><h1>VirtyMorador</h1></body></html>" > morador/www/index.html
-          fi
+          # Instala as dependências travadas do Capacitor que colocamos no package.json
+          npm install
 
-      - name: 6. Criar Projeto Nativo com Capacitor (Substituindo o Cordova)
-        working-directory: ./morador
+      - name: 6. Sincronizar e Criar Estrutura Android Nativa
+        working-directory: ./morador-apk
         run: |
-          npx cap init VirtyMorador com.formatecthiago.controldoor.morador --web-dir=www
-          npm install @capacitor/android
+          # Cria a pasta nativa /android baseada nas configurações limpas do arquivo json
           npx cap add android
+          npx cap sync android
 
-      - name: 7. Compilar o APK com o Gradle Nativo Estável
-        working-directory: ./morador/android
+      - name: 7. Compilar o APK Nativo Puro
+        working-directory: ./morador-apk/android
         run: |
+          # Executa a compilação direto pelo motor do Android, usando o Java 21 do servidor
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: 8. Disponibilizar Download do APK Pronto
+      - name: 8. Disponibilizar Download do APK
         uses: actions/upload-artifact@v4
         with:
-          name: VirtyMorador-Capacitor-APK
-          path: morador/android/app/build/outputs/apk/debug/app-debug.apk
+          name: VirtyMorador-ResetFull-APK
+          path: morador-apk/android/app/build/outputs/apk/debug/app-debug.apk
