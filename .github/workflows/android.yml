@@ -28,20 +28,23 @@ jobs:
       - name: 5. Instalar Dependências do Projeto
         working-directory: ./morador-apk
         run: |
-          # Instala as dependências travadas do Capacitor que colocamos no package.json
           npm install
+
+      - name: 5.5. Transferir Design Maravilhoso (Ponte Automatizada)
+        run: |
+          # Limpa o arquivo provisório e puxa o seu sistema real da pasta morador
+          rm -rf morador-apk/www/*
+          cp -r morador/* morador-apk/www/
 
       - name: 6. Sincronizar e Criar Estrutura Android Nativa
         working-directory: ./morador-apk
         run: |
-          # Cria a pasta nativa /android baseada nas configurações limpas do arquivo json
-          npx cap add android
+          npx cap add android || echo "Pasta android já existe"
           npx cap sync android
 
       - name: 7. Compilar o APK Nativo Puro
         working-directory: ./morador-apk/android
         run: |
-          # Executa a compilação direto pelo motor do Android, usando o Java 21 do servidor
           chmod +x gradlew
           ./gradlew assembleDebug
 
