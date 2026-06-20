@@ -32,7 +32,6 @@ jobs:
 
       - name: 5.5. Transferir Design Maravilhoso (Ponte Automatizada)
         run: |
-          # Limpa o arquivo provisório e puxa o seu sistema real da pasta morador
           rm -rf morador-apk/www/*
           cp -r morador/* morador-apk/www/
 
@@ -41,6 +40,12 @@ jobs:
         run: |
           npx cap add android || echo "Pasta android já existe"
           npx cap sync android
+
+      - name: 6.5. Injetar Permissão de Câmera Automaticamente
+        working-directory: ./morador-apk
+        run: |
+          # Esse comando localiza o arquivo oculto gerado pelo robô e injeta a linha da câmera nele
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
 
       - name: 7. Compilar o APK Nativo Puro
         working-directory: ./morador-apk/android
