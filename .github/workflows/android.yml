@@ -41,11 +41,20 @@ jobs:
           npx cap add android || echo "Pasta android já existe"
           npx cap sync android
 
-      - name: 6.5. Injetar Permissão de Câmera Automaticamente
+      - name: 6.5. Injetar Permissões de Câmera, Áudio, Vibração e Configurações de Som
         working-directory: ./morador-apk
         run: |
-          # Esse comando localiza o arquivo oculto gerado pelo robô e injeta a linha da câmera nele
+          # 1. Injeta permissão de Câmera
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
+          
+          # 2. Injeta permissão de Microfone (Garante gravação de áudio)
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' android/app/src/main/AndroidManifest.xml
+          
+          # 3. Injeta permissão de Vibração (Garante os alertas táteis)
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
+          
+          # 4. Libera o Autoplay de Áudio/Som sem restrições no WebView do Android
+          sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
 
       - name: 7. Compilar o APK Nativo Puro
         working-directory: ./morador-apk/android
