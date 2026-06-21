@@ -103,6 +103,19 @@
 </head>
 <body>
 
+    <!-- BANNER PERSISTENTE DE PERMISSÕES OBRIGATÓRIAS -->
+    <div id="banner-permissoes" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; box-sizing: border-box; text-align: center;">
+        <div style="border: 2px solid var(--neon); box-shadow: 0 0 20px var(--neon); padding: 40px 20px; border-radius: 15px; background: #0a0a0a; max-width: 400px; width: 100%;">
+            <span style="font-size: 50px;">⚠️</span>
+            <h1 style="color: var(--neon); font-family: sans-serif; font-size: 26px; margin-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Acesso Bloqueado</h1>
+            <p style="color: #ffffff; font-family: sans-serif; font-size: 18px; line-height: 1.6; margin: 25px 0;">O interfone <b>NÃO VAI FUNCIONAR</b> se você usar permissões temporárias.</p>
+            <p style="color: #a0a0a0; font-family: sans-serif; font-size: 14px; margin-bottom: 30px;">Ative a permissão permanente para garantir o recebimento de chamadas e uso do hardware.</p>
+            <button id="btn-autorizar-sempre" style="background: var(--neon); color: #000000; border: none; padding: 16px 30px; font-size: 16px; font-weight: bold; border-radius: 30px; width: 100%; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 15px rgba(57,255,20,0.4);">
+                Configurar Agora
+            </button>
+        </div>
+    </div>
+
     <!-- 1. TELA DE CADASTRO -->
     <div id="s-cadastro" class="screen">
         <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
@@ -234,6 +247,32 @@
     let cacheBloqueadosGlobais = {};
     let my_fingerprint = "";
 
+    // FUNÇÃO CIRÚRGICA DE BLINDAGEM DE PERMISSÕES
+    async function verificarPermissoesObg() {
+        const banner = document.getElementById('banner-permissoes');
+        if (window.Capacitor) {
+            try {
+                let statusCamera = await window.Capacitor.Plugins.Camera.requestPermissions();
+                if (statusCamera.camera !== 'granted') {
+                    banner.style.setProperty('display', 'flex', 'important');
+                    return false;
+                } else {
+                    banner.style.setProperty('display', 'none', 'important');
+                    return true;
+                }
+            } catch (e) {
+                console.log("Aguardando inicialização do hardware nativo...");
+            }
+        }
+        return true;
+    }
+
+    document.getElementById('btn-autorizar-sempre').addEventListener('click', async () => {
+        if (window.Capacitor) {
+            await window.Capacitor.Plugins.App.openAppSettings();
+        }
+    });
+
     function gerarFingerprintMorador() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
         let hash = 0;
@@ -246,6 +285,9 @@
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
         verificarStatus();
+        
+        // Dispara a barreira de checagem nativa na abertura
+        verificarPermissoesObg();
     };
 
     function verificarStatus() {
@@ -463,8 +505,8 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = child.val();
-                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = child.key; }
+                    let dadosFilho = filho.val();
+                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
             }
@@ -591,7 +633,10 @@
         }
         
         if(acao === 'stop') { 
-            navigator.vibrate(0); 
+            if (window.Capacitor) {
+                // Para a vibração nativa do dispositivo com precisão
+                navigator.vibrate(0);
+            }
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
             document.title = "VIRTY MORADOR v2.0.1 - Nativo APK";
             return; 
@@ -599,15 +644,19 @@
         
         if(somSilenciadoPorInteracao) return;
         
+        // EXECUÇÃO NATIVA DA VIBRAÇÃO
         if(modoAlerta === 2 || modoAlerta === 3) {
-            navigator.vibrate([500, 300, 500, 300, 500, 300, 500]);
+            if (window.Capacitor) {
+                navigator.vibrate([500, 300, 500, 300, 500, 300, 500]);
+            }
         }
         
+        // EXECUÇÃO DA ROTA CORRIGIDA DE ÁUDIO LOCAL
         if(modoAlerta !== 3) {
             const arquivoFinal = arquivoSomOpcional || obterNomeSomFormatado(somAtual);
-            somInterfoneLocal = new Audio(`/control-door/morador/sound/${arquivoFinal}`);
+            somInterfoneLocal = new Audio(`sound/${arquivoFinal}`);
             somInterfoneLocal.loop = true; 
-            somInterfoneLocal.play().catch(erro => console.log("Autoplay retido pelo sistema."));
+            somInterfoneLocal.play().catch(erro => console.log("Autoplay retido pelo sistema nativo."));
         }
 
         if (!piscaTituloInterval) {
@@ -618,6 +667,11 @@
             }, 500);
         }
     }
+
+    // Monitora quando o usuário volta de fora do aplicativo (Ex: voltou das configurações do Android)
+    document.addEventListener('resume', () => {
+        verificarPermissoesObg();
+    });
 </script>
 </body>
 </html>
