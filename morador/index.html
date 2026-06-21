@@ -103,7 +103,6 @@
 </head>
 <body>
 
-    <!-- BANNER PERSISTENTE DE PERMISSÕES OBRIGATÓRIAS -->
     <div id="banner-permissoes" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; box-sizing: border-box; text-align: center;">
         <div style="border: 2px solid var(--neon); box-shadow: 0 0 20px var(--neon); padding: 40px 20px; border-radius: 15px; background: #0a0a0a; max-width: 400px; width: 100%;">
             <span style="font-size: 50px;">⚠️</span>
@@ -116,7 +115,6 @@
         </div>
     </div>
 
-    <!-- 1. TELA DE CADASTRO -->
     <div id="s-cadastro" class="screen">
         <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
         <div class="area-camera-virty">
@@ -136,7 +134,6 @@
         <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
     </div>
 
-    <!-- 2. TELA DE AGUARDO / ANÁLISE -->
     <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
         <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
         <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
@@ -145,7 +142,6 @@
         <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
     </div>
 
-    <!-- 3. TELA PRINCIPAL (HOME DO MORADOR) -->
     <div id="s-home" class="screen">
         <div class="header">
             <div>
@@ -175,7 +171,6 @@
         <button id="btn-toggle-bloqueados" class="btn-secundario" style="margin-top: 15px;" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
     </div>
 
-    <!-- INTERFONE EM EXECUÇÃO -->
     <div id="painel-chamada">
         <div id="timer-regressivo">90</div>
         <img id="foto-v" class="foto-v" src="">
@@ -196,7 +191,6 @@
         </div>
     </div>
 
-    <!-- MENSAGEM ESCRITA -->
     <div id="container-digitar-texto" onclick="verificarToqueEnvioMaoLivre(event)">
         <div id="timer-flutuante-texto">90s</div>
         <h3 style="color:var(--blue); margin-bottom:15px; letter-spacing:1px;">DIGITAR MENSAGEM</h3>
@@ -207,7 +201,6 @@
         </div>
     </div>
 
-    <!-- GRAVADOR DE VOZ -->
     <div id="popup-voz" onclick="verificarToqueEnvioMaoLivre(event)">
         <div style="position: relative; display: flex; align-items: center; justify-content: center;">
             <svg class="canvas-circular">
@@ -235,6 +228,7 @@
     let timePressStart = 0;
     
     let somInterfoneLocal = null;
+    let loopVibracaoInterval = null; // Controla o loop contínuo de vibração
     let piscaTituloInterval = null;
     let somAtual = parseInt(localStorage.getItem('virty_som')) || 0; 
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
@@ -247,7 +241,6 @@
     let cacheBloqueadosGlobais = {};
     let my_fingerprint = "";
 
-    // FUNÇÃO CIRÚRGICA DE BLINDAGEM DE PERMISSÕES
     async function verificarPermissoesObg() {
         const banner = document.getElementById('banner-permissoes');
         if (window.Capacitor) {
@@ -285,8 +278,6 @@
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
         verificarStatus();
-        
-        // Dispara a barreira de checagem nativa na abertura
         verificarPermissoesObg();
     };
 
@@ -302,7 +293,7 @@
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => { micStreamGlobal = stream; })
-                    .catch(e => console.log("Microfone offline."));
+                    .catch(e => console.log("Microfone em espera."));
                 }
             } else {
                 db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).on('value', snap => {
@@ -437,45 +428,111 @@
         db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: txt, data_hora: obterDataHora() });
         document.getElementById('campo-texto-interno').value = ""; responder('mensagem');
     }
-    function eventoMicStart(e) { e.preventDefault(); if(estaGravando) return; timePressStart = Date.now(); modoMaoLivre = false; somSilenciadoPorInteracao = true; gerenciarAlerta('stop'); startRec(); }
-    function eventoMicEnd(e) { e.preventDefault(); let duration = Date.now() - timePressStart; if(duration < 400) { modoMaoLivre = true; document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque na tela para enviar</span>"; } else { if(!modoMaoLivre) stopRec(); } }
-    function verificarToqueEnvioMaoLivre(e) { if(modoMaoLivre && estaGravando) { e.stopPropagation(); stopRec(); } }
+
+    // MECÂNICA EXATA DO MICROFONE (MÃO LIVRE VS SEGURAR)
+    function eventoMicStart(e) { 
+        e.preventDefault(); 
+        if(estaGravando) return; 
+        timePressStart = Date.now(); 
+        modoMaoLivre = false; 
+        somSilenciadoPorInteracao = true; 
+        gerenciarAlerta('stop'); 
+        startRec(); 
+    }
+    
+    function eventoMicEnd(e) { 
+        e.preventDefault(); 
+        let duration = Date.now() - timePressStart; 
+        if(duration < 400) { 
+            // Clique rápido detectado: Ativa modo Mãos Livres e aguarda o próximo toque na tela
+            modoMaoLivre = true; 
+            document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque na tela para enviar</span>"; 
+        } else { 
+            // Soltou o botão após segurar longo: Envia automaticamente
+            if(!modoMaoLivre) stopRec(); 
+        } 
+    }
+    
+    function verificarToqueEnvioMaoLivre(e) { 
+        if(modoMaoLivre && estaGravando) { 
+            e.stopPropagation(); 
+            stopRec(); 
+        } 
+    }
+
     async function startRec() {
         try {
-            const stream = micStreamGlobal || await navigator.mediaDevices.getUserMedia({ audio: true });
-            if(!micStreamGlobal) micStreamGlobal = stream;
-            mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 16000 });
-            chunks = []; estaGravando = true;
-            const popup = document.getElementById('popup-voz'), texto = document.getElementById('texto-timer-voz'), arco = document.getElementById('arco-progresso');
+            // Re-checa e força o canal de áudio local antes de começar
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            micStreamGlobal = stream;
+            
+            mediaRecorder = new MediaRecorder(stream);
+            chunks = []; 
+            estaGravando = true;
+            
+            const popup = document.getElementById('popup-voz');
+            const texto = document.getElementById('texto-timer-voz');
+            const arco = document.getElementById('arco-progresso');
             
             if(!modoMaoLivre) document.getElementById('label-modo-gravacao').innerText = "SEGURE PARA GRAVAR...";
             popup.style.display = 'flex';
             
-            let tempoVoz = 30; texto.innerText = "30s"; arco.style.strokeDashoffset = 0; arco.style.stroke = "var(--neon)";
+            let tempoVoz = 30; 
+            texto.innerText = "30s"; 
+            arco.style.strokeDashoffset = 0; 
+            arco.style.stroke = "var(--neon)";
             db.ref('chamadas_ativas/' + my_un).update({ status: 'gravando' });
             
             const circunferencia = 2 * Math.PI * 90;
             clearInterval(timerVozInterval);
             timerVozInterval = setInterval(() => {
-                tempoVoz--; texto.innerText = tempoVoz + "s";
-                let percentual = (30 - tempoVoz) / 30; arco.style.strokeDashoffset = circunferencia * percentual;
+                tempoVoz--; 
+                texto.innerText = tempoVoz + "s";
+                let percentual = (30 - tempoVoz) / 30; 
+                arco.style.strokeDashoffset = circunferencia * percentual;
                 if(tempoVoz <= 15 && tempoVoz > 5) arco.style.stroke = "var(--yellow)";
                 if(tempoVoz <= 5) arco.style.stroke = "var(--red)";
                 if(tempoVoz <= 0) stopRec();
             }, 1000);
-            mediaRecorder.ondataavailable = e => chunks.push(e.data);
+
+            mediaRecorder.ondataavailable = e => {
+                if (e.data && e.data.size > 0) chunks.push(e.data);
+            };
+
             mediaRecorder.onstop = () => {
                 const blob = new Blob(chunks, { type: 'audio/webm' });
-                const reader = new FileReader(); reader.readAsDataURL(blob);
+                const reader = new FileReader(); 
+                reader.readAsDataURL(blob);
                 reader.onloadend = () => {
-                    db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: "Áudio enviado", audio_b64: reader.result, data_hora: obterDataHora() });
-                    popup.style.display = 'none'; responder('mensagem');
+                    db.ref('chamadas_ativas/' + my_un).update({ 
+                        status: 'mensagem', 
+                        msg_morador: "Áudio enviado", 
+                        audio_b64: reader.result, 
+                        data_hora: obterDataHora() 
+                    });
+                    popup.style.display = 'none'; 
+                    responder('mensagem');
                 };
             };
             mediaRecorder.start();
-        } catch(e) { estaGravando = false; }
+        } catch(e) { 
+            estaGravando = false; 
+            console.log("Falha nativa no gravador:", e);
+        }
     }
-    function stopRec() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); clearInterval(timerVozInterval); estaGravando = false; } }
+    
+    function stopRec() { 
+        if(mediaRecorder && mediaRecorder.state !== 'inactive') { 
+            mediaRecorder.stop(); 
+            clearInterval(timerVozInterval); 
+            estaGravando = false; 
+            // Desliga o microfone do hardware para poupar energia
+            if(micStreamGlobal) {
+                micStreamGlobal.getTracks().forEach(track => track.stop());
+                micStreamGlobal = null;
+            }
+        } 
+    }
     
     function responder(st) {
         estaGravando = false; estaDigitando = false; modoMaoLivre = false; somSilenciadoPorInteracao = false;
@@ -633,10 +690,9 @@
         }
         
         if(acao === 'stop') { 
-            if (window.Capacitor) {
-                // Para a vibração nativa do dispositivo com precisão
-                navigator.vibrate(0);
-            }
+            // Limpa o loop contínuo de vibração nativa
+            if(loopVibracaoInterval) { clearInterval(loopVibracaoInterval); loopVibracaoInterval = null; }
+            if (navigator.vibrate) navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
             document.title = "VIRTY MORADOR v2.0.1 - Nativo APK";
             return; 
@@ -644,19 +700,19 @@
         
         if(somSilenciadoPorInteracao) return;
         
-        // EXECUÇÃO NATIVA DA VIBRAÇÃO
+        // VIBRAÇÃO EM LOOP CONTÍNUO (Garante pulso enquanto durar a chamada)
         if(modoAlerta === 2 || modoAlerta === 3) {
-            if (window.Capacitor) {
-                navigator.vibrate([500, 300, 500, 300, 500, 300, 500]);
-            }
+            if(loopVibracaoInterval) clearInterval(loopVibracaoInterval);
+            const dispararPulso = () => { if (navigator.vibrate) navigator.vibrate([600, 400]); };
+            dispararPulso();
+            loopVibracaoInterval = setInterval(dispararPulso, 1500);
         }
         
-        // EXECUÇÃO DA ROTA CORRIGIDA DE ÁUDIO LOCAL
         if(modoAlerta !== 3) {
             const arquivoFinal = arquivoSomOpcional || obterNomeSomFormatado(somAtual);
             somInterfoneLocal = new Audio(`sound/${arquivoFinal}`);
             somInterfoneLocal.loop = true; 
-            somInterfoneLocal.play().catch(erro => console.log("Autoplay retido pelo sistema nativo."));
+            somInterfoneLocal.play().catch(erro => console.log("Autoplay retido."));
         }
 
         if (!piscaTituloInterval) {
@@ -668,7 +724,6 @@
         }
     }
 
-    // Monitora quando o usuário volta de fora do aplicativo (Ex: voltou das configurações do Android)
     document.addEventListener('resume', () => {
         verificarPermissoesObg();
     });
