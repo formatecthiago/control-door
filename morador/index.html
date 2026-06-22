@@ -466,8 +466,17 @@
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             micStreamGlobal = stream;
             
-            mediaRecorder = new MediaRecorder(stream);
+            // AJUSTE CIRÚRGICO DE NATIVIDADE: Configura o container de gravação para o padrão MP4 aceito pelo Android nativo
             chunks = []; 
+            let opcoesMime = { mimeType: 'audio/mp4' };
+            if (!MediaRecorder.isTypeSupported('audio/mp4')) {
+                opcoesMime = { mimeType: 'audio/aac' };
+                if (!MediaRecorder.isTypeSupported('audio/aac')) {
+                    opcoesMime = {}; // Fallback do sistema para mídias genéricas se o WebView for antigo
+                }
+            }
+
+            mediaRecorder = new MediaRecorder(stream, opcoesMime);
             estaGravando = true;
             
             const popup = document.getElementById('popup-voz');
@@ -500,7 +509,9 @@
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'audio/webm' });
+                // AJUSTE CIRÚRGICO DE NATIVIDADE: Captura o tipo exato gerado para encapsular a string Base64 corretamente
+                const tipoBlobFinal = mediaRecorder.mimeType || 'audio/mp4';
+                const blob = new Blob(chunks, { type: tipoBlobFinal });
                 const reader = new FileReader(); 
                 reader.readAsDataURL(blob);
                 reader.onloadend = () => {
@@ -562,7 +573,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = filho.val();
+                    let dadosFilho = child.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
