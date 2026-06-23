@@ -1,18 +1,65 @@
-      - name: 6.5. Inspecionar Estrutura Real do MainActivity e Manifesto
+name: Reset Full - Build APK Capacitor 2026
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Baixar Código Fonte
+        uses: actions/checkout@v4
+
+      - name: 2. Configurar Node.js (Ambiente Estável)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 3. Configurar Java 21 (Exigência do Android Moderno)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: 4. Configurar Android SDK Oficial
+        uses: android-actions/setup-android@v3
+
+      - name: 5. Instalar Dependências do Projeto
+        working-directory: ./morador-apk
+        run: |
+          npm install
+
+      - name: 5.5. Transferir Design Maravilhoso (Ponte Automatizada)
+        run: |
+          rm -rf morador-apk/www/*
+          cp -r morador/* morador-apk/www/
+
+      - name: 6. Sincronizar e Criar Estrutura Android Nativa
+        working-directory: ./morador-apk
+        run: |
+          npx cap add android || echo "Pasta android já existe"
+          npx cap sync android
+
+      - name: 6.5. Ler Estrutura Original Nativa (Inspeção Segura)
         working-directory: ./morador-apk
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           MAIN_ACTIVITY_PATH=$(find android/app/src/main/java -name "MainActivity.java")
           
           echo "=================================================="
-          echo "1. CAMINHO REAL DO ARQUIVO JAVA ENCONTRADO:"
+          echo "CAMINHO REAL DO ARQUIVO JAVA:"
           echo "$MAIN_ACTIVITY_PATH"
           echo "=================================================="
           
-          echo "2. CONTEÚDO ORIGINAL DO MAINACTIVITY.JAVA:"
+          echo "CONTEÚDO ORIGINAL DO MAINACTIVITY.JAVA:"
           cat "$MAIN_ACTIVITY_PATH"
           echo "=================================================="
           
-          echo "3. CONTEÚDO ORIGINAL DO MANIFESTO:"
+          echo "CONTEÚDO ORIGINAL DO MANIFESTO:"
           cat "$MANIFEST_PATH"
           echo "=================================================="
+
+      - name: 7. Fim da Inspeção
+        run: |
+          echo "Estruturas lidas com sucesso. Pronto para análise!"
