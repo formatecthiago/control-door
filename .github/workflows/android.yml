@@ -1,4 +1,4 @@
-name: Reset Full - Build APK Capacitor 2026
+Name: Reset Full - Build APK Capacitor 2026
 
 on:
   workflow_dispatch:
@@ -41,20 +41,44 @@ jobs:
           npx cap add android || echo "Pasta android já existe"
           npx cap sync android
 
-      - name: 6.5. Injetar Permissões de Câmera, Áudio, Vibração e Configurações de Som
+      - name: 6.5. Injetar Permissões e Configurações Agressivas Anti-Modo Doze (Som e Timer)
         working-directory: ./morador-apk
         run: |
-          # 1. Injeta permissão de Câmera
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          MAIN_ACTIVITY_PATH="android/app/src/main/java/io/ionic/starter/MainActivity.java"
           
-          # 2. Injeta permissão de Microfone (Garante gravação de áudio)
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' android/app/src/main/AndroidManifest.xml
+          # Se o pacote padrão do Capacitor for diferente de io.ionic.starter, localiza dinamicamente o arquivo MainActivity.java
+          if [ ! -f "$MAIN_ACTIVITY_PATH" ]; then
+            MAIN_ACTIVITY_PATH=$(find android/app/src/main/java -name "MainActivity.java")
+          fi
+
+          echo "Modificando Manifesto em: $MANIFEST_PATH"
+          echo "Modificando MainActivity em: $MAIN_ACTIVITY_PATH"
+
+          # 1. Injeta permissões originais e essenciais (Câmera, Microfone e Vibração)
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' $MANIFEST_PATH
           
-          # 3. Injeta permissão de Vibração (Garante os alertas táteis)
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
+          # 2. INTERVENÇÃO AGRESSIVA: Permissões nativas para o Timer e Processador nunca dormirem
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.WAKE_LOCK" />' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' $MANIFEST_PATH
           
-          # 4. Libera o Autoplay de Áudio/Som sem restrições no WebView do Android
+          # 3. INTERVENÇÃO MICROFONE: Ativa aceleração de hardware na tag <activity> para alternar som/microfone sem travar
+          sed -i 's/<activity/<activity android:hardwareAccelerated="true"/' $MANIFEST_PATH
+
+          # 4. Libera o Autoplay de Áudio/Som sem restrições no arquivo config.xml nativo
           sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
+
+          # 5. SCRIPT JAVA AGRESSIVO: Injeta as importações necessárias no MainActivity.java
+          sed -i '/import com.getcapacitor.BridgeActivity;/a \import android.os.Bundle;\nimport android.view.WindowManager;\nimport android.content.Intent;\nimport android.os.PowerManager;\nimport android.net.Uri;\nimport android.provider.Settings;\nimport android.webkit.WebView;\nimport com.getcapacitor.bridge.WebViewListener;' $MAIN_ACTIVITY_PATH
+
+          # 6. SCRIPT JAVA AGRESSIVO: Reescreve o bloco onCreate para travar a tela ligada, pedir exclusão de bateria e destravar Autoplay do WebView
+          JAVA_CODE="    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        \n        \n        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);\n        \n        \n        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {\n            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);\n            String packageName = getPackageName();\n            if (pm != null && !pm.isIgnoringBatteryOptimizations(packageName)) {\n                Intent intent = new Intent();\n                intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);\n                intent.setData(Uri.parse(\"package:\" + packageName));\n                startActivity(intent);\n            }\n        }\n        \n        \n        this.bridge.setWebViewListener(new WebViewListener() {\n            @Override\n            public void onWebViewStarted(WebView webView) {\n                webView.getSettings().setMediaPlaybackRequiresUserGesture(false);\n            }\n        });\n    }"
+          
+          # Substitui a linha de abertura da classe injetando nosso onCreate customizado logo abaixo
+          sed -i "/public class MainActivity extends BridgeActivity {/a $JAVA_CODE" $MAIN_ACTIVITY_PATH
 
       - name: 7. Compilar o APK Nativo Puro
         working-directory: ./morador-apk/android
