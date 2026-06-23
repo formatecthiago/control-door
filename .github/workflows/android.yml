@@ -1,93 +1,18 @@
-name: Reset Full - Build APK Capacitor 2026
-
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 1. Baixar Código Fonte
-        uses: actions/checkout@v4
-
-      - name: 2. Configurar Node.js (Ambiente Estável)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: 3. Configurar Java 21 (Exigência do Android Moderno)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '21'
-
-      - name: 4. Configurar Android SDK Oficial
-        uses: android-actions/setup-android@v3
-
-      - name: 5. Instalar Dependências do Projeto
-        working-directory: ./morador-apk
-        run: |
-          npm install
-
-      - name: 5.5. Transferir Design Maravilhoso (Ponte Automatizada)
-        run: |
-          rm -rf morador-apk/www/*
-          cp -r morador/* morador-apk/www/
-
-      - name: 6. Sincronizar e Criar Estrutura Android Nativa
-        working-directory: ./morador-apk
-        run: |
-          npx cap add android || echo "Pasta android já existe"
-          npx cap sync android
-
-      - name: 6.5. Injetar Permissões e Configurações Agressivas Anti-Modo Doze (Som e Timer)
+      - name: 6.5. Inspecionar Estrutura Real do MainActivity e Manifesto
         working-directory: ./morador-apk
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          MAIN_ACTIVITY_PATH="android/app/src/main/java/io/ionic/starter/MainActivity.java"
+          MAIN_ACTIVITY_PATH=$(find android/app/src/main/java -name "MainActivity.java")
           
-          # Se o pacote padrão do Capacitor for diferente de io.ionic.starter, localiza dinamicamente o arquivo MainActivity.java
-          if [ ! -f "$MAIN_ACTIVITY_PATH" ]; then
-            MAIN_ACTIVITY_PATH=$(find android/app/src/main/java -name "MainActivity.java")
-          fi
-
-          echo "Modificando Manifesto em: $MANIFEST_PATH"
-          echo "Modificando MainActivity em: $MAIN_ACTIVITY_PATH"
-
-          # 1. Injeta permissões originais e essenciais (Câmera, Microfone e Vibração)
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' $MANIFEST_PATH
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST_PATH
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' $MANIFEST_PATH
+          echo "=================================================="
+          echo "1. CAMINHO REAL DO ARQUIVO JAVA ENCONTRADO:"
+          echo "$MAIN_ACTIVITY_PATH"
+          echo "=================================================="
           
-          # 2. INTERVENÇÃO AGRESSIVA: Permissões nativas para o Timer e Processador nunca dormirem
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.WAKE_LOCK" />' $MANIFEST_PATH
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />' $MANIFEST_PATH
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' $MANIFEST_PATH
+          echo "2. CONTEÚDO ORIGINAL DO MAINACTIVITY.JAVA:"
+          cat "$MAIN_ACTIVITY_PATH"
+          echo "=================================================="
           
-          # 3. INTERVENÇÃO MICROFONE: Ativa aceleração de hardware na tag <activity> para alternar som/microfone sem travar
-          sed -i 's/<activity/<activity android:hardwareAccelerated="true"/' $MANIFEST_PATH
-
-          # 4. Libera o Autoplay de Áudio/Som sem restrições no arquivo config.xml nativo
-          sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa adjusted"
-
-          # 5. SCRIPT JAVA AGRESSIVO: Injeta as importações necessárias no MainActivity.java
-          sed -i '/import com.getcapacitor.BridgeActivity;/a \import android.os.Bundle;\nimport android.view.WindowManager;\nimport android.content.Intent;\nimport android.os.PowerManager;\nimport android.net.Uri;\nimport android.provider.Settings;\nimport android.webkit.WebView;\nimport com.getcapacitor.bridge.WebViewListener;' $MAIN_ACTIVITY_PATH
-
-          # 6. SCRIPT JAVA AGRESSIVO: Reescreve o bloco onCreate para travar a tela ligada, pedir exclusão de bateria e destravar Autoplay do WebView
-          JAVA_CODE="    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        \n        \n        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);\n        \n        \n        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {\n            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);\n            String packageName = getPackageName();\n            if (pm != null && !pm.isIgnoringBatteryOptimizations(packageName)) {\n                Intent intent = new Intent();\n                intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);\n                intent.setData(Uri.parse(\"package:\" + packageName));\n                startActivity(intent);\n            }\n        }\n        \n        \n        this.bridge.setWebViewListener(new WebViewListener() {\n            @Override\n            public void onWebViewStarted(WebView webView) {\n                webView.getSettings().setMediaPlaybackRequiresUserGesture(false);\n            }\n        });\n    }"
-          
-          # Substitui a linha de abertura da classe injetando nosso onCreate customizado logo abaixo
-          sed -i "/public class MainActivity extends BridgeActivity {/a $JAVA_CODE" $MAIN_ACTIVITY_PATH
-
-      - name: 7. Compilar o APK Nativo Puro
-        working-directory: ./morador-apk/android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: 8. Disponibilizar Download do APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: VirtyMorador-ResetFull-APK
-          path: morador-apk/android/app/build/outputs/apk/debug/app-debug.apk
+          echo "3. CONTEÚDO ORIGINAL DO MANIFESTO:"
+          cat "$MANIFEST_PATH"
+          echo "=================================================="
