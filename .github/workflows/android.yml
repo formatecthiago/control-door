@@ -48,7 +48,6 @@ jobs:
           MAIN_ACTIVITY_PATH="android/app/src/main/java/com/formatecthiago/controldoor/morador/MainActivity.java"
 
           echo "Injetando Permissões Agressivas no Manifesto..."
-          # Injeta permissões de Hardware e as travas brutas contra o Modo de Hibernação/Bateria do Android
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' $MANIFEST_PATH
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST_PATH
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' $MANIFEST_PATH
@@ -56,14 +55,14 @@ jobs:
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />' $MANIFEST_PATH
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' $MANIFEST_PATH
 
-          # Ativa a aceleração de hardware nativa na activity para alternar microfone e som sem congelar o chip de áudio
+          # Ativa a aceleração de hardware nativa na activity para alternar microfone e som
           sed -i 's/<activity/<activity android:hardwareAccelerated="true"/' $MANIFEST_PATH
 
-          # Libera o tráfego de navegação e áudio do WebView sem restrições de sandbox
+          # Libera o tráfego de navegação e áudio do WebView
           sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
 
           echo "Reescrevendo MainActivity.java com Injeções Nativas..."
-          # Escreve o código Java perfeito respeitando o seu pacote original com as travas de tela ligada e autoplay
+          # AJUSTADO: Importação do WebViewListener corrigida para com.getcapacitor.WebViewListener
           cat << 'EOF' > $MAIN_ACTIVITY_PATH
           package com.formatecthiago.controldoor.morador;
 
@@ -75,7 +74,7 @@ jobs:
           import android.provider.Settings;
           import android.webkit.WebView;
           import com.getcapacitor.BridgeActivity;
-          import com.getcapacitor.bridge.WebViewListener;
+          import com.getcapacitor.WebViewListener;
 
           public class MainActivity extends BridgeActivity {
               @Override
