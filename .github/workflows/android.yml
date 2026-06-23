@@ -1,4 +1,4 @@
-Name: Reset Full - Build APK Capacitor 2026
+name: Reset Full - Build APK Capacitor 2026
 
 on:
   workflow_dispatch:
@@ -69,7 +69,7 @@ jobs:
           sed -i 's/<activity/<activity android:hardwareAccelerated="true"/' $MANIFEST_PATH
 
           # 4. Libera o Autoplay de Áudio/Som sem restrições no arquivo config.xml nativo
-          sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
+          sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa adjusted"
 
           # 5. SCRIPT JAVA AGRESSIVO: Injeta as importações necessárias no MainActivity.java
           sed -i '/import com.getcapacitor.BridgeActivity;/a \import android.os.Bundle;\nimport android.view.WindowManager;\nimport android.content.Intent;\nimport android.os.PowerManager;\nimport android.net.Uri;\nimport android.provider.Settings;\nimport android.webkit.WebView;\nimport com.getcapacitor.bridge.WebViewListener;' $MAIN_ACTIVITY_PATH
