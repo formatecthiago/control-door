@@ -41,25 +41,81 @@ jobs:
           npx cap add android || echo "Pasta android já existe"
           npx cap sync android
 
-      - name: 6.5. Ler Estrutura Original Nativa (Inspeção Segura)
+      - name: 6.5. Injetar Configurações Ultra Agressivas (Bateria, Som e Hardware)
         working-directory: ./morador-apk
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          MAIN_ACTIVITY_PATH=$(find android/app/src/main/java -name "MainActivity.java")
-          
-          echo "=================================================="
-          echo "CAMINHO REAL DO ARQUIVO JAVA:"
-          echo "$MAIN_ACTIVITY_PATH"
-          echo "=================================================="
-          
-          echo "CONTEÚDO ORIGINAL DO MAINACTIVITY.JAVA:"
-          cat "$MAIN_ACTIVITY_PATH"
-          echo "=================================================="
-          
-          echo "CONTEÚDO ORIGINAL DO MANIFESTO:"
-          cat "$MANIFEST_PATH"
-          echo "=================================================="
+          MAIN_ACTIVITY_PATH="android/app/src/main/java/com/formatecthiago/controldoor/morador/MainActivity.java"
 
-      - name: 7. Fim da Inspeção
+          echo "Injetando Permissões Agressivas no Manifesto..."
+          # Injeta permissões de Hardware e as travas brutas contra o Modo de Hibernação/Bateria do Android
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.WAKE_LOCK" />' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' $MANIFEST_PATH
+
+          # Ativa a aceleração de hardware nativa na activity para alternar microfone e som sem congelar o chip de áudio
+          sed -i 's/<activity/<activity android:hardwareAccelerated="true"/' $MANIFEST_PATH
+
+          # Libera o tráfego de navegação e áudio do WebView sem restrições de sandbox
+          sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
+
+          echo "Reescrevendo MainActivity.java com Injeções Nativas..."
+          # Escreve o código Java perfeito respeitando o seu pacote original com as travas de tela ligada e autoplay
+          cat << 'EOF' > $MAIN_ACTIVITY_PATH
+          package com.formatecthiago.controldoor.morador;
+
+          import android.os.Bundle;
+          import android.view.WindowManager;
+          import android.content.Intent;
+          import android.os.PowerManager;
+          import android.net.Uri;
+          import android.provider.Settings;
+          import android.webkit.WebView;
+          import com.getcapacitor.BridgeActivity;
+          import com.getcapacitor.bridge.WebViewListener;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  
+                  // Força o processador e o hardware a manterem a tela ligada e ativos (Evita congelar o Timer)
+                  getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                  
+                  // Dispara pop-up agressivo exigindo exclusão total da otimização de bateria na inicialização
+                  if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                      PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+                      String packageName = getPackageName();
+                      if (pm != null && !pm.isIgnoringBatteryOptimizations(packageName)) {
+                          Intent intent = new Intent();
+                          intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                          intent.setData(Uri.parse("package:" + packageName));
+                          startActivity(intent);
+                      }
+                  }
+                  
+                  // Remove a necessidade de qualquer gesto humano para disparar o som do interfone (.mp3)
+                  this.bridge.setWebViewListener(new WebViewListener() {
+                      @Override
+                      public void onWebViewStarted(WebView webView) {
+                          webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+                      }
+                  });
+              }
+          }
+          EOF
+
+      - name: 7. Compilar o APK Nativo Puro
+        working-directory: ./morador-apk/android
         run: |
-          echo "Estruturas lidas com sucesso. Pronto para análise!"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: 8. Disponibilizar Download do APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VirtyMorador-ResetFull-APK
+          path: morador-apk/android/app/build/outputs/apk/debug/app-debug.apk
