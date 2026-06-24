@@ -302,7 +302,6 @@
         return true;
     }
 
-    // Corrigido: O ID aqui agora bate perfeitamente com o ID do HTML
     document.getElementById('btn-autorizar-sempre').addEventListener('click', async () => {
         if (window.Capacitor) {
             await window.Capacitor.Plugins.App.openAppSettings();
@@ -356,18 +355,19 @@
     }
 
     function inicializarCapturaVideo() {
-        if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); }
+        if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; }
         const constraints = { video: { facingMode: usarLenteFrontal ? "user" : "environment" } };
         navigator.mediaDevices.getUserMedia(constraints).then(s => {
             streamCameraAtiva = s;
             const video = document.getElementById('v-cad');
-            video.srcObject = s;
-            video.setAttribute('playsinline', true);
-            video.setAttribute('muted', true);
-            video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
-            
-            video.play().catch(e => console.log("Erro play automático:", e));
-        }).catch(e => console.log(e));
+            if (video) {
+                video.srcObject = s;
+                video.setAttribute('playsinline', true);
+                video.setAttribute('muted', true);
+                video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
+                video.play().catch(e => console.log("Erro play automático:", e));
+            }
+        }).catch(e => console.log("Erro ao acessar câmera nativa:", e));
     }
     function alternarLenteCamera() {
         usarLenteFrontal = !usarLenteFrontal;
@@ -375,7 +375,7 @@
     }
     function fotoCad() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
-        if(!v.videoWidth) return;
+        if(!v || !v.videoWidth) return;
         c.width = v.videoWidth; c.height = v.videoHeight;
         
         const ctx = c.getContext('2d');
@@ -610,7 +610,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = child.val();
+                    let dadosFilho = filho.val(); // Corrigido aqui: era child.val() e quebrava
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
@@ -645,7 +645,8 @@
         });
     }
     function construirListaNormal(itens, listaBloqueados) {
-        const list = document.getElementById('lista-hist'); list.innerHTML = "";
+        const list = document.getElementById('lista-hist'); if(!list) return;
+        list.innerHTML = "";
         const ativos = itens.filter(i => !listaBloqueados[i.dna_dispositivo]);
         if(ativos.length === 0) { list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum registro</p>`; document.getElementById('btn-ver-mais').style.display = "none"; return; }
         const exibidos = ativos.slice(0, limiteExibicaoHist);
@@ -653,7 +654,8 @@
         document.getElementById('btn-ver-mais').style.display = ativos.length > limiteExibicaoHist ? "block" : "none";
     }
     function construirListaBloqueadosDireta(mapaBloqueados) {
-        const list = document.getElementById('lista-bloqueados'); list.innerHTML = "";
+        const list = document.getElementById('lista-bloqueados'); if(!list) return;
+        list.innerHTML = "";
         const chaves = Object.keys(mapaBloqueados);
         if(chaves.length === 0) { list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum dispositivo bloqueado.</p>`; return; }
         const mapaOrdenado = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
@@ -710,8 +712,15 @@
         const targetScreen = document.getElementById(id);
         if(targetScreen) targetScreen.classList.add('active');
         
-        if(id === 's-cadastro') { document.getElementById('v-cad').style.display = "block"; document.getElementById('c-cad').style.display = "none"; inicializarCapturaVideo(); }
-        else if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; }
+        if(id === 's-cadastro') { 
+            const video = document.getElementById('v-cad');
+            const canvas = document.getElementById('c-cad');
+            if(video) video.style.display = "block"; 
+            if(canvas) canvas.style.display = "none"; 
+            inicializarCapturaVideo(); 
+        } else if(streamCameraAtiva) { 
+            streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; 
+        }
     }
     
     function cancelarSolicitacaoAtual() {
