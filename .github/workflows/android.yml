@@ -30,7 +30,7 @@ jobs:
         run: |
           npm install
 
-      - name: 5.5. Transferir Design Maravilhoso (Ponte Automatizada)
+      - name: 5.5. Transferir Design Maravilovilho (Ponte Automatizada)
         run: |
           rm -rf morador-apk/www/*
           cp -r morador/* morador-apk/www/
@@ -61,8 +61,7 @@ jobs:
           # Libera o tráfego de navegação e áudio do WebView
           sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
 
-          echo "Reescrevendo MainActivity.java com Injeções Nativas..."
-          # AJUSTADO: Importação do WebViewListener corrigida para com.getcapacitor.WebViewListener
+          echo "Reescrevendo MainActivity.java com Injeções Nativas Universais..."
           cat << 'EOF' > $MAIN_ACTIVITY_PATH
           package com.formatecthiago.controldoor.morador;
 
@@ -72,9 +71,7 @@ jobs:
           import android.os.PowerManager;
           import android.net.Uri;
           import android.provider.Settings;
-          import android.webkit.WebView;
           import com.getcapacitor.BridgeActivity;
-          import com.getcapacitor.WebViewListener;
 
           public class MainActivity extends BridgeActivity {
               @Override
@@ -95,14 +92,15 @@ jobs:
                           startActivity(intent);
                       }
                   }
-                  
-                  // Remove a necessidade de qualquer gesto humano para disparar o som do interfone (.mp3)
-                  this.bridge.setWebViewListener(new WebViewListener() {
-                      @Override
-                      public void onWebViewStarted(WebView webView) {
-                          webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
-                      }
-                  });
+              }
+
+              // Padrão Android Universal: Destrava o autoplay do som diretamente na instância do WebView quando ele é anexado ao app
+              @Override
+              public void onAttachedToWindow() {
+                  super.onAttachedToWindow();
+                  if (this.bridge != null && this.bridge.getWebView() != null) {
+                      this.bridge.getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+                  }
               }
           }
           EOF
