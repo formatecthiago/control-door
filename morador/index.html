@@ -241,7 +241,6 @@
     let cacheBloqueadosGlobais = {};
     let my_fingerprint = "";
 
-    // Inicialização Nativa de Notificações via Capacitor (FCM)
     async function inicializarPushNotificacoesNativas() {
         if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
             const PushNotifications = window.Capacitor.Plugins.PushNotifications;
@@ -303,7 +302,8 @@
         return true;
     }
 
-    document.getElementById('btn-autorizar-always-or-never').addEventListener('click', async () => {
+    // Corrigido: O ID aqui agora bate perfeitamente com o ID do HTML
+    document.getElementById('btn-autorizar-sempre').addEventListener('click', async () => {
         if (window.Capacitor) {
             await window.Capacitor.Plugins.App.openAppSettings();
         }
@@ -566,4 +566,214 @@
             mediaRecorder.start();
         } catch(e) { 
             estaGravando = false; 
-            console.log("Falha nativa no gravador
+            console.log("Falha nativa no gravador:", e);
+        }
+    }
+    
+    function stopRec() { 
+        if(mediaRecorder && mediaRecorder.state !== 'inactive') { 
+            mediaRecorder.stop(); 
+            clearInterval(timerVozInterval); 
+            estaGravando = false; 
+            if(micStreamGlobal) {
+                micStreamGlobal.getTracks().forEach(track => track.stop());
+                micStreamGlobal = null;
+            }
+        } 
+    }
+    
+    function responder(st) {
+        estaGravando = false; estaDigitando = false; modoMaoLivre = false; somSilenciadoPorInteracao = false;
+        document.getElementById('painel-chamada').style.display = 'none';
+        document.getElementById('container-digitar-texto').style.display = 'none';
+        document.getElementById('popup-voz').style.display = 'none';
+        gerenciarAlerta('stop');
+        clearInterval(timerPerdida); timerPerdida = null;
+        const ref = db.ref('chamadas_ativas/' + my_un);
+        ref.once('value', snap => {
+            const d = snap.val();
+            if(d) {
+                if(st !== 'cinza') ref.update({ status: st });
+                const dnaChave = d.dna_dispositivo || d.v_id.substring(0, 11);
+                gravarHist(d.v_id, d.foto, st, dnaChave);
+                setTimeout(() => ref.remove(), 1200);
+            }
+        });
+        mudarTela('s-home');
+    }
+    function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
+    
+    function gravarHist(vid, foto, st, dna) {
+        const baseRef = db.ref(`historico/${my_un}`);
+        baseRef.once('value', snapshot => {
+            let totalFilhos = snapshot.numChildren();
+            if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
+                let maisAntigoChave = null; let menorTs = Infinity;
+                snapshot.forEach(filho => {
+                    let dadosFilho = child.val();
+                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
+                });
+                if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
+            }
+            
+            let d = snapshot.child(dna).val() || { foto: foto, v_id: vid, dna_dispositivo: dna, verde:0, vermelho:0, azul:0, cinza:0 };
+            if(st==='liberado') d.verde++; else if(st==='recusado') d.vermelho++; else if(st==='mensagem') d.azul++; else if(st==='cinza') d.cinza++;
+            d.ultima = st; d.ts = Date.now(); d.data_hora = obterDataHora();
+            baseRef.child(dna).set(d);
+            
+            db.ref(`bloqueados/${my_un}/${dna}`).once('value', bSnap => {
+                if(bSnap.exists()){
+                    db.ref(`bloqueados/${my_un}/${dna}`).update({ foto: foto, ultima: d.ultima, data_hora: d.data_hora, verde: d.verde, vermelho: d.vermelho, azul: d.azul, cinza: d.cinza });
+                }
+            });
+        });
+    }
+    function renderizarDadosAbas() {
+        db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
+            cacheBloqueadosGlobais = bSnap.val() || {};
+            construirListaBloqueadosDireta(cacheBloqueadosGlobais);
+            db.ref(`historico/${my_un}`).once('value', snap => {
+                const historicoItens = []; snap.forEach(item => { historicoItens.push(item.val()); });
+                historicoItens.sort((a, b) => b.ts - a.ts);
+                construirListaNormal(historicoItens, cacheBloqueadosGlobais);
+            });
+        });
+        db.ref(`historico/${my_un}`).on('value', snap => {
+            const historicoItens = []; snap.forEach(item => { historicoItens.push(item.val()); });
+            historicoItens.sort((a, b) => b.ts - a.ts);
+            construirListaNormal(historicoItens, cacheBloqueadosGlobais);
+        });
+    }
+    function construirListaNormal(itens, listaBloqueados) {
+        const list = document.getElementById('lista-hist'); list.innerHTML = "";
+        const ativos = itens.filter(i => !listaBloqueados[i.dna_dispositivo]);
+        if(ativos.length === 0) { list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum registro</p>`; document.getElementById('btn-ver-mais').style.display = "none"; return; }
+        const exibidos = ativos.slice(0, limiteExibicaoHist);
+        exibidos.forEach(d => { list.innerHTML += criarCardHTML(d, false); });
+        document.getElementById('btn-ver-mais').style.display = ativos.length > limiteExibicaoHist ? "block" : "none";
+    }
+    function construirListaBloqueadosDireta(mapaBloqueados) {
+        const list = document.getElementById('lista-bloqueados'); list.innerHTML = "";
+        const chaves = Object.keys(mapaBloqueados);
+        if(chaves.length === 0) { list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum dispositivo bloqueado.</p>`; return; }
+        const mapaOrdenado = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
+        mapaOrdenado.forEach(d => { list.innerHTML += criarCardHTML(d, true); });
+    }
+    function criarCardHTML(d, estaBloqueado) {
+        return `<div class="hist-card">
+            <div class="foto-box">
+                <div class="dots-row">
+                    <div class="dot" style="background:var(--neon); color:#000">${d.verde || 0}</div>
+                    <div class="dot" style="background:var(--red)">${d.vermelho || 0}</div>
+                    <div class="dot" style="background:var(--blue)">${d.azul || 0}</div>
+                    <div class="dot" style="background:var(--gray)">${d.cinza || 0}</div>
+                </div>
+                <img src="${d.foto || ''}" class="foto-hist" onerror="this.src='https://placehold.co/70x70/0a0a0a/39FF14?text=VIRTY'">
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                <b style="font-size:0.75rem; color:#aaa;">DNA: ${d.dna_dispositivo}</b>
+                <small style="color:var(--neon); font-size:0.75rem; font-weight:bold;">${(d.ultima || 'Bloqueado').toUpperCase()}</small>
+                <span style="font-size:0.65rem; color:#444;">${d.data_hora || ''}</span>
+            </div>
+            <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.dna_dispositivo}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
+        </div>`;
+    }
+    function expandirHistorico() { limiteExibicaoHist = Math.min(limiteExibicaoHist + 5, 30); renderizarDadosAbas(); }
+    function alternarVisaoListas() {
+        vendoBloqueados = !vendoBloqueados;
+        const txtTitulo = document.getElementById('titulo-secao-atual'), btnToggle = document.getElementById('btn-toggle-bloqueados'), btnLimpar = document.getElementById('btn-limpar-tudo');
+        if(vendoBloqueados) {
+            document.getElementById('container-historico-normal').style.display = "none"; document.getElementById('container-lista-bloqueados').style.display = "block";
+            txtTitulo.innerText = "Dispositivos Bloqueados"; txtTitulo.style.color = "var(--red)"; btnToggle.innerText = "VER HISTÓRICO"; btnToggle.style.color = "var(--neon)"; btnLimpar.style.display = "none";
+        } else {
+            document.getElementById('container-historico-normal').style.display = "block"; document.getElementById('container-lista-bloqueados').style.display = "none";
+            txtTitulo.innerText = "Histórico de Chamadas"; txtTitulo.style.color = "var(--gray)"; btnToggle.innerText = "VER BLOQUEADOS"; btnToggle.style.color = "var(--red)"; btnLimpar.style.display = "block"; limiteExibicaoHist = 5;
+        }
+        renderizarDadosAbas();
+    }
+    function alternarBloqueio(dna) {
+        const ref = db.ref(`bloqueados/${my_un}/${dna}`);
+        ref.once('value', s => {
+            if(s.exists()) ref.remove();
+            else {
+                db.ref(`historico/${my_un}/${dna}`).once('value', hSnap => {
+                    const dadosHist = hSnap.val() || {};
+                    ref.set({ dna_dispositivo: dna, ts: Date.now(), data_hora: obterDataHora(), foto: dadosHist.foto || "", ultima: dadosHist.ultima || "recusado", verde: dadosHist.verde || 0, vermelho: dadosHist.vermelho || 0, azul: dadosHist.azul || 0, cinza: dadosHist.cinza || 0 });
+                });
+            }
+        });
+    }
+    function limparHist() { if(confirm("Deseja limpar seu histórico?")) db.ref(`historico/${my_un}`).remove(); }
+    
+    function mudarTela(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        const targetScreen = document.getElementById(id);
+        if(targetScreen) targetScreen.classList.add('active');
+        
+        if(id === 's-cadastro') { document.getElementById('v-cad').style.display = "block"; document.getElementById('c-cad').style.display = "none"; inicializarCapturaVideo(); }
+        else if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; }
+    }
+    
+    function cancelarSolicitacaoAtual() {
+        if(confirm("Deseja refazer os dados?")) {
+            db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).remove().then(() => { localStorage.removeItem('my_un'); my_un = null; verificarStatus(); });
+        }
+    }
+    
+    function proximoSom() { 
+        somAtual = (somAtual + 1) % 12; 
+        localStorage.setItem('virty_som', somAtual); 
+        document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1); 
+        gerenciarAlerta('start', obterNomeSomFormatado(somAtual)); 
+        setTimeout(() => { if(!somSilenciadoPorInteracao) gerenciarAlerta('stop'); }, 2000); 
+    }
+    
+    function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
+    function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); btn.innerText = modoAlerta === 1 ? "🔊" : modoAlerta === 2 ? "📳🔊" : "📳"; }
+    
+    function gerenciarAlerta(acao, arquivoSomOpcional) {
+        if(somInterfoneLocal) {
+            try { somInterfoneLocal.pause(); somInterfoneLocal.currentTime = 0; } catch(e){}
+            somInterfoneLocal = null;
+        }
+        
+        if(acao === 'stop') { 
+            if(loopVibracaoInterval) { clearInterval(loopVibracaoInterval); loopVibracaoInterval = null; }
+            if (navigator.vibrate) navigator.vibrate(0); 
+            if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
+            document.title = "VIRTY MORADOR v2.0.1 - Nativo APK";
+            return; 
+        }
+        
+        if(somSilenciadoPorInteracao) return;
+        
+        if(modoAlerta === 2 || modoAlerta === 3) {
+            if(loopVibracaoInterval) clearInterval(loopVibracaoInterval);
+            const dispararPulso = () => { if (navigator.vibrate) navigator.vibrate([600, 400]); };
+            dispararPulso();
+            loopVibracaoInterval = setInterval(dispararPulso, 1500);
+        }
+        
+        if(modoAlerta !== 3) {
+            const arquivoFinal = arquivoSomOpcional || obterNomeSomFormatado(somAtual);
+            somInterfoneLocal = new Audio(`sound/${arquivoFinal}`);
+            somInterfoneLocal.loop = true; 
+            somInterfoneLocal.play().catch(erro => console.log("Autoplay retido."));
+        }
+
+        if (!piscaTituloInterval) {
+            let alternar = false;
+            piscaTituloInterval = setInterval(() => {
+                document.title = alternar ? "🚨 INTERFONE TOCANDO! 🚨" : "⚠️ NOVA CHAMADA VIRTY ⚠️";
+                alternar = !alternar;
+            }, 500);
+        }
+    }
+
+    document.addEventListener('resume', () => {
+        verificarStatus();
+        verificarPermissoesObg();
+    });
+</script>
+</body>
+</html>
