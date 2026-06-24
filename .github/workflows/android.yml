@@ -41,7 +41,7 @@ jobs:
           npx cap add android || echo "Pasta android já existe"
           npx cap sync android
 
-      - name: 6.5. Injetar Configurações Ultra Agressivas (Bateria, Som, Vibração e Microfone)
+      - name: 6.5. Injetar Configurações Ultra Agressivas (Bateria, Som, Vibração e Microfone Seguros)
         working-directory: ./morador-apk
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
@@ -61,7 +61,7 @@ jobs:
           # Libera bypass de navegação interna do WebView
           sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
 
-          echo "Reescrevendo MainActivity.java com Pontes de Hardware Estáveis..."
+          echo "Reescrevendo MainActivity.java com Proteção à Câmera do Capacitor..."
           cat << 'EOF' > $MAIN_ACTIVITY_PATH
           package com.formatecthiago.controldoor.morador;
 
@@ -71,8 +71,6 @@ jobs:
           import android.os.PowerManager;
           import android.net.Uri;
           import android.provider.Settings;
-          import android.webkit.PermissionRequest;
-          import android.webkit.WebChromeClient;
           import android.webkit.WebView;
           import com.getcapacitor.BridgeActivity;
 
@@ -106,13 +104,8 @@ jobs:
                       // Mantém o Autoplay do som ativo sem necessidade de toque prévio na tela
                       webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
                       
-                      // INTERCEPTOR SEGURO: Concede permissão automática de microfone/câmera dentro do WebView
-                      webView.setWebChromeClient(new WebChromeClient() {
-                          @Override
-                          public void onPermissionRequest(final PermissionRequest request) {
-                              request.grant(request.getResources());
-                          }
-                      });
+                      // CORREÇÃO CRÍTICA: Remove o WebChromeClient genérico que quebrava a câmera do Capacitor.
+                      // Deixamos o Capacitor controlar a câmera nativa do cadastro livremente.
                   }
               }
           }
