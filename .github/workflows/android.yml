@@ -30,7 +30,7 @@ jobs:
         run: |
           npm install
 
-      - name: 5.5. Transferir Design Maravilovilho (Ponte Automatizada)
+      - name: 5.5. Transferir Design Maravilhoso (Ponte Automatizada)
         run: |
           rm -rf morador-apk/www/*
           cp -r morador/* morador-apk/www/
@@ -41,7 +41,7 @@ jobs:
           npx cap add android || echo "Pasta android já existe"
           npx cap sync android
 
-      - name: 6.5. Injetar Configurações Ultra Agressivas (Bateria, Som e Hardware)
+      - name: 6.5. Injetar Configurações Ultra Agressivas (Bateria, Som, Vibração e Microfone)
         working-directory: ./morador-apk
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
@@ -55,13 +55,13 @@ jobs:
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />' $MANIFEST_PATH
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' $MANIFEST_PATH
 
-          # Ativa a aceleração de hardware nativa na activity para alternar microfone e som
+          # Garante aceleração de hardware nativa para alternar fluxos de áudio e vídeo em tempo real
           sed -i 's/<activity/<activity android:hardwareAccelerated="true"/' $MANIFEST_PATH
 
-          # Libera o tráfego de navegação e áudio do WebView
+          # Libera bypass de navegação interna do WebView
           sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
 
-          echo "Reescrevendo MainActivity.java com Injeções Nativas Universais..."
+          echo "Reescrevendo MainActivity.java com Pontes de Hardware Estáveis..."
           cat << 'EOF' > $MAIN_ACTIVITY_PATH
           package com.formatecthiago.controldoor.morador;
 
@@ -71,6 +71,9 @@ jobs:
           import android.os.PowerManager;
           import android.net.Uri;
           import android.provider.Settings;
+          import android.webkit.PermissionRequest;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebView;
           import com.getcapacitor.BridgeActivity;
 
           public class MainActivity extends BridgeActivity {
@@ -78,10 +81,10 @@ jobs:
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   
-                  // Força o processador e o hardware a manterem a tela ligada e ativos (Evita congelar o Timer)
+                  // Força o processador e o hardware a manterem a tela ligada (Previne congelamento do Timer)
                   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                   
-                  // Dispara pop-up agressivo exigindo exclusão total da otimização de bateria na inicialização
+                  // Solicita saída permanente do Modo de Otimização de Bateria do Android
                   if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                       PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
                       String packageName = getPackageName();
@@ -94,12 +97,22 @@ jobs:
                   }
               }
 
-              // Padrão Android Universal: Destrava o autoplay do som diretamente na instância do WebView quando ele é anexado ao app
               @Override
               public void onAttachedToWindow() {
                   super.onAttachedToWindow();
                   if (this.bridge != null && this.bridge.getWebView() != null) {
-                      this.bridge.getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+                      WebView webView = this.bridge.getWebView();
+                      
+                      // Mantém o Autoplay do som ativo sem necessidade de toque prévio na tela
+                      webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+                      
+                      // INTERCEPTOR SEGURO: Concede permissão automática de microfone/câmera dentro do WebView
+                      webView.setWebChromeClient(new WebChromeClient() {
+                          @Override
+                          public void onPermissionRequest(final PermissionRequest request) {
+                              request.grant(request.getResources());
+                          }
+                      });
                   }
               }
           }
