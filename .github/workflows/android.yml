@@ -29,8 +29,6 @@ jobs:
         working-directory: ./morador-apk
         run: |
           npm install
-          # Injeta o plugin nativo que cria o serviço de segundo plano do Firebase
-          npm install @capacitor/push-notifications
           npx cap update
 
       - name: 5.5. Transferir Código Fonte (Ponte Automatizada)
@@ -49,7 +47,6 @@ jobs:
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           
-          # Move o arquivo que você baixou para a pasta nativa correta do Android
           if [ -f "google-services.json" ]; then
             cp google-services.json android/app/
             echo "Aviso: google-services.json injetado com sucesso no ecossistema Android!"
@@ -65,10 +62,8 @@ jobs:
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.WAKE_LOCK" />' $MANIFEST_PATH
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />' $MANIFEST_PATH
 
-          # Garante aceleração de hardware nativa para fluxos de mídia
           sed -i 's/<activity/<activity android:hardwareAccelerated="true"/' $MANIFEST_PATH
 
-          # Aplica a regra de automação do Google Services no Gradle nativo
           sed -i '/dependencies {/a \        classpath "com.google.gms:google-services:4.4.1"' android/build.gradle
           sed -i '/apply plugin: '\''com.android.application'\''/a apply plugin: '\''com.google.gms.google-services'\''' android/app/build.gradle
 
@@ -87,7 +82,6 @@ jobs:
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  // Mantém a tela acordada enquanto o app estiver visível
                   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
               }
           }
