@@ -33,10 +33,304 @@
         .actions-bar {
             display: flex;
             justify-content: flex-end;
+            gap: 10px; /* Espaço entre os botões */
             margin-bottom: 20px;
         }
         .btn {
             background-color: #d32f2f;
             color: #ffffff;
             border: none;
-            padding:
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        /* Cor diferente para o botão de compartilhar para destaque */
+        .btn-share {
+            background-color: #1976d2; 
+        }
+        /* Cabeçalho Centralizado estilo Documento Oficial */
+        .header-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 20px;
+        }
+        .logo-box {
+            margin-bottom: 15px;
+        }
+        .logo-box img {
+            max-width: 160px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        .title-box {
+            width: 100%;
+        }
+        .title-box h1 {
+            font-size: 20px;
+            color: #000000; /* Cor alterada para preto */
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .title-box p {
+            font-size: 13px;
+            color: #444; /* Preto suave para o subtítulo */
+            font-weight: bold;
+        }
+        /* Títulos de Seções */
+        .section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #222;
+            background-color: #f1f3f4 !important;
+            padding: 6px 10px;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            border-left: 4px solid #d32f2f;
+        }
+        /* Linhas de Dados */
+        .form-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .label {
+            font-weight: 600;
+            color: #555;
+            width: 30%;
+            font-size: 14px;
+        }
+        .value {
+            width: 70%;
+        }
+        /* Inputs Editáveis */
+        input[type="text"] {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+            background-color: #fafafa;
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: #d32f2f;
+            background-color: #fff;
+        }
+        /* Estados (Radio) */
+        .status-container {
+            display: flex;
+            gap: 15px;
+        }
+        .status-option {
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        /* Bloco de Total */
+        .total-box {
+            background-color: #fbe9e7 !important;
+            border: 1px solid #ffccbc;
+            padding: 15px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-top: 25px;
+            margin-bottom: 25px;
+        }
+        .total-box label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #d32f2f;
+            margin-right: 12px;
+        }
+        .total-box input {
+            width: 120px;
+            text-align: right;
+            font-weight: bold;
+            font-size: 16px;
+            color: #d32f2f;
+            border: 1px solid #ffccbc;
+            background-color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        /* Rodapé */
+        .footer-info {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 11px;
+            color: #555;
+            line-height: 1.6;
+            text-align: center;
+        }
+        .footer-info strong {
+            color: #111;
+        }
+        /* Customização para Impressão e PDF */
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        @media print {
+            html, body {
+                background-color: #fff !important;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+                background: transparent !important;
+            }
+            .actions-bar {
+                display: none !important;
+            }
+            input[type="text"] {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                font-size: 14px !important;
+            }
+            .total-box {
+                background-color: #fbe9e7 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .total-box input {
+                border: none !important;
+                background: transparent !important;
+                font-size: 16px !important;
+                padding: 0 !important;
+            }
+            .section-title {
+                background-color: #f1f3f4 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <div class="actions-bar">
+            <button class="btn btn-share" onclick="compartilharOS()">Compartilhar O.S.</button>
+            <button class="btn" onclick="window.print()">Imprimir / Gerar PDF</button>
+        </div>
+        
+        <div class="header-container">
+            <div class="logo-box">
+                <img src="./logo.png" alt="Formatec Info">
+            </div>
+            <div class="title-box">
+                <h1>Ordem de Serviço & Termo de Garantia</h1>
+                <p>Controle de Assistência Técnica</p>
+            </div>
+        </div>
+        
+        <div class="section-title">Dados do Atendimento</div>
+        
+        <div class="form-row">
+            <div class="label">Número da Ordem:</div>
+            <div class="value"><input type="text" id="os-numero" value="0321"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">Aparelho:</div>
+            <div class="value"><input type="text" id="os-aparelho" value="microondas"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">Serviço:</div>
+            <div class="value"><input type="text" value="manutenção e reparo"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">Peças Substituídas:</div>
+            <div class="value"><input type="text" value="capacitor e proteções"></div>
+        </div>
+        
+        <div class="section-title">Estado & Prazos</div>
+        
+        <div class="form-row">
+            <div class="label">Estado do Aparelho:</div>
+            <div class="value">
+                <div class="status-container">
+                    <label class="status-option"><input type="radio" name="estado" value="Ruim"> Ruim</label>
+                    <label class="status-option"><input type="radio" name="estado" value="Bom" checked> Bom</label>
+                    <label class="status-option"><input type="radio" name="estado" value="Excelente"> Excelente</label>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="label">Dia da Entrada:</div>
+            <div class="value"><input type="text" value="24/06/2026"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">Dia da Saída:</div>
+            <div class="value"><input type="text" value="25/06/2026"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">Observações:</div>
+            <div class="value"><input type="text" value="não"></div>
+        </div>
+        
+        <div class="section-title">Valores do Serviço</div>
+        
+        <div class="form-row">
+            <div class="label">Valor Serviço + Peças:</div>
+            <div class="value"><input type="text" value="175,00"></div>
+        </div>
+        <div class="total-box">
+            <label>VALOR TOTAL R$:</label>
+            <input type="text" value="175,00">
+        </div>
+        
+        <div class="footer-info">
+            <p><strong>Técnico Responsável:</strong> Thiago Rodrigo do Nascimento Vieira | <strong>CNPJ:</strong> 20.754.041/0001-80</p>
+            <p><strong>Endereço:</strong> Rua Alto da Boa Vista, 493, Vila de Ponta Negra - Natal/RN</p>
+            <p><strong>WhatsApp:</strong> (84) 99687-0500</p>
+        </div>
+    </div>
+
+    <script>
+        function compartilharOS() {
+            // Pega o número da OS e o nome do aparelho dinamicamente para personalizar a mensagem
+            const numOS = document.getElementById('os-numero').value;
+            const aparelho = document.getElementById('os-aparelho').value;
+            
+            const dadosCompartilhamento = {
+                title: 'Ordem de Serviço - Formatec Info',
+                text: `Confira a Ordem de Serviço Nº ${numOS} (${aparelho}) da Formatec Info no link abaixo:`,
+                url: window.location.href // Pega automaticamente o link atual onde a página está rodando
+            };
+
+            // Verifica se o navegador suporta a função de compartilhar nativa
+            if (navigator.share) {
+                navigator.share(dadosCompartilhamento)
+                    .catch((error) => console.log('Erro ao compartilhar:', error));
+            } else {
+                // Caso o navegador seja antigo ou não suporte, ele copia o link para a área de transferência como plano B
+                navigator.clipboard.writeText(window.location.href);
+                alert('O link desta Ordem de Serviço foi copiado para a sua área de transferência!');
+            }
+        }
+    </script>
+</body>
+</html>
