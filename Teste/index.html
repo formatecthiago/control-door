@@ -9,102 +9,126 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        html, body {
-            width: 100%;
-            background-color: #f4f6f9 !important;
+
+        body {
+            background-color: #f4f6f9;
             color: #111;
+            padding: 20px;
         }
-        body { padding: 15px; }
+
+        /* Container principal estilo A4 */
         .container {
             max-width: 800px;
             margin: 0 auto;
-            background: #ffffff !important;
-            padding: 40px 35px;
+            background: #ffffff;
+            padding: 40px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: relative;
         }
+
+        /* Barra do botão de impressão */
         .actions-bar {
-            display: flex;
-            justify-content: flex-end;
+            text-align: right;
             margin-bottom: 20px;
         }
+
         .btn {
             background-color: #000000;
-            color: #ffffff;
+            color: white;
             border: none;
             padding: 12px 24px;
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 600;
             border-radius: 4px;
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             transition: background 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
+
         .btn:hover {
             background-color: #222222;
         }
 
-        /* NOVO CABEÇALHO TOTALMENTE CENTRALIZADO */
-        .header-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            margin-bottom: 35px;
+        /* TABELA DO CABEÇALHO - AGORA TOTALMENTE CENTRALIZADA */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
             border-bottom: 3px solid #000000;
-            padding-bottom: 20px;
-        }
-        .logo-box {
-            margin-bottom: 15px;
-        }
-        .logo-box img {
-            max-width: 130px; /* Logo um pouco menor e mais discreta */
-            height: auto;
-            display: block;
-        }
-        .title-box h1 {
-            font-size: 24px;
-            color: #000000; /* Priorizando a cor preta */
-            font-weight: 900; /* Super negrito */
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 6px;
-        }
-        .title-box p {
-            font-size: 13px;
-            color: #333333;
-            font-weight: 700; /* Negrito */
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
-        /* Títulos das Seções */
+        .header-table td {
+            border: none;
+            vertical-align: middle;
+            text-align: center; /* Garante a centralização completa */
+            padding-bottom: 20px;
+        }
+
+        /* Logo centralizada e menor */
+        .logo-container img {
+            max-width: 140px;
+            height: auto;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        /* Títulos em preto e negrito forte */
+        .title-container h1 {
+            font-size: 24px;
+            color: #000000;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .title-container p {
+            font-size: 13px;
+            color: #333333;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* Títulos das Seções em Preto */
         .section-title {
             font-size: 12px;
             text-transform: uppercase;
             color: #ffffff;
-            background-color: #000000 !important; /* Detalhe em preto */
-            padding: 6px 12px;
+            background-color: #000000;
+            padding: 6px 10px;
             font-weight: bold;
-            margin-top: 25px;
-            margin-bottom: 12px;
-            letter-spacing: 0.5px;
+            margin-top: 20px;
+            margin-bottom: 15px;
         }
-        .form-row {
-            display: flex;
-            align-items: center;
-            padding: 8px 0;
+
+        /* Tabelas de Informações */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+
+        .info-table td {
+            padding: 8px 6px;
             border-bottom: 1px solid #e0e0e0;
-        }
-        .label {
-            font-weight: 700; /* Mais destaque nos títulos dos campos */
-            color: #000000;
-            width: 30%;
             font-size: 14px;
+            vertical-align: middle;
         }
-        .value { width: 70%; }
+
+        .label {
+            font-weight: 700;
+            color: #000000;
+            width: 25%;
+        }
+
+        .value {
+            width: 75%;
+        }
+
+        /* Campos Editáveis */
         input[type="text"] {
             width: 100%;
             padding: 6px 10px;
@@ -114,37 +138,223 @@
             color: #111;
             background-color: #fafafa;
             outline: none;
-            font-weight: 500;
         }
+
         input[type="text"]:focus {
             border-color: #000000;
             background-color: #fff;
         }
+
+        /* Opções do Estado do Aparelho */
         .status-container {
-            display: flex;
-            gap: 15px;
+            display: block;
         }
+
         .status-option {
+            display: inline-block;
+            margin-right: 20px;
             font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
             font-weight: 600;
         }
 
-        /* Bloco de Total */
+        .status-option input {
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        /* Caixa de Destaque do Valor Total */
         .total-box {
-            background-color: #f5f5f5 !important;
+            background-color: #f5f5f5;
             border: 2px solid #000000;
             padding: 15px;
             border-radius: 4px;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin-top: 30px;
-            margin-bottom: 30px;
+            text-align: right;
+            margin-top: 25px;
+            margin-bottom: 35px;
         }
+
         .total-box label {
-            font-size: 15px;
-            font-
+            font-size: 14px;
+            font-weight: 800;
+            color: #000000;
+            margin-right: 12px;
+        }
+
+        .total-box input {
+            width: 130px;
+            text-align: right;
+            font-weight: 800;
+            font-size: 16px;
+            color: #000000;
+            border: 1px solid #000000;
+            background-color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        /* Rodapé Técnico */
+        .footer-info {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 11px;
+            color: #444444;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .footer-info strong {
+            color: #000000;
+        }
+
+        /* Regras de Impressão / PDF */
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        @media print {
+            body {
+                background-color: #fff;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+                background: transparent;
+            }
+
+            .actions-bar {
+                display: none !important;
+            }
+
+            input[type="text"] {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                font-size: 14px !important;
+                color: #000000 !important;
+            }
+
+            .total-box {
+                background-color: #f5f5f5 !important;
+                border: 2px solid #000000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .total-box input {
+                border: none !important;
+                background: transparent !important;
+                font-size: 16px !important;
+                padding: 0 !important;
+            }
+
+            .section-title {
+                background-color: #000000 !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Botão de Ação -->
+        <div class="actions-bar">
+            <button class="btn" onclick="window.print()">Imprimir / Gerar PDF</button>
+        </div>
+
+        <!-- Cabeçalho Centralizado com Estrutura de Tabela Corrigida -->
+        <table class="header-table">
+            <tr>
+                <td>
+                    <div class="logo-container">
+                        <img src="logo.png" alt="Formatec Info">
+                    </div>
+                    <div class="title-container">
+                        <h1>Ordem de Serviço & Termo de Garantia</h1>
+                        <p>Controle de Assistência Técnica</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Seção 1: Dados -->
+        <div class="section-title">Dados do Atendimento</div>
+        <table class="info-table">
+            <tr>
+                <td class="label">Número da Ordem:</td>
+                <td class="value"><input type="text" value="0321"></td>
+            </tr>
+            <tr>
+                <td class="label">Aparelho:</td>
+                <td class="value"><input type="text" value="microondas"></td>
+            </tr>
+            <tr>
+                <td class="label">Serviço:</td>
+                <td class="value"><input type="text" value="manutenção e reparo"></td>
+            </tr>
+            <tr>
+                <td class="label">Peças Substituídas:</td>
+                <td class="value"><input type="text" value="capacitor e proteções"></td>
+            </tr>
+        </table>
+
+        <!-- Seção 2: Prazos e Status -->
+        <div class="section-title">Estado & Prazos</div>
+        <table class="info-table">
+            <tr>
+                <td class="label">Estado do Aparelho:</td>
+                <td class="value">
+                    <div class="status-container">
+                        <label class="status-option"><input type="radio" name="estado" value="Ruim"> Ruim</label>
+                        <label class="status-option"><input type="radio" name="estado" value="Bom" checked> Bom</label>
+                        <label class="status-option"><input type="radio" name="estado" value="Excelente"> Excelente</label>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td class="label">Dia da Entrada:</td>
+                <td class="value"><input type="text" value="24/06/2026"></td>
+            </tr>
+            <tr>
+                <td class="label">Dia da Saída:</td>
+                <td class="value"><input type="text" value="25/06/2026"></td>
+            </tr>
+            <tr>
+                <td class="label">Observações:</td>
+                <td class="value"><input type="text" value="não"></td>
+            </tr>
+        </table>
+
+        <!-- Seção 3: Financeiro -->
+        <div class="section-title">Valores do Serviço</div>
+        <table class="info-table">
+            <tr>
+                <td class="label">Valor Serviço + Peças:</td>
+                <td class="value"><input type="text" value="175,00"></td>
+            </tr>
+        </table>
+
+        <!-- Caixa de Destaque para o Valor Total -->
+        <div class="total-box">
+            <label>VALOR TOTAL R$:</label>
+            <input type="text" value="175,00">
+        </div>
+
+        <!-- Rodapé Institucional -->
+        <div class="footer-info">
+            <p><strong>Técnico Responsável:</strong> Thiago Rodrigo do Nascimento Vieira | <strong>CNPJ:</strong> 20.754.041/0001-80</p>
+            <p><strong>Endereço:</strong> Rua Alto da Boa Vista, 493, Vila de Ponta Negra - Natal/RN</p>
+            <p><strong>WhatsApp:</strong> (84) 99687-0500</p>
+        </div>
+    </div>
+
+</body>
+</html>
