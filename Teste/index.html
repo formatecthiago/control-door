@@ -1,339 +1,297 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ordem de Serviço - Formatec Info</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: #f4f6f9;
-            color: #333;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            position: relative;
-        }
-
-        .actions-bar {
-            text-align: right;
-            margin-bottom: 20px;
-        }
-
-        .btn {
-            background-color: #1a73e8;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 600;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: 10px;
-            transition: background 0.2s;
-        }
-
-        .btn:hover {
-            background-color: #1557b0;
-        }
-
-        .btn-print {
-            background-color: #34a853;
-        }
-
-        .btn-print:hover {
-            background-color: #24753a;
-        }
-
-        /* CABEÇALHO ALTERADO PARA FICAR CENTRALIZADO, PRETO E EM NEGRITO */
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-
-        .header-table td {
-            border: none;
-            vertical-align: middle;
-            text-align: center; /* Centraliza todo o conteúdo */
-        }
-
-        .logo-container img {
-            max-width: 140px; /* Logo um pouco menor conforme pedido */
-            height: auto;
-            display: inline-block;
-            margin-bottom: 15px;
-        }
-
-        .title-container h1 {
-            font-size: 24px;
-            color: #000000; /* Cor preta */
-            font-weight: 800; /* Negrito forte */
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
-        }
-
-        .title-container p {
-            font-size: 13px;
-            color: #333333; /* Preto suave */
-            font-weight: 700; /* Negrito */
-            text-transform: uppercase;
-        }
-
-        /* RESTANTE DO TEU CÓDIGO ORIGINAL INALTERADO */
-        .section-title {
-            font-size: 13px;
-            text-transform: uppercase;
-            color: #444;
-            background-color: #f1f3f4;
-            padding: 6px 10px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            border-left: 4px solid #d32f2f;
-        }
-
-        .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 25px;
-        }
-
-        .info-table td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #e0e0e0;
-            font-size: 14px;
-            vertical-align: middle;
-        }
-
-        .label {
-            font-weight: 600;
-            color: #555;
-            width: 25%;
-        }
-
-        .value {
-            width: 75%;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 6px 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-            color: #333;
-            background-color: #fafafa;
-            outline: none;
-        }
-
-        .status-container {
-            display: block;
-        }
-
-        .status-option {
-            display: inline-block;
-            margin-right: 15px;
-            font-size: 14px;
-        }
-
-        .status-option input {
-            margin-right: 5px;
-            vertical-align: middle;
-        }
-
-        .total-box {
-            background-color: #fbe9e7;
-            border: 1px solid #ffccbc;
-            padding: 15px;
-            border-radius: 4px;
-            text-align: right;
-            margin-top: 20px;
-            margin-bottom: 30px;
-        }
-
-        .total-box label {
-            font-size: 14px;
-            font-weight: bold;
-            color: #d32f2f;
-            margin-right: 10px;
-        }
-
-        .total-box input {
-            width: 140px;
-            text-align: right;
-            font-weight: bold;
-            font-size: 16px;
-            color: #d32f2f;
-            border: 1px solid #ffccbc;
-            background-color: #fff;
-        }
-
-        .footer-info {
-            margin-top: 40px;
-            padding-top: 15px;
-            border-top: 1px solid #e0e0e0;
-            font-size: 11px;
-            color: #666;
-            line-height: 1.6;
-            text-align: center;
-        }
-
-        .footer-info strong {
-            color: #333;
-        }
-
-        @page {
-            size: A4;
-            margin: 15mm;
-        }
-
-        @media print {
-            body {
-                background-color: #fff;
-                padding: 0;
-            }
-
-            .container {
-                box-shadow: none;
-                padding: 0;
-                max-width: 100%;
-                background: transparent;
-            }
-
-            .actions-bar {
-                display: none !important;
-            }
-
-            input[type="text"] {
-                border: none !important;
-                background: transparent !important;
-                padding: 0 !important;
-                font-size: 14px !important;
-                width: auto !important;
-            }
-
-            .total-box input {
-                border: none !important;
-                background: transparent !important;
-                font-size: 16px !important;
-                padding: 0 !important;
-            }
-
-            .total-box {
-                background-color: #fbe9e7 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            .section-title {
-                background-color: #f1f3f4 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordem de Serviço - Formatec Info</title>
+    <style>
+        /* Reset básico e garantia de preenchimento da tela */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        html, body {
+            width: 100%;
+            background-color: #f4f6f9 !important; /* Cor de fundo visível no celular */
+            color: #333;
+        }
+        body {
+            padding: 15px;
+        }
+        /* Container que simula a folha A4 */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff !important; /* Força o fundo branco do documento */
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        /* Barra do Botão */
+        .actions-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #d32f2f;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        /* Cabeçalho moderno com Flexbox (Evita bugs em celular) */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 15px;
+        }
+        .logo-box {
+            flex: 1;
+        }
+        .logo-box img {
+            max-width: 150px;
+            height: auto;
+            display: block;
+        }
+        .title-box {
+            flex: 2;
+            text-align: right;
+        }
+        .title-box h1 {
+            font-size: 18px;
+            color: #d32f2f;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .title-box p {
+            font-size: 12px;
+            color: #666;
+            font-weight: bold;
+        }
+        /* Títulos de Seções */
+        .section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #222;
+            background-color: #f1f3f4 !important;
+            padding: 6px 10px;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            border-left: 4px solid #d32f2f;
+        }
+        /* Linhas de Dados */
+        .form-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .label {
+            font-weight: 600;
+            color: #555;
+            width: 30%;
+            font-size: 14px;
+        }
+        .value {
+            width: 70%;
+        }
+        /* Inputs Editáveis */
+        input[type="text"] {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+            background-color: #fafafa;
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: #d32f2f;
+            background-color: #fff;
+        }
+        /* Estados (Radio) */
+        .status-container {
+            display: flex;
+            gap: 15px;
+        }
+        .status-option {
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        /* Bloco de Total */
+        .total-box {
+            background-color: #fbe9e7 !important;
+            border: 1px solid #ffccbc;
+            padding: 15px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-top: 25px;
+            margin-bottom: 25px;
+        }
+        .total-box label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #d32f2f;
+            margin-right: 12px;
+        }
+        .total-box input {
+            width: 120px;
+            text-align: right;
+            font-weight: bold;
+            font-size: 16px;
+            color: #d32f2f;
+            border: 1px solid #ffccbc;
+            background-color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        /* Rodapé */
+        .footer-info {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 11px;
+            color: #555;
+            line-height: 1.6;
+            text-align: center;
+        }
+        .footer-info strong {
+            color: #111;
+        }
+        /* Customização para Impressão e PDF */
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        @media print {
+            html, body {
+                background-color: #fff !important;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+                background: transparent !important;
+            }
+            .actions-bar {
+                display: none !important;
+            }
+            input[type="text"] {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                font-size: 14px !important;
+            }
+            .total-box {
+                background-color: #fbe9e7 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .total-box input {
+                border: none !important;
+                background: transparent !important;
+                font-size: 16px !important;
+                padding: 0 !important;
+            }
+            .section-title {
+                background-color: #f1f3f4 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
 </head>
 <body>
-
-    <div class="container">
-        <div class="actions-bar">
-            <button class="btn btn-print" onclick="window.print()">Imprimir / Gerar PDF</button>
-        </div>
-
-        <!-- Tabela de Cabeçalho mantida com a estrutura que funcionava, apenas centralizada -->
-        <table class="header-table">
-            <tr>
-                <td>
-                    <div class="logo-container">
-                        <img src="logo.png" alt="Formatec Info">
-                    </div>
-                    <div class="title-container">
-                        <h1>Ordem de Serviço & Termo de Garantia</h1>
-                        <p>Controle de Assistência Técnica</p>
-                    </div>
-                </td>
-            </tr>
-        </table>
-
-        <div class="section-title">Dados do Atendimento</div>
-        <table class="info-table">
-            <tr>
-                <td class="label">Número da Ordem:</td>
-                <td class="value"><input type="text" value="0321"></td>
-            </tr>
-            <tr>
-                <td class="label">Aparelho:</td>
-                <td class="value"><input type="text" value="microondas"></td>
-            </tr>
-            <tr>
-                <td class="label">Serviço:</td>
-                <td class="value"><input type="text" value="manutenção e reparo"></td>
-            </tr>
-            <tr>
-                <td class="label">Peças Substituídas:</td>
-                <td class="value"><input type="text" value="capacitor e proteções"></td>
-            </tr>
-        </table>
-
-        <div class="section-title">Estado & Prazos</div>
-        <table class="info-table">
-            <tr>
-                <td class="label">Estado do Aparelho:</td>
-                <td class="value">
-                    <div class="status-container">
-                        <label class="status-option"><input type="radio" name="estado" value="Ruim"> Ruim</label>
-                        <label class="status-option"><input type="radio" name="estado" value="Bom" checked> Bom</label>
-                        <label class="status-option"><input type="radio" name="estado" value="Excelente"> Excelente</label>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">Dia da Entrada:</td>
-                <td class="value"><input type="text" value="24/06/2026"></td>
-            </tr>
-            <tr>
-                <td class="label">Dia da Saída:</td>
-                <td class="value"><input type="text" value="25/06/2026"></td>
-            </tr>
-            <tr>
-                <td class="label">Observações:</td>
-                <td class="value"><input type="text" value="não"></td>
-            </tr>
-        </table>
-
-        <div class="section-title">Valores do Serviço</div>
-        <table class="info-table">
-            <tr>
-                <td class="label">Valor Serviço + Peças:</td>
-                <td class="value"><input type="text" value="175,00"></td>
-            </tr>
-        </table>
-
-        <div class="total-box">
-            <label>VALOR TOTAL:</label>
-            <input type="text" value="175,00">
-        </div>
-
-        <div class="footer-info">
-            <p><strong>Técnico Responsável:</strong> Thiago Rodrigo do Nascimento Vieira | <strong>CNPJ:</strong> 20.754.041/0001-80</p>
-            <p><strong>Endereço:</strong> Rua Alto da Boa Vista, 493, Vila de Ponta Negra - Natal/RN</p>
-            <p><strong>WhatsApp:</strong> (84) 99687-0500</p>
-        </div>
-    </div>
-
+    <div class="container">
+        
+        <div class="actions-bar">
+            <button class="btn" onclick="window.print()">Imprimir / Gerar PDF</button>
+        </div>
+        <div class="header-container">
+            <div class="logo-box">
+                <img src="logo.png" alt="Formatec Info">
+            </div>
+            <div class="title-box">
+                <h1>Ordem de Serviço & Termo de Garantia</h1>
+                <p>Controle de Assistência Técnica</p>
+            </div>
+        </div>
+        <div class="section-title">Dados do Atendimento</div>
+        
+        <div class="form-row">
+            <div class="label">Número da Ordem:</div>
+            <div class="value"><input type="text" value="0321"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">Aparelho:</div>
+            <div class="value"><input type="text" value="microondas"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">Serviço:</div>
+            <div class="value"><input type="text" value="manutenção e reparo"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">Peças Substituídas:</div>
+            <div class="value"><input type="text" value="capacitor e proteções"></div>
+        </div>
+        <div class="section-title">Estado & Prazos</div>
+        
+        <div class="form-row">
+            <div class="label">Estado do Aparelho:</div>
+            <div class="value">
+                <div class="status-container">
+                    <label class="status-option"><input type="radio" name="estado" value="Ruim"> Ruim</label>
+                    <label class="status-option"><input type="radio" name="estado" value="Bom" checked> Bom</label>
+                    <label class="status-option"><input type="radio" name="estado" value="Excelente"> Excelente</label>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="label">Dia da Entrada:</div>
+            <div class="value"><input type="text" value="24/06/2026"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">Dia da Saída:</div>
+            <div class="value"><input type="text" value="25/06/2026"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">Observações:</div>
+            <div class="value"><input type="text" value="não"></div>
+        </div>
+        <div class="section-title">Valores do Serviço</div>
+        
+        <div class="form-row">
+            <div class="label">Valor Serviço + Peças:</div>
+            <div class="value"><input type="text" value="175,00"></div>
+        </div>
+        <div class="total-box">
+            <label>VALOR TOTAL R$:</label>
+            <input type="text" value="175,00">
+        </div>
+        <div class="footer-info">
+            <p><strong>Técnico Responsável:</strong> Thiago Rodrigo do Nascimento Vieira | <strong>CNPJ:</strong> 20.754.041/0001-80</p>
+            <p><strong>Endereço:</strong> Rua Alto da Boa Vista, 493, Vila de Ponta Negra - Natal/RN</p>
+            <p><strong>WhatsApp:</strong> (84) 99687-0500</p>
+        </div>
+    </div>
 </body>
 </html>
