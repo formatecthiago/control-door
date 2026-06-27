@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ordem de Serviço - Formatec Info</title>
+    <!-- Biblioteca para conversão direta de HTML para PDF via código -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <style>
-        /* Reset básico e garantia de preenchimento da tela */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -14,26 +16,24 @@
         }
         html, body {
             width: 100%;
-            background-color: #f4f6f9 !important; /* Cor de fundo visível no celular */
+            background-color: #f4f6f9 !important;
             color: #333;
         }
         body {
             padding: 15px;
         }
-        /* Container que simula a folha A4 */
         .container {
             max-width: 800px;
             margin: 0 auto;
-            background: #ffffff !important; /* Força o fundo branco do documento */
+            background: #ffffff !important;
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        /* Barra do Botão */
         .actions-bar {
             display: flex;
             justify-content: flex-end;
-            gap: 10px; /* Espaço entre os botões */
+            gap: 10px;
             margin-bottom: 20px;
         }
         .btn {
@@ -46,15 +46,10 @@
             border-radius: 4px;
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
-        /* Cor diferente para o botão de compartilhar para destaque */
         .btn-share {
-            background-color: #1976d2; 
+            background-color: #1976d2;
         }
-        /* Cabeçalho Centralizado estilo Documento Oficial */
         .header-container {
             display: flex;
             flex-direction: column;
@@ -73,22 +68,18 @@
             display: block;
             margin: 0 auto;
         }
-        .title-box {
-            width: 100%;
-        }
         .title-box h1 {
             font-size: 20px;
-            color: #000000; /* Cor alterada para preto */
+            color: #000000;
             text-transform: uppercase;
             margin-bottom: 6px;
             letter-spacing: 0.5px;
         }
         .title-box p {
             font-size: 13px;
-            color: #444; /* Preto suave para o subtítulo */
+            color: #444;
             font-weight: bold;
         }
-        /* Títulos de Seções */
         .section-title {
             font-size: 12px;
             text-transform: uppercase;
@@ -100,7 +91,6 @@
             margin-bottom: 12px;
             border-left: 4px solid #d32f2f;
         }
-        /* Linhas de Dados */
         .form-row {
             display: flex;
             align-items: center;
@@ -116,7 +106,6 @@
         .value {
             width: 70%;
         }
-        /* Inputs Editáveis */
         input[type="text"] {
             width: 100%;
             padding: 6px 10px;
@@ -131,7 +120,6 @@
             border-color: #d32f2f;
             background-color: #fff;
         }
-        /* Estados (Radio) */
         .status-container {
             display: flex;
             gap: 15px;
@@ -143,7 +131,6 @@
             align-items: center;
             gap: 4px;
         }
-        /* Bloco de Total */
         .total-box {
             background-color: #fbe9e7 !important;
             border: 1px solid #ffccbc;
@@ -172,7 +159,6 @@
             padding: 4px 8px;
             border-radius: 4px;
         }
-        /* Rodapé */
         .footer-info {
             margin-top: 40px;
             padding-top: 15px;
@@ -185,58 +171,37 @@
         .footer-info strong {
             color: #111;
         }
-        /* Customização para Impressão e PDF */
-        @page {
-            size: A4;
-            margin: 15mm;
-        }
+
+        /* Configuração de Impressão e do PDF gerado */
+        @page { size: A4; margin: 15mm; }
         @media print {
-            html, body {
-                background-color: #fff !important;
-                padding: 0;
-            }
-            .container {
-                box-shadow: none;
-                padding: 0;
-                max-width: 100%;
-                background: transparent !important;
-            }
-            .actions-bar {
-                display: none !important;
-            }
-            input[type="text"] {
-                border: none !important;
-                background: transparent !important;
-                padding: 0 !important;
-                font-size: 14px !important;
-            }
-            .total-box {
-                background-color: #fbe9e7 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            .total-box input {
-                border: none !important;
-                background: transparent !important;
-                font-size: 16px !important;
-                padding: 0 !important;
-            }
-            .section-title {
-                background-color: #f1f3f4 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
+            html, body { background-color: #fff !important; padding: 0; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; background: transparent !important; }
+            .actions-bar { display: none !important; }
+            input[type="text"] { border: none !important; background: transparent !important; padding: 0 !important; font-size: 14px !important; }
+            .total-box { background-color: #fbe9e7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .total-box input { border: none !important; background: transparent !important; font-size: 16px !important; padding: 0 !important; }
+            .section-title { background-color: #f1f3f4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        
+        /* Classe temporária usada pelo gerador de PDF para esconder as bordas dos inputs no arquivo final */
+        .pdf-mode input[type="text"] {
+            border: none !important;
+            background: transparent !important;
+            padding: 0 !important;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="documento-escopo" class="container">
         
-        <div class="actions-bar">
-            <button class="btn btn-share" onclick="compartilharOS()">Compartilhar O.S.</button>
+        <!-- Barra de Ações -->
+        <div class="actions-bar" data-html2canvas-ignore="true">
+            <button class="btn btn-share" onclick="enviarDocumentoPDF()">Compartilhar Documento</button>
             <button class="btn" onclick="window.print()">Imprimir / Gerar PDF</button>
         </div>
         
+        <!-- Cabeçalho -->
         <div class="header-container">
             <div class="logo-box">
                 <img src="./logo.png" alt="Formatec Info">
@@ -247,15 +212,15 @@
             </div>
         </div>
         
+        <!-- Dados do Atendimento -->
         <div class="section-title">Dados do Atendimento</div>
-        
         <div class="form-row">
             <div class="label">Número da Ordem:</div>
-            <div class="value"><input type="text" id="os-numero" value="0321"></div>
+            <div class="value"><input type="text" id="input-os" value="0321"></div>
         </div>
         <div class="form-row">
             <div class="label">Aparelho:</div>
-            <div class="value"><input type="text" id="os-aparelho" value="microondas"></div>
+            <div class="value"><input type="text" value="microondas"></div>
         </div>
         <div class="form-row">
             <div class="label">Serviço:</div>
@@ -266,8 +231,8 @@
             <div class="value"><input type="text" value="capacitor e proteções"></div>
         </div>
         
+        <!-- Estado & Prazos -->
         <div class="section-title">Estado & Prazos</div>
-        
         <div class="form-row">
             <div class="label">Estado do Aparelho:</div>
             <div class="value">
@@ -291,8 +256,8 @@
             <div class="value"><input type="text" value="não"></div>
         </div>
         
+        <!-- Valores -->
         <div class="section-title">Valores do Serviço</div>
-        
         <div class="form-row">
             <div class="label">Valor Serviço + Peças:</div>
             <div class="value"><input type="text" value="175,00"></div>
@@ -302,6 +267,7 @@
             <input type="text" value="175,00">
         </div>
         
+        <!-- Rodapé -->
         <div class="footer-info">
             <p><strong>Técnico Responsável:</strong> Thiago Rodrigo do Nascimento Vieira | <strong>CNPJ:</strong> 20.754.041/0001-80</p>
             <p><strong>Endereço:</strong> Rua Alto da Boa Vista, 493, Vila de Ponta Negra - Natal/RN</p>
@@ -309,27 +275,45 @@
         </div>
     </div>
 
+    <!-- Script de Processamento de Arquivo -->
     <script>
-        function compartilharOS() {
-            // Pega o número da OS e o nome do aparelho dinamicamente para personalizar a mensagem
-            const numOS = document.getElementById('os-numero').value;
-            const aparelho = document.getElementById('os-aparelho').value;
+        function enviarDocumentoPDF() {
+            const elemento = document.getElementById('documento-escopo');
+            const numOS = document.getElementById('input-os').value || "OS";
             
-            const dadosCompartilhamento = {
-                title: 'Ordem de Serviço - Formatec Info',
-                text: `Confira a Ordem de Serviço Nº ${numOS} (${aparelho}) da Formatec Info no link abaixo:`,
-                url: window.location.href // Pega automaticamente o link atual onde a página está rodando
+            // Ativa visual limpo sem caixas de input para gerar o PDF estável
+            elemento.classList.add('pdf-mode');
+
+            // Configurações do arquivo PDF final
+            const opcoes = {
+                margin: 10,
+                filename: `OS_${numOS}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Verifica se o navegador suporta a função de compartilhar nativa
-            if (navigator.share) {
-                navigator.share(dadosCompartilhamento)
-                    .catch((error) => console.log('Erro ao compartilhar:', error));
-            } else {
-                // Caso o navegador seja antigo ou não suporte, ele copia o link para a área de transferência como plano B
-                navigator.clipboard.writeText(window.location.href);
-                alert('O link desta Ordem de Serviço foi copiado para a sua área de transferência!');
-            }
+            // Gera o arquivo temporário em memória para compartilhamento direto
+            html2pdf().set(opcoes).from(elemento).outputPdf('blob').then(function(pdfBlob) {
+                // Remove a estilização temporária da tela do sistema
+                elemento.classList.remove('pdf-mode');
+
+                const arquivoPDF = new File([pdfBlob], `OS_${numOS}.pdf`, { type: 'application/pdf' });
+
+                // Verifica se o navegador suporta o envio de arquivos diretamente
+                if (navigator.canShare && navigator.canShare({ files: [arquivoPDF] })) {
+                    navigator.share({
+                        files: [arquivoPDF],
+                        title: `Ordem de Serviço ${numOS}`,
+                        text: 'Segue em anexo o documento gerado.'
+                    })
+                    .catch((error) => console.log('Envio cancelado ou com erro:', error));
+                } else {
+                    // Alternativa segura se executado em navegadores desktop incompatíveis (baixa o arquivo com os dados inseridos)
+                    html2pdf().set(opcoes).from(elemento).save();
+                    alert('Seu navegador não possui suporte para compartilhamento direto de arquivos. O PDF foi baixado para o seu dispositivo para que possa anexá-lo manualmente.');
+                }
+            });
         }
     </script>
 </body>
