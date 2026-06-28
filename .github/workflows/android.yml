@@ -1,4 +1,4 @@
-name: Reset Full - Build Firebase APK 2026
+name: Reset Full - Build APK Capacitor 2026
 
 on:
   workflow_dispatch:
@@ -25,13 +25,12 @@ jobs:
       - name: 4. Configurar Android SDK Oficial
         uses: android-actions/setup-android@v3
 
-      - name: 5. Instalar Dependências e Plugin Nativo do Firebase
+      - name: 5. Instalar Dependências do Projeto
         working-directory: ./morador-apk
         run: |
           npm install
-          npx cap update
 
-      - name: 5.5. Transferir Código Fonte (Ponte Automatizada)
+      - name: 5.5. Transferir Design Maravilhoso (Ponte Automatizada)
         run: |
           rm -rf morador-apk/www/*
           cp -r morador/* morador-apk/www/
@@ -42,52 +41,21 @@ jobs:
           npx cap add android || echo "Pasta android já existe"
           npx cap sync android
 
-      - name: 6.8. Posicionar Credencial do Firebase e Configurar Manifesto
+      - name: 6.5. Injetar Permissões de Câmera, Áudio, Vibração e Configurações de Som
         working-directory: ./morador-apk
         run: |
-          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          # 1. Injeta permissões estruturais necessárias no AndroidManifest
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
           
-          if [ -f "google-services.json" ]; then
-            cp google-services.json android/app/
-            echo "Aviso: google-services.json injetado com sucesso no ecossistema Android!"
-          else
-            echo "Erro Crítico: google-services.json não encontrado na pasta morador-apk!"
-            exit 1
-          fi
+          # 2. Declara explicitamente o uso do hardware da câmera (Vital para funcionar o <video> no Android Moderno)
+          sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="true" />' android/app/src/main/AndroidManifest.xml
+          
+          # 3. Libera o Autoplay de Áudio/Som sem restrições no WebView do Android
+          sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
 
-          echo "Injetando Permissões de Alta Prioridade para Segundo Plano..."
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' $MANIFEST_PATH
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST_PATH
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' $MANIFEST_PATH
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.WAKE_LOCK" />' $MANIFEST_PATH
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />' $MANIFEST_PATH
-
-          sed -i 's/<activity/<activity android:hardwareAccelerated="true"/' $MANIFEST_PATH
-
-          sed -i '/dependencies {/a \        classpath "com.google.gms:google-services:4.4.1"' android/build.gradle
-          sed -i '/apply plugin: '\''com.android.application'\''/a apply plugin: '\''com.google.gms.google-services'\''' android/app/build.gradle
-
-      - name: 6.9. Restaurar MainActivity Pura (Segurança Total do Cadastro)
-        working-directory: ./morador-apk
-        run: |
-          MAIN_ACTIVITY_PATH="android/app/src/main/java/com/formatecthiago/controldoor/morador/MainActivity.java"
-          cat << 'EOF' > $MAIN_ACTIVITY_PATH
-          package com.formatecthiago.controldoor.morador;
-
-          import android.os.Bundle;
-          import android.view.WindowManager;
-          import com.getcapacitor.BridgeActivity;
-
-          public class MainActivity extends BridgeActivity {
-              @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-              }
-          }
-          EOF
-
-      - name: 7. Compilar o APK com Motor Firebase Nativo
+      - name: 7. Compilar o APK Nativo Puro
         working-directory: ./morador-apk/android
         run: |
           chmod +x gradlew
@@ -96,5 +64,5 @@ jobs:
       - name: 8. Disponibilizar Download do APK
         uses: actions/upload-artifact@v4
         with:
-          name: VirtyMorador-Firebase-APK
+          name: VirtyMorador-ResetFull-APK
           path: morador-apk/android/app/build/outputs/apk/debug/app-debug.apk
