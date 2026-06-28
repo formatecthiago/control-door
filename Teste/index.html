@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ordem de Serviço - Formatec Info</title>
-    <!-- Biblioteca para conversão direta de HTML para PDF via código -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
@@ -184,7 +183,6 @@
             .section-title { background-color: #f1f3f4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
         
-        /* Classe temporária usada pelo gerador de PDF para esconder as bordas dos inputs no arquivo final */
         .pdf-mode input[type="text"] {
             border: none !important;
             background: transparent !important;
@@ -195,13 +193,11 @@
 <body>
     <div id="documento-escopo" class="container">
         
-        <!-- Barra de Ações -->
         <div class="actions-bar" data-html2canvas-ignore="true">
             <button class="btn btn-share" onclick="enviarDocumentoPDF()">Compartilhar Documento</button>
             <button class="btn" onclick="window.print()">Imprimir / Gerar PDF</button>
         </div>
         
-        <!-- Cabeçalho -->
         <div class="header-container">
             <div class="logo-box">
                 <img src="./logo.png" alt="Formatec Info">
@@ -212,26 +208,32 @@
             </div>
         </div>
         
-        <!-- Dados do Atendimento -->
         <div class="section-title">Dados do Atendimento</div>
         <div class="form-row">
             <div class="label">Número da Ordem:</div>
-            <div class="value"><input type="text" id="input-os" value="0321"></div>
+            <div class="value"><input type="text" id="input-os" placeholder="Ex: 0321"></div>
         </div>
         <div class="form-row">
-            <div class="label">Aparelho:</div>
-            <div class="value"><input type="text" value="microondas"></div>
+            <div class="label">Cliente:</div>
+            <div class="value"><input type="text" placeholder="Nome completo do cliente"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">WhatsApp Cliente:</div>
+            <div class="value"><input type="text" placeholder="(00) 00000-0000"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">Aparelho / Modelo:</div>
+            <div class="value"><input type="text" placeholder="Ex: Micro-ondas Philco 30L"></div>
         </div>
         <div class="form-row">
             <div class="label">Serviço:</div>
-            <div class="value"><input type="text" value="manutenção e reparo"></div>
+            <div class="value"><input type="text" placeholder="Descrição do serviço realizado"></div>
         </div>
         <div class="form-row">
             <div class="label">Peças Substituídas:</div>
-            <div class="value"><input type="text" value="capacitor e proteções"></div>
+            <div class="value"><input type="text" placeholder="Peças que foram trocadas"></div>
         </div>
         
-        <!-- Estado & Prazos -->
         <div class="section-title">Estado & Prazos</div>
         <div class="form-row">
             <div class="label">Estado do Aparelho:</div>
@@ -245,29 +247,27 @@
         </div>
         <div class="form-row">
             <div class="label">Dia da Entrada:</div>
-            <div class="value"><input type="text" value="24/06/2026"></div>
+            <div class="value"><input type="text" placeholder="DD/MM/AAAA"></div>
         </div>
         <div class="form-row">
             <div class="label">Dia da Saída:</div>
-            <div class="value"><input type="text" value="25/06/2026"></div>
+            <div class="value"><input type="text" placeholder="DD/MM/AAAA"></div>
         </div>
         <div class="form-row">
             <div class="label">Observações:</div>
-            <div class="value"><input type="text" value="não"></div>
+            <div class="value"><input type="text" placeholder="Alguma observação adicional"></div>
         </div>
         
-        <!-- Valores -->
         <div class="section-title">Valores do Serviço</div>
         <div class="form-row">
             <div class="label">Valor Serviço + Peças:</div>
-            <div class="value"><input type="text" value="175,00"></div>
+            <div class="value"><input type="text" placeholder="0,00"></div>
         </div>
         <div class="total-box">
             <label>VALOR TOTAL R$:</label>
-            <input type="text" value="175,00">
+            <input type="text" placeholder="0,00">
         </div>
         
-        <!-- Rodapé -->
         <div class="footer-info">
             <p><strong>Técnico Responsável:</strong> Thiago Rodrigo do Nascimento Vieira | <strong>CNPJ:</strong> 20.754.041/0001-80</p>
             <p><strong>Endereço:</strong> Rua Alto da Boa Vista, 493, Vila de Ponta Negra - Natal/RN</p>
@@ -275,16 +275,13 @@
         </div>
     </div>
 
-    <!-- Script de Processamento de Arquivo -->
     <script>
         function enviarDocumentoPDF() {
             const elemento = document.getElementById('documento-escopo');
             const numOS = document.getElementById('input-os').value || "OS";
             
-            // Ativa visual limpo sem caixas de input para gerar o PDF estável
             elemento.classList.add('pdf-mode');
 
-            // Configurações do arquivo PDF final
             const opcoes = {
                 margin: 10,
                 filename: `OS_${numOS}.pdf`,
@@ -293,14 +290,11 @@
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Gera o arquivo temporário em memória para compartilhamento direto
             html2pdf().set(opcoes).from(elemento).outputPdf('blob').then(function(pdfBlob) {
-                // Remove a estilização temporária da tela do sistema
                 elemento.classList.remove('pdf-mode');
 
                 const arquivoPDF = new File([pdfBlob], `OS_${numOS}.pdf`, { type: 'application/pdf' });
 
-                // Verifica se o navegador suporta o envio de arquivos diretamente
                 if (navigator.canShare && navigator.canShare({ files: [arquivoPDF] })) {
                     navigator.share({
                         files: [arquivoPDF],
@@ -309,7 +303,6 @@
                     })
                     .catch((error) => console.log('Envio cancelado ou com erro:', error));
                 } else {
-                    // Alternativa segura se executado em navegadores desktop incompatíveis (baixa o arquivo com os dados inseridos)
                     html2pdf().set(opcoes).from(elemento).save();
                     alert('Seu navegador não possui suporte para compartilhamento direto de arquivos. O PDF foi baixado para o seu dispositivo para que possa anexá-lo manualmente.');
                 }
