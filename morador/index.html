@@ -58,6 +58,11 @@
             align-items: center;
             justify-content: center;
         }
+        .btn:disabled {
+            background: #333 !important;
+            color: #666 !important;
+            cursor: not-allowed;
+        }
         
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; margin-bottom: 20px; }
         .controles-alerta { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
@@ -129,9 +134,9 @@
         </div>
         <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR SELFIE</button>
         <input type="text" id="c-nome" placeholder="Nome Completo">
-        <input type="number" id="c-cpf" placeholder="CPF (Apenas numbers)">
+        <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
         <input type="number" id="c-un" placeholder="Número da Casa/Apt">
-        <button class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
+        <button id="btn-finalizar-cad" class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
     </div>
 
     <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
@@ -241,18 +246,21 @@
     let cacheBloqueadosGlobais = {};
     let my_fingerprint = "";
 
+    // Proteções estruturais contra ouvintes duplicados
+    let refStatusAtiva = null;
+    let refChamadasAtiva = null;
+    let refBloqueadosAtiva = null;
+    let refHistoricoAtiva = null;
+
     async function inicializarPushNotificacoesNativas() {
         if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
             const PushNotifications = window.Capacitor.Plugins.PushNotifications;
-
             let permStatus = await PushNotifications.checkPermissions();
             if (permStatus.receive === 'prompt') {
                 permStatus = await PushNotifications.requestPermissions();
             }
-
             if (permStatus.receive === 'granted') {
                 await PushNotifications.register();
-
                 if (window.Capacitor.platform === 'android') {
                     try {
                         await PushNotifications.createChannel({
@@ -264,20 +272,13 @@
                             sound: 'sound01', 
                             vibration: true
                         });
-                        console.log("Canal nativo Virty criado!");
-                    } catch (e) {
-                        console.error("Erro canal nativo:", e);
-                    }
+                    } catch (e) { console.error(e); }
                 }
             }
-
             PushNotifications.addListener('pushNotificationReceived', (notification) => {
-                console.log('Notificação recebida com app aberto: ', notification);
                 if (my_un) verificarStatus();
             });
-
             PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-                console.log('Morador clicou na notificação: ', notification);
                 if (my_un) verificarStatus();
             });
         }
@@ -295,17 +296,13 @@
                     banner.style.setProperty('display', 'none', 'important');
                     return true;
                 }
-            } catch (e) {
-                console.log("Aguardando inicialização do hardware nativo...");
-            }
+            } catch (e) { console.log(e); }
         }
         return true;
     }
 
     document.getElementById('btn-autorizar-sempre').addEventListener('click', async () => {
-        if (window.Capacitor) {
-            await window.Capacitor.Plugins.App.openAppSettings();
-        }
+        if (window.Capacitor) { await window.Capacitor.Plugins.App.openAppSettings(); }
     });
 
     function gerarFingerprintMorador() {
@@ -326,20 +323,18 @@
 
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
-        db.ref('moradores_validados/' + my_un).on('value', s => {
+        
+        if(refStatusAtiva) refStatusAtiva.off();
+        
+        refStatusAtiva = db.ref('moradores_validados/' + my_un);
+        refStatusAtiva.on('value', s => {
             if(s.exists()) {
                 mudarTela('s-home');
                 document.getElementById('txt-un').innerText = "CASA " + my_un;
                 escutarChamadas();
                 renderizarDadosAbas();
-                
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    navigator.mediaDevices.getUserMedia({ audio: true })
-                    .then(stream => { micStreamGlobal = stream; })
-                    .catch(e => console.log("Microfone em espera."));
-                }
             } else {
-                db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).on('value', snap => {
+                db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).once('value', snap => {
                     if(snap.exists()) {
                         document.getElementById('txt-un-analise').innerText = "UNIDADE: " + my_un + " | ID HARDWARE: " + my_fingerprint;
                         mudarTela('s-analise');
@@ -350,13 +345,17 @@
     }
 
     function obterNomeSomFormatado(indexSom) {
-        const numeroFormatado = String(indexSom + 1).padStart(2, '0');
-        return `sound${numeroFormatado}.mp3`;
+        return `sound${String(indexSom + 1).padStart(2, '0')}.mp3`;
     }
 
     function inicializarCapturaVideo() {
         if (streamCameraAtiva) {
-            try { streamCameraAtiva.getTracks().forEach(track => track.stop()); } catch(e){}
+            try {
+                streamCameraAtiva.getTracks().forEach(track => {
+                    track.stop();
+                    track.enabled = false;
+                });
+            } catch(e){}
             streamCameraAtiva = null;
         }
 
@@ -366,8 +365,8 @@
         const constraints = { 
             video: { 
                 facingMode: usarLenteFrontal ? "user" : "environment",
-                width: { ideal: 640 },
-                height: { ideal: 480 }
+                width: { ideal: 480 },
+                height: { ideal: 360 }
             } 
         };
 
@@ -379,16 +378,9 @@
                 video.setAttribute('muted', 'true');
                 video.autoplay = true;
                 video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
-                
-                video.play().catch(e => {
-                    console.log("Tentando forçar play com mute ativo:", e);
-                    video.muted = true;
-                    video.play();
-                });
+                video.play().catch(() => {});
             })
-            .catch(err => {
-                console.error("Erro ao abrir a câmera nativa:", err);
-            });
+            .catch(err => { console.error(err); });
     }
 
     function alternarLenteCamera() {
@@ -396,28 +388,67 @@
         inicializarCapturaVideo();
     }
 
+    // CORREÇÃO CRÍTICA SOLICITADA PARA O APK
     function fotoCad() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
         if(!v || !v.videoWidth) return;
-        c.width = v.videoWidth; c.height = v.videoHeight;
+        
+        // Redimensiona inteligentemente a captura para no máximo 480px, prevenindo Base64 gigante na RAM
+        const maxMedida = 480; 
+        let larguraAlvo = v.videoWidth;
+        let alturaAlvo = v.videoHeight;
+        
+        if (larguraAlvo > maxMedida || alturaAlvo > maxMedida) {
+            if (larguraAlvo > alturaAlvo) {
+                alturaAlvo = Math.round((alturaAlvo * maxMedida) / larguraAlvo);
+                larguraAlvo = maxMedida;
+            } else {
+                larguraAlvo = Math.round((larguraAlvo * maxMedida) / alturaAlvo);
+                alturaAlvo = maxMedida;
+            }
+        }
+        
+        c.width = larguraAlvo; 
+        c.height = alturaAlvo;
         
         const ctx = c.getContext('2d');
-        if(usarLenteFrontal) { ctx.translate(c.width, 0); ctx.scale(-1, 1); }
-        ctx.drawImage(v, 0, 0);
+        if(usarLenteFrontal) { 
+            ctx.translate(c.width, 0); 
+            ctx.scale(-1, 1); 
+        }
+        
+        ctx.drawImage(v, 0, 0, larguraAlvo, alturaAlvo);
         ctx.setTransform(1,0,0,1,0,0);
         
-        my_foto = c.toDataURL('image/jpeg', 0.5);
-        c.style.display = "block"; v.style.display = "none";
+        // Compacta para JPEG com 50% de peso, reduzindo drasticamente o tráfego e uso de memória
+        my_foto = c.toDataURL('image/jpeg', 0.5); 
         
-        if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); }
+        c.style.display = "block"; 
+        v.style.display = "none";
+        
+        // Libera imediatamente o hardware da câmera para o Android focar o processamento nos botões
+        if(v.srcObject) { 
+            try {
+                v.srcObject.getTracks().forEach(track => {
+                    track.stop();
+                    track.enabled = false;
+                });
+            } catch(e) {}
+            v.srcObject = null;
+        }
+        streamCameraAtiva = null;
     }
 
     function enviarCadastro() {
         const un = document.getElementById('c-un').value,
               cpf = document.getElementById('c-cpf').value.trim(),
-              nome = document.getElementById('c-nome').value.trim();
+              nome = document.getElementById('c-nome').value.trim(),
+              btnFinalizar = document.getElementById('btn-finalizar-cad');
               
         if(!my_foto || !un || !cpf || !nome) return;
+        
+        // Desabilita o botão para evitar cliques duplicados lentos no WebView do APK
+        if(btnFinalizar) btnFinalizar.disabled = true;
         
         db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
             const moradoresExistentes = snap.val() || {};
@@ -425,10 +456,13 @@
             const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
             
             if (!jaExisteEsseAparelho) {
-                if(chaves.length >= 5) return;
+                if(chaves.length >= 5) { if(btnFinalizar) btnFinalizar.disabled = false; return; }
                 for (let k in moradoresExistentes) {
                     let m = moradoresExistentes[k];
-                    if(m.cpf === cpf || m.nome.toLowerCase() === nome.toLowerCase()) return;
+                    if(m.cpf === cpf || m.nome.toLowerCase() === nome.toLowerCase()) { 
+                        if(btnFinalizar) btnFinalizar.disabled = false; 
+                        return; 
+                    }
                 }
             }
             
@@ -437,13 +471,20 @@
             }).then(() => {
                 my_un = un;
                 localStorage.setItem('my_un', un);
+                if(btnFinalizar) btnFinalizar.disabled = false;
                 verificarStatus();
-            }).catch(err => console.error(err));
+            }).catch(err => {
+                console.error(err);
+                if(btnFinalizar) btnFinalizar.disabled = false;
+            });
         });
     }
 
     function escutarChamadas() {
-        db.ref('chamadas_ativas/' + my_un).on('value', s => {
+        if(refChamadasAtiva) refChamadasAtiva.off();
+        
+        refChamadasAtiva = db.ref('chamadas_ativas/' + my_un);
+        refChamadasAtiva.on('value', s => {
             const d = s.val(); const painel = document.getElementById('painel-chamada');
             if(d && (d.status === 'chamando' || d.status === 'escrevendo' || d.status === 'gravando')) {
                 document.getElementById('foto-v').src = d.foto;
@@ -529,14 +570,11 @@
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             micStreamGlobal = stream;
-            
             chunks = []; 
             let opcoesMime = { mimeType: 'audio/mp4' };
             if (!MediaRecorder.isTypeSupported('audio/mp4')) {
                 opcoesMime = { mimeType: 'audio/aac' };
-                if (!MediaRecorder.isTypeSupported('audio/aac')) {
-                    opcoesMime = {}; 
-                }
+                if (!MediaRecorder.isTypeSupported('audio/aac')) { opcoesMime = {}; }
             }
 
             mediaRecorder = new MediaRecorder(stream, opcoesMime);
@@ -567,10 +605,7 @@
                 if(tempoVoz <= 0) stopRec();
             }, 1000);
 
-            mediaRecorder.ondataavailable = e => {
-                if (e.data && e.data.size > 0) chunks.push(e.data);
-            };
-
+            mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
             mediaRecorder.onstop = () => {
                 const tipoBlobFinal = mediaRecorder.mimeType || 'audio/mp4';
                 const blob = new Blob(chunks, { type: tipoBlobFinal });
@@ -588,10 +623,7 @@
                 };
             };
             mediaRecorder.start();
-        } catch(e) { 
-            estaGravando = false; 
-            console.log("Falha nativa no gravador:", e);
-        }
+        } catch(e) { estaGravando = false; }
     }
     
     function stopRec() { 
@@ -613,6 +645,7 @@
         document.getElementById('popup-voz').style.display = 'none';
         gerenciarAlerta('stop');
         clearInterval(timerPerdida); timerPerdida = null;
+        
         const ref = db.ref('chamadas_ativas/' + my_un);
         ref.once('value', snap => {
             const d = snap.val();
@@ -634,63 +667,75 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = child.val();
+                    let dadosFilho = child = filho.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
             }
             
-            let d = snapshot.child(dna).val() || { foto: foto, v_id: vid, dna_dispositivo: dna, verde:0, vermelho:0, azul:0, cinza:0 };
-            if(st==='liberado') d.verde++; else if(st==='recusado') d.vermelho++; else if(st==='mensagem') d.azul++; else if(st==='cinza') d.cinza++;
+            let d = snapshot.child(dna).val() || { foto: foto, v_id: vid, dna_dispositivo: dna, verde:0, verm:0, azul:0, cinza:0 };
+            if(st==='liberado') d.verde++; else if(st==='recusado') d.verm++; else if(st==='mensagem') d.azul++; else if(st==='cinza') d.cinza++;
             d.ultima = st; d.ts = Date.now(); d.data_hora = obterDataHora();
             baseRef.child(dna).set(d);
             
             db.ref(`bloqueados/${my_un}/${dna}`).once('value', bSnap => {
                 if(bSnap.exists()){
-                    db.ref(`bloqueados/${my_un}/${dna}`).update({ foto: foto, ultima: d.ultima, data_hora: d.data_hora, verde: d.verde, vermelho: d.vermelho, azul: d.azul, cinza: d.cinza });
+                    db.ref(`bloqueados/${my_un}/${dna}`).update({ foto: foto, ultima: d.ultima, data_hora: d.data_hora, verde: d.verde, vermelho: d.verm, azul: d.azul, cinza: d.cinza });
                 }
             });
         });
     }
+
     function renderizarDadosAbas() {
-        db.ref(`bloqueados/${my_un}`).on('value', bSnap => {
+        if(refBloqueadosAtiva) refBloqueadosAtiva.off();
+        if(refHistoricoAtiva) refHistoricoAtiva.off();
+
+        refBloqueadosAtiva = db.ref(`bloqueados/${my_un}`);
+        refHistoricoAtiva = db.ref(`historico/${my_un}`);
+
+        refBloqueadosAtiva.on('value', bSnap => {
             cacheBloqueadosGlobais = bSnap.val() || {};
             construirListaBloqueadosDireta(cacheBloqueadosGlobais);
-            db.ref(`historico/${my_un}`).once('value', snap => {
+            
+            refHistoricoAtiva.once('value', snap => {
                 const historicoItens = []; snap.forEach(item => { historicoItens.push(item.val()); });
                 historicoItens.sort((a, b) => b.ts - a.ts);
                 construirListaNormal(historicoItens, cacheBloqueadosGlobais);
             });
         });
-        db.ref(`historico/${my_un}`).on('value', snap => {
-            const historicoItens = []; snap.forEach(item => { historicoItens.push(item.val()); });
-            historicoItens.sort((a, b) => b.ts - a.ts);
-            construirListaNormal(historicoItens, cacheBloqueadosGlobais);
-        });
     }
+
     function construirListaNormal(itens, listaBloqueados) {
         const list = document.getElementById('lista-hist'); if(!list) return;
         list.innerHTML = "";
         const ativos = itens.filter(i => !listaBloqueados[i.dna_dispositivo]);
         if(ativos.length === 0) { list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum registro</p>`; document.getElementById('btn-ver-mais').style.display = "none"; return; }
         const exibidos = ativos.slice(0, limiteExibicaoHist);
-        exibidos.forEach(d => { list.innerHTML += criarCardHTML(d, false); });
+        
+        let htmlAcumulado = "";
+        exibidos.forEach(d => { htmlAcumulado += criarCardHTML(d, false); });
+        list.innerHTML = htmlAcumulado;
         document.getElementById('btn-ver-mais').style.display = ativos.length > limiteExibicaoHist ? "block" : "none";
     }
+
     function construirListaBloqueadosDireta(mapaBloqueados) {
         const list = document.getElementById('lista-bloqueados'); if(!list) return;
         list.innerHTML = "";
         const chaves = Object.keys(mapaBloqueados);
         if(chaves.length === 0) { list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum dispositivo bloqueado.</p>`; return; }
         const mapaOrdenado = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
-        mapaOrdenado.forEach(d => { list.innerHTML += criarCardHTML(d, true); });
+        
+        let htmlAcumulado = "";
+        mapaOrdenado.forEach(d => { htmlAcumulado += criarCardHTML(d, true); });
+        list.innerHTML = htmlAcumulado;
     }
+
     function criarCardHTML(d, estaBloqueado) {
         return `<div class="hist-card">
             <div class="foto-box">
                 <div class="dots-row">
                     <div class="dot" style="background:var(--neon); color:#000">${d.verde || 0}</div>
-                    <div class="dot" style="background:var(--red)">${d.vermelho || 0}</div>
+                    <div class="dot" style="background:var(--red)">${d.vermelho || d.verm || 0}</div>
                     <div class="dot" style="background:var(--blue)">${d.azul || 0}</div>
                     <div class="dot" style="background:var(--gray)">${d.cinza || 0}</div>
                 </div>
@@ -705,6 +750,7 @@
         </div>`;
     }
     function expandirHistorico() { limiteExibicaoHist = Math.min(limiteExibicaoHist + 5, 30); renderizarDadosAbas(); }
+    
     function alternarVisaoListas() {
         vendoBloqueados = !vendoBloqueados;
         const txtTitulo = document.getElementById('titulo-secao-atual'), btnToggle = document.getElementById('btn-toggle-bloqueados'), btnLimpar = document.getElementById('btn-limpar-tudo');
@@ -724,7 +770,7 @@
             else {
                 db.ref(`historico/${my_un}/${dna}`).once('value', hSnap => {
                     const dadosHist = hSnap.val() || {};
-                    ref.set({ dna_dispositivo: dna, ts: Date.now(), data_hora: obterDataHora(), foto: dadosHist.foto || "", ultima: dadosHist.ultima || "recusado", verde: dadosHist.verde || 0, vermelho: dadosHist.vermelho || 0, azul: dadosHist.azul || 0, cinza: dadosHist.cinza || 0 });
+                    ref.set({ dna_dispositivo: dna, ts: Date.now(), data_hora: obterDataHora(), foto: dadosHist.foto || "", ultima: dadosHist.ultima || "recusado", verde: dadosHist.verde || 0, vermelho: dadosHist.vermelho || dadosHist.verm || 0, azul: dadosHist.azul || 0, cinza: dadosHist.cinza || 0 });
                 });
             }
         });
@@ -744,11 +790,12 @@
             if(video) video.style.display = "block"; 
             if(canvas) canvas.style.display = "none"; 
             
-            // Atraso estratégico para o Android renderizar o contêiner do vídeo antes de chamá-lo
-            setTimeout(inicializarCapturaVideo, 300); 
+            setTimeout(inicializarCapturaVideo, 150); 
         } else {
             if(streamCameraAtiva) { 
-                try { streamCameraAtiva.getTracks().forEach(t => t.stop()); } catch(e){}
+                try {
+                    streamCameraAtiva.getTracks().forEach(t => { t.stop(); t.enabled = false; });
+                } catch(e){}
                 streamCameraAtiva = null; 
             }
         }
@@ -776,7 +823,6 @@
             try { somInterfoneLocal.pause(); somInterfoneLocal.currentTime = 0; } catch(e){}
             somInterfoneLocal = null;
         }
-        
         if(acao === 'stop') { 
             if(loopVibracaoInterval) { clearInterval(loopVibracaoInterval); loopVibracaoInterval = null; }
             if (navigator.vibrate) navigator.vibrate(0); 
@@ -784,23 +830,19 @@
             document.title = "VIRTY MORADOR v2.0.1 - Nativo APK";
             return; 
         }
-        
         if(somSilenciadoPorInteracao) return;
-        
         if(modoAlerta === 2 || modoAlerta === 3) {
             if(loopVibracaoInterval) clearInterval(loopVibracaoInterval);
             const dispararPulso = () => { if (navigator.vibrate) navigator.vibrate([600, 400]); };
             dispararPulso();
             loopVibracaoInterval = setInterval(dispararPulso, 1500);
         }
-        
         if(modoAlerta !== 3) {
             const arquivoFinal = arquivoSomOpcional || obterNomeSomFormatado(somAtual);
             somInterfoneLocal = new Audio(`sound/${arquivoFinal}`);
             somInterfoneLocal.loop = true; 
-            somInterfoneLocal.play().catch(erro => console.log("Autoplay retido."));
+            somInterfoneLocal.play().catch(() => {});
         }
-
         if (!piscaTituloInterval) {
             let alternar = false;
             piscaTituloInterval = setInterval(() => {
