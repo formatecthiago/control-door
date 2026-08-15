@@ -233,6 +233,7 @@
     let timePressStart = 0;
     
     let somInterfoneLocal = null;
+    let somTocandoAtualmente = false; 
     let loopVibracaoInterval = null; 
     let piscaTituloInterval = null;
     let somAtual = parseInt(localStorage.getItem('virty_som')) || 0; 
@@ -246,11 +247,11 @@
     let cacheBloqueadosGlobais = {};
     let my_fingerprint = "";
 
-    // Proteções estruturais contra ouvintes duplicados
     let refStatusAtiva = null;
     let refChamadasAtiva = null;
     let refBloqueadosAtiva = null;
     let refHistoricoAtiva = null;
+    let escutaChamadasIniciada = false;
 
     async function inicializarPushNotificacoesNativas() {
         if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
@@ -261,6 +262,13 @@
             }
             if (permStatus.receive === 'granted') {
                 await PushNotifications.register();
+                
+                PushNotifications.addListener('registration', (token) => {
+                    if (my_un && token && token.value) {
+                        db.ref('moradores_validados/' + my_un).update({ fcm_token: token.value });
+                    }
+                });
+
                 if (window.Capacitor.platform === 'android') {
                     try {
                         await PushNotifications.createChannel({
@@ -331,7 +339,10 @@
             if(s.exists()) {
                 mudarTela('s-home');
                 document.getElementById('txt-un').innerText = "CASA " + my_un;
-                escutarChamadas();
+                if (!escutaChamadasIniciada) {
+                    escutarChamadas();
+                    escutaChamadasIniciada = true;
+                }
                 renderizarDadosAbas();
             } else {
                 db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).once('value', snap => {
@@ -388,12 +399,10 @@
         inicializarCapturaVideo();
     }
 
-    // CORREÇÃO CRÍTICA SOLICITADA PARA O APK
     function fotoCad() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
         if(!v || !v.videoWidth) return;
         
-        // Redimensiona inteligentemente a captura para no máximo 480px, prevenindo Base64 gigante na RAM
         const maxMedida = 480; 
         let larguraAlvo = v.videoWidth;
         let alturaAlvo = v.videoHeight;
@@ -420,13 +429,11 @@
         ctx.drawImage(v, 0, 0, larguraAlvo, alturaAlvo);
         ctx.setTransform(1,0,0,1,0,0);
         
-        // Compacta para JPEG com 50% de peso, reduzindo drasticamente o tráfego e uso de memória
         my_foto = c.toDataURL('image/jpeg', 0.5); 
         
         c.style.display = "block"; 
         v.style.display = "none";
         
-        // Libera imediatamente o hardware da câmera para o Android focar o processamento nos botões
         if(v.srcObject) { 
             try {
                 v.srcObject.getTracks().forEach(track => {
@@ -447,7 +454,6 @@
               
         if(!my_foto || !un || !cpf || !nome) return;
         
-        // Desabilita o botão para evitar cliques duplicados lentos no WebView do APK
         if(btnFinalizar) btnFinalizar.disabled = true;
         
         db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
@@ -667,7 +673,7 @@
             if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
                 let maisAntigoChave = null; let menorTs = Infinity;
                 snapshot.forEach(filho => {
-                    let dadosFilho = child = filho.val();
+                    let dadosFilho = filho.val();
                     if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
                 });
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
@@ -819,30 +825,37 @@
     function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); btn.innerText = modoAlerta === 1 ? "🔊" : modoAlerta === 2 ? "📳🔊" : "📳"; }
     
     function gerenciarAlerta(acao, arquivoSomOpcional) {
-        if(somInterfoneLocal) {
-            try { somInterfoneLocal.pause(); somInterfoneLocal.currentTime = 0; } catch(e){}
-            somInterfoneLocal = null;
-        }
         if(acao === 'stop') { 
+            if(somInterfoneLocal) {
+                try { somInterfoneLocal.pause(); somInterfoneLocal.currentTime = 0; } catch(e){}
+                somInterfoneLocal = null;
+            }
+            somTocandoAtualmente = false;
             if(loopVibracaoInterval) { clearInterval(loopVibracaoInterval); loopVibracaoInterval = null; }
             if (navigator.vibrate) navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
             document.title = "VIRTY MORADOR v2.0.1 - Nativo APK";
             return; 
         }
+
         if(somSilenciadoPorInteracao) return;
+
         if(modoAlerta === 2 || modoAlerta === 3) {
-            if(loopVibracaoInterval) clearInterval(loopVibracaoInterval);
-            const dispararPulso = () => { if (navigator.vibrate) navigator.vibrate([600, 400]); };
-            dispararPulso();
-            loopVibracaoInterval = setInterval(dispararPulso, 1500);
+            if(!loopVibracaoInterval) {
+                const dispararPulso = () => { if (navigator.vibrate) navigator.vibrate([600, 400]); };
+                dispararPulso();
+                loopVibracaoInterval = setInterval(dispararPulso, 1500);
+            }
         }
-        if(modoAlerta !== 3) {
+
+        if(modoAlerta !== 3 && !somTocandoAtualmente) {
             const arquivoFinal = arquivoSomOpcional || obterNomeSomFormatado(somAtual);
             somInterfoneLocal = new Audio(`sound/${arquivoFinal}`);
             somInterfoneLocal.loop = true; 
-            somInterfoneLocal.play().catch(() => {});
+            somTocandoAtualmente = true;
+            somInterfoneLocal.play().catch(() => { somTocandoAtualmente = false; });
         }
+
         if (!piscaTituloInterval) {
             let alternar = false;
             piscaTituloInterval = setInterval(() => {
