@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIRTY VISITANTE v2.6.3 - Solução Definitiva</title>
+    <!-- MediaPipe Face Detection Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -134,12 +136,13 @@
             transition: all 0.3s ease;
         }
 
-        .btn:disabled {
+        .btn:disabled, .btn[disabled] {
             background: #222 !important;
             color: #666 !important;
             cursor: not-allowed !important;
             box-shadow: none !important;
-            border: 1px solid #333 !important;
+            opacity: 0.6;
+            border: 1px solid #333;
         }
 
         .btn-perigo {
@@ -155,41 +158,44 @@
             gap: 15px; 
             width: 100%; 
         }
-
         .video-box { 
-            width: 250px; 
-            height: 310px; 
-            border-radius: 20px; 
+            width: 240px; 
+            height: 240px; 
+            border-radius: 50%; 
             overflow: hidden; 
-            border: 2px solid #222; 
+            border: 3px solid #222; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.8); 
             background:#111; 
             position:relative; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
-
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
-
-        /* Guia Oval de Reconhecimento Facial */
-        .oval-guia {
+        
+        .mascara-oval-svg {
             position: absolute;
-            width: 170px;
-            height: 230px;
-            border-radius: 50%;
-            border: 4px dashed var(--red);
-            box-shadow: 0 0 20px rgba(255, 49, 49, 0.4);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease, border-style 0.3s ease;
             z-index: 10;
         }
 
-        .oval-guia.valido {
-            border: 4px solid var(--neon);
-            box-shadow: 0 0 30px rgba(57, 255, 20, 0.8);
+        #path-oval-guia {
+            fill: none;
+            stroke: var(--red);
+            stroke-width: 3.5;
+            stroke-dasharray: 6,4;
+            transition: all 0.2s ease-in-out;
+            filter: drop-shadow(0px 0px 6px var(--red));
         }
-        
+
+        #path-oval-guia.valido {
+            stroke: var(--neon);
+            stroke-dasharray: none;
+            filter: drop-shadow(0px 0px 10px var(--neon));
+        }
+
         .btn-inverter { 
             background: #111; 
             border: 2px solid var(--neon); 
@@ -276,7 +282,7 @@
     <div id="s-camera" class="screen">
         <div class="virty-header">
             <h2 class="texto-neon-verde" style="font-size: 1.6rem; margin: 0;">RECONHECIMENTO VISUAL</h2>
-            <div style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">TIRE UMA FOTO PARA SE IDENTIFICAR</div>
+            <div style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">ENCAIXE SEU ROSTO NO ESPAÇO INDICADO</div>
         </div>
         <div class="conteudo-central">
             <div class="area-camera-virty">
@@ -284,16 +290,18 @@
                 <div class="video-box">
                     <video id="v-vis" autoplay playsinline muted></video>
                     <canvas id="c-vis"></canvas>
-                    <div id="oval-guia" class="oval-guia"></div>
+                    <svg class="mascara-oval-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <ellipse id="path-oval-guia" cx="50" cy="50" rx="35" ry="44" />
+                    </svg>
                 </div>
                 <button class="btn-inverter" onclick="alternarLenteCamera()">
                     <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
                 </button>
             </div>
-            <div id="status-foto" style="font-size:0.95rem; font-weight:bold; height:24px; color:var(--red);">POSICIONE O ROSTO NO OVAL</div>
+            <div id="status-foto" style="color:var(--red); font-size:0.95rem; font-weight:bold; height:24px; text-transform: uppercase;">POSICIONE O ROSTO NO OVAL</div>
         </div>
         <div class="rodape-tela">
-            <button id="btn-bater-selfie" class="btn" style="background:var(--neon); color:#000; margin-bottom: 12px;" onclick="capturarSelfieAutomatica()" disabled>📸 BATER A SELFIE</button>
+            <button id="btn-bater-selfie" class="btn" style="background:#fff; color:#000; margin-bottom: 12px;" disabled onclick="capturarSelfieAutomatica()">📸 BATER A SELFIE</button>
         </div>
     </div>
 
@@ -341,14 +349,8 @@
         </div>
     </div>
 
-<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-<!-- MediaPipe SDKs para Detecção Facial -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
-
 <script>
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
@@ -364,9 +366,91 @@
     let cacheAudioUrl = ""; 
     let audioBoasVindasExecutado = false;
 
-    // Variáveis do leitor facial
-    let detectorFacial = null;
-    let processandoLoopRosto = false;
+    // Variáveis de Validação Facial em Tempo Real
+    let meDetector = null;
+    let animFrameId = null;
+    let rostoEncaixadoValido = false;
+
+    function inicializarDetectorFacial() {
+        if (typeof FaceDetection !== 'undefined' && !meDetector) {
+            meDetector = new FaceDetection({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
+            });
+            meDetector.setOptions({
+                modelSelection: 0,
+                minDetectionConfidence: 0.55
+            });
+            meDetector.onResults(processarResultadosRosto);
+        }
+    }
+
+    async function loopProcessamentoFrame() {
+        const video = document.getElementById('v-vis');
+        if (video && video.readyState >= 2 && meDetector) {
+            try {
+                await meDetector.send({ image: video });
+            } catch (err) {
+                console.log("Erro processando frame:", err);
+            }
+        }
+        if (streamCameraAtiva) {
+            animFrameId = requestAnimationFrame(loopProcessamentoFrame);
+        }
+    }
+
+    function processarResultadosRosto(results) {
+        const ovalPath = document.getElementById('path-oval-guia');
+        const btnSelfie = document.getElementById('btn-bater-selfie');
+        const txtStatus = document.getElementById('status-foto');
+
+        if (results.detections && results.detections.length > 0) {
+            const bbox = results.detections[0].boundingBox;
+            
+            // bbox contém valores normalizados (0.0 a 1.0)
+            const xCentro = bbox.xCenter;
+            const yCentro = bbox.yCenter;
+            const largura = bbox.width;
+            const altura = bbox.height;
+
+            // Tolerância para centralização e tamanho dentro do formato oval
+            const centralizado = Math.abs(xCentro - 0.5) < 0.12 && Math.abs(yCentro - 0.48) < 0.14;
+            const tamanhoAdequado = largura >= 0.28 && largura <= 0.65 && altura >= 0.32 && altura <= 0.75;
+
+            if (centralizado && tamanhoAdequado) {
+                rostoEncaixadoValido = true;
+                ovalPath.classList.add('valido');
+                txtStatus.innerText = "✓ ROSTO ALINHADO! PODE APERTAR";
+                txtStatus.style.color = "var(--neon)";
+                
+                btnSelfie.disabled = false;
+                btnSelfie.style.background = "var(--neon)";
+                btnSelfie.style.color = "#000";
+            } else {
+                rostoEncaixadoValido = false;
+                ovalPath.classList.remove('valido');
+                btnSelfie.disabled = true;
+                btnSelfie.style.background = "#fff";
+                btnSelfie.style.color = "#000";
+                
+                if (!centralizado) {
+                    txtStatus.innerText = "CENTRALIZE SEU ROSTO NO OVAL";
+                } else if (largura < 0.28) {
+                    txtStatus.innerText = "APROXIME MAIS O ROSTO";
+                } else {
+                    txtStatus.innerText = "AFASTE UM POUCO O ROSTO";
+                }
+                txtStatus.style.color = "var(--red)";
+            }
+        } else {
+            rostoEncaixadoValido = false;
+            ovalPath.classList.remove('valido');
+            btnSelfie.disabled = true;
+            btnSelfie.style.background = "#fff";
+            btnSelfie.style.color = "#000";
+            txtStatus.innerText = "POSICIONE O ROSTO NO OVAL";
+            txtStatus.style.color = "var(--red)";
+        }
+    }
 
     function executarBoasVindasVoz() {
         if ('speechSynthesis' in window) {
@@ -403,6 +487,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+        inicializarDetectorFacial();
         executarBoasVindasVoz();
         const desbloquearAudioTouch = () => {
             if (!audioBoasVindasExecutado) {
@@ -414,8 +499,6 @@
         };
         document.addEventListener('touchstart', desbloquearAudioTouch, { once: true });
         document.addEventListener('click', desbloquearAudioTouch, { once: true });
-        
-        inicializarDetectorFacial();
     });
 
     function gerarFingerprintDispositivo() {
@@ -439,21 +522,10 @@
         inicializarCapturaVideo();
     }
 
-    function inicializarDetectorFacial() {
-        if (typeof FaceDetection !== 'undefined') {
-            detectorFacial = new FaceDetection({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
-            });
-            detectorFacial.setOptions({
-                modelSelection: 0,
-                minDetectionConfidence: 0.65
-            });
-            detectorFacial.onResults(validarPosicaoRosto);
-        }
-    }
-
     function inicializarCapturaVideo() {
+        if(animFrameId) cancelAnimationFrame(animFrameId);
         if(streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); }
+        
         const constraints = { video: { facingMode: { ideal: usarLenteFrontal ? "user" : "environment" } } };
         
         navigator.mediaDevices.getUserMedia(constraints).then(s => {
@@ -462,54 +534,14 @@
             video.srcObject = s;
             video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
             
-            processandoLoopRosto = true;
-            loopAnaliseRosto();
+            video.onloadedmetadata = () => {
+                inicializarDetectorFacial();
+                loopProcessamentoFrame();
+            };
         }).catch(e => {
             console.log("Erro câmera:", e);
             virtyAlert("Câmera indisponível ou permissão negada.");
         });
-    }
-
-    async function loopAnaliseRosto() {
-        const video = document.getElementById('v-vis');
-        if (processandoLoopRosto && streamCameraAtiva && video.readyState >= 2 && detectorFacial) {
-            await detectorFacial.send({ image: video });
-        }
-        if (processandoLoopRosto && streamCameraAtiva) {
-            requestAnimationFrame(loopAnaliseRosto);
-        }
-    }
-
-    function validarPosicaoRosto(results) {
-        const oval = document.getElementById('oval-guia');
-        const btnSelfie = document.getElementById('btn-bater-selfie');
-        const statusTexto = document.getElementById('status-foto');
-
-        if (results.detections && results.detections.length > 0) {
-            const bbox = results.detections[0].locationData.relativeBoundingBox;
-            
-            // Calculando o centro e tamanho relativo do rosto detectado (0.0 a 1.0)
-            const centroX = bbox.xmin + (bbox.width / 2);
-            const centroY = bbox.ymin + (bbox.height / 2);
-
-            // Regras de validação do alinhamento do rosto
-            const estaCentralizado = (centroX >= 0.35 && centroX <= 0.65) && (centroY >= 0.30 && centroY <= 0.70);
-            const tamanhoIdeal = (bbox.width >= 0.25 && bbox.width <= 0.65);
-
-            if (estaCentralizado && tamanhoIdeal) {
-                oval.classList.add('valido');
-                btnSelfie.disabled = false;
-                statusTexto.innerText = "✓ ROSTO ENCAIXADO! PODE BATER A FOTO";
-                statusTexto.style.color = "var(--neon)";
-                return;
-            }
-        }
-
-        // Caso o rosto não esteja detectado ou desalinhado
-        oval.classList.remove('valido');
-        btnSelfie.disabled = true;
-        statusTexto.innerText = "POSICIONE O ROSTO DENTRO DO OVAL";
-        statusTexto.style.color = "var(--red)";
     }
 
     function alternarLenteCamera() {
@@ -518,7 +550,10 @@
     }
 
     function capturarSelfieAutomatica() {
-        processandoLoopRosto = false;
+        if(!rostoEncaixadoValido) return;
+
+        if(animFrameId) cancelAnimationFrame(animFrameId);
+        
         const v = document.getElementById('v-vis'), c = document.getElementById('c-vis');
         if(!v.videoWidth) return virtyAlert("Aguarde o feed da câmera carregar.");
         
@@ -536,7 +571,6 @@
         visitanteFotoBase64 = c.toDataURL('image/jpeg', 0.5);
         c.style.display = "block"; 
         v.style.display = "none";
-        document.getElementById('oval-guia').style.display = "none";
         
         if(v.srcObject) { v.srcObject.getTracks().forEach(track => track.stop()); streamCameraAtiva = null; }
 
@@ -558,9 +592,7 @@
             document.getElementById('btn-bater-selfie').style.display = "block";
             document.getElementById('c-vis').style.display = "none";
             document.getElementById('v-vis').style.display = "block";
-            document.getElementById('oval-guia').style.display = "block";
-            document.getElementById('status-foto').innerText = "POSICIONE O ROSTO DENTRO DO OVAL";
-            document.getElementById('status-foto').style.color = "var(--red)";
+            document.getElementById('status-foto').innerText = "";
             avancarParaCamera();
             return;
         }
@@ -739,9 +771,8 @@
 
     function resetarFluxoVisitante() {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        if(animFrameId) cancelAnimationFrame(animFrameId);
         clearInterval(timerRegressivoInterval);
-        processandoLoopRosto = false;
-        
         if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
         
         if(streamCameraAtiva) {
@@ -752,19 +783,17 @@
         usarLenteFrontal = true;
         visitanteFotoBase64 = "";
         cacheAudioUrl = "";
+        rostoEncaixadoValido = false;
+        
         document.getElementById('v-un').value = "";
         document.getElementById('v-texto').value = "";
         
         document.getElementById('c-vis').style.display = "none";
         document.getElementById('v-vis').style.display = "block";
-        document.getElementById('oval-guia').style.display = "block";
-        document.getElementById('oval-guia').classList.remove('valido');
-        
-        const btnSelfie = document.getElementById('btn-bater-selfie');
-        btnSelfie.style.display = "block";
-        btnSelfie.disabled = true;
-        
-        document.getElementById('status-foto').innerText = "POSICIONE O ROSTO DENTRO DO OVAL";
+        document.getElementById('btn-bater-selfie').style.display = "block";
+        document.getElementById('btn-bater-selfie').disabled = true;
+        document.getElementById('path-oval-guia').classList.remove('valido');
+        document.getElementById('status-foto').innerText = "POSICIONE O ROSTO NO OVAL";
         document.getElementById('status-foto').style.color = "var(--red)";
         
         document.getElementById('virty-status-tempo-real').innerText = "";
