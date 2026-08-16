@@ -329,7 +329,7 @@
     function executarBoasVindasVoz() {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
-            const texto = "Seja bem-vindo e inicie o seu acesso agora clicando em aceitar e iniciar.";
+            const texto = "Seja bem-vindo clique em aceitar e iniciar.";
             const ut = new SpeechSynthesisUtterance(texto);
             ut.lang = 'pt-BR';
             ut.rate = 0.95;
