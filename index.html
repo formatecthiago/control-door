@@ -157,7 +157,7 @@
             position:relative; 
         }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; transform: scaleX(-1); }
+        .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
         
         .btn-inverter { 
             background: #111; 
@@ -305,7 +305,7 @@
             </div>
         </div>
         <div class="rodape-tela">
-            <button id="btn-voltar-feedback" class="btn" style="background: #222; color:#fff;" onclick="resetarFluxoVisitante()">VOLTAR PARA O INÍCIO</button>
+            <button id="btn-voltar-feedback" class="btn" style="background: #222; color: #fff;" onclick="resetarFluxoVisitante()">VOLTAR PARA O INÍCIO</button>
         </div>
     </div>
 
@@ -326,51 +326,53 @@
     let cacheAudioUrl = ""; 
     let audioBoasVindasExecutado = false;
 
-    // SÍNTESE DE VOZ MASCULINA - BOAS-VINDAS
-    function falarBoasVindas() {
-        if (!('speechSynthesis' in window)) return;
-        window.speechSynthesis.cancel();
+    function executarBoasVindasVoz() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const texto = "Seja bem-vindo e inicie o seu acesso agora clicando em aceitar e iniciar.";
+            const ut = new SpeechSynthesisUtterance(texto);
+            ut.lang = 'pt-BR';
+            ut.rate = 0.95;
+            ut.pitch = 0.85;
 
-        const texto = "Seja bem-vindo e inicie o seu acesso agora clicando em aceitar e iniciar";
-        const utterance = new SpeechSynthesisUtterance(texto);
-        utterance.lang = "pt-BR";
-        utterance.rate = 0.95; // Velocidade natural
-        utterance.pitch = 0.85; // Tom mais grave para sonoridade masculina
+            const definirVoz = () => {
+                const voces = window.speechSynthesis.getVoices();
+                const vozMasculina = voces.find(v => 
+                    v.lang.includes('pt') && (
+                        v.name.toLowerCase().includes('male') || 
+                        v.name.toLowerCase().includes('daniel') || 
+                        v.name.toLowerCase().includes('helio') || 
+                        v.name.toLowerCase().includes('ricardo') ||
+                        v.name.toLowerCase().includes('luciano') ||
+                        v.name.toLowerCase().includes('google')
+                    )
+                ) || voces.find(v => v.lang.includes('pt'));
 
-        function carregarEVoz() {
-            const voces = window.speechSynthesis.getVoices();
-            // Busca priorizada por voz masculina em português
-            const vozMasculina = voces.find(v => 
-                v.lang.includes("pt") && (
-                    v.name.toLowerCase().includes("male") ||
-                    v.name.toLowerCase().includes("ricardo") ||
-                    v.name.toLowerCase().includes("daniel") ||
-                    v.name.toLowerCase().includes("natural") ||
-                    v.name.toLowerCase().includes("google")
-                )
-            ) || voces.find(v => v.lang.includes("pt"));
+                if (vozMasculina) ut.voice = vozMasculina;
+                window.speechSynthesis.speak(ut);
+            };
 
-            if (vozMasculina) utterance.voice = vozMasculina;
-            window.speechSynthesis.speak(utterance);
-        }
-
-        if (window.speechSynthesis.getVoices().length !== 0) {
-            carregarEVoz();
-        } else {
-            window.speechSynthesis.onvoiceschanged = carregarEVoz;
+            if (window.speechSynthesis.getVoices().length > 0) {
+                definirVoz();
+            } else {
+                window.speechSynthesis.onvoiceschanged = definirVoz;
+            }
         }
     }
 
-    function dispararVozInicial() {
-        if (audioBoasVindasExecutado) return;
-        audioBoasVindasExecutado = true;
-        falarBoasVindas();
-    }
-
-    // Gatilhos para contornar bloqueios de áudio dos navegadores
-    window.addEventListener('load', () => setTimeout(dispararVozInicial, 400));
-    document.addEventListener('click', dispararVozInicial, { once: true });
-    document.addEventListener('touchstart', dispararVozInicial, { once: true });
+    window.addEventListener('DOMContentLoaded', () => {
+        executarBoasVindasVoz();
+        const desbloquearAudioTouch = () => {
+            if (!audioBoasVindasExecutado) {
+                executarBoasVindasVoz();
+                audioBoasVindasExecutado = true;
+            }
+            document.removeEventListener('touchstart', desbloquearAudioTouch);
+            document.removeEventListener('click', desbloquearAudioTouch);
+        };
+        document.addEventListener('touchstart', desbloquearAudioTouch, { once: true });
+        document.addEventListener('click', desbloquearAudioTouch, { once: true });
+    });
 
     function gerarFingerprintDispositivo() {
         const componentesHardware = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language, navigator.maxTouchPoints || 0, new Date().getTimezoneOffset()];
@@ -419,9 +421,14 @@
         
         c.width = v.videoWidth; c.height = v.videoHeight;
         const ctx = c.getContext('2d');
-        if(usarLenteFrontal) { ctx.translate(c.width, 0); ctx.scale(-1, 1); }
-        ctx.drawImage(v, 0, 0);
-        ctx.setTransform(1,0,0,1,0,0);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        
+        if(usarLenteFrontal) { 
+            ctx.translate(c.width, 0); 
+            ctx.scale(-1, 1); 
+        }
+        
+        ctx.drawImage(v, 0, 0, c.width, c.height);
         
         visitanteFotoBase64 = c.toDataURL('image/jpeg', 0.5);
         c.style.display = "block"; 
@@ -624,9 +631,9 @@
     }
 
     function resetarFluxoVisitante() {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         clearInterval(timerRegressivoInterval);
         if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
-        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         
         if(streamCameraAtiva) {
             streamCameraAtiva.getTracks().forEach(t => t.stop());
@@ -636,8 +643,6 @@
         usarLenteFrontal = true;
         visitanteFotoBase64 = "";
         cacheAudioUrl = "";
-        audioBoasVindasExecutado = false;
-        
         document.getElementById('v-un').value = "";
         document.getElementById('v-texto').value = "";
         
@@ -649,8 +654,9 @@
         document.getElementById('virty-status-tempo-real').innerText = "";
         document.getElementById('virty-status-tempo-real').className = "";
         
+        audioBoasVindasExecutado = false;
         mudarTela('s-boasvindas');
-        setTimeout(dispararVozInicial, 300);
+        executarBoasVindasVoz();
     }
 
     function mudarTela(id) {
