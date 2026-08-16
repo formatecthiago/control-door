@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0.1 - Nativo APK</title>
+    <title>VIRTY MORADOR v2.0.2 - Nativo APK</title>
     
     <meta name="theme-color" content="#39FF14">
 
@@ -17,11 +17,14 @@
             --yellow: #FFD700;
             --dark-card: #0d0d0d;
         }
-        *, *::before, *::after { box-sizing: border-box; }
+        *, *::before, *::after { 
+            box-sizing: border-box; 
+            touch-action: manipulation; /* Elimina o delay de 300ms do toque no Android */
+        }
         body {
             background: var(--bg);
             color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
             overflow-x: hidden;
@@ -30,7 +33,7 @@
         }
  
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
-        .active { display: flex; }
+        .active { display: flex !important; }
         
         input {
             width: 100%;
@@ -41,6 +44,7 @@
             background: #111;
             color: #fff;
             font-size: 1.1rem;
+            -webkit-appearance: none;
         }
         input:focus { border-color: var(--neon); outline: none; }
         
@@ -58,11 +62,7 @@
             align-items: center;
             justify-content: center;
         }
-        .btn:disabled {
-            background: #333 !important;
-            color: #666 !important;
-            cursor: not-allowed;
-        }
+        .btn:disabled { background: #333 !important; color: #666 !important; cursor: not-allowed; }
         
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; margin-bottom: 20px; }
         .controles-alerta { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
@@ -76,17 +76,17 @@
         .dot { width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; box-shadow: 0 2px 4px #000; }
         
         .switch-bloqueio { padding: 8px 14px; border-radius: 20px; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; text-transform: uppercase; }
-        .status-bloqueado { background: var(--red); color: #fff; box-shadow: 0 0 10px var(--red); }
+        .status-bloqueado { background: var(--red); color: #fff; }
         .status-desbloqueado { background: var(--neon); color: #000; }
         
         .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; margin-bottom: 10px; font-weight: bold; font-size: 0.85rem; }
         .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
-        .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 15px; box-shadow: 0 0 25px rgba(57,255,20,0.3); }
-        #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; text-shadow: 0 0 10px var(--red); }
+        .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 15px; }
+        #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; }
         
         #container-digitar-texto { display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        #timer-flutuante-texto { font-size: 3.5rem; color: #fff; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px var(--blue); }
+        #timer-flutuante-texto { font-size: 3.5rem; color: #fff; font-weight: bold; margin-bottom: 20px; }
         #popup-voz { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
         .canvas-circular { transform: rotate(-90deg); width: 200px; height: 200px; }
         .circle-bg { fill: none; stroke: #222; stroke-width: 12; }
@@ -96,12 +96,10 @@
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
         .btn-voz svg { width: 32px; height: 32px; fill: #000; }
         
-        .area-camera-virty { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px 0 25px; width: 100%; }
-        .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); box-shadow: 0 0 15px rgba(57,255,20,0.3); background:#111; position:relative; }
+        .area-camera-virty { display: flex; align-items: center; justify-content: center; margin: 15px 0 25px; width: 100%; }
+        .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; position:relative; will-change: transform; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; transform: scaleX(-1); }
-        .btn-inverter { background: #111; border: 2px solid var(--neon); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 10px rgba(57,255,20,0.2); }
-        .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
+        .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
         .leaving-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
     </style>
@@ -109,12 +107,11 @@
 <body>
 
     <div id="banner-permissoes" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; box-sizing: border-box; text-align: center;">
-        <div style="border: 2px solid var(--neon); box-shadow: 0 0 20px var(--neon); padding: 40px 20px; border-radius: 15px; background: #0a0a0a; max-width: 400px; width: 100%;">
+        <div style="border: 2px solid var(--neon); padding: 40px 20px; border-radius: 15px; background: #0a0a0a; max-width: 400px; width: 100%;">
             <span style="font-size: 50px;">⚠️</span>
-            <h1 style="color: var(--neon); font-family: sans-serif; font-size: 26px; margin-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Acesso Bloqueado</h1>
-            <p style="color: #ffffff; font-family: sans-serif; font-size: 18px; line-height: 1.6; margin: 25px 0;">O interfone <b>NÃO VAI FUNCIONAR</b> se você usar permissões temporárias.</p>
-            <p style="color: #a0a0a0; font-family: sans-serif; font-size: 14px; margin-bottom: 30px;">Ative a permissão permanente para garantir o recebimento de chamadas e uso do hardware.</p>
-            <button id="btn-autorizar-sempre" style="background: var(--neon); color: #000000; border: none; padding: 16px 30px; font-size: 16px; font-weight: bold; border-radius: 30px; width: 100%; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 15px rgba(57,255,20,0.4);">
+            <h1 style="color: var(--neon); font-family: sans-serif; font-size: 26px; margin-top: 20px; font-weight: bold; text-transform: uppercase;">Acesso Bloqueado</h1>
+            <p style="color: #ffffff; font-family: sans-serif; font-size: 18px; line-height: 1.6; margin: 25px 0;">Ative a permissão permanente de câmera para habilitar o aplicativo.</p>
+            <button id="btn-autorizar-sempre" style="background: var(--neon); color: #000000; border: none; padding: 16px 30px; font-size: 16px; font-weight: bold; border-radius: 30px; width: 100%; cursor: pointer; text-transform: uppercase;">
                 Configurar Agora
             </button>
         </div>
@@ -123,14 +120,10 @@
     <div id="s-cadastro" class="screen">
         <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
         <div class="area-camera-virty">
-            <div style="width:50px;"></div>
             <div class="video-box">
                 <video id="v-cad" autoplay playsinline muted></video>
                 <canvas id="c-cad"></canvas>
             </div>
-            <button class="btn-inverter" onclick="alternarLenteCamera()">
-                <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
-            </button>
         </div>
         <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR SELFIE</button>
         <input type="text" id="c-nome" placeholder="Nome Completo">
@@ -142,7 +135,7 @@
     <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
         <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
         <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
-        <p style="color:#aaa; font-size:1.1rem; max-width:300px; line-height:1.5;">Olá! Os seus dados foram enviados para a administração do condomínio. Aguarde a liberação do seu acesso doméstico.</p>
+        <p style="color:#aaa; font-size:1.1rem; max-width:300px; line-height:1.5;">Olá! Os seus dados foram enviados para a administração. Aguarde a liberação do seu acesso.</p>
         <div style="margin-top:40px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
         <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
     </div>
@@ -151,7 +144,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.1</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.2</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -240,7 +233,6 @@
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
     
     let streamCameraAtiva = null;
-    let usarLenteFrontal = true;
     let micStreamGlobal = null;
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
@@ -283,12 +275,8 @@
                     } catch (e) { console.error(e); }
                 }
             }
-            PushNotifications.addListener('pushNotificationReceived', (notification) => {
-                if (my_un) verificarStatus();
-            });
-            PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-                if (my_un) verificarStatus();
-            });
+            PushNotifications.addListener('pushNotificationReceived', () => { if (my_un) verificarStatus(); });
+            PushNotifications.addListener('pushNotificationActionPerformed', () => { if (my_un) verificarStatus(); });
         }
     }
 
@@ -331,7 +319,6 @@
 
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
-        
         if(refStatusAtiva) refStatusAtiva.off();
         
         refStatusAtiva = db.ref('moradores_validados/' + my_un);
@@ -359,91 +346,59 @@
         return `sound${String(indexSom + 1).padStart(2, '0')}.mp3`;
     }
 
-    function inicializarCapturaVideo() {
+    function encerrarStreamCamera() {
         if (streamCameraAtiva) {
             try {
-                streamCameraAtiva.getTracks().forEach(track => {
-                    track.stop();
-                    track.enabled = false;
-                });
+                streamCameraAtiva.getTracks().forEach(track => track.stop());
             } catch(e){}
             streamCameraAtiva = null;
         }
+    }
+
+    function inicializarCapturaVideo() {
+        encerrarStreamCamera();
 
         const video = document.getElementById('v-cad');
         if (!video) return;
 
-        const constraints = { 
+        navigator.mediaDevices.getUserMedia({ 
             video: { 
-                facingMode: usarLenteFrontal ? "user" : "environment",
+                facingMode: "user",
                 width: { ideal: 480 },
                 height: { ideal: 360 }
             } 
-        };
-
-        navigator.mediaDevices.getUserMedia(constraints)
-            .then(stream => {
-                streamCameraAtiva = stream;
-                video.srcObject = stream;
-                video.setAttribute('playsinline', 'true');
-                video.setAttribute('muted', 'true');
-                video.autoplay = true;
-                video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "scaleX(1)";
+        }).then(stream => {
+            streamCameraAtiva = stream;
+            video.srcObject = stream;
+            video.setAttribute('playsinline', 'true');
+            video.style.transform = "scaleX(-1)"; // Mantém prévia espelhada para o enquadramento
+            
+            video.onloadedmetadata = () => {
                 video.play().catch(() => {});
-            })
-            .catch(err => { console.error(err); });
-    }
-
-    function alternarLenteCamera() {
-        usarLenteFrontal = !usarLenteFrontal;
-        inicializarCapturaVideo();
+            };
+        }).catch(err => { console.error("Erro camera:", err); });
     }
 
     function fotoCad() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
-        if(!v || !v.videoWidth) return;
+        if(!v) return;
         
-        const maxMedida = 480; 
-        let larguraAlvo = v.videoWidth;
-        let alturaAlvo = v.videoHeight;
+        const larguraReal = v.videoWidth > 0 ? v.videoWidth : 480;
+        const alturaReal = v.videoHeight > 0 ? v.videoHeight : 360;
         
-        if (larguraAlvo > maxMedida || alturaAlvo > maxMedida) {
-            if (larguraAlvo > alturaAlvo) {
-                alturaAlvo = Math.round((alturaAlvo * maxMedida) / larguraAlvo);
-                larguraAlvo = maxMedida;
-            } else {
-                larguraAlvo = Math.round((larguraAlvo * maxMedida) / alturaAlvo);
-                alturaAlvo = maxMedida;
-            }
-        }
-        
-        c.width = larguraAlvo; 
-        c.height = alturaAlvo;
+        c.width = larguraReal; 
+        c.height = alturaReal;
         
         const ctx = c.getContext('2d');
-        if(usarLenteFrontal) { 
-            ctx.translate(c.width, 0); 
-            ctx.scale(-1, 1); 
-        }
-        
-        ctx.drawImage(v, 0, 0, larguraAlvo, alturaAlvo);
-        ctx.setTransform(1,0,0,1,0,0);
+        // Captura direta sem inversão do Canvas para salvar o rosto na posição real
+        ctx.drawImage(v, 0, 0, c.width, c.height);
         
         my_foto = c.toDataURL('image/jpeg', 0.5); 
         
         c.style.display = "block"; 
         v.style.display = "none";
         
-        if(v.srcObject) { 
-            try {
-                v.srcObject.getTracks().forEach(track => {
-                    track.stop();
-                    track.enabled = false;
-                });
-            } catch(e) {}
-            v.srcObject = null;
-        }
-        streamCameraAtiva = null;
+        encerrarStreamCamera();
     }
 
     function enviarCadastro() {
@@ -453,7 +408,6 @@
               btnFinalizar = document.getElementById('btn-finalizar-cad');
               
         if(!my_foto || !un || !cpf || !nome) return;
-        
         if(btnFinalizar) btnFinalizar.disabled = true;
         
         db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
@@ -785,7 +739,7 @@
     
     function mudarTela(id) {
         const targetScreen = document.getElementById(id);
-        if (!targetScreen || targetScreen.classList.contains('active')) return;
+        if (!targetScreen) return;
 
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         targetScreen.classList.add('active');
@@ -796,14 +750,11 @@
             if(video) video.style.display = "block"; 
             if(canvas) canvas.style.display = "none"; 
             
-            setTimeout(inicializarCapturaVideo, 150); 
+            requestAnimationFrame(() => {
+                setTimeout(inicializarCapturaVideo, 200);
+            });
         } else {
-            if(streamCameraAtiva) { 
-                try {
-                    streamCameraAtiva.getTracks().forEach(t => { t.stop(); t.enabled = false; });
-                } catch(e){}
-                streamCameraAtiva = null; 
-            }
+            encerrarStreamCamera();
         }
     }
     
@@ -834,7 +785,7 @@
             if(loopVibracaoInterval) { clearInterval(loopVibracaoInterval); loopVibracaoInterval = null; }
             if (navigator.vibrate) navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
-            document.title = "VIRTY MORADOR v2.0.1 - Nativo APK";
+            document.title = "VIRTY MORADOR v2.0.2 - Nativo APK";
             return; 
         }
 
