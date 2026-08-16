@@ -324,6 +324,37 @@
     let timerRegressivoInterval = null;
     let tempoRestanteChamada = 90;
     let cacheAudioUrl = ""; 
+    let audioBoasVindasExecutado = false;
+
+    // SINTETIZADOR DE VOZ DE BOAS-VINDAS
+    function falarBoasVindas() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); 
+            const texto = "Seja bem-vindo e inicie o seu acesso agora clicando em aceitar e iniciar";
+            const mensagem = new SpeechSynthesisUtterance(texto);
+            mensagem.lang = 'pt-BR';
+            mensagem.rate = 1.0;
+            mensagem.pitch = 1.0;
+            
+            mensagem.onend = () => { audioBoasVindasExecutado = true; };
+            mensagem.onerror = () => { audioBoasVindasExecutado = true; };
+
+            window.speechSynthesis.speak(mensagem);
+        }
+    }
+
+    // TENTA EXECUTAR O ÁUDIO DE BOAS-VINDAS NA INICIALIZAÇÃO
+    window.addEventListener('DOMContentLoaded', () => {
+        falarBoasVindas();
+
+        // FALLBACK: SE O NAVEGADOR BLOQUEAR O AUTOPLAY, O PRIMEIRO TOQUE DISPARA O ÁUDIO
+        document.body.addEventListener('click', function tentarReproduzirAosClique() {
+            if (!audioBoasVindasExecutado && document.getElementById('s-boasvindas').classList.contains('active')) {
+                falarBoasVindas();
+            }
+            document.body.removeEventListener('click', tentarReproduzirAosClique);
+        }, { once: true });
+    });
 
     function gerarFingerprintDispositivo() {
         const componentesHardware = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language, navigator.maxTouchPoints || 0, new Date().getTimezoneOffset()];
@@ -341,6 +372,7 @@
     function fecharAlertCustomizado() { document.getElementById('custom-alert').style.display = 'none'; }
 
     function avancarParaCamera() {
+        if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); } // Interrompe a fala caso ainda esteja reproduzindo
         mudarTela('s-camera');
         inicializarCapturaVideo();
     }
@@ -463,7 +495,6 @@
         }, 1000);
     }
 
-    /* ESCUTA CORRIGIDA BASEADA NO COMPORTAMENTO REAL REVELADO PELO VISOR */
     function escutarRespostaMorador() {
         if(escutadorFirebaseAtivo) escutadorFirebaseAtivo.off();
         escutadorFirebaseAtivo = db.ref(`chamadas_ativas/${chamadaIdGlobal}`);
@@ -474,7 +505,6 @@
 
             const liveStatusBox = document.getElementById('virty-status-tempo-real');
 
-            // ATUALIZAÇÃO VISUAL EM TEMPO REAL BASEADA NO STATUS QUE VEM DO MORADOR
             if (d.status === 'gravando') {
                 liveStatusBox.innerText = "🎙️ MORADOR GRAVANDO ÁUDIO...";
                 liveStatusBox.className = "texto-neon-azul pulsar";
@@ -482,12 +512,10 @@
                 liveStatusBox.innerText = "✍️ MORADOR ESCREVENDO MENSAGEM...";
                 liveStatusBox.className = "texto-neon-azul pulsar";
             } else if (d.status === 'chamando') {
-                // Se voltar ao status chamando, apaga o aviso visual temporariamente
                 liveStatusBox.innerText = "";
                 liveStatusBox.className = "";
             }
 
-            // GATILHOS DOS STATUS FINAIS DE FECHAMENTO DE CHAMADA
             if(d.status === 'liberado') {
                 clearInterval(timerRegressivoInterval);
                 exibirFeedbackFinal('liberado', "ENTRADA AUTORIZADA", "Porta liberada. Seja bem-vindo!");
@@ -591,6 +619,7 @@
         usarLenteFrontal = true;
         visitanteFotoBase64 = "";
         cacheAudioUrl = "";
+        audioBoasVindasExecutado = false;
         document.getElementById('v-un').value = "";
         document.getElementById('v-texto').value = "";
         
@@ -603,6 +632,7 @@
         document.getElementById('virty-status-tempo-real').className = "";
         
         mudarTela('s-boasvindas');
+        falarBoasVindas();
     }
 
     function mudarTela(id) {
