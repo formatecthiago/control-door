@@ -1,4 +1,4 @@
-name: Reset Full - Build APK Capacitor 2026
+Name: Reset Full - Build APK Capacitor 2026
 
 on:
   workflow_dispatch:
@@ -25,13 +25,15 @@ jobs:
       - name: 4. Configurar Android SDK Oficial
         uses: android-actions/setup-android@v3
 
-      - name: 5. Instalar Dependências do Projeto
+      - name: 5. Instalar Dependências e Plugin Push FCM
         working-directory: ./morador-apk
         run: |
           npm install
+          npm install @capacitor/push-notifications
 
-      - name: 5.5. Transferir Design Maravilhoso (Ponte Automatizada)
+      - name: 5.5. Transferir Web Assets (Ponte Automatizada)
         run: |
+          mkdir -p morador-apk/www
           rm -rf morador-apk/www/*
           cp -r morador/* morador-apk/www/
 
@@ -41,19 +43,31 @@ jobs:
           npx cap add android || echo "Pasta android já existe"
           npx cap sync android
 
-      - name: 6.5. Injetar Permissões de Câmera, Áudio, Vibração e Configurações de Som
+      - name: 6.5. Injetar Permissões de Alta Prioridade, Tela Cheia e Sons Nativos
         working-directory: ./morador-apk
         run: |
-          # 1. Injeta permissões estruturais necessárias no AndroidManifest
+          # 1. Permissões de Câmera, Áudio e Vibração
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
-          
-          # 2. Declara explicitamente o uso do hardware da câmera (Vital para funcionar o <video> no Android Moderno)
           sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="true" />' android/app/src/main/AndroidManifest.xml
           
-          # 3. Libera o Autoplay de Áudio/Som sem restrições no WebView do Android
+          # 2. Permissões Críticas para ACORDAR o Celular e Abrir Tela Bloqueada
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.WAKE_LOCK" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />' android/app/src/main/AndroidManifest.xml
+
+          # 3. Força a Activity Nativa a Acender e Desbloquear a Tela na Chamada
+          sed -i 's/<activity/<activity android:showWhenLocked="true" android:turnScreenOn="true" /g' android/app/src/main/AndroidManifest.xml
+
+          # 4. Libera Navegação Nofail no WebView
           sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
+
+          # 5. Copia Sons de Chamada para a Pasta Nativa do Android (res/raw)
+          mkdir -p android/app/src/main/res/raw
+          cp www/sound/*.mp3 android/app/src/main/res/raw/ || echo "Sons copiados para o sistema nativo"
 
       - name: 7. Compilar o APK Nativo Puro
         working-directory: ./morador-apk/android
