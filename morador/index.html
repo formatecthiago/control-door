@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0.3 - Nativo APK</title>
-    
+    <title>VIRTY MORADOR v2.0.4 - Nativo APK</title>
     <meta name="theme-color" content="#39FF14">
-
     <style>
         :root {
             --neon: #39FF14;
@@ -17,74 +15,44 @@
             --yellow: #FFD700;
             --dark-card: #0d0d0d;
         }
-        *, *::before, *::after { 
-            box-sizing: border-box; 
-            touch-action: manipulation;
-        }
+        *, *::before, *::after { box-sizing: border-box; touch-action: manipulation; }
         body {
-            background: var(--bg);
-            color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            -webkit-user-select: none;
-            user-select: none;
+            background: var(--bg); color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 0; overflow-x: hidden;
+            -webkit-user-select: none; user-select: none;
         }
- 
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
         .active { display: flex !important; }
-        
         input {
-            width: 100%;
-            padding: 16px;
-            margin: 8px 0;
-            border-radius: 12px;
-            border: 2px solid #222;
-            background: #111;
-            color: #fff;
-            font-size: 1.1rem;
+            width: 100%; padding: 16px; margin: 8px 0; border-radius: 12px;
+            border: 2px solid #222; background: #111; color: #fff; font-size: 1.1rem;
             -webkit-appearance: none;
         }
         input:focus { border-color: var(--neon); outline: none; }
-        
         .btn {
-            width: 100%;
-            padding: 18px;
-            border-radius: 30px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            margin: 8px 0;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold;
+            cursor: pointer; text-transform: uppercase; margin: 8px 0; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center;
         }
         .btn:disabled { background: #333 !important; color: #666 !important; cursor: not-allowed; }
-        
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; margin-bottom: 20px; }
         .controles-alerta { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
         .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 12px 20px; border-radius: 12px; cursor: pointer; font-size: 1.3rem; min-width: 65px; }
-        
         #lista-hist, #lista-bloqueados { flex: 1; }
         .hist-card { background: var(--dark-card); border-radius: 16px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #161616; position: relative; }
         .foto-box { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
         .foto-hist { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; border: 1px solid var(--neon); }
         .dots-row { position: absolute; top: -10px; left: 0; width: 100%; display: flex; justify-content: center; gap: 4px; z-index: 10; }
         .dot { width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; box-shadow: 0 2px 4px #000; }
-        
         .switch-bloqueio { padding: 8px 14px; border-radius: 20px; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; text-transform: uppercase; }
         .status-bloqueado { background: var(--red); color: #fff; }
         .status-desbloqueado { background: var(--neon); color: #000; }
-        
         .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; margin-bottom: 10px; font-weight: bold; font-size: 0.85rem; }
         .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
         .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 15px; }
         #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; }
-        
         #container-digitar-texto { display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         #timer-flutuante-texto { font-size: 3.5rem; color: #fff; font-weight: bold; margin-bottom: 20px; }
         #popup-voz { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
@@ -92,18 +60,14 @@
         .circle-bg { fill: none; stroke: #222; stroke-width: 12; }
         .circle-progress { fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 0; transition: stroke 0.3s, stroke-dashoffset 0.1s linear; }
         #texto-timer-voz { position: absolute; font-size: 2.2rem; font-weight: bold; color: #fff; }
-        
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
         .btn-voz svg { width: 32px; height: 32px; fill: #000; }
-        
         .area-camera-virty { display: flex; align-items: center; justify-content: center; margin: 15px 0 25px; width: 100%; }
         .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; position:relative; will-change: transform; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
         .leaving-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
-
-        /* Modal do Log Diagnóstico */
         #modal-diagnostico { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 999999; flex-direction: column; padding: 25px; box-sizing: border-box; }
         #log-conteudo { background: #111; border: 1px solid var(--neon); color: var(--neon); font-family: monospace; font-size: 11px; padding: 15px; border-radius: 10px; flex: 1; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin: 15px 0; }
     </style>
@@ -155,7 +119,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.3</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.4</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -224,7 +188,6 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
-    // --- SISTEMA CAIXA PRETA DE DIAGNÓSTICO LOCAL ---
     function salvarLog(msg) {
         try {
             const data = new Date().toLocaleTimeString('pt-BR') + "." + String(new Date().getMilliseconds()).padStart(3, '0');
@@ -298,7 +261,7 @@
     async function inicializarPushNotificacoesNativas() {
         salvarLog("Iniciando PushNotifications nativo");
         try {
-            if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
+            if (window.Capacitor && window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('PushNotifications')) {
                 const PushNotifications = window.Capacitor.Plugins.PushNotifications;
                 let permStatus = await PushNotifications.checkPermissions();
                 if (permStatus.receive === 'prompt') {
@@ -314,7 +277,7 @@
                         }
                     });
 
-                    if (window.Capacitor.platform === 'android') {
+                    if (window.Capacitor.getPlatform() === 'android') {
                         try {
                             await PushNotifications.createChannel({
                                 id: 'virty_interfone_channel',
@@ -328,26 +291,17 @@
                         } catch (e) { salvarLog("Erro ao criar canal Push: " + e.message); }
                     }
                 }
-                
-                PushNotifications.addListener('pushNotificationReceived', () => { 
-                    if (my_un && !document.getElementById('s-cadastro').classList.contains('active')) {
-                        verificarStatus(); 
-                    }
-                });
-                PushNotifications.addListener('pushNotificationActionPerformed', () => { 
-                    if (my_un) verificarStatus(); 
-                });
             }
         } catch (e) {
-            salvarLog("Erro no módulo Push: " + e.message);
+            salvarLog("Erro tratado no módulo Push: " + e.message);
         }
     }
 
     async function verificarPermissoesObg() {
         salvarLog("Verificando permissões nativas de câmera");
         const banner = document.getElementById('banner-permissoes');
-        if (window.Capacitor && window.Capacitor.Plugins.Camera) {
-            try {
+        try {
+            if (window.Capacitor && window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('Camera')) {
                 let statusCamera = await window.Capacitor.Plugins.Camera.requestPermissions();
                 salvarLog("Status da permissão: " + statusCamera.camera);
                 if (statusCamera.camera !== 'granted') {
@@ -357,13 +311,17 @@
                     banner.style.setProperty('display', 'none', 'important');
                     return true;
                 }
-            } catch (e) { salvarLog("Erro ao checar permissão Capacitor: " + e.message); }
+            }
+        } catch (e) { 
+            salvarLog("Aviso permissão Capacitor omitido: " + e.message); 
         }
         return true;
     }
 
     document.getElementById('btn-autorizar-sempre').addEventListener('click', async () => {
-        if (window.Capacitor) { await window.Capacitor.Plugins.App.openAppSettings(); }
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) { 
+            await window.Capacitor.Plugins.App.openAppSettings(); 
+        }
     });
 
     function gerarFingerprintMorador() {
@@ -459,7 +417,6 @@
 
         video.muted = true;
 
-        // RESTRIÇÃO PARANOICA DE RESOLUÇÃO PARA IMPEDIR OUT OF MEMORY (OOM) NA GPU DO ANDROID
         const restricoesVideo = { 
             video: { 
                 facingMode: "user",
@@ -469,25 +426,22 @@
             } 
         };
 
-        salvarLog("Solicitando getUserMedia com restrição leve 640x480@15fps");
+        salvarLog("Solicitando getUserMedia com restrição 640x480@15fps");
 
         cameraPromise = navigator.mediaDevices.getUserMedia(restricoesVideo).then(stream => {
-            salvarLog("getUserMedia concedido com sucesso. Atribuindo ao elemento video");
+            salvarLog("getUserMedia concedido com sucesso.");
             streamCameraAtiva = stream;
             video.srcObject = stream;
             video.setAttribute('playsinline', 'true');
             video.style.transform = "scaleX(-1)";
-            
-            salvarLog("Iniciando video.play()");
             return video.play();
         }).then(() => {
             salvarLog("video.play() executado sem erros! Câmera operando.");
         }).catch(err => { 
-            salvarLog("ERRO CRÍTICO no getUserMedia: " + err.name + " - " + err.message); 
+            salvarLog("ERRO no getUserMedia: " + err.name + " - " + err.message); 
             streamCameraAtiva = null;
         }).finally(() => {
             cameraPromise = null;
-            salvarLog("Finalizado bloco inicializarCapturaVideo");
         });
     }
 
@@ -504,7 +458,6 @@
 
         const maxDim = 160;
         let w = v.videoWidth, h = v.videoHeight;
-        salvarLog(`Resolução original do sensor: ${w}x${h}`);
 
         if (w > h) {
             h = Math.round((h * maxDim) / w);
@@ -521,7 +474,7 @@
         ctx.drawImage(v, 0, 0, w, h);
         
         my_foto = c.toDataURL('image/jpeg', 0.5); 
-        salvarLog(`Foto capturada e reduzida para ${w}x${h}. Tamanho B64: ` + my_foto.length + " bytes");
+        salvarLog(`Foto capturada e reduzida para ${w}x${h}.`);
         
         c.style.display = "block"; 
         v.style.display = "none";
@@ -542,8 +495,6 @@
         if(!un) { alert("Por favor, preencha o número da casa/apartamento."); return; }
 
         if(btnFinalizar) btnFinalizar.disabled = true;
-        
-        salvarLog("Enviando solicitação em lote ao Firebase Realtime Database");
 
         db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({
             nome: nome,
@@ -909,7 +860,7 @@
             if(loopVibracaoInterval) { clearInterval(loopVibracaoInterval); loopVibracaoInterval = null; }
             if (navigator.vibrate) navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
-            document.title = "VIRTY MORADOR v2.0.3 - Nativo APK";
+            document.title = "VIRTY MORADOR v2.0.4 - Nativo APK";
             return; 
         }
 
@@ -939,14 +890,6 @@
             }, 500);
         }
     }
-
-    document.addEventListener('resume', () => {
-        salvarLog("Evento 'resume' disparado no documento (App voltou para o primeiro plano)");
-        if (!document.getElementById('s-cadastro').classList.contains('active')) {
-            verificarStatus();
-            verificarPermissoesObg();
-        }
-    });
 </script>
 </body>
 </html>
