@@ -2,7 +2,6 @@
   "appId": "com.formatecthiago.controldoor.morador",
   "appName": "VirtyMorador",
   "webDir": "www",
-  "bundledWebRuntime": false,
   "plugins": {
     "PushNotifications": {
       "presentationOptions": ["badge", "sound", "alert"]
