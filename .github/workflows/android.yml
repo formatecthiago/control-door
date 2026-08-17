@@ -50,7 +50,7 @@ jobs:
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="true" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false" />' android/app/src/main/AndroidManifest.xml
           
           # 2. Permissões Críticas para ACORDAR o Celular e Abrir Tela Bloqueada
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' android/app/src/main/AndroidManifest.xml
@@ -59,8 +59,8 @@ jobs:
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />' android/app/src/main/AndroidManifest.xml
 
-          # 3. Força a Activity Nativa a Acender e Desbloquear a Tela na Chamada
-          sed -i 's/<activity/<activity android:showWhenLocked="true" android:turnScreenOn="true" /g' android/app/src/main/AndroidManifest.xml
+          # 3. Impede REINÍCIO de Tela na Câmera, Acende e Desbloqueia na Chamada
+          sed -i 's/<activity/<activity android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density|smallestScreenSize" android:showWhenLocked="true" android:turnScreenOn="true" /g' android/app/src/main/AndroidManifest.xml
 
           # 4. Libera Navegação Nofail no WebView
           sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
