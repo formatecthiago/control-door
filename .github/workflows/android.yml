@@ -43,31 +43,51 @@ jobs:
           npx cap add android || echo "Pasta android já existe"
           npx cap sync android
 
-      - name: 6.5. Injetar Permissões de Alta Prioridade, Tela Cheia e Sons Nativos
+      - name: 6.5. Injetar Permissões e Configurações Nativas (Via Node.js Seguro)
         working-directory: ./morador-apk
         run: |
-          # 1. Permissões de Câmera, Áudio, Vibração e Armazenamento (CRÍTICO)
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false" />' android/app/src/main/AndroidManifest.xml
-          
-          # 2. Permissões Críticas para ACORDAR o Celular e Abrir Tela Bloqueada
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.WAKE_LOCK" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />' android/app/src/main/AndroidManifest.xml
+          node -e '
+          const fs = require("fs");
+          const manifestPath = "android/app/src/main/AndroidManifest.xml";
+          let manifest = fs.readFileSync(manifestPath, "utf8");
 
-          # 3. Impede REINÍCIO de Tela na Câmera, Acende e Desbloqueia na Chamada
-          sed -i 's/<activity/<activity android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density|smallestScreenSize" android:showWhenLocked="true" android:turnScreenOn="true" /g' android/app/src/main/AndroidManifest.xml
+          // 1. Permissões de Câmera, Áudio, Vibração, Armazenamento e Notificações
+          const permissions = `
+              <uses-permission android:name="android.permission.CAMERA" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.VIBRATE" />
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+              <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-permission android:name="android.permission.WAKE_LOCK" />
+              <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+              <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+              <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+              <uses-feature android:name="android.hardware.camera" android:required="false" />
+          `;
 
-          # 4. Libera Navegação Nofail no WebView
+          manifest = manifest.replace("</manifest>", permissions + "\n</manifest>");
+
+          // 2. Modificar Activity para evitar restarts na câmera e acender a tela em chamadas
+          manifest = manifest.replace(/<activity([^>]+)>/, (match, attrs) => {
+              if (attrs.includes("android:configChanges=")) {
+                  attrs = attrs.replace(/android:configChanges="[^"]*"/, `android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density|smallestScreenSize"`);
+              } else {
+                  attrs += ` android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density|smallestScreenSize"`;
+              }
+              if (!attrs.includes("android:showWhenLocked")) attrs += ` android:showWhenLocked="true"`;
+              if (!attrs.includes("android:turnScreenOn")) attrs += ` android:turnScreenOn="true"`;
+              return `<activity${attrs}>`;
+          });
+
+          fs.writeFileSync(manifestPath, manifest, "utf8");
+          console.log("AndroidManifest.xml ajustado com sucesso!");
+          '
+
+          # 3. Libera Navegação Nofail no config.xml
           sed -i '/<\/capabilities>/i \    <allow-navigation href="*" />' android/app/src/main/res/xml/config.xml || echo "Config nativa ajustada"
 
-          # 5. Copia Sons de Chamada para a Pasta Nativa do Android (res/raw)
+          # 4. Copia Sons de Chamada para a Pasta Nativa do Android (res/raw)
           mkdir -p android/app/src/main/res/raw
           cp www/sound/*.mp3 android/app/src/main/res/raw/ || echo "Sons copiados para o sistema nativo"
 
