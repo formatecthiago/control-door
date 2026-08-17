@@ -127,7 +127,8 @@
         </div>
         <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR SELFIE</button>
         <input type="text" id="c-nome" placeholder="Nome Completo">
-        <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
+        <!-- Alterado para text com inputmode numeric para evitar travamento com pontuação -->
+        <input type="text" inputmode="numeric" id="c-cpf" placeholder="CPF (Apenas números)">
         <input type="number" id="c-un" placeholder="Número da Casa/Apt">
         <button id="btn-finalizar-cad" class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
     </div>
@@ -233,7 +234,7 @@
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
     
     let streamCameraAtiva = null;
-    let cameraPromise = null; // Trava de Promise assíncrona para evitar race conditions do hardware
+    let cameraPromise = null;
     let micStreamGlobal = null;
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
@@ -246,6 +247,7 @@
     let refHistoricoAtiva = null;
     let escutaChamadasIniciada = false;
 
+    // Inicialização do FCM diferida e sem concorrência com a câmera
     async function inicializarPushNotificacoesNativas() {
         if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
             const PushNotifications = window.Capacitor.Plugins.PushNotifications;
@@ -276,8 +278,16 @@
                     } catch (e) { console.error(e); }
                 }
             }
-            PushNotifications.addListener('pushNotificationReceived', () => { if (my_un) verificarStatus(); });
-            PushNotifications.addListener('pushNotificationActionPerformed', () => { if (my_un) verificarStatus(); });
+            
+            // Ouvintes passivos sem interferir diretamente no fluxo ativo da tela
+            PushNotifications.addListener('pushNotificationReceived', () => { 
+                if (my_un && !document.getElementById('s-cadastro').classList.contains('active')) {
+                    verificarStatus(); 
+                }
+            });
+            PushNotifications.addListener('pushNotificationActionPerformed', () => { 
+                if (my_un) verificarStatus(); 
+            });
         }
     }
 
@@ -315,7 +325,11 @@
         atualizarInterfaceAlerta();
         verificarStatus();
         verificarPermissoesObg();
-        inicializarPushNotificacoesNativas();
+        
+        // Isola a inicialização do FCM para rodar 2 segundos após a montagem do app
+        setTimeout(() => {
+            inicializarPushNotificacoesNativas();
+        }, 2000);
     };
 
     function verificarStatus() {
@@ -348,7 +362,6 @@
     }
 
     function encerrarStreamCamera() {
-        // Encerra apenas se houver fluxo ativo e NENHUMA promessa de abertura pendente
         if (streamCameraAtiva && !cameraPromise) {
             try {
                 streamCameraAtiva.getTracks().forEach(track => track.stop());
@@ -359,27 +372,23 @@
         }
     }
 
+    // Abertura veloz sem negociar resolução pesada
     function inicializarCapturaVideo() {
         const video = document.getElementById('v-cad');
         if (!video) return;
 
-        // Se o vídeo já estiver ativo e rodando, reutiliza o stream existente
         if (streamCameraAtiva && video.srcObject) {
             video.play().catch(() => {});
             return;
         }
 
-        // Se já existe uma Promise em processamento no Android, aguarda o desfecho
         if (cameraPromise) return;
 
         video.muted = true;
 
+        // Sem restrição de width/height pesada para acelerar a resposta do hardware
         cameraPromise = navigator.mediaDevices.getUserMedia({ 
-            video: { 
-                facingMode: "user", 
-                width: { ideal: 480 }, 
-                height: { ideal: 360 } 
-            } 
+            video: { facingMode: "user" } 
         }).then(stream => {
             streamCameraAtiva = stream;
             video.srcObject = stream;
@@ -394,20 +403,23 @@
         });
     }
 
+    // Captura com verificação de carregamento de quadro
     function fotoCad() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
         if(!v) return;
         
-        const larguraReal = v.videoWidth > 0 ? v.videoWidth : 480;
-        const alturaReal = v.videoHeight > 0 ? v.videoHeight : 360;
-        
-        c.width = larguraReal; 
-        c.height = alturaReal;
+        if (v.readyState < 2 || v.videoWidth === 0) {
+            alert("Aguarde um segundo para a câmera carregar a imagem completamente.");
+            return;
+        }
+
+        c.width = v.videoWidth; 
+        c.height = v.videoHeight;
         
         const ctx = c.getContext('2d');
         ctx.drawImage(v, 0, 0, c.width, c.height);
         
-        my_foto = c.toDataURL('image/jpeg', 0.5); 
+        my_foto = c.toDataURL('image/jpeg', 0.6); 
         
         c.style.display = "block"; 
         v.style.display = "none";
@@ -415,13 +427,30 @@
         encerrarStreamCamera();
     }
 
+    // Validação com mensagens de retorno e higienização do CPF
     function enviarCadastro() {
-        const un = document.getElementById('c-un').value,
-              cpf = document.getElementById('c-cpf').value.trim(),
+        const un = document.getElementById('c-un').value.trim(),
+              cpfLimpo = document.getElementById('c-cpf').value.replace(/\D/g, ''),
               nome = document.getElementById('c-nome').value.trim(),
               btnFinalizar = document.getElementById('btn-finalizar-cad');
               
-        if(!my_foto || !un || !cpf || !nome) return;
+        if(!my_foto) {
+            alert("Por favor, tire a foto da selfie antes de continuar.");
+            return;
+        }
+        if(!nome) {
+            alert("Por favor, preencha o seu nome completo.");
+            return;
+        }
+        if(!cpfLimpo || cpfLimpo.length < 11) {
+            alert("Por favor, informe um CPF válido contendo apenas os números.");
+            return;
+        }
+        if(!un) {
+            alert("Por favor, preencha o número da casa/apartamento.");
+            return;
+        }
+
         if(btnFinalizar) btnFinalizar.disabled = true;
         
         db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
@@ -430,10 +459,15 @@
             const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
             
             if (!jaExisteEsseAparelho) {
-                if(chaves.length >= 5) { if(btnFinalizar) btnFinalizar.disabled = false; return; }
+                if(chaves.length >= 5) { 
+                    alert("Limite de cadastros para esta unidade atingido.");
+                    if(btnFinalizar) btnFinalizar.disabled = false; 
+                    return; 
+                }
                 for (let k in moradoresExistentes) {
                     let m = moradoresExistentes[k];
-                    if(m.cpf === cpf || m.nome.toLowerCase() === nome.toLowerCase()) { 
+                    if(m.cpf === cpfLimpo || m.nome.toLowerCase() === nome.toLowerCase()) { 
+                        alert("Este CPF ou nome já possui uma solicitação enviada.");
                         if(btnFinalizar) btnFinalizar.disabled = false; 
                         return; 
                     }
@@ -441,7 +475,7 @@
             }
             
             db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({
-                nome: nome, cpf: cpf, unidade: un, foto: my_foto, ts: Date.now()
+                nome: nome, cpf: cpfLimpo, unidade: un, foto: my_foto, ts: Date.now()
             }).then(() => {
                 my_un = un;
                 localStorage.setItem('my_un', un);
@@ -449,6 +483,7 @@
                 verificarStatus();
             }).catch(err => {
                 console.error(err);
+                alert("Erro ao enviar o cadastro. Verifique a conexão.");
                 if(btnFinalizar) btnFinalizar.disabled = false;
             });
         });
@@ -829,8 +864,10 @@
     }
 
     document.addEventListener('resume', () => {
-        verificarStatus();
-        verificarPermissoesObg();
+        if (!document.getElementById('s-cadastro').classList.contains('active')) {
+            verificarStatus();
+            verificarPermissoesObg();
+        }
     });
 </script>
 </body>
