@@ -19,7 +19,7 @@
         }
         *, *::before, *::after { 
             box-sizing: border-box; 
-            touch-action: manipulation; /* Elimina o delay de 300ms do toque no Android */
+            touch-action: manipulation;
         }
         body {
             background: var(--bg);
@@ -233,7 +233,7 @@
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
     
     let streamCameraAtiva = null;
-    let isCameraInitializing = false; // Trava para impedir reinicializações paralelas da câmera
+    let cameraPromise = null; // Trava de Promise assíncrona para evitar race conditions do hardware
     let micStreamGlobal = null;
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
@@ -348,44 +348,49 @@
     }
 
     function encerrarStreamCamera() {
-        if (streamCameraAtiva) {
+        // Encerra apenas se houver fluxo ativo e NENHUMA promessa de abertura pendente
+        if (streamCameraAtiva && !cameraPromise) {
             try {
                 streamCameraAtiva.getTracks().forEach(track => track.stop());
             } catch(e){}
             streamCameraAtiva = null;
+            const video = document.getElementById('v-cad');
+            if (video) video.srcObject = null;
         }
     }
 
     function inicializarCapturaVideo() {
-        // Se o hardware já tiver um stream ativo ou estiver em processamento de abertura, bloqueia nova execução
-        if (streamCameraAtiva || isCameraInitializing) return;
-        isCameraInitializing = true;
-
         const video = document.getElementById('v-cad');
-        if (!video) {
-            isCameraInitializing = false;
+        if (!video) return;
+
+        // Se o vídeo já estiver ativo e rodando, reutiliza o stream existente
+        if (streamCameraAtiva && video.srcObject) {
+            video.play().catch(() => {});
             return;
         }
 
-        navigator.mediaDevices.getUserMedia({ 
+        // Se já existe uma Promise em processamento no Android, aguarda o desfecho
+        if (cameraPromise) return;
+
+        video.muted = true;
+
+        cameraPromise = navigator.mediaDevices.getUserMedia({ 
             video: { 
-                facingMode: "user",
-                width: { ideal: 480 },
-                height: { ideal: 360 }
+                facingMode: "user", 
+                width: { ideal: 480 }, 
+                height: { ideal: 360 } 
             } 
         }).then(stream => {
             streamCameraAtiva = stream;
             video.srcObject = stream;
             video.setAttribute('playsinline', 'true');
-            video.style.transform = "scaleX(-1)"; 
-            
-            video.onloadedmetadata = () => {
-                video.play().catch(() => {});
-            };
+            video.style.transform = "scaleX(-1)";
+            return video.play();
         }).catch(err => { 
             console.error("Erro camera:", err); 
+            streamCameraAtiva = null;
         }).finally(() => {
-            isCameraInitializing = false;
+            cameraPromise = null;
         });
     }
 
@@ -748,7 +753,6 @@
     
     function mudarTela(id) {
         const targetScreen = document.getElementById(id);
-        // Se a tela não existir ou já for a tela atual visível, interrompe a transição
         if (!targetScreen || targetScreen.classList.contains('active')) return;
 
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -760,9 +764,7 @@
             if(video) video.style.display = "block"; 
             if(canvas) canvas.style.display = "none"; 
             
-            requestAnimationFrame(() => {
-                setTimeout(inicializarCapturaVideo, 200);
-            });
+            inicializarCapturaVideo();
         } else {
             encerrarStreamCamera();
         }
