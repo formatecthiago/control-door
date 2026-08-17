@@ -233,6 +233,7 @@
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
     
     let streamCameraAtiva = null;
+    let isCameraInitializing = false; // Trava para impedir reinicializações paralelas da câmera
     let micStreamGlobal = null;
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
@@ -356,10 +357,15 @@
     }
 
     function inicializarCapturaVideo() {
-        encerrarStreamCamera();
+        // Se o hardware já tiver um stream ativo ou estiver em processamento de abertura, bloqueia nova execução
+        if (streamCameraAtiva || isCameraInitializing) return;
+        isCameraInitializing = true;
 
         const video = document.getElementById('v-cad');
-        if (!video) return;
+        if (!video) {
+            isCameraInitializing = false;
+            return;
+        }
 
         navigator.mediaDevices.getUserMedia({ 
             video: { 
@@ -371,12 +377,16 @@
             streamCameraAtiva = stream;
             video.srcObject = stream;
             video.setAttribute('playsinline', 'true');
-            video.style.transform = "scaleX(-1)"; // Mantém prévia espelhada para o enquadramento
+            video.style.transform = "scaleX(-1)"; 
             
             video.onloadedmetadata = () => {
                 video.play().catch(() => {});
             };
-        }).catch(err => { console.error("Erro camera:", err); });
+        }).catch(err => { 
+            console.error("Erro camera:", err); 
+        }).finally(() => {
+            isCameraInitializing = false;
+        });
     }
 
     function fotoCad() {
@@ -390,7 +400,6 @@
         c.height = alturaReal;
         
         const ctx = c.getContext('2d');
-        // Captura direta sem inversão do Canvas para salvar o rosto na posição real
         ctx.drawImage(v, 0, 0, c.width, c.height);
         
         my_foto = c.toDataURL('image/jpeg', 0.5); 
@@ -739,7 +748,8 @@
     
     function mudarTela(id) {
         const targetScreen = document.getElementById(id);
-        if (!targetScreen) return;
+        // Se a tela não existir ou já for a tela atual visível, interrompe a transição
+        if (!targetScreen || targetScreen.classList.contains('active')) return;
 
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         targetScreen.classList.add('active');
