@@ -46,10 +46,12 @@ jobs:
       - name: 6.5. Injetar Permissões de Alta Prioridade, Tela Cheia e Sons Nativos
         working-directory: ./morador-apk
         run: |
-          # 1. Permissões de Câmera, Áudio e Vibração
+          # 1. Permissões de Câmera, Áudio, Vibração e Armazenamento (CRÍTICO)
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false" />' android/app/src/main/AndroidManifest.xml
           
           # 2. Permissões Críticas para ACORDAR o Celular e Abrir Tela Bloqueada
