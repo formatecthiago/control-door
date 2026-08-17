@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0.2 - Nativo APK</title>
+    <title>VIRTY MORADOR v2.0.3 - Nativo APK</title>
     
     <meta name="theme-color" content="#39FF14">
 
@@ -102,9 +102,20 @@
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
         .leaving-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
+
+        /* Modal do Log Diagnóstico */
+        #modal-diagnostico { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 999999; flex-direction: column; padding: 25px; box-sizing: border-box; }
+        #log-conteudo { background: #111; border: 1px solid var(--neon); color: var(--neon); font-family: monospace; font-size: 11px; padding: 15px; border-radius: 10px; flex: 1; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin: 15px 0; }
     </style>
 </head>
 <body>
+
+    <div id="modal-diagnostico">
+        <h3 style="color:var(--yellow); margin:0;">🔍 REGISTRO CAIXA-PRETA DO CRASH</h3>
+        <p style="color:#aaa; font-size:12px; margin:5px 0 0;">Últimos eventos gravados antes da última finalização do app:</p>
+        <div id="log-conteudo"></div>
+        <button class="btn" style="background:var(--neon); color:#000;" onclick="fecharDiagnostico()">ENTENDI / CONTINUAR</button>
+    </div>
 
     <div id="banner-permissoes" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; box-sizing: border-box; text-align: center;">
         <div style="border: 2px solid var(--neon); padding: 40px 20px; border-radius: 15px; background: #0a0a0a; max-width: 400px; width: 100%;">
@@ -144,7 +155,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.2</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.3</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -213,6 +224,44 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
+    // --- SISTEMA CAIXA PRETA DE DIAGNÓSTICO LOCAL ---
+    function salvarLog(msg) {
+        try {
+            const data = new Date().toLocaleTimeString('pt-BR') + "." + String(new Date().getMilliseconds()).padStart(3, '0');
+            let logs = JSON.parse(localStorage.getItem('virty_crash_logs') || "[]");
+            logs.push(`[${data}] ${msg}`);
+            if (logs.length > 35) logs.shift();
+            localStorage.setItem('virty_crash_logs', JSON.stringify(logs));
+        } catch (e) {}
+    }
+
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+        salvarLog(`FATAL_JS_ERROR: ${msg} na linha ${lineNo}:${columnNo}`);
+        return false;
+    };
+
+    window.onunhandledrejection = function(event) {
+        salvarLog(`PROMISE_REJECTED: ${event.reason}`);
+    };
+
+    function checarEExibirDiagnostico() {
+        const logs = JSON.parse(localStorage.getItem('virty_crash_logs') || "[]");
+        if (logs.length > 0) {
+            const container = document.getElementById('log-conteudo');
+            if(container) {
+                container.innerText = logs.join('\n');
+                document.getElementById('modal-diagnostico').style.display = 'flex';
+            }
+        }
+    }
+
+    function fecharDiagnostico() {
+        localStorage.removeItem('virty_crash_logs');
+        document.getElementById('modal-diagnostico').style.display = 'none';
+    }
+
+    salvarLog("=== INICIALIZANDO APLICAÇÃO ===");
+
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
@@ -246,8 +295,8 @@
     let refHistoricoAtiva = null;
     let escutaChamadasIniciada = false;
 
-    // Inicialização segura do FCM sem crash de áudio
     async function inicializarPushNotificacoesNativas() {
+        salvarLog("Iniciando PushNotifications nativo");
         try {
             if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
                 const PushNotifications = window.Capacitor.Plugins.PushNotifications;
@@ -259,6 +308,7 @@
                     await PushNotifications.register();
                     
                     PushNotifications.addListener('registration', (token) => {
+                        salvarLog("Push Token registrado");
                         if (my_un && token && token.value) {
                             db.ref('moradores_validados/' + my_un).update({ fcm_token: token.value }).catch(()=>{});
                         }
@@ -266,7 +316,6 @@
 
                     if (window.Capacitor.platform === 'android') {
                         try {
-                            // Removido 'sound' customizado para evitar Resources$NotFoundException e fatal crash
                             await PushNotifications.createChannel({
                                 id: 'virty_interfone_channel',
                                 name: 'Chamadas do Interfone',
@@ -275,7 +324,8 @@
                                 visibility: 1,  
                                 vibration: true
                             });
-                        } catch (e) { console.error("Erro ao criar canal push:", e); }
+                            salvarLog("Canal Android Push criado com sucesso");
+                        } catch (e) { salvarLog("Erro ao criar canal Push: " + e.message); }
                     }
                 }
                 
@@ -289,15 +339,17 @@
                 });
             }
         } catch (e) {
-            console.error("Erro na inicialização de Push:", e);
+            salvarLog("Erro no módulo Push: " + e.message);
         }
     }
 
     async function verificarPermissoesObg() {
+        salvarLog("Verificando permissões nativas de câmera");
         const banner = document.getElementById('banner-permissoes');
-        if (window.Capacitor) {
+        if (window.Capacitor && window.Capacitor.Plugins.Camera) {
             try {
                 let statusCamera = await window.Capacitor.Plugins.Camera.requestPermissions();
+                salvarLog("Status da permissão: " + statusCamera.camera);
                 if (statusCamera.camera !== 'granted') {
                     banner.style.setProperty('display', 'flex', 'important');
                     return false;
@@ -305,7 +357,7 @@
                     banner.style.setProperty('display', 'none', 'important');
                     return true;
                 }
-            } catch (e) { console.log(e); }
+            } catch (e) { salvarLog("Erro ao checar permissão Capacitor: " + e.message); }
         }
         return true;
     }
@@ -322,29 +374,30 @@
     }
     
     window.onload = async () => {
+        checarEExibirDiagnostico();
         my_fingerprint = gerarFingerprintMorador();
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
         
-        // 1. Resolve permissão nativa antes de qualquer ação
+        salvarLog("Window loaded. Fingerprint: " + my_fingerprint);
+
         await verificarPermissoesObg();
-        
-        // 2. Define o fluxo da tela
         verificarStatus();
         
-        // 3. Inicialização isolada do Push
         setTimeout(() => {
             inicializarPushNotificacoesNativas();
         }, 3000);
     };
 
     function verificarStatus() {
+        salvarLog("Verificando status do morador. Local Storage my_un: " + my_un);
         if(!my_un) { mudarTela('s-cadastro'); return; }
         if(refStatusAtiva) refStatusAtiva.off();
         
         refStatusAtiva = db.ref('moradores_validados/' + my_un);
         refStatusAtiva.on('value', s => {
             if(s.exists()) {
+                salvarLog("Morador validado na base. Indo para s-home");
                 mudarTela('s-home');
                 document.getElementById('txt-un').innerText = "CASA " + my_un;
                 if (!escutaChamadasIniciada) {
@@ -353,6 +406,7 @@
                 }
                 renderizarDadosAbas();
             } else {
+                salvarLog("Morador não validado. Checando solicitações pendentes");
                 db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).once('value', snap => {
                     if(snap.exists()) {
                         document.getElementById('txt-un-analise').innerText = "UNIDADE: " + my_un + " | ID HARDWARE: " + my_fingerprint;
@@ -368,10 +422,16 @@
     }
 
     function encerrarStreamCamera() {
+        salvarLog("Encerrando stream da câmera");
         if (streamCameraAtiva && !cameraPromise) {
             try {
-                streamCameraAtiva.getTracks().forEach(track => track.stop());
-            } catch(e){}
+                streamCameraAtiva.getTracks().forEach(track => {
+                    track.stop();
+                    salvarLog("Track de vídeo finalizada: " + track.label);
+                });
+            } catch(e){
+                salvarLog("Exceção ao fechar tracks: " + e.message);
+            }
             streamCameraAtiva = null;
             const video = document.getElementById('v-cad');
             if (video) video.srcObject = null;
@@ -379,47 +439,73 @@
     }
 
     function inicializarCapturaVideo() {
+        salvarLog("Entrou em inicializarCapturaVideo()");
         const video = document.getElementById('v-cad');
-        if (!video) return;
-
-        if (streamCameraAtiva && video.srcObject) {
-            video.play().catch(() => {});
+        if (!video) {
+            salvarLog("ERRO: Elemento video id v-cad não existe!");
             return;
         }
 
-        if (cameraPromise) return;
+        if (streamCameraAtiva && video.srcObject) {
+            salvarLog("Câmera já estava ativa. Chamando video.play()");
+            video.play().catch(e => salvarLog("Erro video.play(): " + e.message));
+            return;
+        }
+
+        if (cameraPromise) {
+            salvarLog("cameraPromise já em andamento. Aguardando...");
+            return;
+        }
 
         video.muted = true;
 
-        cameraPromise = navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: "user" } 
-        }).then(stream => {
+        // RESTRIÇÃO PARANOICA DE RESOLUÇÃO PARA IMPEDIR OUT OF MEMORY (OOM) NA GPU DO ANDROID
+        const restricoesVideo = { 
+            video: { 
+                facingMode: "user",
+                width: { ideal: 640, max: 1280 },
+                height: { ideal: 480, max: 720 },
+                frameRate: { max: 15 }
+            } 
+        };
+
+        salvarLog("Solicitando getUserMedia com restrição leve 640x480@15fps");
+
+        cameraPromise = navigator.mediaDevices.getUserMedia(restricoesVideo).then(stream => {
+            salvarLog("getUserMedia concedido com sucesso. Atribuindo ao elemento video");
             streamCameraAtiva = stream;
             video.srcObject = stream;
             video.setAttribute('playsinline', 'true');
             video.style.transform = "scaleX(-1)";
+            
+            salvarLog("Iniciando video.play()");
             return video.play();
+        }).then(() => {
+            salvarLog("video.play() executado sem erros! Câmera operando.");
         }).catch(err => { 
-            console.error("Erro camera:", err); 
+            salvarLog("ERRO CRÍTICO no getUserMedia: " + err.name + " - " + err.message); 
             streamCameraAtiva = null;
         }).finally(() => {
             cameraPromise = null;
+            salvarLog("Finalizado bloco inicializarCapturaVideo");
         });
     }
 
-    // Geração de Miniatura Leve para o Admin (Máximo 160px)
     function fotoCad() {
+        salvarLog("Acionado fotoCad()");
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
         if(!v) return;
         
         if (v.readyState < 2 || v.videoWidth === 0) {
+            salvarLog("Aviso: Tentativa de foto com vídeo não pronto");
             alert("Aguarde um segundo para a câmera carregar a imagem completamente.");
             return;
         }
 
-        // Redimensiona para miniatura minúscula de admin
         const maxDim = 160;
         let w = v.videoWidth, h = v.videoHeight;
+        salvarLog(`Resolução original do sensor: ${w}x${h}`);
+
         if (w > h) {
             h = Math.round((h * maxDim) / w);
             w = maxDim;
@@ -434,8 +520,8 @@
         const ctx = c.getContext('2d');
         ctx.drawImage(v, 0, 0, w, h);
         
-        // JPEG 50% em miniatura ocupa menos de 15KB
         my_foto = c.toDataURL('image/jpeg', 0.5); 
+        salvarLog(`Foto capturada e reduzida para ${w}x${h}. Tamanho B64: ` + my_foto.length + " bytes");
         
         c.style.display = "block"; 
         v.style.display = "none";
@@ -443,33 +529,22 @@
         encerrarStreamCamera();
     }
 
-    // Envio Local-First em Pacote Único (Carta na Caixa)
     function enviarCadastro() {
+        salvarLog("Iniciando enviarCadastro()");
         const un = document.getElementById('c-un').value.trim(),
               cpfLimpo = document.getElementById('c-cpf').value.replace(/\D/g, ''),
               nome = document.getElementById('c-nome').value.trim(),
               btnFinalizar = document.getElementById('btn-finalizar-cad');
               
-        if(!my_foto) {
-            alert("Por favor, tire a foto da selfie antes de continuar.");
-            return;
-        }
-        if(!nome) {
-            alert("Por favor, preencha o seu nome completo.");
-            return;
-        }
-        if(!cpfLimpo || cpfLimpo.length < 11) {
-            alert("Por favor, informe um CPF válido contendo apenas os números.");
-            return;
-        }
-        if(!un) {
-            alert("Por favor, preencha o número da casa/apartamento.");
-            return;
-        }
+        if(!my_foto) { alert("Por favor, tire a foto da selfie antes de continuar."); return; }
+        if(!nome) { alert("Por favor, preencha o seu nome completo."); return; }
+        if(!cpfLimpo || cpfLimpo.length < 11) { alert("Por favor, informe um CPF válido contendo apenas os números."); return; }
+        if(!un) { alert("Por favor, preencha o número da casa/apartamento."); return; }
 
         if(btnFinalizar) btnFinalizar.disabled = true;
         
-        // Envio direto do pacote pronto para o Firebase sem consultas intermediárias
+        salvarLog("Enviando solicitação em lote ao Firebase Realtime Database");
+
         db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({
             nome: nome,
             cpf: cpfLimpo,
@@ -477,18 +552,20 @@
             foto: my_foto,
             ts: Date.now()
         }).then(() => {
+            salvarLog("Solicitação enviada com sucesso ao Firebase");
             my_un = un;
             localStorage.setItem('my_un', un);
             if(btnFinalizar) btnFinalizar.disabled = false;
             verificarStatus();
         }).catch(err => {
-            console.error(err);
+            salvarLog("Erro ao salvar cadastro no Firebase: " + err.message);
             alert("Erro ao enviar a solicitação. Verifique sua conexão com a internet.");
             if(btnFinalizar) btnFinalizar.disabled = false;
         });
     }
 
     function escutarChamadas() {
+        salvarLog("Iniciando escutador de chamadas para UN: " + my_un);
         if(refChamadasAtiva) refChamadasAtiva.off();
         
         refChamadasAtiva = db.ref('chamadas_ativas/' + my_un);
@@ -786,6 +863,7 @@
     function limparHist() { if(confirm("Deseja limpar seu histórico?")) db.ref(`historico/${my_un}`).remove(); }
     
     function mudarTela(id) {
+        salvarLog("Mudando para a tela: " + id);
         const targetScreen = document.getElementById(id);
         if (!targetScreen || targetScreen.classList.contains('active')) return;
 
@@ -831,7 +909,7 @@
             if(loopVibracaoInterval) { clearInterval(loopVibracaoInterval); loopVibracaoInterval = null; }
             if (navigator.vibrate) navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
-            document.title = "VIRTY MORADOR v2.0.2 - Nativo APK";
+            document.title = "VIRTY MORADOR v2.0.3 - Nativo APK";
             return; 
         }
 
@@ -863,6 +941,7 @@
     }
 
     document.addEventListener('resume', () => {
+        salvarLog("Evento 'resume' disparado no documento (App voltou para o primeiro plano)");
         if (!document.getElementById('s-cadastro').classList.contains('active')) {
             verificarStatus();
             verificarPermissoesObg();
