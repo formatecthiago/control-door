@@ -1,4 +1,4 @@
-Name: Reset Full - Build APK Capacitor 2026
+name: Reset Full - Build APK Capacitor 2026
 
 on:
   workflow_dispatch:
