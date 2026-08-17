@@ -127,7 +127,6 @@
         </div>
         <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR SELFIE</button>
         <input type="text" id="c-nome" placeholder="Nome Completo">
-        <!-- Alterado para text com inputmode numeric para evitar travamento com pontuação -->
         <input type="text" inputmode="numeric" id="c-cpf" placeholder="CPF (Apenas números)">
         <input type="number" id="c-un" placeholder="Número da Casa/Apt">
         <button id="btn-finalizar-cad" class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
@@ -247,47 +246,50 @@
     let refHistoricoAtiva = null;
     let escutaChamadasIniciada = false;
 
-    // Inicialização do FCM diferida e sem concorrência com a câmera
+    // Inicialização segura do FCM sem crash de áudio
     async function inicializarPushNotificacoesNativas() {
-        if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
-            const PushNotifications = window.Capacitor.Plugins.PushNotifications;
-            let permStatus = await PushNotifications.checkPermissions();
-            if (permStatus.receive === 'prompt') {
-                permStatus = await PushNotifications.requestPermissions();
-            }
-            if (permStatus.receive === 'granted') {
-                await PushNotifications.register();
+        try {
+            if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
+                const PushNotifications = window.Capacitor.Plugins.PushNotifications;
+                let permStatus = await PushNotifications.checkPermissions();
+                if (permStatus.receive === 'prompt') {
+                    permStatus = await PushNotifications.requestPermissions();
+                }
+                if (permStatus.receive === 'granted') {
+                    await PushNotifications.register();
+                    
+                    PushNotifications.addListener('registration', (token) => {
+                        if (my_un && token && token.value) {
+                            db.ref('moradores_validados/' + my_un).update({ fcm_token: token.value }).catch(()=>{});
+                        }
+                    });
+
+                    if (window.Capacitor.platform === 'android') {
+                        try {
+                            // Removido 'sound' customizado para evitar Resources$NotFoundException e fatal crash
+                            await PushNotifications.createChannel({
+                                id: 'virty_interfone_channel',
+                                name: 'Chamadas do Interfone',
+                                description: 'Canal de alta prioridade para chamadas do totem Virty',
+                                importance: 5, 
+                                visibility: 1,  
+                                vibration: true
+                            });
+                        } catch (e) { console.error("Erro ao criar canal push:", e); }
+                    }
+                }
                 
-                PushNotifications.addListener('registration', (token) => {
-                    if (my_un && token && token.value) {
-                        db.ref('moradores_validados/' + my_un).update({ fcm_token: token.value });
+                PushNotifications.addListener('pushNotificationReceived', () => { 
+                    if (my_un && !document.getElementById('s-cadastro').classList.contains('active')) {
+                        verificarStatus(); 
                     }
                 });
-
-                if (window.Capacitor.platform === 'android') {
-                    try {
-                        await PushNotifications.createChannel({
-                            id: 'virty_interfone_channel',
-                            name: 'Chamadas do Interfone',
-                            description: 'Canal de alta prioridade para chamadas do totem Virty',
-                            importance: 5, 
-                            visibility: 1,  
-                            sound: 'sound01', 
-                            vibration: true
-                        });
-                    } catch (e) { console.error(e); }
-                }
+                PushNotifications.addListener('pushNotificationActionPerformed', () => { 
+                    if (my_un) verificarStatus(); 
+                });
             }
-            
-            // Ouvintes passivos sem interferir diretamente no fluxo ativo da tela
-            PushNotifications.addListener('pushNotificationReceived', () => { 
-                if (my_un && !document.getElementById('s-cadastro').classList.contains('active')) {
-                    verificarStatus(); 
-                }
-            });
-            PushNotifications.addListener('pushNotificationActionPerformed', () => { 
-                if (my_un) verificarStatus(); 
-            });
+        } catch (e) {
+            console.error("Erro na inicialização de Push:", e);
         }
     }
 
@@ -319,17 +321,21 @@
         return "M-" + Math.abs(hash).toString(16).toUpperCase();
     }
     
-    window.onload = () => {
+    window.onload = async () => {
         my_fingerprint = gerarFingerprintMorador();
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
-        verificarStatus();
-        verificarPermissoesObg();
         
-        // Isola a inicialização do FCM para rodar 2 segundos após a montagem do app
+        // 1. Resolve permissão nativa antes de qualquer ação
+        await verificarPermissoesObg();
+        
+        // 2. Define o fluxo da tela
+        verificarStatus();
+        
+        // 3. Inicialização isolada do Push
         setTimeout(() => {
             inicializarPushNotificacoesNativas();
-        }, 2000);
+        }, 3000);
     };
 
     function verificarStatus() {
@@ -372,7 +378,6 @@
         }
     }
 
-    // Abertura veloz sem negociar resolução pesada
     function inicializarCapturaVideo() {
         const video = document.getElementById('v-cad');
         if (!video) return;
@@ -386,7 +391,6 @@
 
         video.muted = true;
 
-        // Sem restrição de width/height pesada para acelerar a resposta do hardware
         cameraPromise = navigator.mediaDevices.getUserMedia({ 
             video: { facingMode: "user" } 
         }).then(stream => {
@@ -403,7 +407,7 @@
         });
     }
 
-    // Captura com verificação de carregamento de quadro
+    // Geração de Miniatura Leve para o Admin (Máximo 160px)
     function fotoCad() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
         if(!v) return;
@@ -413,13 +417,25 @@
             return;
         }
 
-        c.width = v.videoWidth; 
-        c.height = v.videoHeight;
+        // Redimensiona para miniatura minúscula de admin
+        const maxDim = 160;
+        let w = v.videoWidth, h = v.videoHeight;
+        if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+        } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+        }
+
+        c.width = w; 
+        c.height = h;
         
         const ctx = c.getContext('2d');
-        ctx.drawImage(v, 0, 0, c.width, c.height);
+        ctx.drawImage(v, 0, 0, w, h);
         
-        my_foto = c.toDataURL('image/jpeg', 0.6); 
+        // JPEG 50% em miniatura ocupa menos de 15KB
+        my_foto = c.toDataURL('image/jpeg', 0.5); 
         
         c.style.display = "block"; 
         v.style.display = "none";
@@ -427,7 +443,7 @@
         encerrarStreamCamera();
     }
 
-    // Validação com mensagens de retorno e higienização do CPF
+    // Envio Local-First em Pacote Único (Carta na Caixa)
     function enviarCadastro() {
         const un = document.getElementById('c-un').value.trim(),
               cpfLimpo = document.getElementById('c-cpf').value.replace(/\D/g, ''),
@@ -453,39 +469,22 @@
 
         if(btnFinalizar) btnFinalizar.disabled = true;
         
-        db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
-            const moradoresExistentes = snap.val() || {};
-            const chaves = Object.keys(moradoresExistentes);
-            const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
-            
-            if (!jaExisteEsseAparelho) {
-                if(chaves.length >= 5) { 
-                    alert("Limite de cadastros para esta unidade atingido.");
-                    if(btnFinalizar) btnFinalizar.disabled = false; 
-                    return; 
-                }
-                for (let k in moradoresExistentes) {
-                    let m = moradoresExistentes[k];
-                    if(m.cpf === cpfLimpo || m.nome.toLowerCase() === nome.toLowerCase()) { 
-                        alert("Este CPF ou nome já possui uma solicitação enviada.");
-                        if(btnFinalizar) btnFinalizar.disabled = false; 
-                        return; 
-                    }
-                }
-            }
-            
-            db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({
-                nome: nome, cpf: cpfLimpo, unidade: un, foto: my_foto, ts: Date.now()
-            }).then(() => {
-                my_un = un;
-                localStorage.setItem('my_un', un);
-                if(btnFinalizar) btnFinalizar.disabled = false;
-                verificarStatus();
-            }).catch(err => {
-                console.error(err);
-                alert("Erro ao enviar o cadastro. Verifique a conexão.");
-                if(btnFinalizar) btnFinalizar.disabled = false;
-            });
+        // Envio direto do pacote pronto para o Firebase sem consultas intermediárias
+        db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({
+            nome: nome,
+            cpf: cpfLimpo,
+            unidade: un,
+            foto: my_foto,
+            ts: Date.now()
+        }).then(() => {
+            my_un = un;
+            localStorage.setItem('my_un', un);
+            if(btnFinalizar) btnFinalizar.disabled = false;
+            verificarStatus();
+        }).catch(err => {
+            console.error(err);
+            alert("Erro ao enviar a solicitação. Verifique sua conexão com a internet.");
+            if(btnFinalizar) btnFinalizar.disabled = false;
         });
     }
 
