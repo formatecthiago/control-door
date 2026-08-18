@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0.3</title>
+    <title>VIRTY MORADOR v2.0.4</title>
     
     <meta name="theme-color" content="#39FF14">
 
@@ -31,7 +31,7 @@
         <h2 style="color:var(--neon); text-align:center;">CADASTRO MORADOR</h2>
         <div class="video-box">
             <video id="v-cad" autoplay playsinline muted></video>
-            <img id="img-preview" src="" style="display:none;">
+            <img id="img-preview" src="" style="display:none; transform: scaleX(-1);">
         </div>
         <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR FOTO</button>
         <input type="text" id="c-nome" placeholder="Nome Completo">
@@ -50,7 +50,6 @@
             <h3>Aguardando Chamadas...</h3>
             <p style="color:#666;">Seu dispositivo está ativo para esta unidade.</p>
         </div>
-        <div id="lista-hist"></div>
     </div>
 
     <div id="painel-chamada">
@@ -72,9 +71,21 @@
     let fotoBase64 = "";
     let streamCamera = null;
 
-    window.onload = () => {
+    window.onload = async () => {
+        await solicitarPermissoesIniciais();
         verificarStatus();
     };
+
+    // Solicita explicitamente as permissões ao Android logo no início
+    async function solicitarPermissoesIniciais() {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera) {
+            try {
+                await window.Capacitor.Plugins.Camera.requestPermissions();
+            } catch (e) {
+                console.log("Erro ao solicitar permissões nativas:", e);
+            }
+        }
+    }
 
     function verificarStatus() {
         if(!my_un) { 
@@ -94,16 +105,30 @@
 
     function inicializarCapturaVideo() {
         const video = document.getElementById('v-cad');
+        const imgPreview = document.getElementById('img-preview');
         if (!video) return;
 
+        video.style.display = 'block';
+        imgPreview.style.display = 'none';
+
+        const constraints = {
+            video: {
+                facingMode: "user",
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            }
+        };
+
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            navigator.mediaDevices.getUserMedia(constraints)
             .then(stream => { 
                 streamCamera = stream;
-                video.srcObject = stream; 
+                video.srcObject = stream;
+                video.play();
+                document.getElementById('msg-cad').innerText = "";
             })
             .catch(err => { 
-                document.getElementById('msg-cad').innerText = "Erro ao acessar câmera: verifique as permissões.";
+                document.getElementById('msg-cad').innerText = "Permissão de câmera negada pelo sistema.";
             });
         }
     }
@@ -113,23 +138,24 @@
         const canvas = document.getElementById('canvas-hidden');
         const imgPreview = document.getElementById('img-preview');
 
-        if (!video || !video.videoWidth) {
-            alert("Aguarde a câmera carregar para tirar a foto.");
+        if (!video || !streamCamera) {
+            alert("Ative as permissões de câmera nas configurações do celular.");
             return;
         }
 
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth || 320;
+        canvas.height = video.videoHeight || 240;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        fotoBase64 = canvas.toDataURL('image/jpeg', 0.7); // Reduz qualidade para não estourar memória
+        fotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
         imgPreview.src = fotoBase64;
         imgPreview.style.display = 'block';
         video.style.display = 'none';
 
         if (streamCamera) {
             streamCamera.getTracks().forEach(track => track.stop());
+            streamCamera = null;
         }
     }
 
@@ -155,7 +181,6 @@
             timestamp: Date.now()
         };
 
-        // Salva na lista de moradores validados e vincula localmente
         db.ref('moradores_validados/' + un).set(dadosCadastro)
         .then(() => {
             localStorage.setItem('my_un', un);
