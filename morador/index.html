@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0.4</title>
+    <title>VIRTY MORADOR v2.0.5</title>
     
     <meta name="theme-color" content="#39FF14">
 
@@ -27,11 +27,12 @@
 </head>
 <body>
 
-    <div id="s-cadastro" class="screen">
+    <!-- Tela Cadastro (Ativa por padrão para evitar tela preta se houver falha de JS) -->
+    <div id="s-cadastro" class="screen active">
         <h2 style="color:var(--neon); text-align:center;">CADASTRO MORADOR</h2>
         <div class="video-box">
             <video id="v-cad" autoplay playsinline muted></video>
-            <img id="img-preview" src="" style="display:none; transform: scaleX(-1);">
+            <img id="img-preview" src="" style="display:none;">
         </div>
         <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR FOTO</button>
         <input type="text" id="c-nome" placeholder="Nome Completo">
@@ -41,6 +42,7 @@
         <button id="btn-finalizar-cad" class="btn" style="background:var(--neon);" onclick="enviarCadastro()">SOLICITAR</button>
     </div>
 
+    <!-- Tela Home -->
     <div id="s-home" class="screen">
         <div class="header">
             <b style="color:var(--neon);">VIRTY ACCESS DOOR</b>
@@ -52,6 +54,7 @@
         </div>
     </div>
 
+    <!-- Painel Atendimento -->
     <div id="painel-chamada">
         <div id="timer-regressivo">90</div>
         <img id="foto-v" class="foto-v" src="">
@@ -71,21 +74,12 @@
     let fotoBase64 = "";
     let streamCamera = null;
 
-    window.onload = async () => {
-        await solicitarPermissoesIniciais();
+    window.onload = () => {
+        // Exibe a interface primeiro
         verificarStatus();
+        // Em seguida tenta inicializar a câmera
+        inicializarCapturaVideo();
     };
-
-    // Solicita explicitamente as permissões ao Android logo no início
-    async function solicitarPermissoesIniciais() {
-        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera) {
-            try {
-                await window.Capacitor.Plugins.Camera.requestPermissions();
-            } catch (e) {
-                console.log("Erro ao solicitar permissões nativas:", e);
-            }
-        }
-    }
 
     function verificarStatus() {
         if(!my_un) { 
@@ -100,35 +94,34 @@
             } else {
                 mudarTela('s-cadastro');
             }
+        }).catch(() => {
+            mudarTela('s-cadastro');
         });
     }
 
-    function inicializarCapturaVideo() {
+    async function inicializarCapturaVideo() {
         const video = document.getElementById('v-cad');
-        const imgPreview = document.getElementById('img-preview');
         if (!video) return;
 
-        video.style.display = 'block';
-        imgPreview.style.display = 'none';
-
-        const constraints = {
-            video: {
-                facingMode: "user",
-                width: { ideal: 640 },
-                height: { ideal: 480 }
+        // Pedido de permissão nativa sem travar o app se falhar
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera) {
+            try {
+                await window.Capacitor.Plugins.Camera.requestPermissions();
+            } catch (e) {
+                console.log("Aviso: Falha ao solicitar permissão nativa", e);
             }
-        };
+        }
 
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia(constraints)
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
             .then(stream => { 
                 streamCamera = stream;
-                video.srcObject = stream;
+                video.srcObject = stream; 
                 video.play();
                 document.getElementById('msg-cad').innerText = "";
             })
             .catch(err => { 
-                document.getElementById('msg-cad').innerText = "Permissão de câmera negada pelo sistema.";
+                document.getElementById('msg-cad').innerText = "Toque em 'CAPTURAR FOTO' para permitir o uso da câmera.";
             });
         }
     }
@@ -138,11 +131,25 @@
         const canvas = document.getElementById('canvas-hidden');
         const imgPreview = document.getElementById('img-preview');
 
-        if (!video || !streamCamera) {
-            alert("Ative as permissões de câmera nas configurações do celular.");
+        // Se o stream contínuo falhou, força a tentativa no clique do botão
+        if (!streamCamera) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(stream => {
+                streamCamera = stream;
+                video.srcObject = stream;
+                video.play();
+                setTimeout(() => capturarFrame(video, canvas, imgPreview), 500);
+            })
+            .catch(() => {
+                alert("Permissão de câmera negada nas configurações do Android.");
+            });
             return;
         }
 
+        capturarFrame(video, canvas, imgPreview);
+    }
+
+    function capturarFrame(video, canvas, imgPreview) {
         canvas.width = video.videoWidth || 320;
         canvas.height = video.videoHeight || 240;
         const ctx = canvas.getContext('2d');
@@ -200,8 +207,8 @@
 
     function mudarTela(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(id === 's-cadastro') inicializarCapturaVideo();
+        const telaAlvo = document.getElementById(id);
+        if (telaAlvo) telaAlvo.classList.add('active');
     }
 
     function responder(st) {
