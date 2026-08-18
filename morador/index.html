@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0.2 - TESTE ESTABILIDADE</title>
+    <title>VIRTY MORADOR v2.0.3</title>
     
     <meta name="theme-color" content="#39FF14">
 
-    <!-- CSS mantido idêntico para não quebrar a interface -->
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --blue: #007BFF; --gray: #666; --yellow: #FFD700; --dark-card: #0d0d0d; }
         *, *::before, *::after { box-sizing: border-box; touch-action: manipulation; }
@@ -18,25 +17,27 @@
         .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 8px 0; }
         .btn:disabled { background: #333 !important; color: #666 !important; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; margin-bottom: 20px; }
-        .controles-alerta { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 12px 20px; border-radius: 12px; font-size: 1.3rem; min-width: 65px; }
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
         .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 15px; }
         #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; }
-        .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; }
-        .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; margin: 0 auto 20px; position: relative; }
+        .video-box video, .video-box img { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .status-msg { color: var(--neon); text-align: center; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <!-- Conteúdo HTML mantido igual -->
     <div id="s-cadastro" class="screen">
         <h2 style="color:var(--neon); text-align:center;">CADASTRO MORADOR</h2>
-        <div class="video-box" style="margin: 0 auto 20px;"><video id="v-cad" autoplay playsinline muted></video></div>
-        <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR</button>
-        <input type="text" id="c-nome" placeholder="Nome">
-        <input type="number" id="c-cpf" placeholder="CPF">
-        <input type="number" id="c-un" placeholder="Apt">
+        <div class="video-box">
+            <video id="v-cad" autoplay playsinline muted></video>
+            <img id="img-preview" src="" style="display:none;">
+        </div>
+        <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR FOTO</button>
+        <input type="text" id="c-nome" placeholder="Nome Completo">
+        <input type="number" id="c-cpf" placeholder="CPF (apenas números)">
+        <input type="number" id="c-un" placeholder="Unidade / Apartamento">
+        <div id="msg-cad" class="status-msg"></div>
         <button id="btn-finalizar-cad" class="btn" style="background:var(--neon);" onclick="enviarCadastro()">SOLICITAR</button>
     </div>
 
@@ -44,6 +45,10 @@
         <div class="header">
             <b style="color:var(--neon);">VIRTY ACCESS DOOR</b>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px;"></span>
+        </div>
+        <div style="text-align: center; margin-top: 40px;">
+            <h3>Aguardando Chamadas...</h3>
+            <p style="color:#666;">Seu dispositivo está ativo para esta unidade.</p>
         </div>
         <div id="lista-hist"></div>
     </div>
@@ -54,6 +59,8 @@
         <button class="btn" style="background:var(--neon);" onclick="responder('liberado')">AUTORIZAR ENTRADA</button>
     </div>
 
+    <canvas id="canvas-hidden" style="display:none;"></canvas>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
@@ -62,20 +69,20 @@
     const db = firebase.database();
     
     let my_un = localStorage.getItem('my_un');
-    let somInterfoneLocal = null;
-    let somTocandoAtualmente = false; 
+    let fotoBase64 = "";
+    let streamCamera = null;
 
-    // --- MUDANÇA 1: Removido listener de resume ---
-    // O evento de 'resume' causava loop infinito em aparelhos antigos
-    
     window.onload = () => {
         verificarStatus();
-        verificarPermissoesObg();
     };
 
     function verificarStatus() {
-        if(!my_un) { mudarTela('s-cadastro'); return; }
-        db.ref('moradores_validados/' + my_un).once('value', s => { // Usando once para evitar listeners infinitos
+        if(!my_un) { 
+            mudarTela('s-cadastro'); 
+            return; 
+        }
+        document.getElementById('txt-un').innerText = `UN: ${my_un}`;
+        db.ref('moradores_validados/' + my_un).once('value', s => {
             if(s.exists()) {
                 mudarTela('s-home');
                 escutarChamadas();
@@ -85,44 +92,85 @@
         });
     }
 
-    function gerenciarAlerta(acao, arquivoSomOpcional) {
-        if(acao === 'stop') { 
-            if(somInterfoneLocal) { somInterfoneLocal.pause(); somInterfoneLocal.currentTime = 0; somInterfoneLocal = null; }
-            somTocandoAtualmente = false;
-            // --- MUDANÇA 2: Vibração comentada para evitar travamento de hardware ---
-            // if (navigator.vibrate) navigator.vibrate(0); 
-            return; 
-        }
-
-        // --- MUDANÇA 2: Vibração comentada para evitar travamento de hardware ---
-        // if(modoAlerta === 2 || modoAlerta === 3) { ... dispararPulso ... }
-
-        if(!somTocandoAtualmente) {
-            const arquivoFinal = arquivoSomOpcional || "sound01.mp3";
-            somInterfoneLocal = new Audio(`sound/${arquivoFinal}`);
-            somInterfoneLocal.loop = true; 
-            somTocandoAtualmente = true;
-            somInterfoneLocal.play().catch(() => { somTocandoAtualmente = false; });
-        }
-    }
-
-    // --- MUDANÇA 3: Funções de câmera com verificação de erro ---
     function inicializarCapturaVideo() {
         const video = document.getElementById('v-cad');
         if (!video) return;
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-        .then(stream => { video.srcObject = stream; })
-        .catch(err => { console.log("Câmera indisponível:", err); });
+
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(stream => { 
+                streamCamera = stream;
+                video.srcObject = stream; 
+            })
+            .catch(err => { 
+                document.getElementById('msg-cad').innerText = "Erro ao acessar câmera: verifique as permissões.";
+            });
+        }
     }
 
-    async function verificarPermissoesObg() {
-        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera) {
-            try {
-                // Apenas checa, não força o pedido em loop
-                const status = await window.Capacitor.Plugins.Camera.checkPermissions();
-                return status.camera === 'granted';
-            } catch (e) { return false; }
+    function fotoCad() {
+        const video = document.getElementById('v-cad');
+        const canvas = document.getElementById('canvas-hidden');
+        const imgPreview = document.getElementById('img-preview');
+
+        if (!video || !video.videoWidth) {
+            alert("Aguarde a câmera carregar para tirar a foto.");
+            return;
         }
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        fotoBase64 = canvas.toDataURL('image/jpeg', 0.7); // Reduz qualidade para não estourar memória
+        imgPreview.src = fotoBase64;
+        imgPreview.style.display = 'block';
+        video.style.display = 'none';
+
+        if (streamCamera) {
+            streamCamera.getTracks().forEach(track => track.stop());
+        }
+    }
+
+    function enviarCadastro() {
+        const nome = document.getElementById('c-nome').value.trim();
+        const cpf = document.getElementById('c-cpf').value.trim();
+        const un = document.getElementById('c-un').value.trim();
+        const btn = document.getElementById('btn-finalizar-cad');
+
+        if (!nome || !cpf || !un) {
+            alert("Preencha todos os campos!");
+            return;
+        }
+
+        btn.disabled = true;
+        document.getElementById('msg-cad').innerText = "Enviando cadastro...";
+
+        const dadosCadastro = {
+            nome: nome,
+            cpf: cpf,
+            unidade: un,
+            foto: fotoBase64 || "",
+            timestamp: Date.now()
+        };
+
+        // Salva na lista de moradores validados e vincula localmente
+        db.ref('moradores_validados/' + un).set(dadosCadastro)
+        .then(() => {
+            localStorage.setItem('my_un', un);
+            my_un = un;
+            document.getElementById('msg-cad').innerText = "Cadastro realizado!";
+            setTimeout(() => {
+                btn.disabled = false;
+                mudarTela('s-home');
+                verificarStatus();
+            }, 1000);
+        })
+        .catch(err => {
+            btn.disabled = false;
+            document.getElementById('msg-cad').innerText = "Erro ao enviar: " + err.message;
+        });
     }
 
     function mudarTela(id) {
@@ -133,10 +181,8 @@
 
     function responder(st) {
         document.getElementById('painel-chamada').style.display = 'none';
-        gerenciarAlerta('stop');
         db.ref('chamadas_ativas/' + my_un).update({ status: st });
         setTimeout(() => db.ref('chamadas_ativas/' + my_un).remove(), 1000);
-        mudarTela('s-home');
     }
 
     function escutarChamadas() {
@@ -144,14 +190,12 @@
             const d = s.val();
             if(d && d.status === 'chamando') {
                 document.getElementById('painel-chamada').style.display = 'flex';
-                gerenciarAlerta('start');
+                if(d.foto) document.getElementById('foto-v').src = d.foto;
             } else {
                 document.getElementById('painel-chamada').style.display = 'none';
-                gerenciarAlerta('stop');
             }
         });
     }
-
 </script>
 </body>
 </html>
