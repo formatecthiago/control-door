@@ -246,7 +246,7 @@
     let escutaChamadasIniciada = false;
 
     async function inicializarPushNotificacoesNativas() {
-        if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications) {
             const PushNotifications = window.Capacitor.Plugins.PushNotifications;
             let permStatus = await PushNotifications.checkPermissions();
             if (permStatus.receive === 'prompt') {
@@ -280,25 +280,36 @@
         }
     }
 
+    // CORREÇÃO DE ESTABILIDADE: Checa antes de pedir permissão para não gerar loop nem fechar o app
     async function verificarPermissoesObg() {
         const banner = document.getElementById('banner-permissoes');
-        if (window.Capacitor) {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera) {
             try {
-                let statusCamera = await window.Capacitor.Plugins.Camera.requestPermissions();
+                const Camera = window.Capacitor.Plugins.Camera;
+                let statusCamera = await Camera.checkPermissions();
+                
                 if (statusCamera.camera !== 'granted') {
-                    banner.style.setProperty('display', 'flex', 'important');
+                    statusCamera = await Camera.requestPermissions();
+                }
+
+                if (statusCamera.camera !== 'granted') {
+                    if (banner) banner.style.setProperty('display', 'flex', 'important');
                     return false;
                 } else {
-                    banner.style.setProperty('display', 'none', 'important');
+                    if (banner) banner.style.setProperty('display', 'none', 'important');
                     return true;
                 }
-            } catch (e) { console.log(e); }
+            } catch (e) { 
+                console.log("Erro ao verificar permissões:", e); 
+            }
         }
         return true;
     }
 
     document.getElementById('btn-autorizar-sempre').addEventListener('click', async () => {
-        if (window.Capacitor) { await window.Capacitor.Plugins.App.openAppSettings(); }
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) { 
+            await window.Capacitor.Plugins.App.openAppSettings(); 
+        }
     });
 
     function gerarFingerprintMorador() {
@@ -823,5 +834,3 @@
 </script>
 </body>
 </html>
-
-
