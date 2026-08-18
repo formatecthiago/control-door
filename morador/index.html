@@ -3,138 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0.6</title>
+    <title>VIRTY MORADOR v2.2.0 - COM APROVAÇÃO</title>
     <meta name="theme-color" content="#39FF14">
 
     <style>
-        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; }
+        :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --dark-card: #0d0d0d; }
         *, *::before, *::after { box-sizing: border-box; touch-action: manipulation; }
-        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 15px; }
-        .screen { display: none; min-height: 100vh; flex-direction: column; }
+        body { background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 0; overflow-x: hidden; -webkit-user-select: none; user-select: none; }
+        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; justify-content: center; }
         .active { display: flex !important; }
-        input { width: 100%; padding: 14px; margin: 6px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; font-size: 1rem; }
-        .btn { width: 100%; padding: 16px; border-radius: 25px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 8px 0; }
-        .video-box { width: 160px; height: 160px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; margin: 0 auto 15px; position: relative; }
+        input { width: 100%; padding: 16px; margin: 8px 0; border-radius: 12px; border: 2px solid #222; background: #111; color: #fff; font-size: 1.1rem; }
+        .btn { width: 100%; padding: 18px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 8px 0; }
+        .btn:disabled { background: #333 !important; color: #666 !important; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; margin-bottom: 20px; }
+        .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; margin: 0 auto 15px; position: relative; }
         .video-box video, .video-box img { width: 100%; height: 100%; object-fit: cover; }
-        #debug-box { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); color: #39FF14; font-family: monospace; font-size: 11px; padding: 10px; max-height: 120px; overflow-y: auto; z-index: 9999; border-top: 1px solid #333; }
+        
+        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; padding: 20px; }
+        .foto-v { width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 15px; }
+        #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; }
+        .status-box { background: #111; border: 1px solid #222; padding: 25px; border-radius: 15px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <!-- Painel de Logs para diagnóstico no celular -->
-    <div id="debug-box">LOGS DO SISTEMA:<br></div>
-
-    <!-- Tela Cadastro (Visível por padrão para impedir tela preta) -->
+    <!-- TELA 1: CADASTRO -->
     <div id="s-cadastro" class="screen active">
-        <h2 style="color:var(--neon); text-align:center; margin: 10px 0;">CADASTRO MORADOR</h2>
+        <h2 style="color:var(--neon); text-align:center;">CADASTRO MORADOR</h2>
         <div class="video-box">
             <video id="v-cad" autoplay playsinline muted></video>
             <img id="img-preview" src="" style="display:none;">
         </div>
         
-        <!-- Input de câmera nativo do HTML como Fallback de segurança -->
         <input type="file" id="input-foto-native" accept="image/*" capture="user" style="display:none;" onchange="carregarFotoNativa(event)">
         
-        <button class="btn" style="background:#fff; color:#000;" onclick="iniciarOuCapturarFoto()">📸 TIRAR FOTO</button>
+        <button class="btn" style="background:#fff; color:#000;" onclick="iniciarOuCapturarFoto()">📸 CAPTURAR FOTO</button>
         <input type="text" id="c-nome" placeholder="Nome Completo">
-        <input type="number" id="c-cpf" placeholder="CPF">
+        <input type="number" id="c-cpf" placeholder="CPF (apenas números)">
         <input type="number" id="c-un" placeholder="Unidade / Apartamento">
-        <button id="btn-cad" class="btn" style="background:var(--neon);" onclick="enviarCadastro()">SOLICITAR</button>
+        <button id="btn-finalizar-cad" class="btn" style="background:var(--neon);" onclick="enviarCadastro()">SOLICITAR CADASTRO</button>
     </div>
 
-    <!-- Tela Home -->
-    <div id="s-home" class="screen">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #222; padding-bottom:10px;">
-            <b style="color:var(--neon);">VIRTY ACCESS</b>
-            <span id="txt-un" style="background:var(--neon); color:#000; padding:2px 8px; border-radius:4px; font-weight:bold;"></span>
+    <!-- TELA 2: AGUARDANDO APROVAÇÃO (PENDENTE) -->
+    <div id="s-aguardando" class="screen">
+        <div class="status-box">
+            <h2 style="color:#FFD700; margin-bottom: 10px;">⏳ SOLICITAÇÃO ENVIADA</h2>
+            <p style="color:#ccc; font-size:1.1rem;">Aguardando aprovação do administrador da portaria...</p>
+            <p style="color:#666; font-size:0.9rem; margin-top:20px;">Unidade solicitada: <b id="txt-un-pendente" style="color:#fff;"></b></p>
+            <button class="btn" style="background:#222; color:#fff; margin-top:20px;" onclick="cancelarSolicitacao()">CANCELAR / REFAZER</button>
         </div>
-        <div style="text-align: center; margin-top: 50px;">
-            <h3 style="color:var(--neon);">SISTEMA PRONTO</h3>
-            <p style="color:#888;">Aguardando chamadas da portaria...</p>
+    </div>
+
+    <!-- TELA 3: PRINCIPAL (APROVADO) -->
+    <div id="s-home" class="screen" style="justify-content: flex-start;">
+        <div class="header">
+            <b style="color:var(--neon);">VIRTY ACCESS DOOR</b>
+            <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold;"></span>
         </div>
+        
+        <div style="text-align: center; margin: 40px 0;">
+            <h3 style="color:var(--neon); margin-bottom: 5px;">SISTEMA OPERACIONAL</h3>
+            <p style="color:#666; font-size: 0.9rem;">Aguardando chamadas da portaria...</p>
+        </div>
+    </div>
+
+    <!-- MODAL DE CHAMADA -->
+    <div id="painel-chamada">
+        <div id="timer-regressivo">90</div>
+        <img id="foto-v" class="foto-v" src="">
+        <h3 id="txt-visitante" style="color:#fff; margin-bottom:20px;">VISITANTE NA PORTARIA</h3>
+        <button class="btn" style="background:var(--neon); color:#000;" onclick="responder('liberado')">AUTORIZAR ENTRADA</button>
+        <button class="btn" style="background:var(--red); color:#fff; margin-top:10px;" onclick="responder('recusado')">RECUSAR</button>
     </div>
 
     <canvas id="canvas-hidden" style="display:none;"></canvas>
 
-<!-- Carregamento Seguro do Firebase com tratamento de erro -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-    function log(msg) {
-        const box = document.getElementById('debug-box');
-        if(box) box.innerHTML += `> ${msg}<br>`;
-        console.log(msg);
-    }
+    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    const db = firebase.database();
 
-    // Captura qualquer erro global do JavaScript para não deixar a tela preta
-    window.onerror = function(msg, url, line) {
-        log(`ERRO JS: ${msg} (Linha ${line})`);
-        return true;
-    };
-
-    let db = null;
     let my_un = localStorage.getItem('my_un');
     let fotoBase64 = "";
     let streamCamera = null;
+    let listenerStatus = null;
 
     window.onload = () => {
-        log("Iniciando aplicação...");
-        inicializarFirebase();
         verificarStatus();
     };
 
-    function inicializarFirebase() {
-        try {
-            if (typeof firebase !== 'undefined') {
-                const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
-                if (!firebase.apps.length) firebase.initializeApp(config);
-                db = firebase.database();
-                log("Firebase Conectado.");
-            } else {
-                log("Erro: SDK do Firebase não carregou (Sem Internet?).");
-            }
-        } catch(e) {
-            log("Erro Firebase: " + e.message);
-        }
-    }
-
+    // Controla os 3 estados do app: Não cadastrado -> Pendente -> Aprovado
     function verificarStatus() {
         if(!my_un) { 
             mudarTela('s-cadastro'); 
             return; 
         }
-        document.getElementById('txt-un').innerText = `UN: ${my_un}`;
-        if(db) {
-            db.ref('moradores_validados/' + my_un).once('value')
-            .then(s => {
-                if(s.exists()) mudarTela('s-home');
-                else mudarTela('s-cadastro');
-            })
-            .catch(e => {
-                log("Erro consulta BD: " + e.message);
-                mudarTela('s-cadastro');
-            });
+
+        // Monitora em tempo real a validação do administrador
+        if(listenerStatus) listenerStatus.off();
+        
+        listenerStatus = db.ref('moradores_validados/' + my_un);
+        listenerStatus.on('value', snapshot => {
+            if (snapshot.exists()) {
+                // Aprovado pelo Admin
+                document.getElementById('txt-un').innerText = `UN: ${my_un}`;
+                mudarTela('s-home');
+                escutarChamadas();
+            } else {
+                // Checa se ainda está na fila de pendentes
+                db.ref('solicitacoes_cadastro/' + my_un).once('value', pendSnap => {
+                    if (pendSnap.exists()) {
+                        document.getElementById('txt-un-pendente').innerText = my_un;
+                        mudarTela('s-aguardando');
+                    } else {
+                        // Se não está nem validados nem em pendentes (foi recusado ou cancelado)
+                        localStorage.removeItem('my_un');
+                        my_un = null;
+                        mudarTela('s-cadastro');
+                    }
+                });
+            }
+        });
+    }
+
+    function enviarCadastro() {
+        const nome = document.getElementById('c-nome').value.trim();
+        const cpf = document.getElementById('c-cpf').value.trim();
+        const un = document.getElementById('c-un').value.trim();
+        const btn = document.getElementById('btn-finalizar-cad');
+
+        if (!nome || !cpf || !un) {
+            alert("Preencha todos os campos!");
+            return;
+        }
+
+        btn.disabled = true;
+
+        // GRAVA EM SOLICITAÇÕES_CADASTRO (AGUARDANDO APROVAÇÃO DO ADMIN)
+        db.ref('solicitacoes_cadastro/' + un).set({
+            nome: nome,
+            cpf: cpf,
+            unidade: un,
+            foto: fotoBase64,
+            status: 'pendente',
+            timestamp: Date.now()
+        })
+        .then(() => {
+            localStorage.setItem('my_un', un);
+            my_un = un;
+            btn.disabled = false;
+            verificarStatus();
+        })
+        .catch(err => {
+            btn.disabled = false;
+            alert("Erro ao solicitar cadastro: " + err.message);
+        });
+    }
+
+    function cancelarSolicitacao() {
+        if(my_un) {
+            db.ref('solicitacoes_cadastro/' + my_un).remove();
+            localStorage.removeItem('my_un');
+            my_un = null;
+            mudarTela('s-cadastro');
         }
     }
 
     function iniciarOuCapturarFoto() {
         const video = document.getElementById('v-cad');
-        
         if (!streamCamera) {
-            log("Solicitando câmera...");
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
                 .then(stream => { 
                     streamCamera = stream;
                     video.srcObject = stream;
                     video.play();
-                    log("Câmera ativa. Toque novamente para fotografar.");
                 })
-                .catch(err => { 
-                    log("Câmera bloqueada. Usando seletor nativo.");
-                    document.getElementById('input-foto-native').click();
-                });
+                .catch(() => document.getElementById('input-foto-native').click());
             } else {
                 document.getElementById('input-foto-native').click();
             }
@@ -153,7 +201,7 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        fotoBase64 = canvas.toDataURL('image/jpeg', 0.5);
+        fotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
         imgPreview.src = fotoBase64;
         imgPreview.style.display = 'block';
         video.style.display = 'none';
@@ -162,7 +210,6 @@
             streamCamera.getTracks().forEach(track => track.stop());
             streamCamera = null;
         }
-        log("Foto capturada com sucesso.");
     }
 
     function carregarFotoNativa(event) {
@@ -175,38 +222,27 @@
                 imgPreview.src = fotoBase64;
                 imgPreview.style.display = 'block';
                 document.getElementById('v-cad').style.display = 'none';
-                log("Foto selecionada via câmera do sistema.");
             };
             reader.readAsDataURL(file);
         }
     }
 
-    function enviarCadastro() {
-        const nome = document.getElementById('c-nome').value.trim();
-        const cpf = document.getElementById('c-cpf').value.trim();
-        const un = document.getElementById('c-un').value.trim();
+    function escutarChamadas() {
+        db.ref('chamadas_ativas/' + my_un).on('value', s => {
+            const d = s.val();
+            if(d && d.status === 'chamando') {
+                document.getElementById('painel-chamada').style.display = 'flex';
+                if(d.foto) document.getElementById('foto-v').src = d.foto;
+            } else {
+                document.getElementById('painel-chamada').style.display = 'none';
+            }
+        });
+    }
 
-        if (!nome || !cpf || !un) {
-            alert("Preencha todos os campos!");
-            return;
-        }
-
-        if(!db) {
-            alert("Banco de dados indisponível. Verifique a conexão.");
-            return;
-        }
-
-        log("Enviando cadastro...");
-        db.ref('moradores_validados/' + un).set({
-            nome: nome, cpf: cpf, unidade: un, foto: fotoBase64, timestamp: Date.now()
-        })
-        .then(() => {
-            localStorage.setItem('my_un', un);
-            my_un = un;
-            log("Cadastro concluído!");
-            mudarTela('s-home');
-        })
-        .catch(err => log("Erro ao salvar: " + err.message));
+    function responder(st) {
+        document.getElementById('painel-chamada').style.display = 'none';
+        db.ref('chamadas_ativas/' + my_un).update({ status: st });
+        setTimeout(() => db.ref('chamadas_ativas/' + my_un).remove(), 1000);
     }
 
     function mudarTela(id) {
