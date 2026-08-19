@@ -2,6 +2,14 @@
   "appId": "com.formatecthiago.controldoor.morador",
   "appName": "VirtyMorador",
   "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true,
+    "allowNavigation": [
+      "*.firebaseio.com",
+      "*.googleapis.com"
+    ]
+  },
   "plugins": {
     "PushNotifications": {
       "presentationOptions": ["badge", "sound", "alert"]
