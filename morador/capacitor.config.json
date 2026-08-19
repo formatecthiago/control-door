@@ -1,19 +1,7 @@
 {
-  "appId": "com.virty.controldoor",
-  "appName": "Virty Morador",
+  "appId": "com.formatecthiago.controldoor.morador",
+  "appName": "VirtyMorador",
   "webDir": "www",
-  "server": {
-    "cleartext": true,
-    "androidScheme": "https"
-  },
-  "android": {
-    "allowMixedContent": true,
-    "captureInput": true,
-    "buildOptions": {
-      "keystorePath": null,
-      "keystoreAlias": null
-    }
-  },
   "plugins": {
     "PushNotifications": {
       "presentationOptions": ["badge", "sound", "alert"]
