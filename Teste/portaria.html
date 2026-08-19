@@ -3,47 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste de Câmera</title>
     <style>
-        body { margin: 0; background: #000; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        video { width: 100%; max-width: 500px; background: #333; }
-        button { margin-top: 20px; padding: 15px 30px; font-size: 18px; border-radius: 25px; border: none; background: #007bff; color: white; }
+        body { margin: 0; background: #000; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+        
+        /* Contêiner que vamos esconder */
+        #interface-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        
+        video { width: 90%; max-width: 500px; background: #333; }
+        button { margin-top: 20px; padding: 15px 30px; font-size: 18px; border-radius: 25px; border: none; background: #007bff; color: white; cursor: pointer;}
+        
+        /* Classe que usaremos para esconder tudo */
+        .ocultar { opacity: 0; visibility: hidden; }
     </style>
 </head>
 <body>
 
-    <video id="meuVideo" playsinline autoplay muted loop 
-           src="https://www.w3schools.com/html/mov_bbb.mp4">
-    </video>
-
-    <button onclick="ativarPiP()">Testar Vídeo Flutuante</button>
-    <p id="log" style="margin-top:20px; color: yellow;"></p>
+    <div id="interface-container">
+        <video id="meuVideo" playsinline autoplay muted loop src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
+        <button onclick="ativarPiP()">Visualizar Flutuante</button>
+    </div>
 
     <script>
         const video = document.getElementById('meuVideo');
-        const log = document.getElementById('log');
+        const interfaceDiv = document.getElementById('interface-container');
 
         async function ativarPiP() {
             try {
-                // Tenta forçar o play antes de flutuar (necessário para alguns navegadores)
-                await video.play();
-                
-                if (document.pictureInPictureElement) {
-                    await document.exitPictureInPicture();
-                } else {
-                    await video.requestPictureInPicture();
-                    log.textContent = "Sucesso!";
-                }
+                await video.requestPictureInPicture();
             } catch (error) {
-                log.textContent = "Erro: " + error.message;
-                console.error(error);
+                alert("Erro ao abrir vídeo flutuante.");
             }
         }
 
-        // Monitor de erro do vídeo
-        video.onerror = function() {
-            log.textContent = "Erro: Não foi possível carregar o vídeo.";
-        };
+        // Quando o vídeo entra no modo PiP, escondemos a interface
+        video.addEventListener('enterpictureinpicture', () => {
+            interfaceDiv.classList.add('ocultar');
+        });
+
+        // Quando o vídeo volta para a página, mostramos a interface de novo
+        video.addEventListener('leavepictureinpicture', () => {
+            interfaceDiv.classList.remove('ocultar');
+        });
     </script>
 </body>
 </html>
