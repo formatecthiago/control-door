@@ -19,7 +19,7 @@
         }
         *, *::before, *::after { 
             box-sizing: border-box; 
-            touch-action: manipulation; /* Elimina o delay de 300ms do toque no Android */
+            touch-action: manipulation;
         }
         body {
             background: var(--bg);
@@ -233,7 +233,7 @@
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
     
     let streamCameraAtiva = null;
-    let inicializandoCamera = false; // TRAVA DE ESTADO
+    let inicializandoCamera = false;
     let micStreamGlobal = null;
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
@@ -246,6 +246,7 @@
     let refHistoricoAtiva = null;
     let escutaChamadasIniciada = false;
 
+    // CORREÇÃO FCM: Registra o token sem criar o cadastro aprovado precocemente
     async function inicializarPushNotificacoesNativas() {
         if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
             const PushNotifications = window.Capacitor.Plugins.PushNotifications;
@@ -258,7 +259,18 @@
                 
                 PushNotifications.addListener('registration', (token) => {
                     if (my_un && token && token.value) {
-                        db.ref('moradores_validados/' + my_un).update({ fcm_token: token.value });
+                        // Se estiver na fila de análise, atualiza o token na solicitação
+                        db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).once('value', snap => {
+                            if (snap.exists()) {
+                                db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).update({ fcm_token: token.value });
+                            }
+                        });
+                        // Só atualiza em moradores_validados se o nó realmente JÁ EXISTIR e estivar APROVADO pelo Admin
+                        db.ref('moradores_validados/' + my_un).once('value', snap => {
+                            if (snap.exists() && snap.val() && snap.val().nome) {
+                                db.ref('moradores_validados/' + my_un).update({ fcm_token: token.value });
+                            }
+                        });
                     }
                 });
 
@@ -291,6 +303,10 @@
                     return false;
                 } else {
                     banner.style.setProperty('display', 'none', 'important');
+                    const sCad = document.getElementById('s-cadastro');
+                    if (sCad && sCad.classList.contains('active')) {
+                        inicializarCapturaVideo();
+                    }
                     return true;
                 }
             } catch (e) { console.log(e); }
@@ -309,22 +325,24 @@
         return "M-" + Math.abs(hash).toString(16).toUpperCase();
     }
     
-    window.onload = () => {
+    window.onload = async () => {
         my_fingerprint = gerarFingerprintMorador();
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
+        
+        await verificarPermissoesObg();
         verificarStatus();
-        verificarPermissoesObg();
         inicializarPushNotificacoesNativas();
     };
 
+    // CORREÇÃO: Garante que só vai pra HOME se o nó do morador validado tiver o campo 'nome' aprovado pelo Admin
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
         if(refStatusAtiva) refStatusAtiva.off();
         
         refStatusAtiva = db.ref('moradores_validados/' + my_un);
         refStatusAtiva.on('value', s => {
-            if(s.exists()) {
+            if(s.exists() && s.val() && s.val().nome) {
                 mudarTela('s-home');
                 document.getElementById('txt-un').innerText = "CASA " + my_un;
                 if (!escutaChamadasIniciada) {
@@ -337,7 +355,9 @@
                     if(snap.exists()) {
                         document.getElementById('txt-un-analise').innerText = "UNIDADE: " + my_un + " | ID HARDWARE: " + my_fingerprint;
                         mudarTela('s-analise');
-                    } else { mudarTela('s-cadastro'); }
+                    } else { 
+                        mudarTela('s-cadastro'); 
+                    }
                 });
             }
         });
@@ -356,7 +376,7 @@
         }
     }
 
-    // CORREÇÃO: Função com Trava de Estado e gerenciamento limpo do MediaStream
+    // CORREÇÃO CÂMERA: Abertura imediata EXCLUSIVAMENTE em modo Selfie (Frontal)
     async function inicializarCapturaVideo() {
         if (streamCameraAtiva && streamCameraAtiva.active) return;
         if (inicializandoCamera) return;
@@ -371,20 +391,25 @@
         }
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
+            const constraints = { 
                 video: { 
-                    facingMode: "user",
+                    facingMode: { ideal: "user" }, // Exclusivo Câmera Frontal / Selfie
                     width: { ideal: 480 },
                     height: { ideal: 360 }
-                } 
-            });
+                },
+                audio: false
+            };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
             streamCameraAtiva = stream;
             video.srcObject = stream;
             video.setAttribute('playsinline', 'true');
-            video.style.transform = "scaleX(-1)";
-            await video.play().catch(() => {});
+            video.style.transform = "scaleX(-1)"; // Espelhado para modo selfie
+            
+            try {
+                await video.play();
+            } catch (pErr) { console.warn("Aguardando interação para reproduzir vídeo:", pErr); }
         } catch (err) {
-            console.error("Erro câmera:", err);
+            console.error("Erro ao inicializar câmera selfie:", err);
         } finally {
             inicializandoCamera = false;
         }
@@ -747,7 +772,6 @@
     }
     function limparHist() { if(confirm("Deseja limpar seu histórico?")) db.ref(`historico/${my_un}`).remove(); }
     
-    // CORREÇÃO: Troca de tela simplificada para prevenir concorrência de execução
     function mudarTela(id) {
         const targetScreen = document.getElementById(id);
         if (!targetScreen) return;
@@ -761,7 +785,6 @@
             if(video) video.style.display = "block"; 
             if(canvas) canvas.style.display = "none"; 
             
-            // Ativação limpa e única da câmera
             inicializarCapturaVideo();
         } else {
             encerrarStreamCamera();
