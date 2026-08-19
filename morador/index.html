@@ -97,7 +97,7 @@
         .btn-voz svg { width: 32px; height: 32px; fill: #000; }
         
         .area-camera-virty { display: flex; align-items: center; justify-content: center; margin: 15px 0 25px; width: 100%; }
-        .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; position:relative; will-change: transform; }
+        .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; position:relative; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
@@ -121,7 +121,7 @@
         <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
         <div class="area-camera-virty">
             <div class="video-box">
-                <video id="v-cad" autoplay playsinline muted></video>
+                <video id="v-cad" playsinline muted></video>
                 <canvas id="c-cad"></canvas>
             </div>
         </div>
@@ -246,7 +246,6 @@
     let refHistoricoAtiva = null;
     let escutaChamadasIniciada = false;
 
-    // CORREÇÃO PROTEGIDA: Inicialização do Push Notifications sem travar o app
     async function inicializarPushNotificacoesNativas() {
         try {
             if (typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable && Capacitor.isPluginAvailable('PushNotifications')) {
@@ -284,15 +283,13 @@
                                 sound: 'sound01', 
                                 vibration: true
                             });
-                        } catch (e) { console.error("Erro ao criar canal FCM:", e); }
+                        } catch (e) {}
                     }
                 }
                 PushNotifications.addListener('pushNotificationReceived', () => { if (my_un) verificarStatus(); });
                 PushNotifications.addListener('pushNotificationActionPerformed', () => { if (my_un) verificarStatus(); });
             }
-        } catch (err) {
-            console.warn("Nativo Push não carregou ou ambiente sem suporte:", err);
-        }
+        } catch (err) {}
     }
 
     async function verificarPermissoesObg() {
@@ -305,13 +302,9 @@
                     return false;
                 } else {
                     banner.style.setProperty('display', 'none', 'important');
-                    const sCad = document.getElementById('s-cadastro');
-                    if (sCad && sCad.classList.contains('active')) {
-                        inicializarCapturaVideo();
-                    }
                     return true;
                 }
-            } catch (e) { console.log(e); }
+            } catch (e) {}
         }
         return true;
     }
@@ -332,15 +325,18 @@
         return "M-" + Math.abs(hash).toString(16).toUpperCase();
     }
     
-    window.onload = async () => {
-        my_fingerprint = gerarFingerprintMorador();
-        document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
-        atualizarInterfaceAlerta();
-        
-        await verificarPermissoesObg();
-        verificarStatus();
-        inicializarPushNotificacoesNativas();
-    };
+    // INICIALIZAÇÃO SEGURA (Evita congelar o WebView do Android)
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(async () => {
+            my_fingerprint = gerarFingerprintMorador();
+            document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
+            atualizarInterfaceAlerta();
+            
+            await verificarPermissoesObg();
+            verificarStatus();
+            inicializarPushNotificacoesNativas();
+        }, 300);
+    });
 
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
@@ -410,9 +406,10 @@
             video.setAttribute('playsinline', 'true');
             video.style.transform = "scaleX(-1)";
             
-            try {
-                await video.play();
-            } catch (pErr) { console.warn("Aguardando interação para reproduzir vídeo:", pErr); }
+            setTimeout(() => {
+                video.play().catch(() => {});
+            }, 200);
+
         } catch (err) {
             console.error("Erro ao inicializar câmera selfie:", err);
         } finally {
@@ -423,6 +420,11 @@
     function fotoCad() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
         if(!v) return;
+
+        if(!streamCameraAtiva) {
+            inicializarCapturaVideo();
+            return;
+        }
         
         const larguraReal = v.videoWidth > 0 ? v.videoWidth : 480;
         const alturaReal = v.videoHeight > 0 ? v.videoHeight : 360;
@@ -474,7 +476,6 @@
                 if(btnFinalizar) btnFinalizar.disabled = false;
                 verificarStatus();
             }).catch(err => {
-                console.error(err);
                 if(btnFinalizar) btnFinalizar.disabled = false;
             });
         });
@@ -790,7 +791,7 @@
             if(video) video.style.display = "block"; 
             if(canvas) canvas.style.display = "none"; 
             
-            inicializarCapturaVideo();
+            setTimeout(() => { inicializarCapturaVideo(); }, 100);
         } else {
             encerrarStreamCamera();
         }
