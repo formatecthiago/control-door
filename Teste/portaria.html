@@ -4,46 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { margin: 0; background: #000; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
-        
-        /* Contêiner que vamos esconder */
-        #interface-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        
-        video { width: 90%; max-width: 500px; background: #333; }
-        button { margin-top: 20px; padding: 15px 30px; font-size: 18px; border-radius: 25px; border: none; background: #007bff; color: white; cursor: pointer;}
-        
-        /* Classe que usaremos para esconder tudo */
-        .ocultar { opacity: 0; visibility: hidden; }
+        body { margin: 0; background: #000; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
+        video { width: 90%; max-width: 500px; background: #333; border-radius: 10px; }
+        button { margin-top: 30px; padding: 18px 40px; font-size: 18px; border-radius: 50px; border: none; background: #007bff; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="interface-container">
-        <video id="meuVideo" playsinline autoplay muted loop src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
-        <button onclick="ativarPiP()">Visualizar Flutuante</button>
-    </div>
+    <video id="meuVideo" playsinline autoplay muted loop src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
+    <button id="btn" onclick="iniciarFluxo()">Visualizar e Abrir Portão</button>
 
     <script>
         const video = document.getElementById('meuVideo');
-        const interfaceDiv = document.getElementById('interface-container');
 
-        async function ativarPiP() {
+        async function iniciarFluxo() {
             try {
+                // 1. Tenta ativar o modo flutuante
                 await video.requestPictureInPicture();
+                
+                // 2. O PULO DO GATO: Redirecionar para página em branco
+                // Isso faz a interface sumir instantaneamente
+                window.location.replace('about:blank');
+                
             } catch (error) {
-                alert("Erro ao abrir vídeo flutuante.");
+                alert("Para funcionar, toque na tela antes de clicar no botão.");
             }
         }
-
-        // Quando o vídeo entra no modo PiP, escondemos a interface
-        video.addEventListener('enterpictureinpicture', () => {
-            interfaceDiv.classList.add('ocultar');
-        });
-
-        // Quando o vídeo volta para a página, mostramos a interface de novo
-        video.addEventListener('leavepictureinpicture', () => {
-            interfaceDiv.classList.remove('ocultar');
-        });
     </script>
 </body>
 </html>
