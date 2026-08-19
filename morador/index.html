@@ -246,58 +246,60 @@
     let refHistoricoAtiva = null;
     let escutaChamadasIniciada = false;
 
-    // CORREÇÃO FCM: Registra o token sem criar o cadastro aprovado precocemente
+    // CORREÇÃO PROTEGIDA: Inicialização do Push Notifications sem travar o app
     async function inicializarPushNotificacoesNativas() {
-        if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
-            const PushNotifications = window.Capacitor.Plugins.PushNotifications;
-            let permStatus = await PushNotifications.checkPermissions();
-            if (permStatus.receive === 'prompt') {
-                permStatus = await PushNotifications.requestPermissions();
-            }
-            if (permStatus.receive === 'granted') {
-                await PushNotifications.register();
-                
-                PushNotifications.addListener('registration', (token) => {
-                    if (my_un && token && token.value) {
-                        // Se estiver na fila de análise, atualiza o token na solicitação
-                        db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).once('value', snap => {
-                            if (snap.exists()) {
-                                db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).update({ fcm_token: token.value });
-                            }
-                        });
-                        // Só atualiza em moradores_validados se o nó realmente JÁ EXISTIR e estivar APROVADO pelo Admin
-                        db.ref('moradores_validados/' + my_un).once('value', snap => {
-                            if (snap.exists() && snap.val() && snap.val().nome) {
-                                db.ref('moradores_validados/' + my_un).update({ fcm_token: token.value });
-                            }
-                        });
-                    }
-                });
-
-                if (window.Capacitor.platform === 'android') {
-                    try {
-                        await PushNotifications.createChannel({
-                            id: 'virty_interfone_channel',
-                            name: 'Chamadas do Interfone',
-                            description: 'Canal de alta prioridade para chamadas do totem Virty',
-                            importance: 5, 
-                            visibility: 1,  
-                            sound: 'sound01', 
-                            vibration: true
-                        });
-                    } catch (e) { console.error(e); }
+        try {
+            if (typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable && Capacitor.isPluginAvailable('PushNotifications')) {
+                const PushNotifications = Capacitor.Plugins.PushNotifications;
+                let permStatus = await PushNotifications.checkPermissions();
+                if (permStatus.receive === 'prompt') {
+                    permStatus = await PushNotifications.requestPermissions();
                 }
+                if (permStatus.receive === 'granted') {
+                    await PushNotifications.register();
+                    
+                    PushNotifications.addListener('registration', (token) => {
+                        if (my_un && token && token.value) {
+                            db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).once('value', snap => {
+                                if (snap.exists()) {
+                                    db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).update({ fcm_token: token.value });
+                                }
+                            });
+                            db.ref('moradores_validados/' + my_un).once('value', snap => {
+                                if (snap.exists() && snap.val() && snap.val().nome) {
+                                    db.ref('moradores_validados/' + my_un).update({ fcm_token: token.value });
+                                }
+                            });
+                        }
+                    });
+
+                    if (Capacitor.getPlatform() === 'android') {
+                        try {
+                            await PushNotifications.createChannel({
+                                id: 'virty_interfone_channel',
+                                name: 'Chamadas do Interfone',
+                                description: 'Canal de alta prioridade para chamadas do totem Virty',
+                                importance: 5, 
+                                visibility: 1,  
+                                sound: 'sound01', 
+                                vibration: true
+                            });
+                        } catch (e) { console.error("Erro ao criar canal FCM:", e); }
+                    }
+                }
+                PushNotifications.addListener('pushNotificationReceived', () => { if (my_un) verificarStatus(); });
+                PushNotifications.addListener('pushNotificationActionPerformed', () => { if (my_un) verificarStatus(); });
             }
-            PushNotifications.addListener('pushNotificationReceived', () => { if (my_un) verificarStatus(); });
-            PushNotifications.addListener('pushNotificationActionPerformed', () => { if (my_un) verificarStatus(); });
+        } catch (err) {
+            console.warn("Nativo Push não carregou ou ambiente sem suporte:", err);
         }
     }
 
     async function verificarPermissoesObg() {
         const banner = document.getElementById('banner-permissoes');
-        if (window.Capacitor) {
+        if (typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable && Capacitor.isPluginAvailable('Camera')) {
             try {
-                let statusCamera = await window.Capacitor.Plugins.Camera.requestPermissions();
+                let statusCamera = await Capacitor.Plugins.Camera.requestPermissions();
                 if (statusCamera.camera !== 'granted') {
                     banner.style.setProperty('display', 'flex', 'important');
                     return false;
@@ -314,9 +316,14 @@
         return true;
     }
 
-    document.getElementById('btn-autorizar-sempre').addEventListener('click', async () => {
-        if (window.Capacitor) { await window.Capacitor.Plugins.App.openAppSettings(); }
-    });
+    const btnAutorizar = document.getElementById('btn-autorizar-sempre');
+    if (btnAutorizar) {
+        btnAutorizar.addEventListener('click', async () => {
+            if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.App) { 
+                await Capacitor.Plugins.App.openAppSettings(); 
+            }
+        });
+    }
 
     function gerarFingerprintMorador() {
         const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
@@ -335,7 +342,6 @@
         inicializarPushNotificacoesNativas();
     };
 
-    // CORREÇÃO: Garante que só vai pra HOME se o nó do morador validado tiver o campo 'nome' aprovado pelo Admin
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
         if(refStatusAtiva) refStatusAtiva.off();
@@ -376,7 +382,6 @@
         }
     }
 
-    // CORREÇÃO CÂMERA: Abertura imediata EXCLUSIVAMENTE em modo Selfie (Frontal)
     async function inicializarCapturaVideo() {
         if (streamCameraAtiva && streamCameraAtiva.active) return;
         if (inicializandoCamera) return;
@@ -393,7 +398,7 @@
         try {
             const constraints = { 
                 video: { 
-                    facingMode: { ideal: "user" }, // Exclusivo Câmera Frontal / Selfie
+                    facingMode: { ideal: "user" },
                     width: { ideal: 480 },
                     height: { ideal: 360 }
                 },
@@ -403,7 +408,7 @@
             streamCameraAtiva = stream;
             video.srcObject = stream;
             video.setAttribute('playsinline', 'true');
-            video.style.transform = "scaleX(-1)"; // Espelhado para modo selfie
+            video.style.transform = "scaleX(-1)";
             
             try {
                 await video.play();
