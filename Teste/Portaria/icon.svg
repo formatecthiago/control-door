@@ -1,7 +1,5 @@
-"icons": [
-{
-"src": "icon.svg",
-"sizes": "192x192",
-"type": "image/svg+xml"
-}
-]
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="96" cy="96" r="85" fill="#28a745" />
+  <rect x="66" y="55" width="60" height="90" fill="#ffc107" stroke="#000" stroke-width="4" rx="5" />
+  <circle cx="110" cy="100" r="6" fill="#000" />
+</svg>
