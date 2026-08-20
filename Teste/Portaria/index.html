@@ -6,13 +6,9 @@
     <link rel="manifest" href="manifest.json">
     <style>
         body { margin: 0; background: #000; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; transition: opacity 0.5s; }
-        
         #interface-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        
         video { width: 90%; max-width: 500px; background: #333; border-radius: 10px; }
-        
         button { margin-top: 30px; padding: 18px 40px; font-size: 18px; border-radius: 50px; border: none; background: #007bff; color: white; font-weight: bold; cursor: pointer; }
-        
         .ocultar { opacity: 0; visibility: hidden; }
     </style>
 </head>
@@ -24,7 +20,6 @@
     </div>
 
     <script>
-        // REGISTRO DO SERVICE WORKER (Necessário para a instalação do PWA)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
         }
