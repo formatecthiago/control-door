@@ -3,79 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoramento Portaria</title>
+    <title>Portaria Digital - YouTube Stream</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            background-color: #121212; 
-            color: #ffffff; 
-            font-family: Arial, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            padding: 20px;
-        }
-        h2 { margin-bottom: 15px; font-size: 1.2rem; }
-        .camera-card { 
-            width: 100%; 
-            max-width: 480px; 
-            background: #1e1e1e; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
-        }
-        .img-container { 
-            width: 100%; 
-            aspect-ratio: 4/3; 
-            background: #000; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-        }
+        body { margin: 0; background: #000; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
+        .video-container { width: 90%; max-width: 500px; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: #222; }
         img { width: 100%; height: 100%; object-fit: cover; }
-        .status-bar { 
-            padding: 10px 15px; 
-            font-size: 0.85rem; 
-            color: #00ff88; 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-        }
-        .dot { 
-            width: 8px; 
-            height: 8px; 
-            background-color: #00ff88; 
-            border-radius: 50%; 
-            display: inline-block; 
-        }
     </style>
 </head>
 <body>
 
-    <h2>Portaria Principal</h2>
-
-    <div class="camera-card">
-        <div class="img-container">
-            <img id="portariaFrame" src="http://80.2.216.179:8080/shot.jpg" alt="Conectando à câmera...">
-        </div>
-        <div class="status-bar">
-            <span class="dot"></span> Transmissão em Quadros (1 fps)
-        </div>
+    <div class="video-container">
+        <!-- Exibe a foto da câmera e atualiza em loop -->
+        <img id="camFrame" src="http://80.2.216.179:8080/shot.jpg" alt="Carregando câmera...">
     </div>
 
     <script>
-        const imgElement = document.getElementById('portariaFrame');
-        const frameUrl = 'http://80.2.216.179:8080/shot.jpg';
+        const img = document.getElementById('camFrame');
+        const baseUrl = 'http://80.2.216.179:8080/shot.jpg';
 
-        // Atualiza o frame a cada 1000ms (1 segundo)
+        // Atualiza a imagem a cada 1 segundo
         setInterval(() => {
-            imgElement.src = `${frameUrl}?t=${Date.now()}`;
+            img.src = `${baseUrl}?t=${Date.now()}`;
         }, 1000);
 
-        // Registro do Service Worker para PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
         }
