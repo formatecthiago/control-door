@@ -3,62 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Câmera IP</title>
+    <title>Portaria Digital</title>
+    <link rel="manifest" href="manifest.json">
     <style>
-        body {
-            margin: 0;
-            background-color: #000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        .quadro-camera {
-            width: 100%;
-            max-width: 400px;
-            aspect-ratio: 4/3;
-            background-color: #111;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        .quadro-camera img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            cursor: pointer;
-        }
+        body { margin: 0; background: #1a1a1a; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; }
+        
+        #app-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Simulação de monitor de segurança */
+        .video-box { width: 90%; aspect-ratio: 16/9; background: #000; border: 4px solid #333; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        
+        video { width: 100%; height: 100%; object-fit: cover; }
+        
+        .status-bar { margin: 15px 0; font-size: 14px; color: #888; }
+        
+        button { margin-top: 20px; padding: 20px 40px; font-size: 18px; border-radius: 12px; border: none; background: #ff4757; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        
+        .ocultar { opacity: 0; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <div class="quadro-camera">
-        <img id="imagemCamera" src="" alt="Aguardando conexão...">
+    <div id="app-container">
+        <div class="video-box">
+            <video id="meuVideo" playsinline autoplay muted controls></video>
+        </div>
+        
+        <div class="status-bar">Câmera Portaria: ONLINE (Simulação)</div>
+        
+        <button id="btnPip" onclick="ativarPiP()">Visualizar em Janela Flutuante</button>
     </div>
 
-    <button onclick="conectarCamera()">Acessar Câmera IP</button>
-
     <script>
-        function conectarCamera() {
-            const img = document.getElementById('imagemCamera');
-            const urlBase = 'http://80.2.216.179:8080/shot.jpg';
+        const video = document.getElementById('meuVideo');
+        const container = document.getElementById('app-container');
 
-            // Carrega a primeira imagem imediatamente
-            img.src = `${urlBase}?t=${Date.now()}`;
+        // ESTE É O LOCAL ONDE VOCÊ VAI MUDAR NO FUTURO
+        // Quando configurar o go2rtc, substitua a linha abaixo pelo link do seu stream
+        video.src = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
 
-            // Inicia o loop para atualizar o quadro a cada 1 segundo
-            setInterval(() => {
-                img.src = `${urlBase}?t=${Date.now()}`;
-            }, 1000);
+        async function ativarPiP() {
+            try {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else {
+                    await video.requestPictureInPicture();
+                }
+            } catch (err) {
+                console.error("Erro no PiP:", err);
+            }
         }
-    </script>
 
+        video.addEventListener('enterpictureinpicture', () => container.classList.add('ocultar'));
+        video.addEventListener('leavepictureinpicture', () => container.classList.remove('ocultar'));
+    </script>
 </body>
 </html>
