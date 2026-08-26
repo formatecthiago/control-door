@@ -10,52 +10,69 @@
         
         #app-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; }
         
-        /* Simulação de monitor de segurança */
         .video-box { width: 90%; aspect-ratio: 16/9; background: #000; border: 4px solid #333; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         
-        video { width: 100%; height: 100%; object-fit: cover; }
+        img { width: 100%; height: 100%; object-fit: cover; }
         
         .status-bar { margin: 15px 0; font-size: 14px; color: #888; }
         
         button { margin-top: 20px; padding: 20px 40px; font-size: 18px; border-radius: 12px; border: none; background: #ff4757; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        
-        .ocultar { opacity: 0; pointer-events: none; }
     </style>
+
+    <!-- SDKs do Firebase (Versão Compatível Web) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
     <div id="app-container">
         <div class="video-box">
-            <video id="meuVideo" playsinline autoplay muted controls></video>
+            <img id="meuFrame" src="" alt="Aguardando conexão com a câmera...">
         </div>
         
-        <div class="status-bar">Câmera Portaria: ONLINE (Simulação)</div>
+        <div class="status-bar" id="statusTxt">Câmera Portaria: DESCONECTADA</div>
         
-        <button id="btnPip" onclick="ativarPiP()">Visualizar em Janela Flutuante</button>
+        <button id="btnConectar" onclick="iniciarRealtimeDB()">Acessar Câmera IP</button>
     </div>
 
     <script>
-        const video = document.getElementById('meuVideo');
-        const container = document.getElementById('app-container');
+        // Configuração extraída da sua tela do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXlYVB0nYKj-8",
+            authDomain: "portaria-cam.firebaseapp.com",
+            databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
+            projectId: "portaria-cam",
+            storageBucket: "portaria-cam.firebasestorage.app",
+            messagingSenderId: "271848073619",
+            appId: "1:271848073619:web:4bab1cfb13a479ca596066",
+            measurementId: "G-1XJ4Q6491E"
+        };
 
-        // ESTE É O LOCAL ONDE VOCÊ VAI MUDAR NO FUTURO
-        // Quando configurar o go2rtc, substitua a linha abaixo pelo link do seu stream
-        video.src = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+        // Inicialização do Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const statusTxt = document.getElementById('statusTxt');
+        const imgElement = document.getElementById('meuFrame');
 
-        async function ativarPiP() {
-            try {
-                if (document.pictureInPictureElement) {
-                    await document.exitPictureInPicture();
+        function iniciarRealtimeDB() {
+            statusTxt.textContent = "Câmera Portaria: AGUARDANDO SINAL 4G...";
+            statusTxt.style.color = "#eccc68";
+
+            // Escuta as alterações na chave 'camera/frame' no Realtime Database
+            const cameraRef = database.ref('camera/frame');
+
+            cameraRef.on('value', (snapshot) => {
+                const base64Image = snapshot.val();
+                if (base64Image) {
+                    imgElement.src = base64Image;
+                    statusTxt.textContent = "Câmera Portaria: ONLINE (Realtime 4G)";
+                    statusTxt.style.color = "#00ff88";
                 } else {
-                    await video.requestPictureInPicture();
+                    statusTxt.textContent = "Aguardando envio da imagem pelo banco...";
+                    statusTxt.style.color = "#ff4757";
                 }
-            } catch (err) {
-                console.error("Erro no PiP:", err);
-            }
+            });
         }
-
-        video.addEventListener('enterpictureinpicture', () => container.classList.add('ocultar'));
-        video.addEventListener('leavepictureinpicture', () => container.classList.remove('ocultar'));
     </script>
 </body>
 </html>
