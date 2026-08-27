@@ -24,6 +24,7 @@
         }
 
         .container {
+            position: relative;
             width: 100%;
             max-width: 420px;
             background: #1e1e1e;
@@ -35,12 +36,35 @@
             align-items: center;
         }
 
+        /* Botão X Superior visível para encerrar tudo */
+        .btn-close-top {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+        }
+
+        .btn-close-top:active { transform: scale(0.9); }
+
         h2 {
             font-size: 1.1rem;
             margin-bottom: 15px;
             color: #e0e0e0;
             text-transform: uppercase;
             letter-spacing: 1px;
+            padding-right: 30px; /* Espaço para o botão X */
         }
 
         .video-wrapper {
@@ -110,6 +134,9 @@
 <body>
 
     <div class="container">
+        <!-- Botão X de Fechamento Geral -->
+        <button class="btn-close-top" onclick="encerrarTudo()" title="Fechar Tudo e Sair">✖</button>
+
         <h2>Portaria - Monitoramento</h2>
 
         <div class="video-wrapper">
@@ -193,6 +220,15 @@
             } catch (err) {
                 alert("O navegador não suporta a janela flutuante ou é necessária uma interação.");
             }
+        }
+
+        // Função do botão X: Fecha a Janela Flutuante e direciona o navegador para a página inicial
+        async function encerrarTudo() {
+            if (document.pictureInPictureElement) {
+                await document.exitPictureInPicture();
+            }
+            // Redireciona para o Google para sair do PWA sem deixar tela em branco
+            window.location.href = "https://www.google.com";
         }
 
         pipVideo.addEventListener('enterpictureinpicture', () => {
