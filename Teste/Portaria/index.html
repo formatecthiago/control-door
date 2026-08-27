@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1a1a1a">
-    <title>Portaria Digital PWA</title>
+    <title>Portaria ao vivo</title>
 
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -24,6 +24,7 @@
         }
 
         .container {
+            position: relative;
             width: 100%;
             max-width: 420px;
             background: #1e1e1e;
@@ -33,38 +34,35 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            position: relative;
         }
 
-        /* Botão "Fechar X" estilo balão no topo */
-        .btn-fechar-top {
+        /* Botão Fechar em balão no topo superior direito */
+        .btn-close-top {
             position: absolute;
             top: 15px;
             right: 15px;
             background: #ff4757;
             color: #ffffff;
             border: none;
-            border-radius: 20px;
             padding: 6px 14px;
+            border-radius: 20px;
             font-size: 0.85rem;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(255, 71, 87, 0.4);
             display: flex;
             align-items: center;
             gap: 6px;
-            z-index: 10;
+            box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
         }
 
-        .btn-fechar-top:active {
+        .btn-close-top:active {
             transform: scale(0.95);
-            background: #ff6b81;
         }
 
         h2 {
             font-size: 1.1rem;
             margin-top: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             color: #e0e0e0;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -140,12 +138,12 @@
 <body>
 
     <div class="container">
-        <!-- Botão Fechar estilo balão -->
-        <button class="btn-fechar-top" onclick="fecharTudo()">
-            Fechar ✖
+        <!-- Botão Fechar em balão com X -->
+        <button class="btn-close-top" onclick="fecharTudo()">
+            ✖ Fechar
         </button>
 
-        <h2>Portaria - Monitoramento</h2>
+        <h2>Portaria ao vivo</h2>
 
         <div class="video-wrapper">
             <img id="frameImg" src="https://picsum.photos/400/225" alt="Buscando sinal da portaria...">
@@ -230,26 +228,22 @@
             }
         }
 
-        // Função do Botão Fechar X
         async function fecharTudo() {
-            // 1. Fecha a janela flutuante se estiver aberta
+            // 1. Encerra a janela flutuante imediatamente se estiver ativa
             if (document.pictureInPictureElement) {
                 try {
                     await document.exitPictureInPicture();
                 } catch (e) {
-                    console.log("Erro ao fechar PiP:", e);
+                    console.log("Flutuante encerrado.");
                 }
             }
 
-            // 2. Desconecta o ouvinte do Firebase
-            database.ref('camera/frame').off();
-
-            // 3. Redireciona a navegação para fora do app
+            // 2. Redireciona a navegação para a home do Google Chrome
             window.location.href = "https://www.google.com";
         }
 
         pipVideo.addEventListener('enterpictureinpicture', () => {
-            btnPip.innerHTML = "🔴 Janela Flutuante Ativa";
+            btnPip.innerHTML = "❌ Encerrar Flutuante";
         });
 
         pipVideo.addEventListener('leavepictureinpicture', () => {
