@@ -6,7 +6,6 @@
     <meta name="theme-color" content="#1a1a1a">
     <title>Portaria Digital PWA</title>
 
-    <!-- Configurações PWA -->
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
 
@@ -15,7 +14,7 @@
         body {
             background-color: #121212;
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -26,7 +25,7 @@
 
         .container {
             width: 100%;
-            max-width: 450px;
+            max-width: 420px; /* Tamanho compacto ideal para o morador */
             background: #1e1e1e;
             border-radius: 16px;
             padding: 20px;
@@ -37,18 +36,18 @@
         }
 
         h2 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             margin-bottom: 15px;
             color: #e0e0e0;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        /* Container de Vídeo/Imagem */
+        /* Moldura de Exibição Compacta (Upscaling CSS ativado) */
         .video-wrapper {
             position: relative;
             width: 100%;
-            aspect-ratio: 16 / 9;
+            height: 220px; /* Moldura fixa e confortável */
             background-color: #000;
             border-radius: 12px;
             overflow: hidden;
@@ -58,17 +57,16 @@
             justify-content: center;
         }
 
-        /* Elemento de imagem estática/stream */
+        /* A imagem pequena vinda do 4G expande para preencher a moldura sem pescar a rede */
         #frameImg {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            image-rendering: -webkit-optimize-contrast; /* Suaviza a ampliação */
             display: block;
         }
 
-        /* Canvas invisível para renderizar o Picture-in-Picture */
-        #pipCanvas { display: none; }
-        #pipVideo { display: none; }
+        #pipCanvas, #pipVideo { display: none; }
 
         .status-bar {
             margin: 15px 0;
@@ -86,55 +84,48 @@
             background-color: #ff4757;
         }
 
-        .status-dot.online {
-            background-color: #00ff88;
-            box-shadow: 0 0 8px #00ff88;
-        }
+        .status-dot.online { background-color: #00ff88; box-shadow: 0 0 8px #00ff88; }
+        .status-dot.repouso { background-color: #eccc68; box-shadow: 0 0 8px #eccc68; }
 
         .btn-action {
             width: 100%;
-            padding: 16px;
-            font-size: 1rem;
+            padding: 14px;
+            font-size: 0.95rem;
             font-weight: bold;
             color: #fff;
             background: linear-gradient(135deg, #007bff, #0056b3);
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-            transition: transform 0.1s ease, background 0.2s ease;
         }
 
-        .btn-action:active {
-            transform: scale(0.98);
-        }
+        .btn-action:active { transform: scale(0.98); }
     </style>
 
-    <!-- SDKs do Firebase (Compatibilidade) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
     <div class="container">
-        <h2>Portaria ao Vivo</h2>
+        <h2>Portaria - Monitoramento</h2>
 
         <div class="video-wrapper">
-            <img id="frameImg" src="https://picsum.photos/400/300" alt="Aguardando Sinal...">
-            <canvas id="pipCanvas" width="640" height="360"></canvas>
+            <img id="frameImg" src="https://picsum.photos/400/225" alt="Buscando sinal da portaria...">
+            <canvas id="pipCanvas" width="400" height="225"></canvas>
             <video id="pipVideo" autoplay playsinline muted></video>
         </div>
 
         <div class="status-bar">
             <div id="statusDot" class="status-dot"></div>
-            <span id="statusTxt">Conectando ao Firebase...</span>
+            <span id="statusTxt">Conectando...</span>
         </div>
 
         <button class="btn-action" onclick="togglePip()">Visualizar Portaria (Janela Flutuante)</button>
     </div>
 
     <script>
-        // Configuração do seu Projeto no Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXlYVB0nYKj-8",
             authDomain: "portaria-cam.firebaseapp.com",
@@ -145,7 +136,6 @@
             appId: "1:271848073619:web:4bab1cfb13a479ca596066"
         };
 
-        // Inicialização
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
@@ -156,56 +146,52 @@
         const pipVideo = document.getElementById('pipVideo');
         const ctx = pipCanvas.getContext('2d');
 
-        // Escutando nó 'camera/frame' no Realtime Database
+        let timerRepouso = null;
+
+        // Monitor de recebimento de frames
         database.ref('camera/frame').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 frameImg.src = data;
-                statusTxt.textContent = "Câmera On-line (4G Realtime)";
-                statusDot.classList.add('online');
+                
+                // Indica sinal AO VIVO / MOVIMENTO
+                statusTxt.textContent = "Portaria: Movimento detectado (Ao Vivo)";
+                statusDot.className = "status-dot online";
                 atualizarCanvas();
-            } else {
-                statusTxt.textContent = "Aguardando transmissão...";
-                statusDot.classList.remove('online');
+
+                // Reseta o temporizador de detecção de repouso (se não chegar novo frame em 5 segs, assume repouso)
+                clearTimeout(timerRepouso);
+                timerRepouso = setTimeout(() => {
+                    statusTxt.textContent = "Portaria: Sem movimento (Imagem em Repouso)";
+                    statusDot.className = "status-dot repouso";
+                }, 5000); 
             }
-        }, (error) => {
-            statusTxt.textContent = "Erro na conexão: " + error.message;
-            statusDot.classList.remove('online');
         });
 
-        // Função para desenhar a imagem no Canvas para alimentar o vídeo PiP
         function atualizarCanvas() {
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = () => {
+                ctx.imageSmoothingEnabled = true; // Aplica o filtro de suavização na ampliação
                 ctx.drawImage(img, 0, 0, pipCanvas.width, pipCanvas.height);
             };
             img.src = frameImg.src;
         }
 
-        // Ativação da Janela Flutuante (Picture-in-Picture)
         async function togglePip() {
             try {
                 if (document.pictureInPictureElement) {
                     await document.exitPictureInPicture();
                 } else {
                     atualizarCanvas();
-                    const stream = pipCanvas.captureStream(15); // 15 FPS
+                    const stream = pipCanvas.captureStream(10); // 10 FPS estático para a Janela Flutuante
                     pipVideo.srcObject = stream;
                     await pipVideo.play();
                     await pipVideo.requestPictureInPicture();
                 }
             } catch (err) {
-                alert("O recurso de janela flutuante não é suportado neste navegador ou requer interação direta.");
-                console.error(err);
+                alert("Navegador não suporta a Janela Flutuante ou requer permissão.");
             }
-        }
-
-        // Registro do Service Worker para suporte PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Erro:', err));
-            });
         }
     </script>
 </body>
