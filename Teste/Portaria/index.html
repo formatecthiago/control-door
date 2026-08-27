@@ -24,7 +24,6 @@
         }
 
         .container {
-            position: relative;
             width: 100%;
             max-width: 420px;
             background: #1e1e1e;
@@ -34,37 +33,43 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            position: relative;
         }
 
-        /* Botão X Superior visível para encerrar tudo */
-        .btn-close-top {
+        /* Botão "Fechar X" estilo balão no topo */
+        .btn-fechar-top {
             position: absolute;
-            top: 12px;
-            right: 12px;
+            top: 15px;
+            right: 15px;
             background: #ff4757;
-            color: white;
+            color: #ffffff;
             border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
             font-weight: bold;
-            font-size: 16px;
             cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 71, 87, 0.4);
             display: flex;
             align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+            gap: 6px;
+            z-index: 10;
         }
 
-        .btn-close-top:active { transform: scale(0.9); }
+        .btn-fechar-top:active {
+            transform: scale(0.95);
+            background: #ff6b81;
+        }
 
         h2 {
             font-size: 1.1rem;
+            margin-top: 10px;
             margin-bottom: 15px;
             color: #e0e0e0;
             text-transform: uppercase;
             letter-spacing: 1px;
-            padding-right: 30px; /* Espaço para o botão X */
+            width: 100%;
+            text-align: left;
         }
 
         .video-wrapper {
@@ -97,6 +102,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            width: 100%;
         }
 
         .status-dot {
@@ -134,8 +140,10 @@
 <body>
 
     <div class="container">
-        <!-- Botão X de Fechamento Geral -->
-        <button class="btn-close-top" onclick="encerrarTudo()" title="Fechar Tudo e Sair">✖</button>
+        <!-- Botão Fechar estilo balão -->
+        <button class="btn-fechar-top" onclick="fecharTudo()">
+            Fechar ✖
+        </button>
 
         <h2>Portaria - Monitoramento</h2>
 
@@ -222,17 +230,26 @@
             }
         }
 
-        // Função do botão X: Fecha a Janela Flutuante e direciona o navegador para a página inicial
-        async function encerrarTudo() {
+        // Função do Botão Fechar X
+        async function fecharTudo() {
+            // 1. Fecha a janela flutuante se estiver aberta
             if (document.pictureInPictureElement) {
-                await document.exitPictureInPicture();
+                try {
+                    await document.exitPictureInPicture();
+                } catch (e) {
+                    console.log("Erro ao fechar PiP:", e);
+                }
             }
-            // Redireciona para o Google para sair do PWA sem deixar tela em branco
+
+            // 2. Desconecta o ouvinte do Firebase
+            database.ref('camera/frame').off();
+
+            // 3. Redireciona a navegação para fora do app
             window.location.href = "https://www.google.com";
         }
 
         pipVideo.addEventListener('enterpictureinpicture', () => {
-            btnPip.innerHTML = "❌ Fechar Janela Flutuante";
+            btnPip.innerHTML = "🔴 Janela Flutuante Ativa";
         });
 
         pipVideo.addEventListener('leavepictureinpicture', () => {
