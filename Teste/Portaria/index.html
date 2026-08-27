@@ -2,41 +2,139 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portaria Digital</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>Portaria Digital PWA</title>
+
+    <!-- Configurações PWA -->
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <style>
-        body { margin: 0; background: #1a1a1a; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; }
-        
-        #app-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; }
-        
-        .video-box { width: 90%; aspect-ratio: 16/9; background: #000; border: 4px solid #333; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        
-        img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .status-bar { margin: 15px 0; font-size: 14px; color: #888; }
-        
-        button { margin-top: 20px; padding: 20px 40px; font-size: 18px; border-radius: 12px; border: none; background: #ff4757; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #e0e0e0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Container de Vídeo/Imagem */
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Elemento de imagem estática/stream */
+        #frameImg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Canvas invisível para renderizar o Picture-in-Picture */
+        #pipCanvas { display: none; }
+        #pipVideo { display: none; }
+
+        .status-bar {
+            margin: 15px 0;
+            font-size: 0.85rem;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ff4757;
+        }
+
+        .status-dot.online {
+            background-color: #00ff88;
+            box-shadow: 0 0 8px #00ff88;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+            transition: transform 0.1s ease, background 0.2s ease;
+        }
+
+        .btn-action:active {
+            transform: scale(0.98);
+        }
     </style>
 
-    <!-- SDKs do Firebase (Versão Compatível Web) -->
+    <!-- SDKs do Firebase (Compatibilidade) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
-    <div id="app-container">
-        <div class="video-box">
-            <img id="meuFrame" src="" alt="Aguardando conexão com a câmera...">
+    <div class="container">
+        <h2>Portaria ao Vivo</h2>
+
+        <div class="video-wrapper">
+            <img id="frameImg" src="https://picsum.photos/400/300" alt="Aguardando Sinal...">
+            <canvas id="pipCanvas" width="640" height="360"></canvas>
+            <video id="pipVideo" autoplay playsinline muted></video>
         </div>
-        
-        <div class="status-bar" id="statusTxt">Câmera Portaria: DESCONECTADA</div>
-        
-        <button id="btnConectar" onclick="iniciarRealtimeDB()">Acessar Câmera IP</button>
+
+        <div class="status-bar">
+            <div id="statusDot" class="status-dot"></div>
+            <span id="statusTxt">Conectando ao Firebase...</span>
+        </div>
+
+        <button class="btn-action" onclick="togglePip()">Visualizar Portaria (Janela Flutuante)</button>
     </div>
 
     <script>
-        // Configuração extraída da sua tela do Firebase
+        // Configuração do seu Projeto no Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXlYVB0nYKj-8",
             authDomain: "portaria-cam.firebaseapp.com",
@@ -44,33 +142,69 @@
             projectId: "portaria-cam",
             storageBucket: "portaria-cam.firebasestorage.app",
             messagingSenderId: "271848073619",
-            appId: "1:271848073619:web:4bab1cfb13a479ca596066",
-            measurementId: "G-1XJ4Q6491E"
+            appId: "1:271848073619:web:4bab1cfb13a479ca596066"
         };
 
-        // Inicialização do Firebase
+        // Inicialização
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+
+        const frameImg = document.getElementById('frameImg');
         const statusTxt = document.getElementById('statusTxt');
-        const imgElement = document.getElementById('meuFrame');
+        const statusDot = document.getElementById('statusDot');
+        const pipCanvas = document.getElementById('pipCanvas');
+        const pipVideo = document.getElementById('pipVideo');
+        const ctx = pipCanvas.getContext('2d');
 
-        function iniciarRealtimeDB() {
-            statusTxt.textContent = "Câmera Portaria: AGUARDANDO SINAL 4G...";
-            statusTxt.style.color = "#eccc68";
+        // Escutando nó 'camera/frame' no Realtime Database
+        database.ref('camera/frame').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                frameImg.src = data;
+                statusTxt.textContent = "Câmera On-line (4G Realtime)";
+                statusDot.classList.add('online');
+                atualizarCanvas();
+            } else {
+                statusTxt.textContent = "Aguardando transmissão...";
+                statusDot.classList.remove('online');
+            }
+        }, (error) => {
+            statusTxt.textContent = "Erro na conexão: " + error.message;
+            statusDot.classList.remove('online');
+        });
 
-            // Escuta as alterações na chave 'camera/frame' no Realtime Database
-            const cameraRef = database.ref('camera/frame');
+        // Função para desenhar a imagem no Canvas para alimentar o vídeo PiP
+        function atualizarCanvas() {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0, pipCanvas.width, pipCanvas.height);
+            };
+            img.src = frameImg.src;
+        }
 
-            cameraRef.on('value', (snapshot) => {
-                const base64Image = snapshot.val();
-                if (base64Image) {
-                    imgElement.src = base64Image;
-                    statusTxt.textContent = "Câmera Portaria: ONLINE (Realtime 4G)";
-                    statusTxt.style.color = "#00ff88";
+        // Ativação da Janela Flutuante (Picture-in-Picture)
+        async function togglePip() {
+            try {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
                 } else {
-                    statusTxt.textContent = "Aguardando envio da imagem pelo banco...";
-                    statusTxt.style.color = "#ff4757";
+                    atualizarCanvas();
+                    const stream = pipCanvas.captureStream(15); // 15 FPS
+                    pipVideo.srcObject = stream;
+                    await pipVideo.play();
+                    await pipVideo.requestPictureInPicture();
                 }
+            } catch (err) {
+                alert("O recurso de janela flutuante não é suportado neste navegador ou requer interação direta.");
+                console.error(err);
+            }
+        }
+
+        // Registro do Service Worker para suporte PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Erro:', err));
             });
         }
     </script>
