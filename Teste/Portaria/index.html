@@ -99,7 +99,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
         }
 
         .btn-action:active { transform: scale(0.98); }
@@ -124,7 +123,7 @@
             <span id="statusTxt">Conectando...</span>
         </div>
 
-        <button id="btnPip" class="btn-action" onclick="ativarFlutuante()">
+        <button id="btnPip" class="btn-action" onclick="togglePip()">
             📺 Ativar Janela Flutuante
         </button>
     </div>
@@ -180,7 +179,7 @@
             img.src = frameImg.src;
         }
 
-        async function ativarFlutuante() {
+        async function togglePip() {
             try {
                 if (document.pictureInPictureElement) {
                     await document.exitPictureInPicture();
@@ -192,13 +191,12 @@
                     await pipVideo.requestPictureInPicture();
                 }
             } catch (err) {
-                alert("O dispositivo requer permissão ou o navegador não suporta janela flutuante.");
+                alert("O navegador não suporta a janela flutuante ou é necessária uma interação.");
             }
         }
 
-        // Eventos nativos da Janela Flutuante
         pipVideo.addEventListener('enterpictureinpicture', () => {
-            btnPip.innerHTML = "🔴 Flutuante Ativo (Minimize o App)";
+            btnPip.innerHTML = "❌ Fechar Janela Flutuante";
         });
 
         pipVideo.addEventListener('leavepictureinpicture', () => {
