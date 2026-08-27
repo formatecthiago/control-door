@@ -96,6 +96,10 @@
             border-radius: 10px;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .btn-action:active { transform: scale(0.98); }
@@ -120,7 +124,10 @@
             <span id="statusTxt">Conectando...</span>
         </div>
 
-        <button class="btn-action" onclick="togglePip()">Visualizar Portaria (Janela Flutuante)</button>
+        <!-- Botão com ação conjugada Minimizar + Flutuar -->
+        <button id="btnPip" class="btn-action" onclick="minimizarEFlutuar()">
+            📌 Minimizar & Flutuar Portaria
+        </button>
     </div>
 
     <script>
@@ -140,6 +147,7 @@
         const frameImg = document.getElementById('frameImg');
         const statusTxt = document.getElementById('statusTxt');
         const statusDot = document.getElementById('statusDot');
+        const btnPip = document.getElementById('btnPip');
         const pipCanvas = document.getElementById('pipCanvas');
         const pipVideo = document.getElementById('pipVideo');
         const ctx = pipCanvas.getContext('2d');
@@ -173,21 +181,32 @@
             img.src = frameImg.src;
         }
 
-        async function togglePip() {
+        async function minimizarEFlutuar() {
             try {
                 if (document.pictureInPictureElement) {
                     await document.exitPictureInPicture();
+                    btnPip.innerHTML = "📌 Minimizar & Flutuar Portaria";
                 } else {
                     atualizarCanvas();
                     const stream = pipCanvas.captureStream(10);
                     pipVideo.srcObject = stream;
                     await pipVideo.play();
                     await pipVideo.requestPictureInPicture();
+                    
+                    btnPip.innerHTML = "🔙 Restaurar App Principal";
+
+                    // Remove o foco do navegador para facilitar a navegação em outros apps
+                    window.blur();
                 }
             } catch (err) {
                 alert("Navegador não suporta a Janela Flutuante ou requer permissão.");
             }
         }
+
+        // Restaura o texto do botão caso o usuário feche a janela flutuante manualmente
+        pipVideo.addEventListener('leavepictureinpicture', () => {
+            btnPip.innerHTML = "📌 Minimizar & Flutuar Portaria";
+        });
     </script>
 </body>
 </html>
