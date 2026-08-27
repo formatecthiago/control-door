@@ -124,9 +124,8 @@
             <span id="statusTxt">Conectando...</span>
         </div>
 
-        <!-- Botão com ação conjugada Minimizar + Flutuar -->
-        <button id="btnPip" class="btn-action" onclick="minimizarEFlutuar()">
-            📌 Minimizar & Flutuar Portaria
+        <button id="btnPip" class="btn-action" onclick="ativarFlutuante()">
+            📺 Ativar Janela Flutuante
         </button>
     </div>
 
@@ -181,31 +180,29 @@
             img.src = frameImg.src;
         }
 
-        async function minimizarEFlutuar() {
+        async function ativarFlutuante() {
             try {
                 if (document.pictureInPictureElement) {
                     await document.exitPictureInPicture();
-                    btnPip.innerHTML = "📌 Minimizar & Flutuar Portaria";
                 } else {
                     atualizarCanvas();
                     const stream = pipCanvas.captureStream(10);
                     pipVideo.srcObject = stream;
                     await pipVideo.play();
                     await pipVideo.requestPictureInPicture();
-                    
-                    btnPip.innerHTML = "🔙 Restaurar App Principal";
-
-                    // Remove o foco do navegador para facilitar a navegação em outros apps
-                    window.blur();
                 }
             } catch (err) {
-                alert("Navegador não suporta a Janela Flutuante ou requer permissão.");
+                alert("O dispositivo requer permissão ou o navegador não suporta janela flutuante.");
             }
         }
 
-        // Restaura o texto do botão caso o usuário feche a janela flutuante manualmente
+        // Eventos nativos da Janela Flutuante
+        pipVideo.addEventListener('enterpictureinpicture', () => {
+            btnPip.innerHTML = "🔴 Flutuante Ativo (Minimize o App)";
+        });
+
         pipVideo.addEventListener('leavepictureinpicture', () => {
-            btnPip.innerHTML = "📌 Minimizar & Flutuar Portaria";
+            btnPip.innerHTML = "📺 Ativar Janela Flutuante";
         });
     </script>
 </body>
