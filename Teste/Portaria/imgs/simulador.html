@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Imagens Reais - Firebase</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #111; color: white; margin-top: 20px; }
+        .box { max-width: 400px; margin: 0 auto; background: #222; padding: 20px; border-radius: 12px; }
+        img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; border: 2px solid #00ff88; margin: 15px 0; }
+        button { padding: 12px 24px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-start { background: #00ff88; color: #000; }
+        .btn-stop { background: #ff4757; color: #fff; margin-left: 10px; }
+        select { padding: 10px; border-radius: 6px; font-size: 14px; margin-bottom: 15px; }
+        #status { font-size: 13px; color: #aaa; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>Simulador de Feed Real</h2>
+        
+        <label for="fpsSelect">Velocidade de Transmissão:</label><br>
+        <select id="fpsSelect" onchange="atualizarFPS()">
+            <option value="2">2 Fotos por segundo (Muito Leve)</option>
+            <option value="5" selected>5 Fotos por segundo (Recomendado)</option>
+            <option value="8">8 Fotos por segundo (Fluidez Alta)</option>
+        </select>
+
+        <div>
+            <button class="btn-start" onclick="iniciar()">Iniciar Envio</button>
+            <button class="btn-stop" onclick="parar()">Parar</button>
+        </div>
+
+        <!-- Exibe a imagem sequencial atual -->
+        <img id="previewImg" src="https://picsum.photos/400/225?random=1" alt="Preview">
+        
+        <div id="status">Status: Parado</div>
+    </div>
+
+    <script>
+        const firebaseUrl = "https://portaria-cam-default-rtdb.firebaseio.com/camera.json";
+        const previewImg = document.getElementById('previewImg');
+        const statusEl = document.getElementById('status');
+        
+        let intervalId = null;
+        let fps = 5;
+        let contadorQuadro = 1;
+
+        function atualizarFPS() {
+            fps = parseInt(document.getElementById('fpsSelect').value);
+            if (intervalId) {
+                parar();
+                iniciar();
+            }
+        }
+
+        async function enviarQuadrosSequenciais() {
+            // Alterna o ID da imagem de 1 a 10 para criar a sequência dinâmica contínua
+            contadorQuadro = (contadorQuadro % 10) + 1;
+            
+            // Gera a URL da foto no tamanho exato de portaria (400x225)
+            const imageUrl = `https://picsum.photos/400/225?random=${contadorQuadro}`;
+            
+            // Atualiza o preview local
+            previewImg.src = imageUrl;
+
+            try {
+                // Envia a URL da foto atual para o Firebase via API REST
+                await fetch(firebaseUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ frame: imageUrl })
+                });
+                
+                statusEl.innerText = `Enviando quadro #${contadorQuadro} (${fps} FPS) - ` + new Date().toLocaleTimeString();
+                statusEl.style.color = "#00ff88";
+            } catch (err) {
+                statusEl.innerText = "Erro de conexão: " + err.message;
+                statusEl.style.color = "#ff4757";
+            }
+        }
+
+        function iniciar() {
+            if (intervalId) return;
+            intervalId = setInterval(enviarQuadrosSequenciais, 1000 / fps);
+        }
+
+        function parar() {
+            clearInterval(intervalId);
+            intervalId = null;
+            statusEl.innerText = "Status: Parado";
+            statusEl.style.color = "#aaa";
+        }
+    </script>
+</body>
+</html>
