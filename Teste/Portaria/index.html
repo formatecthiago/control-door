@@ -25,7 +25,7 @@
 
         .container {
             width: 100%;
-            max-width: 420px; /* Tamanho compacto ideal para o morador */
+            max-width: 420px;
             background: #1e1e1e;
             border-radius: 16px;
             padding: 20px;
@@ -43,11 +43,10 @@
             letter-spacing: 1px;
         }
 
-        /* Moldura de Exibição Compacta (Upscaling CSS ativado) */
         .video-wrapper {
             position: relative;
             width: 100%;
-            height: 220px; /* Moldura fixa e confortável */
+            height: 220px;
             background-color: #000;
             border-radius: 12px;
             overflow: hidden;
@@ -57,12 +56,11 @@
             justify-content: center;
         }
 
-        /* A imagem pequena vinda do 4G expande para preencher a moldura sem pescar a rede */
         #frameImg {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            image-rendering: -webkit-optimize-contrast; /* Suaviza a ampliação */
+            image-rendering: -webkit-optimize-contrast;
             display: block;
         }
 
@@ -148,23 +146,20 @@
 
         let timerRepouso = null;
 
-        // Monitor de recebimento de frames
         database.ref('camera/frame').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 frameImg.src = data;
                 
-                // Indica sinal AO VIVO / MOVIMENTO
                 statusTxt.textContent = "Portaria: Movimento detectado (Ao Vivo)";
                 statusDot.className = "status-dot online";
                 atualizarCanvas();
 
-                // Reseta o temporizador de detecção de repouso (se não chegar novo frame em 5 segs, assume repouso)
                 clearTimeout(timerRepouso);
                 timerRepouso = setTimeout(() => {
                     statusTxt.textContent = "Portaria: Sem movimento (Imagem em Repouso)";
                     statusDot.className = "status-dot repouso";
-                }, 5000); 
+                }, 40000); 
             }
         });
 
@@ -172,7 +167,7 @@
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = () => {
-                ctx.imageSmoothingEnabled = true; // Aplica o filtro de suavização na ampliação
+                ctx.imageSmoothingEnabled = true;
                 ctx.drawImage(img, 0, 0, pipCanvas.width, pipCanvas.height);
             };
             img.src = frameImg.src;
@@ -184,7 +179,7 @@
                     await document.exitPictureInPicture();
                 } else {
                     atualizarCanvas();
-                    const stream = pipCanvas.captureStream(10); // 10 FPS estático para a Janela Flutuante
+                    const stream = pipCanvas.captureStream(10);
                     pipVideo.srcObject = stream;
                     await pipVideo.play();
                     await pipVideo.requestPictureInPicture();
