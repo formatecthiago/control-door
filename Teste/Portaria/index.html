@@ -163,7 +163,7 @@
 
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXlYVB0nYKj-8",
+            apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
             authDomain: "portaria-cam.firebaseapp.com",
             databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
             projectId: "portaria-cam",
@@ -185,12 +185,14 @@
 
         let timerRepouso = null;
 
-        database.ref('camera/frame').on('value', (snapshot) => {
+        // Escuta a transmissão do Celular A no caminho 'camera/stream'
+        database.ref('camera/stream').on('value', (snapshot) => {
             const data = snapshot.val();
-            if (data) {
-                frameImg.src = data;
+            if (data && data.imagem) {
+                // Atualiza a foto principal do PWA com a imagem vinda do Celular A
+                frameImg.src = data.imagem;
                 
-                statusTxt.textContent = "Portaria: Movimento detectado (Ao Vivo)";
+                statusTxt.textContent = "Portaria: Transmissão Ativa (Ao Vivo)";
                 statusDot.className = "status-dot online";
                 atualizarCanvas();
 
@@ -198,13 +200,12 @@
                 timerRepouso = setTimeout(() => {
                     statusTxt.textContent = "Portaria: Sem movimento (Imagem em Repouso)";
                     statusDot.className = "status-dot repouso";
-                }, 40000); 
+                }, 10000); // 10 segundos sem sinal ativa o status repouso
             }
         });
 
         function atualizarCanvas() {
             const img = new Image();
-            img.crossOrigin = "anonymous";
             img.onload = () => {
                 ctx.imageSmoothingEnabled = true;
                 ctx.drawImage(img, 0, 0, pipCanvas.width, pipCanvas.height);
@@ -229,7 +230,6 @@
         }
 
         async function fecharTudo() {
-            // 1. Encerra a janela flutuante imediatamente se estiver ativa
             if (document.pictureInPictureElement) {
                 try {
                     await document.exitPictureInPicture();
@@ -238,7 +238,6 @@
                 }
             }
 
-            // 2. Redireciona a navegação para a home do Google Chrome
             window.location.href = "https://www.google.com";
         }
 
