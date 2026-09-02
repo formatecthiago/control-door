@@ -82,7 +82,23 @@
         .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; margin-bottom: 10px; font-weight: bold; font-size: 0.85rem; }
         .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
-        .foto-v { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; margin-bottom: 15px; }
+        
+        /* CONTAINER DA FOTO DO VISITANTE COM A MINIATURA DA CÂMERA DA PORTARIA */
+        .wrapper-foto-chamada { position: relative; width: 220px; height: 220px; margin-bottom: 15px; }
+        .foto-v { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
+        .mini-stream { 
+            position: absolute; 
+            bottom: 5px; 
+            right: 5px; 
+            width: 75px; 
+            height: 75px; 
+            border-radius: 50%; 
+            border: 2px solid var(--yellow); 
+            object-fit: cover; 
+            background: #000;
+            box-shadow: 0 0 10px rgba(0,0,0,0.8);
+        }
+
         #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; }
         
         #container-digitar-texto { display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
@@ -171,7 +187,13 @@
 
     <div id="painel-chamada">
         <div id="timer-regressivo">90</div>
-        <img id="foto-v" class="foto-v" src="">
+        
+        <!-- WRAPPER DA FOTO ESTÁTICA COM A MINIATURA DA PORTARIA DA CÂMERA IP -->
+        <div class="wrapper-foto-chamada">
+            <img id="foto-v" class="foto-v" src="">
+            <img id="mini-stream-portaria" class="mini-stream" src="" alt="Live Portaria">
+        </div>
+
         <h3 style="color:var(--neon); margin:5px 0; letter-spacing:1px;">VISITANTE NA PORTA</h3>
         <p id="msg-v" style="font-style:italic; color:#aaa; margin-bottom:25px; text-align:center; padding:0 20px; font-size:1.1rem; min-height:20px;"></p>
         
@@ -213,9 +235,23 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
+    // 1. CONFIGURAÇÃO DO FIREBASE MORADOR
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
+
+    // 2. CONFIGURAÇÃO DA SEGUNDA INSTÂNCIA DO FIREBASE (CÂMERA PORTARIA)
+    const firebaseConfigPortaria = {
+        apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
+        authDomain: "portaria-cam.firebaseapp.com",
+        databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
+        projectId: "portaria-cam",
+        storageBucket: "portaria-cam.firebasestorage.app",
+        messagingSenderId: "271848073619",
+        appId: "1:271848073619:web:4bab1cfb13a479ca596066"
+    };
+    const appPortaria = firebase.initializeApp(firebaseConfigPortaria, "appPortaria");
+    const dbPortaria = appPortaria.database();
     
     let my_un = localStorage.getItem('my_un');
     let my_foto = "";
@@ -245,6 +281,15 @@
     let refBloqueadosAtiva = null;
     let refHistoricoAtiva = null;
     let escutaChamadasIniciada = false;
+
+    // CONEXÃO ONLINE COM O STREAM DA CÂMERA DA PORTARIA
+    const miniStreamImg = document.getElementById('mini-stream-portaria');
+    dbPortaria.ref('camera/stream').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.imagem && miniStreamImg) {
+            miniStreamImg.src = data.imagem;
+        }
+    });
 
     async function inicializarPushNotificacoesNativas() {
         try {
@@ -325,7 +370,6 @@
         return "M-" + Math.abs(hash).toString(16).toUpperCase();
     }
     
-    // INICIALIZAÇÃO SEGURA (Evita congelar o WebView do Android)
     window.addEventListener('DOMContentLoaded', () => {
         setTimeout(async () => {
             my_fingerprint = gerarFingerprintMorador();
