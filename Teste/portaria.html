@@ -7,7 +7,7 @@
     <style>
         body { margin: 0; background: #000; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; transition: opacity 0.5s; }
         #interface-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        img, video { width: 90%; max-width: 500px; background: #333; border-radius: 10px; min-height: 250px; object-fit: cover; }
+        img { width: 90%; max-width: 500px; background: #333; border-radius: 10px; min-height: 250px; object-fit: cover; }
         button { margin-top: 30px; padding: 18px 40px; font-size: 18px; border-radius: 50px; border: none; background: #007bff; color: white; font-weight: bold; cursor: pointer; }
         .ocultar { opacity: 0; visibility: hidden; }
     </style>
@@ -19,10 +19,10 @@
 <body>
 
     <div id="interface-container">
-        <!-- Imagem que exibe o sinal do Firebase -->
+        <!-- Exibição principal da câmera -->
         <img id="streamPortaria" src="" alt="Aguardando sinal da portaria...">
         
-        <!-- Elementos ocultos necessários para manter o suporte a Picture-in-Picture -->
+        <!-- Elementos ocultos para suportar o modo PiP -->
         <canvas id="canvasPiP" width="320" height="240" style="display:none;"></canvas>
         <video id="meuVideo" playsinline autoplay muted style="display:none;"></video>
 
@@ -30,7 +30,6 @@
     </div>
 
     <script>
-        // Configuração do seu projeto Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
             authDomain: "portaria-cam.firebaseapp.com",
@@ -50,21 +49,23 @@
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('interface-container');
 
-        // Prepara o stream interno para suportar a janela flutuante
+        // Prepara o stream para a janela flutuante
         const stream = canvas.captureStream(10);
         video.srcObject = stream;
         video.play();
 
-        // Escuta o banco do Firebase em tempo real
+        // Escuta exatamente a estrutura nova enviada pelo Celular A (camera/stream)
         database.ref('camera/stream').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.imagem) {
-                // Atualiza a imagem principal na tela
+                // 1. Atualiza a imagem principal do PWA
                 imgElement.src = data.imagem;
 
-                // Desenha a imagem no canvas interno para o modo PiP
+                // 2. Desenha no canvas para a janela flutuante (PiP)
                 const img = new Image();
-                img.onload = () => { ctx.drawImage(img, 0, 0, 320, 240); };
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, 320, 240);
+                };
                 img.src = data.imagem;
             }
         });
