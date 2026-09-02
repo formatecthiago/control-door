@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulador de Câmera - Portaria</title>
+  <!-- Firebase App e Database SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body style="text-align: center; font-family: sans-serif; background: #121212; color: #fff; padding-top: 20px;">
+
+  <h2>Simulador ESP32-CAM (Celular A)</h2>
+  <video id="webcam" autoplay playsinline style="width: 320px; height: 240px; border: 2px solid #00ff00; border-radius: 8px;"></video>
+  <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+  
+  <p id="status" style="font-weight: bold; color: #00ff00;">Aguardando permissão da câmera...</p>
+
+  <script>
+    // Configurações do seu projeto portaria-cam
+    const firebaseConfig = {
+      apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
+      authDomain: "portaria-cam.firebaseapp.com",
+      databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
+      projectId: "portaria-cam",
+      storageBucket: "portaria-cam.firebasestorage.app",
+      messagingSenderId: "271848073619",
+      appId: "1:271848073619:web:4bab1cfb13a479ca596066",
+      measurementId: "G-1XJ4Q6491E"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusText = document.getElementById('status');
+
+    // Liga a câmera do Celular A
+    navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: "environment" }, audio: false })
+      .then((stream) => {
+        video.srcObject = stream;
+        statusText.innerText = "Transmissão Ativa -> Enviando ao Firebase!";
+        // Envia 1 foto por segundo (1000ms)
+        setInterval(capturarEEnviar, 1000);
+      })
+      .catch((err) => {
+        statusText.innerText = "Erro ao acessar a câmera: " + err;
+        statusText.style.color = "#ff4444";
+      });
+
+    function capturarEEnviar() {
+      ctx.drawImage(video, 0, 0, 320, 240);
+      const frameBase64 = canvas.toDataURL('image/jpeg', 0.4); // Qualidade leve para economizar tráfego
+
+      database.ref('camera/stream').set({
+        imagem: frameBase64,
+        timestamp: Date.now()
+      });
+    }
+  </script>
+</body>
+</html>
