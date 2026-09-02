@@ -3,46 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="manifest" href="manifest.json"> <!-- Isso que transforma em PWA -->
+    <link rel="manifest" href="manifest.json">
     <style>
         body { margin: 0; background: #000; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; transition: opacity 0.5s; }
-        
         #interface-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        
-        video { width: 90%; max-width: 500px; background: #333; border-radius: 10px; }
-        
+        img, video { width: 90%; max-width: 500px; background: #333; border-radius: 10px; min-height: 250px; object-fit: cover; }
         button { margin-top: 30px; padding: 18px 40px; font-size: 18px; border-radius: 50px; border: none; background: #007bff; color: white; font-weight: bold; cursor: pointer; }
-        
-        /* O "Truque": esconde tudo deixando apenas o vídeo */
         .ocultar { opacity: 0; visibility: hidden; }
     </style>
+
+    <!-- SDKs do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
     <div id="interface-container">
-        <video id="meuVideo" playsinline autoplay muted loop src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
+        <!-- Imagem que exibe o sinal do Firebase -->
+        <img id="streamPortaria" src="" alt="Aguardando sinal da portaria...">
+        
+        <!-- Elementos ocultos necessários para manter o suporte a Picture-in-Picture -->
+        <canvas id="canvasPiP" width="320" height="240" style="display:none;"></canvas>
+        <video id="meuVideo" playsinline autoplay muted style="display:none;"></video>
+
         <button onclick="ativarPiP()">Visualizar a Portaria</button>
     </div>
 
     <script>
+        // Configuração do seu projeto Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
+            authDomain: "portaria-cam.firebaseapp.com",
+            databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
+            projectId: "portaria-cam",
+            storageBucket: "portaria-cam.firebasestorage.app",
+            messagingSenderId: "271848073619",
+            appId: "1:271848073619:web:4bab1cfb13a479ca596066"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const imgElement = document.getElementById('streamPortaria');
         const video = document.getElementById('meuVideo');
+        const canvas = document.getElementById('canvasPiP');
+        const ctx = canvas.getContext('2d');
         const container = document.getElementById('interface-container');
+
+        // Prepara o stream interno para suportar a janela flutuante
+        const stream = canvas.captureStream(10);
+        video.srcObject = stream;
+        video.play();
+
+        // Escuta o banco do Firebase em tempo real
+        database.ref('camera/stream').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.imagem) {
+                // Atualiza a imagem principal na tela
+                imgElement.src = data.imagem;
+
+                // Desenha a imagem no canvas interno para o modo PiP
+                const img = new Image();
+                img.onload = () => { ctx.drawImage(img, 0, 0, 320, 240); };
+                img.src = data.imagem;
+            }
+        });
 
         async function ativarPiP() {
             try {
-                // Tenta ativar o flutuante
                 await video.requestPictureInPicture();
             } catch (error) {
                 alert("Erro ao flutuar. Toque na tela primeiro!");
             }
         }
 
-        // Quando o PiP entra, escondemos o site
         video.addEventListener('enterpictureinpicture', () => {
             container.classList.add('ocultar');
         });
 
-        // Quando o PiP sai, o site reaparece
         video.addEventListener('leavepictureinpicture', () => {
             container.classList.remove('ocultar');
         });
