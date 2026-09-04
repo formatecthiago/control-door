@@ -83,7 +83,7 @@
         .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
         
-        /* CONTAINER DA FOTO DO VISITANTE COM A MINIATURA DA CÂMERA DA PORTARIA */
+        /* CONTAINER DA FOTO DO VISITANTE COM OVERLAY DA CÂMERA DA PORTARIA */
         .wrapper-foto-chamada { position: relative; width: 220px; height: 220px; margin-bottom: 15px; }
         .foto-v { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
         .mini-stream { 
@@ -188,7 +188,6 @@
     <div id="painel-chamada">
         <div id="timer-regressivo">90</div>
         
-        <!-- WRAPPER DA FOTO ESTÁTICA COM A MINIATURA DA PORTARIA DA CÂMERA IP -->
         <div class="wrapper-foto-chamada">
             <img id="foto-v" class="foto-v" src="">
             <img id="mini-stream-portaria" class="mini-stream" src="" alt="Live Portaria">
@@ -240,7 +239,7 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    // 2. CONFIGURAÇÃO DA SEGUNDA INSTÂNCIA DO FIREBASE (CÂMERA PORTARIA)
+    // 2. CONFIGURAÇÃO DA SEGUNDA INSTÂNCIA DO FIREBASE (PORTARIA)
     const firebaseConfigPortaria = {
         apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
         authDomain: "portaria-cam.firebaseapp.com",
@@ -282,14 +281,21 @@
     let refHistoricoAtiva = null;
     let escutaChamadasIniciada = false;
 
-    // CONEXÃO ONLINE COM O STREAM DA CÂMERA DA PORTARIA
-    const miniStreamImg = document.getElementById('mini-stream-portaria');
-    dbPortaria.ref('camera/stream').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data && data.imagem && miniStreamImg) {
-            miniStreamImg.src = data.imagem;
+    // GERENCIAMENTO DA STREAM DA PORTARIA (LIGADO APENAS QUANDO A CHAMADA TOCA)
+    function escutarStreamPortaria(ativa) {
+        const miniStreamImg = document.getElementById('mini-stream-portaria');
+        if (ativa) {
+            dbPortaria.ref('camera/stream').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.imagem && miniStreamImg) {
+                    miniStreamImg.src = data.imagem;
+                }
+            });
+        } else {
+            dbPortaria.ref('camera/stream').off();
+            if (miniStreamImg) miniStreamImg.src = "";
         }
-    });
+    }
 
     async function inicializarPushNotificacoesNativas() {
         try {
@@ -310,7 +316,7 @@
                                 }
                             });
                             db.ref('moradores_validados/' + my_un).once('value', snap => {
-                                if (snap.exists() && snap.val() && snap.val().nome) {
+                                if (snap.exists()) {
                                     db.ref('moradores_validados/' + my_un).update({ fcm_token: token.value });
                                 }
                             });
@@ -388,7 +394,8 @@
         
         refStatusAtiva = db.ref('moradores_validados/' + my_un);
         refStatusAtiva.on('value', s => {
-            if(s.exists() && s.val() && s.val().nome) {
+            // CORREÇÃO DE APROVAÇÃO EM TEMPO REAL: Checa existencia direta da chave da unidade
+            if(s.exists()) {
                 mudarTela('s-home');
                 document.getElementById('txt-un').innerText = "CASA " + my_un;
                 if (!escutaChamadasIniciada) {
@@ -452,7 +459,7 @@
             
             setTimeout(() => {
                 video.play().catch(() => {});
-            }, 200);
+            }, 300);
 
         } catch (err) {
             console.error("Erro ao inicializar câmera selfie:", err);
@@ -465,8 +472,9 @@
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
         if(!v) return;
 
-        if(!streamCameraAtiva) {
+        if(!streamCameraAtiva || v.videoWidth === 0) {
             inicializarCapturaVideo();
+            alert("Aguarde a câmera iniciar totalmente e clique em capturar novamente.");
             return;
         }
         
@@ -493,8 +501,13 @@
               nome = document.getElementById('c-nome').value.trim(),
               btnFinalizar = document.getElementById('btn-finalizar-cad');
               
-        if(!my_foto || !un || !cpf || !nome) return;
-        if(btnFinalizar) btnFinalizar.disabled = true;
+        if(!my_foto) { alert("Por favor, capture a sua selfie antes de enviar!"); return; }
+        if(!un || !cpf || !nome) { alert("Preencha todos os campos do formulário!"); return; }
+        
+        if(btnFinalizar) {
+            btnFinalizar.disabled = true;
+            btnFinalizar.innerText = "ENVIANDO SOLICITAÇÃO...";
+        }
         
         db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
             const moradoresExistentes = snap.val() || {};
@@ -502,11 +515,16 @@
             const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
             
             if (!jaExisteEsseAparelho) {
-                if(chaves.length >= 5) { if(btnFinalizar) btnFinalizar.disabled = false; return; }
+                if(chaves.length >= 5) { 
+                    alert("Limite de moradores para esta unidade foi excedido (Máximo 5).");
+                    if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
+                    return; 
+                }
                 for (let k in moradoresExistentes) {
                     let m = moradoresExistentes[k];
                     if(m.cpf === cpf || m.nome.toLowerCase() === nome.toLowerCase()) { 
-                        if(btnFinalizar) btnFinalizar.disabled = false; 
+                        alert("Este CPF ou Nome já possui uma solicitação enviada.");
+                        if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
                         return; 
                     }
                 }
@@ -517,10 +535,11 @@
             }).then(() => {
                 my_un = un;
                 localStorage.setItem('my_un', un);
-                if(btnFinalizar) btnFinalizar.disabled = false;
+                if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
                 verificarStatus();
             }).catch(err => {
-                if(btnFinalizar) btnFinalizar.disabled = false;
+                alert("Erro ao conectar com o banco de dados. Tente novamente.");
+                if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
             });
         });
     }
@@ -536,6 +555,9 @@
                 document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
                 painel.style.display = 'flex';
                 
+                // Ativa a miniatura de vídeo em tempo real da portaria
+                escutarStreamPortaria(true);
+
                 if((d.status === 'escrevendo' || d.status === 'gravando' || somSilenciadoPorInteracao)) {
                     gerenciarAlerta('stop');
                 } else if(d.status === 'chamando' && !estaGravando && !estaDigitando && !somSilenciadoPorInteracao) {
@@ -557,6 +579,7 @@
                 painel.style.display = 'none';
                 fecharPainelTexto();
                 gerenciarAlerta('stop');
+                escutarStreamPortaria(false); // Desativa escuta da miniatura
                 clearInterval(timerPerdida);
                 timerPerdida = null;
                 somSilenciadoPorInteracao = false;
@@ -688,7 +711,10 @@
         document.getElementById('painel-chamada').style.display = 'none';
         document.getElementById('container-digitar-texto').style.display = 'none';
         document.getElementById('popup-voz').style.display = 'none';
+        
         gerenciarAlerta('stop');
+        escutarStreamPortaria(false);
+        
         clearInterval(timerPerdida); timerPerdida = null;
         
         const ref = db.ref('chamadas_ativas/' + my_un);
@@ -829,13 +855,16 @@
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         targetScreen.classList.add('active');
         
+        // CORREÇÃO DA TELA PRETA: Inicialização da câmera isolada e com delay
         if(id === 's-cadastro') { 
             const video = document.getElementById('v-cad');
             const canvas = document.getElementById('c-cad');
             if(video) video.style.display = "block"; 
             if(canvas) canvas.style.display = "none"; 
             
-            setTimeout(() => { inicializarCapturaVideo(); }, 100);
+            setTimeout(() => { 
+                inicializarCapturaVideo(); 
+            }, 300);
         } else {
             encerrarStreamCamera();
         }
