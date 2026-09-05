@@ -83,20 +83,57 @@
         .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
         
-        /* CONTAINER DA FOTO DO VISITANTE COM OVERLAY DA CÂMERA DA PORTARIA */
-        .wrapper-foto-chamada { position: relative; width: 220px; height: 220px; margin-bottom: 15px; }
+        /* CONTAINER DA FOTO DO VISITANTE COM OVERLAY E MINI ZOOM */
+        .wrapper-foto-chamada { position: relative; width: 220px; height: 220px; margin-bottom: 25px; }
         .foto-v { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
+        
+        /* Aumento e reposicionamento arrastado para fora */
+        .container-stream-box {
+            position: absolute;
+            bottom: -12px;
+            right: -12px;
+            width: 100px;
+            height: 100px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+        
+        /* Classe ativada ao clicar no Zoom */
+        .container-stream-box.mini-zoom-ativo {
+            width: 155px;
+            height: 155px;
+            bottom: -20px;
+            right: -25px;
+        }
+
         .mini-stream { 
-            position: absolute; 
-            bottom: 5px; 
-            right: 5px; 
-            width: 75px; 
-            height: 75px; 
+            width: 100%; 
+            height: 100%; 
             border-radius: 50%; 
-            border: 2px solid var(--yellow); 
+            border: 3px solid var(--yellow); 
             object-fit: cover; 
             background: #000;
-            box-shadow: 0 0 10px rgba(0,0,0,0.8);
+            box-shadow: 0 0 15px rgba(0,0,0,0.9);
+        }
+
+        .btn-toggle-zoom {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--yellow);
+            color: #000;
+            border: 2px solid #000;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 101;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
         #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; }
@@ -137,11 +174,11 @@
         <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
         <div class="area-camera-virty">
             <div class="video-box">
-                <video id="v-cad" playsinline muted></video>
+                <video id="v-cad" playsinline autoPlay muted></video>
                 <canvas id="c-cad"></canvas>
             </div>
         </div>
-        <button class="btn" style="background:#fff; color:#000;" onclick="fotoCad()">📸 CAPTURAR SELFIE</button>
+        <button class="btn" style="background:#fff; color:#000;" onclick="capturarFotoComFallback()">📸 CAPTURAR SELFIE</button>
         <input type="text" id="c-nome" placeholder="Nome Completo">
         <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
         <input type="number" id="c-un" placeholder="Número da Casa/Apt">
@@ -190,7 +227,11 @@
         
         <div class="wrapper-foto-chamada">
             <img id="foto-v" class="foto-v" src="">
-            <img id="mini-stream-portaria" class="mini-stream" src="" alt="Live Portaria">
+            <!-- Container com controle do Mini Zoom -->
+            <div id="stream-box" class="container-stream-box">
+                <button class="btn-toggle-zoom" onclick="alternarMiniZoom(event)">🔍</button>
+                <img id="mini-stream-portaria" class="mini-stream" src="" alt="Live Portaria">
+            </div>
         </div>
 
         <h3 style="color:var(--neon); margin:5px 0; letter-spacing:1px;">VISITANTE NA PORTA</h3>
@@ -234,12 +275,10 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
-    // 1. CONFIGURAÇÃO DO FIREBASE MORADOR
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    // 2. CONFIGURAÇÃO DA SEGUNDA INSTÂNCIA DO FIREBASE (PORTARIA)
     const firebaseConfigPortaria = {
         apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
         authDomain: "portaria-cam.firebaseapp.com",
@@ -281,7 +320,14 @@
     let refHistoricoAtiva = null;
     let escutaChamadasIniciada = false;
 
-    // GERENCIAMENTO DA STREAM DA PORTARIA (LIGADO APENAS QUANDO A CHAMADA TOCA)
+    function alternarMiniZoom(e) {
+        if(e) e.stopPropagation();
+        const streamBox = document.getElementById('stream-box');
+        if (streamBox) {
+            streamBox.classList.toggle('mini-zoom-ativo');
+        }
+    }
+
     function escutarStreamPortaria(ativa) {
         const miniStreamImg = document.getElementById('mini-stream-portaria');
         if (ativa) {
@@ -394,7 +440,6 @@
         
         refStatusAtiva = db.ref('moradores_validados/' + my_un);
         refStatusAtiva.on('value', s => {
-            // CORREÇÃO DE APROVAÇÃO EM TEMPO REAL: Checa existencia direta da chave da unidade
             if(s.exists()) {
                 mudarTela('s-home');
                 document.getElementById('txt-un').innerText = "CASA " + my_un;
@@ -445,49 +490,72 @@
         try {
             const constraints = { 
                 video: { 
-                    facingMode: { ideal: "user" },
-                    width: { ideal: 480 },
-                    height: { ideal: 360 }
+                    facingMode: "user",
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
                 },
                 audio: false
             };
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            streamCameraAtiva = stream;
-            video.srcObject = stream;
-            video.setAttribute('playsinline', 'true');
-            video.style.transform = "scaleX(-1)";
             
-            setTimeout(() => {
-                video.play().catch(() => {});
-            }, 300);
-
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                streamCameraAtiva = stream;
+                video.srcObject = stream;
+                video.setAttribute('playsinline', 'true');
+                video.style.transform = "scaleX(-1)";
+                
+                await video.play().catch(() => {});
+            }
         } catch (err) {
-            console.error("Erro ao inicializar câmera selfie:", err);
+            console.warn("Retentativa de inicialização da câmera:", err);
         } finally {
             inicializandoCamera = false;
         }
     }
 
-    function fotoCad() {
+    async function capturarFotoComFallback() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
-        if(!v) return;
+        if(!v || !c) return;
+
+        // Fallback Nativo usando Capacitor Camera caso a WebView bloqueie o getUserMedia
+        if ((!streamCameraAtiva || v.videoWidth === 0) && typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable('Camera')) {
+            try {
+                const image = await Capacitor.Plugins.Camera.getPhoto({
+                    quality: 60,
+                    allowEditing: false,
+                    resultType: 'dataUrl',
+                    source: 'CAMERA'
+                });
+                if(image && image.dataUrl) {
+                    my_foto = image.dataUrl;
+                    const ctx = c.getContext('2d');
+                    const img = new Image();
+                    img.onload = () => {
+                        c.width = img.width;
+                        c.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        c.style.display = "block";
+                        v.style.display = "none";
+                    };
+                    img.src = image.dataUrl;
+                    return;
+                }
+            } catch(e) {}
+        }
 
         if(!streamCameraAtiva || v.videoWidth === 0) {
-            inicializarCapturaVideo();
-            alert("Aguarde a câmera iniciar totalmente e clique em capturar novamente.");
+            await inicializarCapturaVideo();
+            alert("Iniciando permissão da câmera. Clique novamente para capturar.");
             return;
         }
         
-        const larguraReal = v.videoWidth > 0 ? v.videoWidth : 480;
-        const alturaReal = v.videoHeight > 0 ? v.videoHeight : 360;
-        
-        c.width = larguraReal; 
-        c.height = alturaReal;
+        c.width = v.videoWidth || 480; 
+        c.height = v.videoHeight || 360;
         
         const ctx = c.getContext('2d');
         ctx.drawImage(v, 0, 0, c.width, c.height);
         
-        my_foto = c.toDataURL('image/jpeg', 0.5); 
+        my_foto = c.toDataURL('image/jpeg', 0.6); 
         
         c.style.display = "block"; 
         v.style.display = "none";
@@ -555,7 +623,6 @@
                 document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
                 painel.style.display = 'flex';
                 
-                // Ativa a miniatura de vídeo em tempo real da portaria
                 escutarStreamPortaria(true);
 
                 if((d.status === 'escrevendo' || d.status === 'gravando' || somSilenciadoPorInteracao)) {
@@ -579,7 +646,7 @@
                 painel.style.display = 'none';
                 fecharPainelTexto();
                 gerenciarAlerta('stop');
-                escutarStreamPortaria(false); // Desativa escuta da miniatura
+                escutarStreamPortaria(false);
                 clearInterval(timerPerdida);
                 timerPerdida = null;
                 somSilenciadoPorInteracao = false;
@@ -855,7 +922,6 @@
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         targetScreen.classList.add('active');
         
-        // CORREÇÃO DA TELA PRETA: Inicialização da câmera isolada e com delay
         if(id === 's-cadastro') { 
             const video = document.getElementById('v-cad');
             const canvas = document.getElementById('c-cad');
