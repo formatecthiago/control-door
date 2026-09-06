@@ -45,10 +45,20 @@ jobs:
           npx cap add android || echo "Pasta android já existe"
           npx cap sync android
 
-      - name: 6.5. Injetar Permissões e Sons Nativos
+      - name: 6.5. Injetar Permissões Nativas e Sons
         working-directory: ./morador-apk
         run: |
-          # 1. Copia e padroniza arquivos de som para uso nativo do Android
+          # Injeta permissões de Câmera, Microfone e Vibração no Manifest Nativo do Android
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST_PATH" ]; then
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.CAMERA" \/>' $MANIFEST_PATH
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" \/>' $MANIFEST_PATH
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" \/>' $MANIFEST_PATH
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.VIBRATE" \/>' $MANIFEST_PATH
+            sed -i '/<\/manifest>/i \    <uses-feature android:name="android.hardware.camera" android:required="false" \/>' $MANIFEST_PATH
+          fi
+
+          # Copia e padroniza arquivos de som para uso nativo do Android
           mkdir -p android/app/src/main/res/raw
           if [ -d "www/sound" ]; then
             for f in www/sound/*.mp3; do
