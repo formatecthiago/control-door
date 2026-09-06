@@ -33,8 +33,11 @@ jobs:
       - name: 5.5. Transferir Web Assets (Ponte Automatizada)
         run: |
           mkdir -p morador-apk/www
-          rm -rf morador-apk/www/*
-          cp -r morador/* morador-apk/www/
+          if [ -d "morador" ]; then
+            cp -r morador/* morador-apk/www/
+          else
+            cp -r index.html manifest.json sw.js sound icon-*.png morador-apk/www/ 2>/dev/null || true
+          fi
 
       - name: 6. Sincronizar e Criar Estrutura Android Nativa
         working-directory: ./morador-apk
@@ -42,12 +45,18 @@ jobs:
           npx cap add android || echo "Pasta android já existe"
           npx cap sync android
 
-      - name: 6.5. Copiar Recursos Nativos (Sons)
+      - name: 6.5. Injetar Permissões e Sons Nativos
         working-directory: ./morador-apk
         run: |
-          # Copia Sons de Chamada para a Pasta Nativa do Android (res/raw)
+          # 1. Copia e padroniza arquivos de som para uso nativo do Android
           mkdir -p android/app/src/main/res/raw
-          cp -r www/sound/*.mp3 android/app/src/main/res/raw/ 2>/dev/null || echo "Nenhum som para copiar ou pasta ausente"
+          if [ -d "www/sound" ]; then
+            for f in www/sound/*.mp3; do
+              [ -e "$f" ] || continue
+              filename=$(basename "$f" | tr '[:upper:]' '[:lower:]' | tr '-' '_')
+              cp "$f" "android/app/src/main/res/raw/$filename"
+            done
+          fi
 
       - name: 7. Compilar o APK Nativo
         working-directory: ./morador-apk/android
