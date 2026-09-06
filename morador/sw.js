@@ -1,6 +1,5 @@
-const CACHE_NAME = 'virty-cache-v3';
+const CACHE_NAME = 'virty-cache-v3.1';
 
-// Lista oficial contendo a pasta correta (sound) e os nomes com dois dígitos
 const urlsToCache = [
   './',
   './index.html',
@@ -21,25 +20,19 @@ const urlsToCache = [
   './icon-512.png'
 ];
 
-// Instalação: Salva os arquivos essenciais e os sons para uso em segundo plano
 self.addEventListener('install', (e) => {
     self.skipWaiting();
     e.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(urlsToCache);
-        })
+        caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
     );
 });
 
-// Ativação: Limpa caches antigos para evitar travamentos de tela
 self.addEventListener('activate', (e) => {
     e.waitUntil(
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
-                    if (key !== CACHE_NAME) {
-                        return caches.delete(key);
-                    }
+                    if (key !== CACHE_NAME) return caches.delete(key);
                 })
             );
         })
@@ -47,7 +40,6 @@ self.addEventListener('activate', (e) => {
     self.clients.claim();
 });
 
-// Estratégia de Rede: Busca sempre o mais recente da internet (Network-First)
 self.addEventListener('fetch', (e) => {
     if (e.request.method !== 'GET') return;
     e.respondWith(
@@ -61,15 +53,13 @@ self.addEventListener('fetch', (e) => {
                 }
                 return response;
             })
-            .catch(() => {
-                return caches.match(e.request);
-            })
+            .catch(() => caches.match(e.request))
     );
 });
 
-// NOTIFICAÇÃO PERSISTENTE (Disparada em segundo plano)
+// Tratamento de Push Notificação com alta prioridade para Heads-up (Banner Flutuante)
 self.addEventListener('push', (e) => {
-    let data = { title: 'VIRTY ACCESS DOOR', body: 'Alguém está tocando o seu interfone!', som: 'sound01.mp3' };
+    let data = { title: 'VIRTY ACCESS DOOR', body: 'Alguém está chamando na sua porta!', som: 'sound01' };
     
     if (e.data) {
         try { data = e.data.json(); } catch(err) { data.body = e.data.text(); }
@@ -79,13 +69,15 @@ self.addEventListener('push', (e) => {
         body: data.body,
         icon: './icon-192.png',
         badge: './icon-192.png',
-        vibrate: [500, 300, 500, 300, 500],
-        tag: 'chamada-interfone-' + data.unidade, // Tag impede notificações duplicadas
+        vibrate: [1000, 500, 1000, 500, 1000],
+        tag: 'chamada-interfone-' + (data.unidade || 'geral'),
         renotify: true,
-        requireInteraction: true, // Torna a notificação persistente (só some se o usuário arrastar ou clicar)
+        requireInteraction: true,
+        priority: 'high',
+        channelId: 'virty_interfone_channel',
         data: {
-            url: '/control-door/morador/index.html',
-            som_escolhido: data.som // Envia o som customizado recebido do Firebase
+            url: './index.html',
+            som_escolhido: data.som
         }
     };
 
@@ -94,21 +86,19 @@ self.addEventListener('push', (e) => {
     );
 });
 
-// Ação ao clicar na Notificação: Abre o App direto na tela de atendimento
+// Clique na notificação: Traz o APK para a frente ou abre o navegador
 self.addEventListener('notificationclick', (e) => {
     e.notification.close();
     
     e.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-            // Se o app já estiver aberto, foca nele
             for (let client of clientList) {
-                if (client.url.includes('/control-door/morador/') && 'focus' in client) {
+                if (client.url.includes('index.html') && 'focus' in client) {
                     return client.focus();
                 }
             }
-            // Se estiver fechado, abre uma nova janela limpa
             if (clients.openWindow) {
-                return clients.openWindow(e.notification.data.url);
+                return clients.openWindow('./index.html');
             }
         })
     );
