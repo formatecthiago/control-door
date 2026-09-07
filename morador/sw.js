@@ -1,4 +1,4 @@
-const CACHE_NAME = 'virty-cache-v3.1';
+const CACHE_NAME = 'virty-cache-v3.2';
 
 const urlsToCache = [
   './',
@@ -40,12 +40,29 @@ self.addEventListener('activate', (e) => {
     self.clients.claim();
 });
 
+// Interceptação de Rede Otimizada (Evita estouro de memória no APK)
 self.addEventListener('fetch', (e) => {
     if (e.request.method !== 'GET') return;
+
+    const url = e.request.url;
+
+    // Ignora conexões em tempo real do Firebase e requisições externas para não travar a memória
+    if (
+        url.includes('firebaseio.com') || 
+        url.includes('googleapis.com') || 
+        url.includes('google-analytics.com') ||
+        url.startsWith('data:') ||
+        url.startsWith('blob:')
+    ) {
+        return;
+    }
+
+    // Estratégia: Tenta Rede -> Se falhar, busca no Cache local
     e.respondWith(
         fetch(e.request)
             .then((response) => {
-                if (response.status === 200) {
+                // Armazena no cache apenas se for arquivo estático local válido
+                if (response.status === 200 && response.type === 'basic') {
                     let responseClone = response.clone();
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(e.request, responseClone);
@@ -57,7 +74,7 @@ self.addEventListener('fetch', (e) => {
     );
 });
 
-// Tratamento de Push Notificação com alta prioridade para Heads-up (Banner Flutuante)
+// Tratamento de Push Notificação para Heads-up (Banner Flutuante)
 self.addEventListener('push', (e) => {
     let data = { title: 'VIRTY ACCESS DOOR', body: 'Alguém está chamando na sua porta!', som: 'sound01' };
     
@@ -86,7 +103,7 @@ self.addEventListener('push', (e) => {
     );
 });
 
-// Clique na notificação: Traz o APK para a frente ou abre o navegador
+// Clique na notificação
 self.addEventListener('notificationclick', (e) => {
     e.notification.close();
     
