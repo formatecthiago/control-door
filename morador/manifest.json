@@ -1,25 +1,26 @@
 {
-  "theme_color": "#39FF14",
-  "background_color": "#000000",
-  "display": "standalone",
-  "orientation": "portrait",
-  "scope": "./",
-  "start_url": "./index.html",
-  "name": "Virty Morador",
-  "short_name": "Virty Morador",
-  "description": "Ecossistema Inteligente de Controle de Acesso",
+  "short_name": "Virty",
+  "name": "VIRTY ACCESS DOOR - Morador",
+  "description": "Sistema Inteligente de Interfonia e Controle de Acesso",
   "icons": [
     {
-      "src": "./icon-192.png",
-      "sizes": "192x192",
+      "src": "https://placehold.co/192x192/000000/39FF14?text=VIRTY",
       "type": "image/png",
+      "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "./icon-512.png",
-      "sizes": "512x512",
+      "src": "https://placehold.co/512x512/000000/39FF14?text=VIRTY",
       "type": "image/png",
+      "sizes": "512x512",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "start_url": "./index.html",
+  "background_color": "#000000",
+  "theme_color": "#39FF14",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "./",
+  "categories": ["utilities", "security"]
 }
