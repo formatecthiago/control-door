@@ -83,11 +83,9 @@
         .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
         
-        /* CONTAINER DA FOTO DO VISITANTE COM OVERLAY E MINI ZOOM */
         .wrapper-foto-chamada { position: relative; width: 220px; height: 220px; margin-bottom: 25px; }
         .foto-v { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
         
-        /* Aumento e reposicionamento arrastado para fora */
         .container-stream-box {
             position: absolute;
             bottom: -12px;
@@ -98,7 +96,6 @@
             z-index: 100;
         }
         
-        /* Classe ativada ao clicar no Zoom */
         .container-stream-box.mini-zoom-ativo {
             width: 155px;
             height: 155px;
@@ -227,7 +224,6 @@
         
         <div class="wrapper-foto-chamada">
             <img id="foto-v" class="foto-v" src="">
-            <!-- Container com controle do Mini Zoom -->
             <div id="stream-box" class="container-stream-box">
                 <button class="btn-toggle-zoom" onclick="alternarMiniZoom(event)">🔍</button>
                 <img id="mini-stream-portaria" class="mini-stream" src="" alt="Live Portaria">
@@ -299,7 +295,9 @@
     let tempoGeralRegressivo = 90;
     let timePressStart = 0;
     
-    let somInterfoneLocal = null;
+    // OTIMIZAÇÃO: Player de Áudio Único (Singleton) reutilizado sem criar vazoes no sistema
+    let somInterfoneLocal = new Audio();
+    somInterfoneLocal.loop = true;
     let somTocandoAtualmente = false; 
     let loopVibracaoInterval = null; 
     let piscaTituloInterval = null;
@@ -389,14 +387,6 @@
         } catch (err) {}
     }
 
-    /* TESTE DE DESATIVAÇÃO TEMPORÁRIA DO SERVICE WORKER
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW registrado com sucesso!'))
-            .catch(err => console.error('Erro ao registrar SW:', err));
-    }
-    */
-
     async function verificarPermissoesObg() {
         const banner = document.getElementById('banner-permissoes');
         if (typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable && Capacitor.isPluginAvailable('Camera')) {
@@ -423,23 +413,33 @@
         });
     }
 
+    // OTIMIZAÇÃO: Função Fingerprint Ultra-Leve (Elimina travamento no carregamento da tela)
     function gerarFingerprintMorador() {
-        const meta = [screen.width, screen.height, screen.devicePixelRatio, navigator.hardwareConcurrency || 4, navigator.language].join('||');
+        const idSalvo = localStorage.getItem('virty_device_fp');
+        if (idSalvo) return idSalvo;
+
+        const str = [navigator.userAgent, screen.width, screen.height, navigator.language].join('|');
         let hash = 0;
-        for (let i = 0; i < meta.length; i++) { hash = (hash << 5) - hash + meta.charCodeAt(i); hash |= 0; }
-        return "M-" + Math.abs(hash).toString(16).toUpperCase();
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        const novoFp = "M-" + Math.abs(hash).toString(16).toUpperCase();
+        localStorage.setItem('virty_device_fp', novoFp);
+        return novoFp;
     }
     
+    // OTIMIZAÇÃO: Boot assíncrono para liberar o motor do Android instantaneamente
     window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(async () => {
+        requestAnimationFrame(async () => {
             my_fingerprint = gerarFingerprintMorador();
             document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
             atualizarInterfaceAlerta();
             
-            await verificarPermissoesObg();
             verificarStatus();
+            verificarPermissoesObg();
             inicializarPushNotificacoesNativas();
-        }, 300);
+        });
     });
 
     function verificarStatus() {
@@ -497,11 +497,7 @@
 
         try {
             const constraints = { 
-                video: { 
-                    facingMode: "user",
-                    width: { ideal: 640 },
-                    height: { ideal: 480 }
-                },
+                video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
                 audio: false
             };
             
@@ -511,11 +507,10 @@
                 video.srcObject = stream;
                 video.setAttribute('playsinline', 'true');
                 video.style.transform = "scaleX(-1)";
-                
                 await video.play().catch(() => {});
             }
         } catch (err) {
-            console.warn("Retentativa de inicialização da câmera:", err);
+            console.warn("Retentativa da câmera:", err);
         } finally {
             inicializandoCamera = false;
         }
@@ -525,7 +520,6 @@
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
         if(!v || !c) return;
 
-        // Fallback Nativo usando Capacitor Camera caso a WebView bloqueie o getUserMedia
         if ((!streamCameraAtiva || v.videoWidth === 0) && typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable('Camera')) {
             try {
                 const image = await Capacitor.Plugins.Camera.getPhoto({
@@ -562,12 +556,10 @@
         
         const ctx = c.getContext('2d');
         ctx.drawImage(v, 0, 0, c.width, c.height);
-        
         my_foto = c.toDataURL('image/jpeg', 0.6); 
         
         c.style.display = "block"; 
         v.style.display = "none";
-        
         encerrarStreamCamera();
     }
 
@@ -709,11 +701,13 @@
         } 
     }
 
+    // OTIMIZAÇÃO: Gravação de Áudio Otimizada (Evita travamentos de microfone e memória)
     async function startRec() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             micStreamGlobal = stream;
             chunks = []; 
+            
             let opcoesMime = { mimeType: 'audio/mp4' };
             if (!MediaRecorder.isTypeSupported('audio/mp4')) {
                 opcoesMime = { mimeType: 'audio/aac' };
@@ -749,9 +743,11 @@
             }, 1000);
 
             mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+            
             mediaRecorder.onstop = () => {
                 const tipoBlobFinal = mediaRecorder.mimeType || 'audio/mp4';
                 const blob = new Blob(chunks, { type: tipoBlobFinal });
+                
                 const reader = new FileReader(); 
                 reader.readAsDataURL(blob);
                 reader.onloadend = () => {
@@ -764,8 +760,14 @@
                     popup.style.display = 'none'; 
                     responder('mensagem');
                 };
+
+                // Desliga totalmente o microfone no nativo
+                if(micStreamGlobal) {
+                    micStreamGlobal.getTracks().forEach(track => track.stop());
+                    micStreamGlobal = null;
+                }
             };
-            mediaRecorder.start();
+            mediaRecorder.start(100);
         } catch(e) { estaGravando = false; }
     }
     
@@ -774,10 +776,6 @@
             mediaRecorder.stop(); 
             clearInterval(timerVozInterval); 
             estaGravando = false; 
-            if(micStreamGlobal) {
-                micStreamGlobal.getTracks().forEach(track => track.stop());
-                micStreamGlobal = null;
-            }
         } 
     }
     
@@ -804,6 +802,7 @@
         });
         mudarTela('s-home');
     }
+
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
     
     function gravarHist(vid, foto, st, dna) {
@@ -832,6 +831,7 @@
         });
     }
 
+    // OTIMIZAÇÃO: Listeners de Histórico/Bloqueados com Renderização em Microtarefas
     function renderizarDadosAbas() {
         if(refBloqueadosAtiva) refBloqueadosAtiva.off();
         if(refHistoricoAtiva) refHistoricoAtiva.off();
@@ -844,35 +844,49 @@
             construirListaBloqueadosDireta(cacheBloqueadosGlobais);
             
             refHistoricoAtiva.once('value', snap => {
-                const historicoItens = []; snap.forEach(item => { historicoItens.push(item.val()); });
+                const historicoItens = []; 
+                snap.forEach(item => { historicoItens.push(item.val()); });
                 historicoItens.sort((a, b) => b.ts - a.ts);
-                construirListaNormal(historicoItens, cacheBloqueadosGlobais);
+                
+                // Desenha os cards sem congelar a interface
+                requestAnimationFrame(() => {
+                    construirListaNormal(historicoItens, cacheBloqueadosGlobais);
+                });
             });
         });
     }
 
     function construirListaNormal(itens, listaBloqueados) {
         const list = document.getElementById('lista-hist'); if(!list) return;
-        list.innerHTML = "";
         const ativos = itens.filter(i => !listaBloqueados[i.dna_dispositivo]);
-        if(ativos.length === 0) { list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum registro</p>`; document.getElementById('btn-ver-mais').style.display = "none"; return; }
-        const exibidos = ativos.slice(0, limiteExibicaoHist);
         
+        if(ativos.length === 0) { 
+            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum registro</p>`; 
+            document.getElementById('btn-ver-mais').style.display = "none"; 
+            return; 
+        }
+        
+        const exibidos = ativos.slice(0, limiteExibicaoHist);
         let htmlAcumulado = "";
         exibidos.forEach(d => { htmlAcumulado += criarCardHTML(d, false); });
+        
         list.innerHTML = htmlAcumulado;
         document.getElementById('btn-ver-mais').style.display = ativos.length > limiteExibicaoHist ? "block" : "none";
     }
 
     function construirListaBloqueadosDireta(mapaBloqueados) {
         const list = document.getElementById('lista-bloqueados'); if(!list) return;
-        list.innerHTML = "";
         const chaves = Object.keys(mapaBloqueados);
-        if(chaves.length === 0) { list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum dispositivo bloqueado.</p>`; return; }
-        const mapaOrdenado = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
         
+        if(chaves.length === 0) { 
+            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum dispositivo bloqueado.</p>`; 
+            return; 
+        }
+        
+        const mapaOrdenado = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
         let htmlAcumulado = "";
         mapaOrdenado.forEach(d => { htmlAcumulado += criarCardHTML(d, true); });
+        
         list.innerHTML = htmlAcumulado;
     }
 
@@ -895,6 +909,7 @@
             <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.dna_dispositivo}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
         </div>`;
     }
+
     function expandirHistorico() { limiteExibicaoHist = Math.min(limiteExibicaoHist + 5, 30); renderizarDadosAbas(); }
     
     function alternarVisaoListas() {
@@ -909,6 +924,7 @@
         }
         renderizarDadosAbas();
     }
+
     function alternarBloqueio(dna) {
         const ref = db.ref(`bloqueados/${my_un}/${dna}`);
         ref.once('value', s => {
@@ -921,6 +937,7 @@
             }
         });
     }
+
     function limparHist() { if(confirm("Deseja limpar seu histórico?")) db.ref(`historico/${my_un}`).remove(); }
     
     function mudarTela(id) {
@@ -935,10 +952,7 @@
             const canvas = document.getElementById('c-cad');
             if(video) video.style.display = "block"; 
             if(canvas) canvas.style.display = "none"; 
-            
-            setTimeout(() => { 
-                inicializarCapturaVideo(); 
-            }, 300);
+            setTimeout(() => { inicializarCapturaVideo(); }, 300);
         } else {
             encerrarStreamCamera();
         }
@@ -961,13 +975,15 @@
     function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
     function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); btn.innerText = modoAlerta === 1 ? "🔊" : modoAlerta === 2 ? "📳🔊" : "📳"; }
     
+    // OTIMIZAÇÃO: Gerenciador do Player Único (Evita acúmulo de áudio em memória e travamentos do sistema)
     function gerenciarAlerta(acao, arquivoSomOpcional) {
         if(acao === 'stop') { 
-            if(somInterfoneLocal) {
-                try { somInterfoneLocal.pause(); somInterfoneLocal.currentTime = 0; } catch(e){}
-                somInterfoneLocal = null;
-            }
+            try {
+                somInterfoneLocal.pause();
+                somInterfoneLocal.currentTime = 0;
+            } catch(e){}
             somTocandoAtualmente = false;
+            
             if(loopVibracaoInterval) { clearInterval(loopVibracaoInterval); loopVibracaoInterval = null; }
             if (navigator.vibrate) navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
@@ -987,8 +1003,7 @@
 
         if(modoAlerta !== 3 && !somTocandoAtualmente) {
             const arquivoFinal = arquivoSomOpcional || obterNomeSomFormatado(somAtual);
-            somInterfoneLocal = new Audio(`sound/${arquivoFinal}`);
-            somInterfoneLocal.loop = true; 
+            somInterfoneLocal.src = `sound/${arquivoFinal}`;
             somTocandoAtualmente = true;
             somInterfoneLocal.play().catch(() => { somTocandoAtualmente = false; });
         }
