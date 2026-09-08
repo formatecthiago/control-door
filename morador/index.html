@@ -144,7 +144,7 @@
         #texto-timer-voz { position: absolute; font-size: 2.2rem; font-weight: bold; color: #fff; }
         
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
-        .btn-voz svg { width: 32px; height: 32px; fill: #000; }
+        .btn-voz svg { width: 32px; height: 32px; fill: #000; pointer-events: none; }
         
         .area-camera-virty { display: flex; align-items: center; justify-content: center; margin: 15px 0 25px; width: 100%; }
         .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; position:relative; }
@@ -237,9 +237,7 @@
             <button class="btn" style="background:var(--red); color:#fff; margin:0;" onclick="responder('recusado')">RECUSAR CHAMADA</button>
             <div class="leaving-interacao-meio">
                 <button class="btn" style="background:var(--blue); color:#fff; flex: 1; margin:0;" onclick="abrirPainelTexto()">MENSAGEM</button>
-                <button id="btn-mic" class="btn-voz"
-                        ontouchstart="eventoMicStart(event)" ontouchend="eventoMicEnd(event)"
-                        onmousedown="eventoMicStart(event)" onmouseup="eventoMicEnd(event)">
+                <button id="btn-mic" class="btn-voz">
                     <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
                 </button>
             </div>
@@ -295,7 +293,6 @@
     let tempoGeralRegressivo = 90;
     let timePressStart = 0;
     
-    // OTIMIZAÇÃO: Player de Áudio Único (Singleton) reutilizado sem criar vazoes no sistema
     let somInterfoneLocal = new Audio();
     somInterfoneLocal.loop = true;
     let somTocandoAtualmente = false; 
@@ -318,11 +315,21 @@
     let refHistoricoAtiva = null;
     let escutaChamadasIniciada = false;
 
+    // NOVO: Força repintura nativa da WebView sem congelar
+    function forcarReflowWebView() {
+        requestAnimationFrame(() => {
+            document.body.style.display = 'none';
+            document.body.offsetHeight; // Reflow
+            document.body.style.display = '';
+        });
+    }
+
     function alternarMiniZoom(e) {
         if(e) e.stopPropagation();
         const streamBox = document.getElementById('stream-box');
         if (streamBox) {
             streamBox.classList.toggle('mini-zoom-ativo');
+            forcarReflowWebView();
         }
     }
 
@@ -413,7 +420,6 @@
         });
     }
 
-    // OTIMIZAÇÃO: Função Fingerprint Ultra-Leve (Elimina travamento no carregamento da tela)
     function gerarFingerprintMorador() {
         const idSalvo = localStorage.getItem('virty_device_fp');
         if (idSalvo) return idSalvo;
@@ -429,18 +435,51 @@
         return novoFp;
     }
     
-    // OTIMIZAÇÃO: Boot assíncrono para liberar o motor do Android instantaneamente
     window.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(async () => {
             my_fingerprint = gerarFingerprintMorador();
             document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
             atualizarInterfaceAlerta();
             
+            configurarEventosMicrofone();
             verificarStatus();
             verificarPermissoesObg();
             inicializarPushNotificacoesNativas();
         });
     });
+
+    // NOVO: Manipulador unificado de Pointer Events no microfone (Sem travar a gravação)
+    function configurarEventosMicrofone() {
+        const btnMic = document.getElementById('btn-mic');
+        if(!btnMic) return;
+
+        btnMic.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            if (document.activeElement) document.activeElement.blur();
+            btnMic.setPointerCapture(e.pointerId);
+
+            if(estaGravando) return; 
+            timePressStart = Date.now(); 
+            modoMaoLivre = false; 
+            somSilenciadoPorInteracao = true; 
+            gerenciarAlerta('stop'); 
+            startRec(); 
+        });
+
+        btnMic.addEventListener('pointerup', (e) => {
+            e.preventDefault();
+            try { btnMic.releasePointerCapture(e.pointerId); } catch(err){}
+
+            let duration = Date.now() - timePressStart; 
+            if(duration < 400) { 
+                modoMaoLivre = true; 
+                document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque na tela para enviar</span>"; 
+                forcarReflowWebView();
+            } else { 
+                if(!modoMaoLivre) stopRec(); 
+            } 
+        });
+    }
 
     function verificarStatus() {
         if(!my_un) { mudarTela('s-cadastro'); return; }
@@ -564,6 +603,8 @@
     }
 
     function enviarCadastro() {
+        if (document.activeElement) document.activeElement.blur();
+        
         const un = document.getElementById('c-un').value,
               cpf = document.getElementById('c-cpf').value.trim(),
               nome = document.getElementById('c-nome').value.trim(),
@@ -623,6 +664,7 @@
                 document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
                 painel.style.display = 'flex';
                 
+                forcarReflowWebView();
                 escutarStreamPortaria(true);
 
                 if((d.status === 'escrevendo' || d.status === 'gravando' || somSilenciadoPorInteracao)) {
@@ -659,39 +701,22 @@
         db.ref('chamadas_ativas/' + my_un).update({ status: 'escrevendo' });
         document.getElementById('container-digitar-texto').style.display = 'flex';
         document.getElementById('campo-texto-interno').focus();
+        forcarReflowWebView();
     }
     function fecharPainelTexto() {
+        if (document.activeElement) document.activeElement.blur();
         estaDigitando = false; document.getElementById('container-digitar-texto').style.display = 'none';
         if(document.getElementById('painel-chamada').style.display === 'flex') {
             db.ref('chamadas_ativas/' + my_un).update({ status: 'chamando' });
         }
+        forcarReflowWebView();
     }
     function enviarTextoInternal() {
+        if (document.activeElement) document.activeElement.blur();
         const txt = document.getElementById('campo-texto-interno').value;
         if(!txt) return;
         db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: txt, data_hora: obterDataHora() });
         document.getElementById('campo-texto-interno').value = ""; responder('mensagem');
-    }
-
-    function eventoMicStart(e) { 
-        e.preventDefault(); 
-        if(estaGravando) return; 
-        timePressStart = Date.now(); 
-        modoMaoLivre = false; 
-        somSilenciadoPorInteracao = true; 
-        gerenciarAlerta('stop'); 
-        startRec(); 
-    }
-    
-    function eventoMicEnd(e) { 
-        e.preventDefault(); 
-        let duration = Date.now() - timePressStart; 
-        if(duration < 400) { 
-            modoMaoLivre = true; 
-            document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque na tela para enviar</span>"; 
-        } else { 
-            if(!modoMaoLivre) stopRec(); 
-        } 
     }
     
     function verificarToqueEnvioMaoLivre(e) { 
@@ -701,7 +726,6 @@
         } 
     }
 
-    // OTIMIZAÇÃO: Gravação de Áudio Otimizada (Evita travamentos de microfone e memória)
     async function startRec() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -723,6 +747,7 @@
             
             if(!modoMaoLivre) document.getElementById('label-modo-gravacao').innerText = "SEGURE PARA GRAVAR...";
             popup.style.display = 'flex';
+            forcarReflowWebView();
             
             let tempoVoz = 30; 
             texto.innerText = "30s"; 
@@ -761,7 +786,6 @@
                     responder('mensagem');
                 };
 
-                // Desliga totalmente o microfone no nativo
                 if(micStreamGlobal) {
                     micStreamGlobal.getTracks().forEach(track => track.stop());
                     micStreamGlobal = null;
@@ -780,6 +804,7 @@
     }
     
     function responder(st) {
+        if (document.activeElement) document.activeElement.blur();
         estaGravando = false; estaDigitando = false; modoMaoLivre = false; somSilenciadoPorInteracao = false;
         document.getElementById('painel-chamada').style.display = 'none';
         document.getElementById('container-digitar-texto').style.display = 'none';
@@ -801,6 +826,7 @@
             }
         });
         mudarTela('s-home');
+        forcarReflowWebView();
     }
 
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
@@ -831,7 +857,6 @@
         });
     }
 
-    // OTIMIZAÇÃO: Listeners de Histórico/Bloqueados com Renderização em Microtarefas
     function renderizarDadosAbas() {
         if(refBloqueadosAtiva) refBloqueadosAtiva.off();
         if(refHistoricoAtiva) refHistoricoAtiva.off();
@@ -848,7 +873,6 @@
                 snap.forEach(item => { historicoItens.push(item.val()); });
                 historicoItens.sort((a, b) => b.ts - a.ts);
                 
-                // Desenha os cards sem congelar a interface
                 requestAnimationFrame(() => {
                     construirListaNormal(historicoItens, cacheBloqueadosGlobais);
                 });
@@ -923,6 +947,7 @@
             txtTitulo.innerText = "Histórico de Chamadas"; txtTitulo.style.color = "var(--gray)"; btnToggle.innerText = "VER BLOQUEADOS"; btnToggle.style.color = "var(--red)"; btnLimpar.style.display = "block"; limiteExibicaoHist = 5;
         }
         renderizarDadosAbas();
+        forcarReflowWebView();
     }
 
     function alternarBloqueio(dna) {
@@ -956,6 +981,7 @@
         } else {
             encerrarStreamCamera();
         }
+        forcarReflowWebView();
     }
     
     function cancelarSolicitacaoAtual() {
@@ -975,7 +1001,6 @@
     function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
     function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); btn.innerText = modoAlerta === 1 ? "🔊" : modoAlerta === 2 ? "📳🔊" : "📳"; }
     
-    // OTIMIZAÇÃO: Gerenciador do Player Único (Evita acúmulo de áudio em memória e travamentos do sistema)
     function gerenciarAlerta(acao, arquivoSomOpcional) {
         if(acao === 'stop') { 
             try {
@@ -1020,6 +1045,7 @@
     document.addEventListener('resume', () => {
         verificarStatus();
         verificarPermissoesObg();
+        forcarReflowWebView();
     });
 </script>
 </body>
