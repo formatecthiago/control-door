@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador Câmera Flutuante - Portaria</title>
+  <title>Simulador de Câmera - Portaria</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -11,57 +11,55 @@
   <style>
     * { box-sizing: border-box; }
     body {
-      background: #000;
+      background: #121212;
       color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: sans-serif;
       text-align: center;
       padding: 20px;
       margin: 0;
     }
     .card {
-      background: #111;
+      background: #1e1e1e;
       border: 1px solid #333;
-      border-radius: 16px;
+      border-radius: 12px;
       padding: 20px;
       max-width: 360px;
       margin: 0 auto;
     }
     video {
-      width: 100%;
-      max-width: 320px;
+      width: 320px;
       height: 240px;
-      border: 2px solid #39FF14;
-      border-radius: 12px;
+      border: 2px solid #00ff00;
+      border-radius: 8px;
       background: #000;
       object-fit: cover;
     }
     .btn {
       width: 100%;
-      padding: 16px;
+      padding: 14px;
       margin-top: 15px;
-      border-radius: 25px;
+      border-radius: 8px;
       border: none;
-      background: #39FF14;
+      background: #00ff00;
       color: #000;
       font-weight: bold;
-      font-size: 1rem;
+      font-size: 0.95rem;
       cursor: pointer;
       text-transform: uppercase;
     }
-    .btn:disabled { background: #333; color: #666; }
-    #status { font-size: 0.85rem; color: #39FF14; font-weight: bold; margin-top: 15px; }
+    #status { font-weight: bold; color: #00ff00; margin-top: 15px; font-size: 0.9rem; }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h3 style="color:#39FF14; margin-top:0;">CAM PORTARIA (PIP)</h3>
+    <h2>Simulador ESP32-CAM (Celular A)</h2>
     
     <video id="webcam" autoplay playsinline muted></video>
     <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
     
-    <button id="btn-pip" class="btn" onclick="alternarModoFlutuante()">🔲 Ativar Janela Flutuante</button>
-    <p id="status">Iniciando câmera...</p>
+    <button id="btn-pip" class="btn" onclick="alternarModoFlutuante()">🔲 MODO FLUTUANTE (PIP)</button>
+    <p id="status">Aguardando permissão da câmera...</p>
   </div>
 
   <script>
@@ -72,7 +70,8 @@
       projectId: "portaria-cam",
       storageBucket: "portaria-cam.firebasestorage.app",
       messagingSenderId: "271848073619",
-      appId: "1:271848073619:web:4bab1cfb13a479ca596066"
+      appId: "1:271848073619:web:4bab1cfb13a479ca596066",
+      measurementId: "G-1XJ4Q6491E"
     };
 
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -84,79 +83,63 @@
     const statusText = document.getElementById('status');
     const btnPip = document.getElementById('btn-pip');
 
-    let enviando = false;
-    let ultimoEnvio = 0;
+    let intervalTransmissao = null;
 
-    // 1. Liga a câmera com restrições otimizadas
+    // Liga a câmera do dispositivo
     navigator.mediaDevices.getUserMedia({ 
-      video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: "environment" }, 
+      video: { width: 320, height: 240, facingMode: "environment" }, 
       audio: false 
     })
     .then((stream) => {
       video.srcObject = stream;
-      video.play();
-      statusText.innerText = "Câmera Ativa -> Transmitindo ao Firebase!";
+      statusText.innerText = "Transmissão Ativa -> Enviando ao Firebase!";
       
-      // Inicia loop de envio
-      enviando = true;
-      processarEEnviarFrame();
+      // Restauração: 2 fotos por segundo (intervalo de 500ms) utilizando setInterval tradicional
+      if (intervalTransmissao) clearInterval(intervalTransmissao);
+      intervalTransmissao = setInterval(capturarEEnviar, 500);
     })
     .catch((err) => {
       statusText.innerText = "Erro ao acessar a câmera: " + err;
-      statusText.style.color = "#FF3131";
+      statusText.style.color = "#ff4444";
     });
 
-    // 2. Loop de envio leve (Aprox. 3 a 4 FPS para vídeo fluido sem travar)
-    function processarEEnviarFrame() {
-      if (!enviando) return;
+    function capturarEEnviar() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        ctx.drawImage(video, 0, 0, 320, 240);
+        const frameBase64 = canvas.toDataURL('image/jpeg', 0.4);
 
-      const agora = Date.now();
-      // Envia uma foto a cada 300ms (ajustável)
-      if (agora - ultimoEnvio >= 300) {
-        if (video.videoWidth > 0) {
-          ctx.drawImage(video, 0, 0, 320, 240);
-          const frameBase64 = canvas.toDataURL('image/jpeg', 0.35); // Qualidade ajustada para menor latência
-
-          database.ref('camera/stream').set({
-            imagem: frameBase64,
-            timestamp: agora
-          });
-        }
-        ultimoEnvio = agora;
+        database.ref('camera/stream').set({
+          imagem: frameBase64,
+          timestamp: Date.now()
+        });
       }
-
-      requestAnimationFrame(processarEEnviarFrame);
     }
 
-    // 3. Ativa o modo Picture-in-Picture (Janela Flutuante)
+    // Ativa o modo Janela Flutuante sem interromper o setInterval
     async function alternarModoFlutuante() {
       try {
         if (document.pictureInPictureElement) {
           await document.exitPictureInPicture();
-          btnPip.innerText = "🔲 Ativar Janela Flutuante";
         } else {
           if (document.pictureInPictureEnabled) {
             await video.requestPictureInPicture();
-            btnPip.innerText = "🔙 Sair do Modo Flutuante";
           } else {
             alert("Seu navegador não suporta o modo janela flutuante.");
           }
         }
       } catch (err) {
         console.error("Erro ao ativar PiP:", err);
-        alert("Para abrir a janela flutuante, certifique-se de ter interagido com a tela primeiro.");
       }
     }
 
-    // Eventos de estado da janela flutuante
     video.addEventListener('enterpictureinpicture', () => {
-      statusText.innerText = "Modo Flutuante Ativo (Rodando em segundo plano)";
-      btnPip.innerText = "🔙 Sair do Modo Flutuante";
+      statusText.innerText = "Modo Flutuante Ativo -> Transmitindo em segundo plano!";
+      btnPip.innerText = "🔙 SAIR DO MODO FLUTUANTE";
     });
 
     video.addEventListener('leavepictureinpicture', () => {
-      statusText.innerText = "Câmera Ativa -> Transmitindo ao Firebase!";
-      btnPip.innerText = "🔲 Ativar Janela Flutuante";
+      statusText.innerText = "Transmissão Ativa -> Enviando ao Firebase!";
+      btnPip.innerText = "🔲 MODO FLUTUANTE (PIP)";
     });
   </script>
 </body>
