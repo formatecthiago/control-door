@@ -1,14 +1,9 @@
 {
   "appId": "com.formatecthiago.controldoor.morador",
-  "appName": "VirtyMorador",
+  "appName": "Virty Morador",
   "webDir": "www",
   "server": {
-    "androidScheme": "https",
-    "cleartext": true,
-    "allowNavigation": [
-      "*.firebaseio.com",
-      "*.googleapis.com"
-    ]
+    "androidScheme": "https"
   },
   "plugins": {
     "PushNotifications": {
