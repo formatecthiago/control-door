@@ -24,34 +24,37 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: 4. Instalar Dependências do Capacitor
+      - name: 4. Instalar Dependências e CLI do Capacitor
         working-directory: ./morador-apk
         run: |
           npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: 5. Copiar Aplicação Web para o APK
         run: |
           mkdir -p morador-apk/www
           cp -r morador/* morador-apk/www/ 2>/dev/null || true
 
-      - name: 6. Copiar Google Services para o Android Nativo
+      - name: 6. Adicionar e Sincronizar Plataforma Android
+        working-directory: ./morador-apk
+        run: |
+          npx cap add android || echo "Plataforma android ja existe"
+          npx cap sync android
+
+      - name: 7. Copiar Google Services para o Android Nativo
         run: |
           mkdir -p morador-apk/android/app
           cp morador-apk/google-services.json morador-apk/android/app/ 2>/dev/null || true
 
-      - name: 7. Sincronizar Estrutura Android (Capacitor)
-        working-directory: ./morador-apk
-        run: |
-          npx cap add android || echo "Pasta android ja existe"
-          npx cap sync android
-
       - name: 8. Gerar APK Debug
         run: |
-          if [ -d "morador-apk/android" ]; then
-            cd morador-apk/android
-          elif [ -d "android" ]; then
-            cd android
+          GRADLEW_PATH=$(find . -name gradlew)
+          if [ -z "$GRADLEW_PATH" ]; then
+            echo "Erro: gradlew nao encontrado no projeto!"
+            exit 1
           fi
+          GRADLE_DIR=$(dirname "$GRADLEW_PATH")
+          cd "$GRADLE_DIR"
           chmod +x gradlew
           ./gradlew assembleDebug
 
@@ -59,6 +62,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: VirtyMorador-APK
-          path: |
-            morador-apk/android/app/build/outputs/apk/debug/app-debug.apk
-            android/app/build/outputs/apk/debug/app-debug.apk
+          path: "**/app-debug.apk"
