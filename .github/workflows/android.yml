@@ -24,11 +24,11 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: 4. Instalar Dependências e CLI do Capacitor
+      - name: 4. Instalar Dependências e Plugins do Capacitor
         working-directory: ./morador-apk
         run: |
           npm install
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/push-notifications
 
       - name: 5. Copiar Aplicação Web para o APK
         run: |
@@ -41,24 +41,27 @@ jobs:
           npx cap add android || echo "Plataforma android ja existe"
           npx cap sync android
 
-      - name: 7. Copiar Google Services para o Android Nativo
+      - name: 7. Injetar Permissões do Android (Áudio + Notificações)
+        run: |
+          MANIFEST_PATH=$(find morador-apk/android -name AndroidManifest.xml | head -n 1)
+          if [ -f "$MANIFEST_PATH" ]; then
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.INTERNET" />' "$MANIFEST_PATH"
+          fi
+
+      - name: 8. Copiar Google Services para o Android Nativo
         run: |
           mkdir -p morador-apk/android/app
           cp morador-apk/google-services.json morador-apk/android/app/ 2>/dev/null || true
 
-      - name: 8. Gerar APK Debug
+      - name: 9. Gerar APK Debug
         run: |
           GRADLEW_PATH=$(find . -name gradlew)
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "Erro: gradlew nao encontrado no projeto!"
-            exit 1
-          fi
           GRADLE_DIR=$(dirname "$GRADLEW_PATH")
           cd "$GRADLE_DIR"
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: 9. Disponibilizar APK para Download
+      - name: 10. Disponibilizar APK para Download
         uses: actions/upload-artifact@v4
         with:
           name: VirtyMorador-APK
