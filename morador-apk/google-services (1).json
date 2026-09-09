@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "694822891117",
+    "firebase_url": "https://virty-access-door-default-rtdb.firebaseio.com",
+    "project_id": "virty-access-door",
+    "storage_bucket": "virty-access-door.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694822891117:android:15032d5b0d9cc0b6fa9964",
+        "android_client_info": {
+          "package_name": "com.formatecthiago.controldoor.morador"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDis1Zr3IOV-iWco8m9tUWIeL1UKVRxcEc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
