@@ -266,8 +266,11 @@
         <p id="label-modo-gravacao" style="color:var(--red); font-weight:bold; margin-top:25px; letter-spacing:1px; text-align:center; padding:0 20px; line-height:1.4;"></p>
     </div>
 
+<!-- SDK do Firebase 8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<!-- Script principal da aplicação -->
 <script>
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
@@ -389,7 +392,6 @@
                     }
                 }
 
-                // Ao receber Push ou Clicar no Banner Flutuante: Abre o APK e carrega a tela de chamada
                 PushNotifications.addListener('pushNotificationReceived', () => { 
                     if (my_un) {
                         verificarStatus();
@@ -1009,7 +1011,6 @@
         gerenciarAlerta('start', obterNomeSomFormatado(somAtual)); 
         setTimeout(() => { if(!somSilenciadoPorInteracao) gerenciarAlerta('stop'); }, 2000); 
         
-        // Atualiza o som do canal nativo do Android com a nova escolha
         if (typeof Capacitor !== 'undefined' && Capacitor.getPlatform() === 'android') {
             try {
                 Capacitor.Plugins.PushNotifications.createChannel({
