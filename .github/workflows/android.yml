@@ -46,8 +46,12 @@ jobs:
           npx cap sync android
 
       - name: 8. Gerar APK Debug
-        working-directory: ./morador-apk/android
         run: |
+          if [ -d "morador-apk/android" ]; then
+            cd morador-apk/android
+          elif [ -d "android" ]; then
+            cd android
+          fi
           chmod +x gradlew
           ./gradlew assembleDebug
 
@@ -55,4 +59,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: VirtyMorador-APK
-          path: morador-apk/android/app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            morador-apk/android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/app-debug.apk
