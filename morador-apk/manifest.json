@@ -4,15 +4,9 @@
   "description": "Sistema Inteligente de Interfonia e Controle de Acesso",
   "icons": [
     {
-      "src": "https://placehold.co/192x192/000000/39FF14?text=VIRTY",
+      "src": "./icon-192.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://placehold.co/512x512/000000/39FF14?text=VIRTY",
-      "type": "image/png",
-      "sizes": "512x512",
       "purpose": "any maskable"
     }
   ],
