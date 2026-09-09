@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VIRTY MORADOR v2.0.2 - Nativo APK</title>
+    
+    <meta name="theme-color" content="#39FF14">
+
+    <style>
+        :root {
+            --neon: #39FF14;
+            --bg: #000;
+            --red: #FF3131;
+            --blue: #007BFF;
+            --gray: #666;
+            --yellow: #FFD700;
+            --dark-card: #0d0d0d;
+        }
+        *, *::before, *::after { 
+            box-sizing: border-box; 
+            touch-action: manipulation;
+        }
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+ 
+        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
+        .active { display: flex !important; }
+        
+        input {
+            width: 100%;
+            padding: 16px;
+            margin: 8px 0;
+            border-radius: 12px;
+            border: 2px solid #222;
+            background: #111;
+            color: #fff;
+            font-size: 1.1rem;
+            -webkit-appearance: none;
+        }
+        input:focus { border-color: var(--neon); outline: none; }
+        
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border-radius: 30px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin: 8px 0;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn:disabled { background: #333 !important; color: #666 !important; cursor: not-allowed; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; margin-bottom: 20px; }
+        .controles-alerta { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 12px 20px; border-radius: 12px; cursor: pointer; font-size: 1.3rem; min-width: 65px; }
+        
+        #lista-hist, #lista-bloqueados { flex: 1; }
+        .hist-card { background: var(--dark-card); border-radius: 16px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #161616; position: relative; }
+        .foto-box { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
+        .foto-hist { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; border: 1px solid var(--neon); }
+        .dots-row { position: absolute; top: -10px; left: 0; width: 100%; display: flex; justify-content: center; gap: 4px; z-index: 10; }
+        .dot { width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; box-shadow: 0 2px 4px #000; }
+        
+        .switch-bloqueio { padding: 8px 14px; border-radius: 20px; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; text-transform: uppercase; }
+        .status-bloqueado { background: var(--red); color: #fff; }
+        .status-desbloqueado { background: var(--neon); color: #000; }
+        
+        .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; margin-bottom: 10px; font-weight: bold; font-size: 0.85rem; }
+        .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
+        #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
+        
+        .wrapper-foto-chamada { position: relative; width: 220px; height: 220px; margin-bottom: 25px; }
+        .foto-v { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
+        
+        .container-stream-box {
+            position: absolute;
+            bottom: -12px;
+            right: -12px;
+            width: 100px;
+            height: 100px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+        
+        .container-stream-box.mini-zoom-ativo {
+            width: 155px;
+            height: 155px;
+            bottom: -20px;
+            right: -25px;
+        }
+
+        .mini-stream { 
+            width: 100%; 
+            height: 100%; 
+            border-radius: 50%; 
+            border: 3px solid var(--yellow); 
+            object-fit: cover; 
+            background: #000;
+            box-shadow: 0 0 15px rgba(0,0,0,0.9);
+        }
+
+        .btn-toggle-zoom {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--yellow);
+            color: #000;
+            border: 2px solid #000;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 101;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; }
+        
+        #container-digitar-texto { display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #timer-flutuante-texto { font-size: 3.5rem; color: #fff; font-weight: bold; margin-bottom: 20px; }
+        #popup-voz { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+        .canvas-circular { transform: rotate(-90deg); width: 200px; height: 200px; }
+        .circle-bg { fill: none; stroke: #222; stroke-width: 12; }
+        .circle-progress { fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 0; transition: stroke 0.3s, stroke-dashoffset 0.1s linear; }
+        #texto-timer-voz { position: absolute; font-size: 2.2rem; font-weight: bold; color: #fff; }
+        
+        .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
+        .btn-voz svg { width: 32px; height: 32px; fill: #000; pointer-events: none; }
+        
+        .area-camera-virty { display: flex; align-items: center; justify-content: center; margin: 15px 0 25px; width: 100%; }
+        .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; position:relative; }
+        .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
+        .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
+        .leaving-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
+    </style>
+</head>
+<body>
+
+    <div id="banner-permissoes" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; box-sizing: border-box; text-align: center;">
+        <div style="border: 2px solid var(--neon); padding: 40px 20px; border-radius: 15px; background: #0a0a0a; max-width: 400px; width: 100%;">
+            <span style="font-size: 50px;">⚠️</span>
+            <h1 style="color: var(--neon); font-family: sans-serif; font-size: 26px; margin-top: 20px; font-weight: bold; text-transform: uppercase;">Acesso Bloqueado</h1>
+            <p style="color: #ffffff; font-family: sans-serif; font-size: 18px; line-height: 1.6; margin: 25px 0;">Ative a permissão permanente de câmera para habilitar o aplicativo.</p>
+            <button id="btn-autorizar-sempre" style="background: var(--neon); color: #000000; border: none; padding: 16px 30px; font-size: 16px; font-weight: bold; border-radius: 30px; width: 100%; cursor: pointer; text-transform: uppercase;">
+                Configurar Agora
+            </button>
+        </div>
+    </div>
+
+    <div id="s-cadastro" class="screen">
+        <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
+        <div class="area-camera-virty">
+            <div class="video-box">
+                <video id="v-cad" playsinline autoPlay muted></video>
+                <canvas id="c-cad"></canvas>
+            </div>
+        </div>
+        <button class="btn" style="background:#fff; color:#000;" onclick="capturarFotoComFallback()">📸 CAPTURAR SELFIE</button>
+        <input type="text" id="c-nome" placeholder="Nome Completo">
+        <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
+        <input type="number" id="c-un" placeholder="Número da Casa/Apt">
+        <button id="btn-finalizar-cad" class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
+    </div>
+
+    <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
+        <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
+        <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
+        <p style="color:#aaa; font-size:1.1rem; max-width:300px; line-height:1.5;">Olá! Os seus dados foram enviados para a administração. Aguarde a liberação do seu acesso.</p>
+        <div style="margin-top:40px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
+        <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
+    </div>
+
+    <div id="s-home" class="screen">
+        <div class="header">
+            <div>
+                <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.2</small>
+            </div>
+            <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
+        </div>
+        
+        <div class="controles-alerta">
+            <button class="btn-mini" id="label-som" onclick="proximoSom()">🎼 1</button>
+            <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()">🔊</button>
+        </div>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <span id="titulo-secao-atual" style="font-size:0.85rem; color:var(--gray); font-weight:bold; letter-spacing:0.5px; text-transform: uppercase;">HISTÓRICO DE CHAMADAS</span>
+            <button id="btn-limpar-tudo" onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.75rem; font-weight:bold; cursor:pointer;">LIMPAR TUDO</button>
+        </div>
+        <div id="container-historico-normal">
+            <div id="lista-hist"></div>
+            <button id="btn-ver-mais" class="btn-expansor" style="display:none;" onclick="expandirHistorico()">VER MAIS</button>
+        </div>
+        
+        <div id="container-lista-bloqueados" style="display:none;">
+            <div id="lista-bloqueados"></div>
+        </div>
+        <button id="btn-toggle-bloqueados" class="btn-secundario" style="margin-top: 15px;" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
+    </div>
+
+    <div id="painel-chamada">
+        <div id="timer-regressivo">90</div>
+        
+        <div class="wrapper-foto-chamada">
+            <img id="foto-v" class="foto-v" src="">
+            <div id="stream-box" class="container-stream-box">
+                <button class="btn-toggle-zoom" onclick="alternarMiniZoom(event)">🔍</button>
+                <img id="mini-stream-portaria" class="mini-stream" src="" alt="Live Portaria">
+            </div>
+        </div>
+
+        <h3 style="color:var(--neon); margin:5px 0; letter-spacing:1px;">VISITANTE NA PORTA</h3>
+        <p id="msg-v" style="font-style:italic; color:#aaa; margin-bottom:25px; text-align:center; padding:0 20px; font-size:1.1rem; min-height:20px;"></p>
+        
+        <div class="painel-controles-chamada">
+            <button class="btn" style="background:var(--red); color:#fff; margin:0;" onclick="responder('recusado')">RECUSAR CHAMADA</button>
+            <div class="leaving-interacao-meio">
+                <button class="btn" style="background:var(--blue); color:#fff; flex: 1; margin:0;" onclick="abrirPainelTexto()">MENSAGEM</button>
+                <button id="btn-mic" class="btn-voz">
+                    <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+                </button>
+            </div>
+            <button class="btn" style="background:var(--neon); color:#000; margin:0;" onclick="responder('liberado')">AUTORIZAR ENTRADA</button>
+        </div>
+    </div>
+
+    <div id="container-digitar-texto" onclick="verificarToqueEnvioMaoLivre(event)">
+        <div id="timer-flutuante-texto">90s</div>
+        <h3 style="color:var(--blue); margin-bottom:15px; letter-spacing:1px;">DIGITAR MENSAGEM</h3>
+        <input type="text" id="campo-texto-interno" placeholder="Escreva a mensagem aqui..." style="width:100%; max-width:320px; text-align:center;">
+        <div style="display:flex; gap:10px; width:100%; max-width:320px; margin-top:15px;">
+            <button class="btn" style="background:var(--blue); color:#fff; margin:0; flex:1;" onclick="enviarTextoInternal()">ENVIAR</button>
+            <button class="btn" style="background:var(--gray); color:#fff; margin:0; flex:1;" onclick="fecharPainelTexto()">VOLTAR</button>
+        </div>
+    </div>
+
+    <div id="popup-voz" onclick="verificarToqueEnvioMaoLivre(event)">
+        <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+            <svg class="canvas-circular">
+                <circle class="circle-bg" cx="100" cy="100" r="90"></circle>
+                <circle id="arco-progresso" class="circle-progress" cx="100" cy="100" r="90"></circle>
+            </svg>
+            <div id="texto-timer-voz">30s</div>
+        </div>
+        <p id="label-modo-gravacao" style="color:var(--red); font-weight:bold; margin-top:25px; letter-spacing:1px; text-align:center; padding:0 20px; line-height:1.4;"></p>
+    </div>
+
+<!-- SDK do Firebase 8 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<!-- Script principal da aplicação -->
+<script>
+    const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    const db = firebase.database();
+
+    const firebaseConfigPortaria = {
+        apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
+        authDomain: "portaria-cam.firebaseapp.com",
+        databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
+        projectId: "portaria-cam",
+        storageBucket: "portaria-cam.firebasestorage.app",
+        messagingSenderId: "271848073619",
+        appId: "1:271848073619:web:4bab1cfb13a479ca596066"
+    };
+    const appPortaria = firebase.initializeApp(firebaseConfigPortaria, "appPortaria");
+    const dbPortaria = appPortaria.database();
+    
+    let my_un = localStorage.getItem('my_un');
+    let my_foto = "";
+    let timerPerdida, timerVozInterval, mediaRecorder, chunks = [];
+    let estaGravando = false, estaDigitando = false, modoMaoLivre = false;
+    let somSilenciadoPorInteracao = false;
+    let tempoGeralRegressivo = 90;
+    let timePressStart = 0;
+    
+    let somInterfoneLocal = new Audio();
+    somInterfoneLocal.loop = true;
+    let somTocandoAtualmente = false; 
+    let loopVibracaoInterval = null; 
+    let piscaTituloInterval = null;
+    let somAtual = parseInt(localStorage.getItem('virty_som')) || 0; 
+    let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
+    
+    let streamCameraAtiva = null;
+    let inicializandoCamera = false;
+    let micStreamGlobal = null;
+    let limiteExibicaoHist = 5;
+    let vendoBloqueados = false;
+    let cacheBloqueadosGlobais = {};
+    let my_fingerprint = "";
+
+    let refStatusAtiva = null;
+    let refChamadasAtiva = null;
+    let refBloqueadosAtiva = null;
+    let refHistoricoAtiva = null;
+    let escutaChamadasIniciada = false;
+
+    function forcarReflowWebView() {
+        requestAnimationFrame(() => {
+            document.body.style.display = 'none';
+            document.body.offsetHeight;
+            document.body.style.display = '';
+        });
+    }
+
+    function alternarMiniZoom(e) {
+        if(e) e.stopPropagation();
+        const streamBox = document.getElementById('stream-box');
+        if (streamBox) {
+            streamBox.classList.toggle('mini-zoom-ativo');
+            forcarReflowWebView();
+        }
+    }
+
+    function escutarStreamPortaria(ativa) {
+        const miniStreamImg = document.getElementById('mini-stream-portaria');
+        if (ativa) {
+            dbPortaria.ref('camera/stream').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.imagem && miniStreamImg) {
+                    miniStreamImg.src = data.imagem;
+                }
+            });
+        } else {
+            dbPortaria.ref('camera/stream').off();
+            if (miniStreamImg) miniStreamImg.src = "";
+        }
+    }
+
+    async function inicializarPushNotificacoesNativas() {
+        try {
+            if (typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable && Capacitor.isPluginAvailable('PushNotifications')) {
+                const PushNotifications = Capacitor.Plugins.PushNotifications;
+                let permStatus = await PushNotifications.checkPermissions();
+                if (permStatus.receive === 'prompt') {
+                    permStatus = await PushNotifications.requestPermissions();
+                }
+                if (permStatus.receive === 'granted') {
+                    await PushNotifications.register();
+                    
+                    PushNotifications.addListener('registration', (token) => {
+                        if (my_un && token && token.value) {
+                            db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).once('value', snap => {
+                                if (snap.exists()) {
+                                    db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).update({ fcm_token: token.value });
+                                }
+                            });
+                            db.ref('moradores_validados/' + my_un).once('value', snap => {
+                                if (snap.exists()) {
+                                    db.ref('moradores_validados/' + my_un).update({ fcm_token: token.value });
+                                }
+                            });
+                        }
+                    });
+
+                    if (Capacitor.getPlatform() === 'android') {
+                        try {
+                            const nomeSomNativo = `sound${String(somAtual + 1).padStart(2, '0')}`;
+                            await PushNotifications.createChannel({
+                                id: 'virty_interfone_channel',
+                                name: 'Chamadas do Interfone',
+                                description: 'Canal de alta prioridade para chamadas do totem Virty',
+                                importance: 5, 
+                                visibility: 1,  
+                                sound: nomeSomNativo, 
+                                vibration: true
+                            });
+                        } catch (e) {}
+                    }
+                }
+
+                PushNotifications.addListener('pushNotificationReceived', () => { 
+                    if (my_un) {
+                        verificarStatus();
+                        forcarReflowWebView();
+                    } 
+                });
+
+                PushNotifications.addListener('pushNotificationActionPerformed', () => { 
+                    if (my_un) {
+                        verificarStatus();
+                        forcarReflowWebView();
+                    } 
+                });
+            }
+        } catch (err) {}
+    }
+
+    async function verificarPermissoesObg() {
+        const banner = document.getElementById('banner-permissoes');
+        if (typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable && Capacitor.isPluginAvailable('Camera')) {
+            try {
+                let statusCamera = await Capacitor.Plugins.Camera.requestPermissions();
+                if (statusCamera.camera !== 'granted') {
+                    banner.style.setProperty('display', 'flex', 'important');
+                    return false;
+                } else {
+                    banner.style.setProperty('display', 'none', 'important');
+                    return true;
+                }
+            } catch (e) {}
+        }
+        return true;
+    }
+
+    const btnAutorizar = document.getElementById('btn-autorizar-sempre');
+    if (btnAutorizar) {
+        btnAutorizar.addEventListener('click', async () => {
+            if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.App) { 
+                await Capacitor.Plugins.App.openAppSettings(); 
+            }
+        });
+    }
+
+    function gerarFingerprintMorador() {
+        const idSalvo = localStorage.getItem('virty_device_fp');
+        if (idSalvo) return idSalvo;
+
+        const str = [navigator.userAgent, screen.width, screen.height, navigator.language].join('|');
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        const novoFp = "M-" + Math.abs(hash).toString(16).toUpperCase();
+        localStorage.setItem('virty_device_fp', novoFp);
+        return novoFp;
+    }
+    
+    window.addEventListener('DOMContentLoaded', () => {
+        requestAnimationFrame(async () => {
+            my_fingerprint = gerarFingerprintMorador();
+            document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
+            atualizarInterfaceAlerta();
+            
+            configurarEventosMicrofone();
+            verificarStatus();
+            verificarPermissoesObg();
+            inicializarPushNotificacoesNativas();
+        });
+    });
+
+    function configurarEventosMicrofone() {
+        const btnMic = document.getElementById('btn-mic');
+        if(!btnMic) return;
+
+        btnMic.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            if (document.activeElement) document.activeElement.blur();
+            btnMic.setPointerCapture(e.pointerId);
+
+            if(estaGravando) return; 
+            timePressStart = Date.now(); 
+            modoMaoLivre = false; 
+            somSilenciadoPorInteracao = true; 
+            gerenciarAlerta('stop'); 
+            startRec(); 
+        });
+
+        btnMic.addEventListener('pointerup', (e) => {
+            e.preventDefault();
+            try { btnMic.releasePointerCapture(e.pointerId); } catch(err){}
+
+            let duration = Date.now() - timePressStart; 
+            if(duration < 400) { 
+                modoMaoLivre = true; 
+                document.getElementById('label-modo-gravacao').innerHTML = "GRAVANDO EM MÃOS LIVRES...<br><span style='color:#fff; font-size:0.8rem;'>Toque na tela para enviar</span>"; 
+                forcarReflowWebView();
+            } else { 
+                if(!modoMaoLivre) stopRec(); 
+            } 
+        });
+    }
+
+    function verificarStatus() {
+        if(!my_un) { mudarTela('s-cadastro'); return; }
+        if(refStatusAtiva) refStatusAtiva.off();
+        
+        refStatusAtiva = db.ref('moradores_validados/' + my_un);
+        refStatusAtiva.on('value', s => {
+            if(s.exists()) {
+                mudarTela('s-home');
+                document.getElementById('txt-un').innerText = "CASA " + my_un;
+                if (!escutaChamadasIniciada) {
+                    escutarChamadas();
+                    escutaChamadasIniciada = true;
+                }
+                renderizarDadosAbas();
+            } else {
+                db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).once('value', snap => {
+                    if(snap.exists()) {
+                        document.getElementById('txt-un-analise').innerText = "UNIDADE: " + my_un + " | ID HARDWARE: " + my_fingerprint;
+                        mudarTela('s-analise');
+                    } else { 
+                        mudarTela('s-cadastro'); 
+                    }
+                });
+            }
+        });
+    }
+
+    function obterNomeSomFormatado(indexSom) {
+        return `sound${String(indexSom + 1).padStart(2, '0')}.mp3`;
+    }
+
+    function encerrarStreamCamera() {
+        if (streamCameraAtiva) {
+            try {
+                streamCameraAtiva.getTracks().forEach(track => track.stop());
+            } catch(e){}
+            streamCameraAtiva = null;
+        }
+    }
+
+    async function inicializarCapturaVideo() {
+        if (streamCameraAtiva && streamCameraAtiva.active) return;
+        if (inicializandoCamera) return;
+        inicializandoCamera = true;
+
+        encerrarStreamCamera();
+
+        const video = document.getElementById('v-cad');
+        if (!video) {
+            inicializandoCamera = false;
+            return;
+        }
+
+        try {
+            const constraints = { 
+                video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+                audio: false
+            };
+            
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                streamCameraAtiva = stream;
+                video.srcObject = stream;
+                video.setAttribute('playsinline', 'true');
+                video.style.transform = "scaleX(-1)";
+                await video.play().catch(() => {});
+            }
+        } catch (err) {
+            console.warn("Retentativa da câmera:", err);
+        } finally {
+            inicializandoCamera = false;
+        }
+    }
+
+    async function capturarFotoComFallback() {
+        const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
+        if(!v || !c) return;
+
+        if ((!streamCameraAtiva || v.videoWidth === 0) && typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable('Camera')) {
+            try {
+                const image = await Capacitor.Plugins.Camera.getPhoto({
+                    quality: 60,
+                    allowEditing: false,
+                    resultType: 'dataUrl',
+                    source: 'CAMERA'
+                });
+                if(image && image.dataUrl) {
+                    my_foto = image.dataUrl;
+                    const ctx = c.getContext('2d');
+                    const img = new Image();
+                    img.onload = () => {
+                        c.width = img.width;
+                        c.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        c.style.display = "block";
+                        v.style.display = "none";
+                    };
+                    img.src = image.dataUrl;
+                    return;
+                }
+            } catch(e) {}
+        }
+
+        if(!streamCameraAtiva || v.videoWidth === 0) {
+            await inicializarCapturaVideo();
+            alert("Iniciando permissão da câmera. Clique novamente para capturar.");
+            return;
+        }
+        
+        c.width = v.videoWidth || 480; 
+        c.height = v.videoHeight || 360;
+        
+        const ctx = c.getContext('2d');
+        ctx.drawImage(v, 0, 0, c.width, c.height);
+        my_foto = c.toDataURL('image/jpeg', 0.6); 
+        
+        c.style.display = "block"; 
+        v.style.display = "none";
+        encerrarStreamCamera();
+    }
+
+    function enviarCadastro() {
+        if (document.activeElement) document.activeElement.blur();
+        
+        const un = document.getElementById('c-un').value,
+              cpf = document.getElementById('c-cpf').value.trim(),
+              nome = document.getElementById('c-nome').value.trim(),
+              btnFinalizar = document.getElementById('btn-finalizar-cad');
+              
+        if(!my_foto) { alert("Por favor, capture a sua selfie antes de enviar!"); return; }
+        if(!un || !cpf || !nome) { alert("Preencha todos os campos do formulário!"); return; }
+        
+        if(btnFinalizar) {
+            btnFinalizar.disabled = true;
+            btnFinalizar.innerText = "ENVIANDO SOLICITAÇÃO...";
+        }
+        
+        db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
+            const moradoresExistentes = snap.val() || {};
+            const chaves = Object.keys(moradoresExistentes);
+            const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
+            
+            if (!jaExisteEsseAparelho) {
+                if(chaves.length >= 5) { 
+                    alert("Limite de moradores para esta unidade foi excedido (Máximo 5).");
+                    if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
+                    return; 
+                }
+                for (let k in moradoresExistentes) {
+                    let m = moradoresExistentes[k];
+                    if(m.cpf === cpf || m.nome.toLowerCase() === nome.toLowerCase()) { 
+                        alert("Este CPF ou Nome já possui uma solicitação enviada.");
+                        if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
+                        return; 
+                    }
+                }
+            }
+            
+            db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({
+                nome: nome, cpf: cpf, unidade: un, foto: my_foto, ts: Date.now()
+            }).then(() => {
+                my_un = un;
+                localStorage.setItem('my_un', un);
+                if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
+                verificarStatus();
+            }).catch(err => {
+                alert("Erro ao conectar com o banco de dados. Tente novamente.");
+                if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
+            });
+        });
+    }
+
+    function escutarChamadas() {
+        if(refChamadasAtiva) refChamadasAtiva.off();
+        
+        refChamadasAtiva = db.ref('chamadas_ativas/' + my_un);
+        refChamadasAtiva.on('value', s => {
+            const d = s.val(); const painel = document.getElementById('painel-chamada');
+            if(d && (d.status === 'chamando' || d.status === 'escrevendo' || d.status === 'gravando')) {
+                document.getElementById('foto-v').src = d.foto;
+                document.getElementById('msg-v').innerText = d.texto || "Sem recado escrito";
+                painel.style.display = 'flex';
+                
+                forcarReflowWebView();
+                escutarStreamPortaria(true);
+
+                if((d.status === 'escrevendo' || d.status === 'gravando' || somSilenciadoPorInteracao)) {
+                    gerenciarAlerta('stop');
+                } else if(d.status === 'chamando' && !estaGravando && !estaDigitando && !somSilenciadoPorInteracao) {
+                    const somSelecionado = d.som_chamada || obterNomeSomFormatado(somAtual);
+                    gerenciarAlerta('start', somSelecionado);
+                }
+
+                if(!timerPerdida) {
+                    tempoGeralRegressivo = 90;
+                    clearInterval(timerPerdida);
+                    timerPerdida = setInterval(() => {
+                        tempoGeralRegressivo--;
+                        document.getElementById('timer-regressivo').innerText = tempoGeralRegressivo;
+                        document.getElementById('timer-flutuante-texto').innerText = tempoGeralRegressivo + "s";
+                        if(tempoGeralRegressivo <= 0) { clearInterval(timerPerdida); timerPerdida = null; responder('cinza'); }
+                    }, 1000);
+                }
+            } else {
+                painel.style.display = 'none';
+                fecharPainelTexto();
+                gerenciarAlerta('stop');
+                escutarStreamPortaria(false);
+                clearInterval(timerPerdida);
+                timerPerdida = null;
+                somSilenciadoPorInteracao = false;
+            }
+        });
+    }
+
+    function abrirPainelTexto() {
+        estaDigitando = true; somSilenciadoPorInteracao = true; gerenciarAlerta('stop');
+        db.ref('chamadas_ativas/' + my_un).update({ status: 'escrevendo' });
+        document.getElementById('container-digitar-texto').style.display = 'flex';
+        document.getElementById('campo-texto-interno').focus();
+        forcarReflowWebView();
+    }
+    function fecharPainelTexto() {
+        if (document.activeElement) document.activeElement.blur();
+        estaDigitando = false; document.getElementById('container-digitar-texto').style.display = 'none';
+        if(document.getElementById('painel-chamada').style.display === 'flex') {
+            db.ref('chamadas_ativas/' + my_un).update({ status: 'chamando' });
+        }
+        forcarReflowWebView();
+    }
+    function enviarTextoInternal() {
+        if (document.activeElement) document.activeElement.blur();
+        const txt = document.getElementById('campo-texto-interno').value;
+        if(!txt) return;
+        db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: txt, data_hora: obterDataHora() });
+        document.getElementById('campo-texto-interno').value = ""; responder('mensagem');
+    }
+    
+    function verificarToqueEnvioMaoLivre(e) { 
+        if(modoMaoLivre && estaGravando) { 
+            e.stopPropagation(); 
+            stopRec(); 
+        } 
+    }
+
+    async function startRec() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            micStreamGlobal = stream;
+            chunks = []; 
+            
+            let opcoesMime = { mimeType: 'audio/mp4' };
+            if (!MediaRecorder.isTypeSupported('audio/mp4')) {
+                opcoesMime = { mimeType: 'audio/aac' };
+                if (!MediaRecorder.isTypeSupported('audio/aac')) { opcoesMime = {}; }
+            }
+
+            mediaRecorder = new MediaRecorder(stream, opcoesMime);
+            estaGravando = true;
+            
+            const popup = document.getElementById('popup-voz');
+            const texto = document.getElementById('texto-timer-voz');
+            const arco = document.getElementById('arco-progresso');
+            
+            if(!modoMaoLivre) document.getElementById('label-modo-gravacao').innerText = "SEGURE PARA GRAVAR...";
+            popup.style.display = 'flex';
+            forcarReflowWebView();
+            
+            let tempoVoz = 30; 
+            texto.innerText = "30s"; 
+            arco.style.strokeDashoffset = 0; 
+            arco.style.stroke = "var(--neon)";
+            db.ref('chamadas_ativas/' + my_un).update({ status: 'gravando' });
+            
+            const circunferencia = 2 * Math.PI * 90;
+            clearInterval(timerVozInterval);
+            timerVozInterval = setInterval(() => {
+                tempoVoz--; 
+                texto.innerText = tempoVoz + "s";
+                let percentual = (30 - tempoVoz) / 30; 
+                arco.style.strokeDashoffset = circunferencia * percentual;
+                if(tempoVoz <= 15 && tempoVoz > 5) arco.style.stroke = "var(--yellow)";
+                if(tempoVoz <= 5) arco.style.stroke = "var(--red)";
+                if(tempoVoz <= 0) stopRec();
+            }, 1000);
+
+            mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+            
+            mediaRecorder.onstop = () => {
+                const tipoBlobFinal = mediaRecorder.mimeType || 'audio/mp4';
+                const blob = new Blob(chunks, { type: tipoBlobFinal });
+                
+                const reader = new FileReader(); 
+                reader.readAsDataURL(blob);
+                reader.onloadend = () => {
+                    db.ref('chamadas_ativas/' + my_un).update({ 
+                        status: 'mensagem', 
+                        msg_morador: "Áudio enviado", 
+                        audio_b64: reader.result, 
+                        data_hora: obterDataHora() 
+                    });
+                    popup.style.display = 'none'; 
+                    responder('mensagem');
+                };
+
+                if(micStreamGlobal) {
+                    micStreamGlobal.getTracks().forEach(track => track.stop());
+                    micStreamGlobal = null;
+                }
+            };
+            mediaRecorder.start(100);
+        } catch(e) { estaGravando = false; }
+    }
+    
+    function stopRec() { 
+        if(mediaRecorder && mediaRecorder.state !== 'inactive') { 
+            mediaRecorder.stop(); 
+            clearInterval(timerVozInterval); 
+            estaGravando = false; 
+        } 
+    }
+    
+    function responder(st) {
+        if (document.activeElement) document.activeElement.blur();
+        estaGravando = false; estaDigitando = false; modoMaoLivre = false; somSilenciadoPorInteracao = false;
+        document.getElementById('painel-chamada').style.display = 'none';
+        document.getElementById('container-digitar-texto').style.display = 'none';
+        document.getElementById('popup-voz').style.display = 'none';
+        
+        gerenciarAlerta('stop');
+        escutarStreamPortaria(false);
+        
+        clearInterval(timerPerdida); timerPerdida = null;
+        
+        const ref = db.ref('chamadas_ativas/' + my_un);
+        ref.once('value', snap => {
+            const d = snap.val();
+            if(d) {
+                if(st !== 'cinza') ref.update({ status: st });
+                const dnaChave = d.dna_dispositivo || d.v_id.substring(0, 11);
+                gravarHist(d.v_id, d.foto, st, dnaChave);
+                setTimeout(() => ref.remove(), 1200);
+            }
+        });
+        mudarTela('s-home');
+        forcarReflowWebView();
+    }
+
+    function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
+    
+    function gravarHist(vid, foto, st, dna) {
+        const baseRef = db.ref(`historico/${my_un}`);
+        baseRef.once('value', snapshot => {
+            let totalFilhos = snapshot.numChildren();
+            if (totalFilhos >= 30 && !snapshot.hasChild(dna)) {
+                let maisAntigoChave = null; let menorTs = Infinity;
+                snapshot.forEach(filho => {
+                    let dadosFilho = filho.val();
+                    if (dadosFilho.ts < menorTs) { menorTs = dadosFilho.ts; maisAntigoChave = filho.key; }
+                });
+                if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
+            }
+            
+            let d = snapshot.child(dna).val() || { foto: foto, v_id: vid, dna_dispositivo: dna, verde:0, verm:0, azul:0, cinza:0 };
+            if(st==='liberado') d.verde++; else if(st==='recusado') d.verm++; else if(st==='mensagem') d.azul++; else if(st==='cinza') d.cinza++;
+            d.ultima = st; d.ts = Date.now(); d.data_hora = obterDataHora();
+            baseRef.child(dna).set(d);
+            
+            db.ref(`bloqueados/${my_un}/${dna}`).once('value', bSnap => {
+                if(bSnap.exists()){
+                    db.ref(`bloqueados/${my_un}/${dna}`).update({ foto: foto, ultima: d.ultima, data_hora: d.data_hora, verde: d.verde, vermelho: d.verm, azul: d.azul, cinza: d.cinza });
+                }
+            });
+        });
+    }
+
+    function renderizarDadosAbas() {
+        if(refBloqueadosAtiva) refBloqueadosAtiva.off();
+        if(refHistoricoAtiva) refHistoricoAtiva.off();
+
+        refBloqueadosAtiva = db.ref(`bloqueados/${my_un}`);
+        refHistoricoAtiva = db.ref(`historico/${my_un}`);
+
+        refBloqueadosAtiva.on('value', bSnap => {
+            cacheBloqueadosGlobais = bSnap.val() || {};
+            construirListaBloqueadosDireta(cacheBloqueadosGlobais);
+            
+            refHistoricoAtiva.once('value', snap => {
+                const historicoItens = []; 
+                snap.forEach(item => { historicoItens.push(item.val()); });
+                historicoItens.sort((a, b) => b.ts - a.ts);
+                
+                requestAnimationFrame(() => {
+                    construirListaNormal(historicoItens, cacheBloqueadosGlobais);
+                });
+            });
+        });
+    }
+
+    function construirListaNormal(itens, listaBloqueados) {
+        const list = document.getElementById('lista-hist'); if(!list) return;
+        const ativos = itens.filter(i => !listaBloqueados[i.dna_dispositivo]);
+        
+        if(ativos.length === 0) { 
+            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum registro</p>`; 
+            document.getElementById('btn-ver-mais').style.display = "none"; 
+            return; 
+        }
+        
+        const exibidos = ativos.slice(0, limiteExibicaoHist);
+        let htmlAcumulado = "";
+        exibidos.forEach(d => { htmlAcumulado += criarCardHTML(d, false); });
+        
+        list.innerHTML = htmlAcumulado;
+        document.getElementById('btn-ver-mais').style.display = ativos.length > limiteExibicaoHist ? "block" : "none";
+    }
+
+    function construirListaBloqueadosDireta(mapaBloqueados) {
+        const list = document.getElementById('lista-bloqueados'); if(!list) return;
+        const chaves = Object.keys(mapaBloqueados);
+        
+        if(chaves.length === 0) { 
+            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:20px;">Nenhum dispositivo bloqueado.</p>`; 
+            return; 
+        }
+        
+        const mapaOrdenado = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
+        let htmlAcumulado = "";
+        mapaOrdenado.forEach(d => { htmlAcumulado += criarCardHTML(d, true); });
+        
+        list.innerHTML = htmlAcumulado;
+    }
+
+    function criarCardHTML(d, estaBloqueado) {
+        return `<div class="hist-card">
+            <div class="foto-box">
+                <div class="dots-row">
+                    <div class="dot" style="background:var(--neon); color:#000">${d.verde || 0}</div>
+                    <div class="dot" style="background:var(--red)">${d.vermelho || d.verm || 0}</div>
+                    <div class="dot" style="background:var(--blue)">${d.azul || 0}</div>
+                    <div class="dot" style="background:var(--gray)">${d.cinza || 0}</div>
+                </div>
+                <img src="${d.foto || ''}" class="foto-hist" onerror="this.src='https://placehold.co/70x70/0a0a0a/39FF14?text=VIRTY'">
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                <b style="font-size:0.75rem; color:#aaa;">DNA: ${d.dna_dispositivo}</b>
+                <small style="color:var(--neon); font-size:0.75rem; font-weight:bold;">${(d.ultima || 'Bloqueado').toUpperCase()}</small>
+                <span style="font-size:0.65rem; color:#444;">${d.data_hora || ''}</span>
+            </div>
+            <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.dna_dispositivo}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
+        </div>`;
+    }
+
+    function expandirHistorico() { limiteExibicaoHist = Math.min(limiteExibicaoHist + 5, 30); renderizarDadosAbas(); }
+    
+    function alternarVisaoListas() {
+        vendoBloqueados = !vendoBloqueados;
+        const txtTitulo = document.getElementById('titulo-secao-atual'), btnToggle = document.getElementById('btn-toggle-bloqueados'), btnLimpar = document.getElementById('btn-limpar-tudo');
+        if(vendoBloqueados) {
+            document.getElementById('container-historico-normal').style.display = "none"; document.getElementById('container-lista-bloqueados').style.display = "block";
+            txtTitulo.innerText = "Dispositivos Bloqueados"; txtTitulo.style.color = "var(--red)"; btnToggle.innerText = "VER HISTÓRICO"; btnToggle.style.color = "var(--neon)"; btnLimpar.style.display = "none";
+        } else {
+            document.getElementById('container-historico-normal').style.display = "block"; document.getElementById('container-lista-bloqueados').style.display = "none";
+            txtTitulo.innerText = "Histórico de Chamadas"; txtTitulo.style.color = "var(--gray)"; btnToggle.innerText = "VER BLOQUEADOS"; btnToggle.style.color = "var(--red)"; btnLimpar.style.display = "block"; limiteExibicaoHist = 5;
+        }
+        renderizarDadosAbas();
+        forcarReflowWebView();
+    }
+
+    function alternarBloqueio(dna) {
+        const ref = db.ref(`bloqueados/${my_un}/${dna}`);
+        ref.once('value', s => {
+            if(s.exists()) ref.remove();
+            else {
+                db.ref(`historico/${my_un}/${dna}`).once('value', hSnap => {
+                    const dadosHist = hSnap.val() || {};
+                    ref.set({ dna_dispositivo: dna, ts: Date.now(), data_hora: obterDataHora(), foto: dadosHist.foto || "", ultima: dadosHist.ultima || "recusado", verde: dadosHist.verde || 0, vermelho: dadosHist.vermelho || dadosHist.verm || 0, azul: dadosHist.azul || 0, cinza: dadosHist.cinza || 0 });
+                });
+            }
+        });
+    }
+
+    function limparHist() { if(confirm("Deseja limpar seu histórico?")) db.ref(`historico/${my_un}`).remove(); }
+    
+    function mudarTela(id) {
+        const targetScreen = document.getElementById(id);
+        if (!targetScreen) return;
+
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        targetScreen.classList.add('active');
+        
+        if(id === 's-cadastro') { 
+            const video = document.getElementById('v-cad');
+            const canvas = document.getElementById('c-cad');
+            if(video) video.style.display = "block"; 
+            if(canvas) canvas.style.display = "none"; 
+            setTimeout(() => { inicializarCapturaVideo(); }, 300);
+        } else {
+            encerrarStreamCamera();
+        }
+        forcarReflowWebView();
+    }
+    
+    function cancelarSolicitacaoAtual() {
+        if(confirm("Deseja refazer os dados?")) {
+            db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).remove().then(() => { localStorage.removeItem('my_un'); my_un = null; verificarStatus(); });
+        }
+    }
+    
+    function proximoSom() { 
+        somAtual = (somAtual + 1) % 12; 
+        localStorage.setItem('virty_som', somAtual); 
+        document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1); 
+        gerenciarAlerta('start', obterNomeSomFormatado(somAtual)); 
+        setTimeout(() => { if(!somSilenciadoPorInteracao) gerenciarAlerta('stop'); }, 2000); 
+        
+        if (typeof Capacitor !== 'undefined' && Capacitor.getPlatform() === 'android') {
+            try {
+                Capacitor.Plugins.PushNotifications.createChannel({
+                    id: 'virty_interfone_channel',
+                    name: 'Chamadas do Interfone',
+                    description: 'Canal de alta prioridade para chamadas do totem Virty',
+                    importance: 5,
+                    visibility: 1,
+                    sound: `sound${String(somAtual + 1).padStart(2, '0')}`,
+                    vibration: true
+                });
+            } catch(e){}
+        }
+    }
+    
+    function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
+    function atualizarInterfaceAlerta() { const btn = document.getElementById('btn-alerta'); btn.innerText = modoAlerta === 1 ? "🔊" : modoAlerta === 2 ? "📳🔊" : "📳"; }
+    
+    function gerenciarAlerta(acao, arquivoSomOpcional) {
+        if(acao === 'stop') { 
+            try {
+                somInterfoneLocal.pause();
+                somInterfoneLocal.currentTime = 0;
+            } catch(e){}
+            somTocandoAtualmente = false;
+            
+            if(loopVibracaoInterval) { clearInterval(loopVibracaoInterval); loopVibracaoInterval = null; }
+            if (navigator.vibrate) navigator.vibrate(0); 
+            if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
+            document.title = "VIRTY MORADOR v2.0.2 - Nativo APK";
+            return; 
+        }
+
+        if(somSilenciadoPorInteracao) return;
+
+        if(modoAlerta === 2 || modoAlerta === 3) {
+            if(!loopVibracaoInterval) {
+                const dispararPulso = () => { if (navigator.vibrate) navigator.vibrate([600, 400]); };
+                dispararPulso();
+                loopVibracaoInterval = setInterval(dispararPulso, 1500);
+            }
+        }
+
+        if(modoAlerta !== 3 && !somTocandoAtualmente) {
+            const arquivoFinal = arquivoSomOpcional || obterNomeSomFormatado(somAtual);
+            somInterfoneLocal.src = `sound/${arquivoFinal}`;
+            somTocandoAtualmente = true;
+            somInterfoneLocal.play().catch(() => { somTocandoAtualmente = false; });
+        }
+
+        if (!piscaTituloInterval) {
+            let alternar = false;
+            piscaTituloInterval = setInterval(() => {
+                document.title = alternar ? "🚨 INTERFONE TOCANDO! 🚨" : "⚠️ NOVA CHAMADA VIRTY ⚠️";
+                alternar = !alternar;
+            }, 500);
+        }
+    }
+
+    document.addEventListener('resume', () => {
+        verificarStatus();
+        verificarPermissoesObg();
+        forcarReflowWebView();
+    });
+</script>
+</body>
+</html>

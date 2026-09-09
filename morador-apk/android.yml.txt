@@ -1,0 +1,68 @@
+name: Build Android APK (Capacitor)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: 2. Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: 3. Configurar Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: 4. Instalar Dependências e Plugins do Capacitor
+        working-directory: ./morador-apk
+        run: |
+          npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/push-notifications
+
+      - name: 5. Copiar Aplicação Web para o APK
+        run: |
+          mkdir -p morador-apk/www
+          cp -r morador/* morador-apk/www/ 2>/dev/null || true
+
+      - name: 6. Adicionar e Sincronizar Plataforma Android
+        working-directory: ./morador-apk
+        run: |
+          npx cap add android || echo "Plataforma android ja existe"
+          npx cap sync android
+
+      - name: 7. Injetar Permissões do Android (Áudio + Notificações)
+        run: |
+          MANIFEST_PATH=$(find morador-apk/android -name AndroidManifest.xml | head -n 1)
+          if [ -f "$MANIFEST_PATH" ]; then
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.INTERNET" />' "$MANIFEST_PATH"
+          fi
+
+      - name: 8. Copiar Google Services para o Android Nativo
+        run: |
+          mkdir -p morador-apk/android/app
+          cp morador-apk/google-services.json morador-apk/android/app/ 2>/dev/null || true
+
+      - name: 9. Gerar APK Debug
+        run: |
+          GRADLEW_PATH=$(find . -name gradlew)
+          GRADLE_DIR=$(dirname "$GRADLEW_PATH")
+          cd "$GRADLE_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: 10. Disponibilizar APK para Download
+        uses: actions/upload-artifact@v4
+        with:
+          name: VirtyMorador-APK
+          path: "**/app-debug.apk"
