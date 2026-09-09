@@ -1,4 +1,4 @@
-name: Build APK Virty Morador
+Name: Build APK Virty Morador
 
 on:
   workflow_dispatch:
@@ -48,13 +48,16 @@ jobs:
       - name: 6.5. Injetar Permissões Nativas e Sons
         working-directory: ./morador-apk
         run: |
-          # Injeta permissões de Câmera, Microfone e Vibração no Manifest Nativo do Android
+          # Injeta permissões de Câmera, Microfone, Vibração, Notificação de Alta Prioridade e WakeLock no Manifest Nativo do Android
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST_PATH" ]; then
             sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.CAMERA" \/>' $MANIFEST_PATH
             sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" \/>' $MANIFEST_PATH
             sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" \/>' $MANIFEST_PATH
             sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.VIBRATE" \/>' $MANIFEST_PATH
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \/>' $MANIFEST_PATH
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" \/>' $MANIFEST_PATH
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.WAKE_LOCK" \/>' $MANIFEST_PATH
             sed -i '/<\/manifest>/i \    <uses-feature android:name="android.hardware.camera" android:required="false" \/>' $MANIFEST_PATH
           fi
 
