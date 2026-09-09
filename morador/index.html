@@ -315,11 +315,10 @@
     let refHistoricoAtiva = null;
     let escutaChamadasIniciada = false;
 
-    // NOVO: Força repintura nativa da WebView sem congelar
     function forcarReflowWebView() {
         requestAnimationFrame(() => {
             document.body.style.display = 'none';
-            document.body.offsetHeight; // Reflow
+            document.body.offsetHeight;
             document.body.style.display = '';
         });
     }
@@ -376,20 +375,34 @@
 
                     if (Capacitor.getPlatform() === 'android') {
                         try {
+                            const nomeSomNativo = `sound${String(somAtual + 1).padStart(2, '0')}`;
                             await PushNotifications.createChannel({
                                 id: 'virty_interfone_channel',
                                 name: 'Chamadas do Interfone',
                                 description: 'Canal de alta prioridade para chamadas do totem Virty',
                                 importance: 5, 
                                 visibility: 1,  
-                                sound: 'sound01', 
+                                sound: nomeSomNativo, 
                                 vibration: true
                             });
                         } catch (e) {}
                     }
                 }
-                PushNotifications.addListener('pushNotificationReceived', () => { if (my_un) verificarStatus(); });
-                PushNotifications.addListener('pushNotificationActionPerformed', () => { if (my_un) verificarStatus(); });
+
+                // Ao receber Push ou Clicar no Banner Flutuante: Abre o APK e carrega a tela de chamada
+                PushNotifications.addListener('pushNotificationReceived', () => { 
+                    if (my_un) {
+                        verificarStatus();
+                        forcarReflowWebView();
+                    } 
+                });
+
+                PushNotifications.addListener('pushNotificationActionPerformed', () => { 
+                    if (my_un) {
+                        verificarStatus();
+                        forcarReflowWebView();
+                    } 
+                });
             }
         } catch (err) {}
     }
@@ -448,7 +461,6 @@
         });
     });
 
-    // NOVO: Manipulador unificado de Pointer Events no microfone (Sem travar a gravação)
     function configurarEventosMicrofone() {
         const btnMic = document.getElementById('btn-mic');
         if(!btnMic) return;
@@ -996,6 +1008,21 @@
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1); 
         gerenciarAlerta('start', obterNomeSomFormatado(somAtual)); 
         setTimeout(() => { if(!somSilenciadoPorInteracao) gerenciarAlerta('stop'); }, 2000); 
+        
+        // Atualiza o som do canal nativo do Android com a nova escolha
+        if (typeof Capacitor !== 'undefined' && Capacitor.getPlatform() === 'android') {
+            try {
+                Capacitor.Plugins.PushNotifications.createChannel({
+                    id: 'virty_interfone_channel',
+                    name: 'Chamadas do Interfone',
+                    description: 'Canal de alta prioridade para chamadas do totem Virty',
+                    importance: 5,
+                    visibility: 1,
+                    sound: `sound${String(somAtual + 1).padStart(2, '0')}`,
+                    vibration: true
+                });
+            } catch(e){}
+        }
     }
     
     function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
