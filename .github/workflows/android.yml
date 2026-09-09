@@ -1,4 +1,4 @@
-Name: Build APK Virty Morador
+name: Build APK Virty Morador
 
 on:
   workflow_dispatch:
