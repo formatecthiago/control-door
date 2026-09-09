@@ -1,4 +1,4 @@
-name: Build Android APK (Capacitor)
+Name: Build Android APK (Capacitor)
 
 on:
   push:
@@ -28,12 +28,12 @@ jobs:
         working-directory: ./morador-apk
         run: |
           npm install
-          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/push-notifications
 
-      - name: 5. Copiar Aplicação Web para o APK
+      - name: 5. Estruturar Pasta Web (www)
+        working-directory: ./morador-apk
         run: |
-          mkdir -p morador-apk/www
-          cp -r morador/* morador-apk/www/ 2>/dev/null || true
+          mkdir -p www
+          cp -r index.html manifest.json icon-192.png sound www/ 2>/dev/null || true
 
       - name: 6. Adicionar e Sincronizar Plataforma Android
         working-directory: ./morador-apk
@@ -41,11 +41,11 @@ jobs:
           npx cap add android || echo "Plataforma android ja existe"
           npx cap sync android
 
-      - name: 7. Injetar Permissões do Android (Áudio + Notificações)
+      - name: 7. Injetar Permissões do Android (Áudio + Notificações + Câmera)
         run: |
           MANIFEST_PATH=$(find morador-apk/android -name AndroidManifest.xml | head -n 1)
           if [ -f "$MANIFEST_PATH" ]; then
-            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.INTERNET" />' "$MANIFEST_PATH"
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />' "$MANIFEST_PATH"
           fi
 
       - name: 8. Copiar Google Services para o Android Nativo
@@ -55,7 +55,7 @@ jobs:
 
       - name: 9. Gerar APK Debug
         run: |
-          GRADLEW_PATH=$(find . -name gradlew)
+          GRADLEW_PATH=$(find morador-apk/android -name gradlew)
           GRADLE_DIR=$(dirname "$GRADLEW_PATH")
           cd "$GRADLE_DIR"
           chmod +x gradlew
