@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador de Câmera - Portaria</title>
+  <title>Simulador de Câmera - Portaria (4 FPS)</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -92,11 +92,11 @@
     })
     .then((stream) => {
       video.srcObject = stream;
-      statusText.innerText = "Transmissão Ativa (3 FPS) -> Enviando ao Firebase!";
+      statusText.innerText = "Transmissão Ativa (4 FPS) -> Enviando ao Firebase!";
       
-      // Ajuste: 3 fotos por segundo (intervalo de 333ms)
+      // Ajuste: 4 fotos por segundo (intervalo de 250ms)
       if (intervalTransmissao) clearInterval(intervalTransmissao);
-      intervalTransmissao = setInterval(capturarEEnviar, 333);
+      intervalTransmissao = setInterval(capturarEEnviar, 250);
     })
     .catch((err) => {
       statusText.innerText = "Erro ao acessar a câmera: " + err;
@@ -106,8 +106,8 @@
     function capturarEEnviar() {
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         ctx.drawImage(video, 0, 0, 320, 240);
-        // Otimização: compressão JPEG ajustada para 0.35 para manter o payload leve a 3 FPS
-        const frameBase64 = canvas.toDataURL('image/jpeg', 0.35);
+        // Otimização: compressão em 0.30 para otimizar pacotes a 250ms
+        const frameBase64 = canvas.toDataURL('image/jpeg', 0.30);
 
         database.ref('camera/stream').set({
           imagem: frameBase64,
@@ -134,12 +134,12 @@
     }
 
     video.addEventListener('enterpictureinpicture', () => {
-      statusText.innerText = "Modo Flutuante Ativo (3 FPS) -> Transmitindo em segundo plano!";
+      statusText.innerText = "Modo Flutuante Ativo (4 FPS) -> Transmitindo em segundo plano!";
       btnPip.innerText = "🔙 SAIR DO MODO FLUTUANTE";
     });
 
     video.addEventListener('leavepictureinpicture', () => {
-      statusText.innerText = "Transmissão Ativa (3 FPS) -> Enviando ao Firebase!";
+      statusText.innerText = "Transmissão Ativa (4 FPS) -> Enviando ao Firebase!";
       btnPip.innerText = "🔲 MODO FLUTUANTE (PIP)";
     });
   </script>
