@@ -92,11 +92,11 @@
     })
     .then((stream) => {
       video.srcObject = stream;
-      statusText.innerText = "Transmissão Ativa -> Enviando ao Firebase!";
+      statusText.innerText = "Transmissão Ativa (3 FPS) -> Enviando ao Firebase!";
       
-      // Restauração: 2 fotos por segundo (intervalo de 500ms) utilizando setInterval tradicional
+      // Ajuste: 3 fotos por segundo (intervalo de 333ms)
       if (intervalTransmissao) clearInterval(intervalTransmissao);
-      intervalTransmissao = setInterval(capturarEEnviar, 500);
+      intervalTransmissao = setInterval(capturarEEnviar, 333);
     })
     .catch((err) => {
       statusText.innerText = "Erro ao acessar a câmera: " + err;
@@ -106,7 +106,8 @@
     function capturarEEnviar() {
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         ctx.drawImage(video, 0, 0, 320, 240);
-        const frameBase64 = canvas.toDataURL('image/jpeg', 0.4);
+        // Otimização: compressão JPEG ajustada para 0.35 para manter o payload leve a 3 FPS
+        const frameBase64 = canvas.toDataURL('image/jpeg', 0.35);
 
         database.ref('camera/stream').set({
           imagem: frameBase64,
@@ -133,12 +134,12 @@
     }
 
     video.addEventListener('enterpictureinpicture', () => {
-      statusText.innerText = "Modo Flutuante Ativo -> Transmitindo em segundo plano!";
+      statusText.innerText = "Modo Flutuante Ativo (3 FPS) -> Transmitindo em segundo plano!";
       btnPip.innerText = "🔙 SAIR DO MODO FLUTUANTE";
     });
 
     video.addEventListener('leavepictureinpicture', () => {
-      statusText.innerText = "Transmissão Ativa -> Enviando ao Firebase!";
+      statusText.innerText = "Transmissão Ativa (3 FPS) -> Enviando ao Firebase!";
       btnPip.innerText = "🔲 MODO FLUTUANTE (PIP)";
     });
   </script>
