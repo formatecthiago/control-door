@@ -63,7 +63,7 @@
   </div>
 
   <script>
-    // Firebase Principal (Virty Access Door) - Leitura de Chamadas e Gravação de Imagem
+    // Firebase Principal (Virty Access Door)
     const configMain = { 
       apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
       databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
@@ -81,15 +81,15 @@
     let intervalTransmissao = null;
     let podeGravarNoFirebase = false;
 
-    // Escuta no Firebase Principal (virty-access-door) se há chamada ativa
+    // Escuta em tempo real se existe qualquer chamada ativa
     dbMain.ref('chamadas_ativas').on('value', (snapshot) => {
       let existeChamadaAtiva = false;
       const chamadas = snapshot.val();
 
       if (chamadas) {
         Object.keys(chamadas).forEach((unidade) => {
-          const status = chamadas[unidade].status;
-          if (status === 'chamando' || status === 'escrevendo' || status === 'gravando') {
+          const st = chamadas[unidade].status;
+          if (st === 'chamando' || st === 'escrevendo' || st === 'gravando') {
             existeChamadaAtiva = true;
           }
         });
@@ -97,22 +97,21 @@
 
       podeGravarNoFirebase = existeChamadaAtiva;
 
-      // Se a chamada acabou, limpa o nó no virty-access-door imediatamente
+      // Se NÃO houver chamada ativa, remove o nó do Firebase na hora
       if (!podeGravarNoFirebase) {
         dbMain.ref('camera/stream').remove();
       }
     });
 
-    // Liga a câmera do dispositivo
+    // Liga a câmera do celular
     navigator.mediaDevices.getUserMedia({ 
       video: { width: 320, height: 240, facingMode: "environment" }, 
       audio: false 
     })
     .then((stream) => {
       video.srcObject = stream;
-      statusText.innerText = "Transmissão Ativa (4 FPS) -> Enviando ao Firebase!";
+      statusText.innerText = "Transmissão Ativa (4 FPS) -> Monitorando Chamadas!";
       
-      // Ajuste: 4 fotos por segundo (intervalo de 250ms)
       if (intervalTransmissao) clearInterval(intervalTransmissao);
       intervalTransmissao = setInterval(capturarEEnviar, 250);
     })
@@ -122,7 +121,7 @@
     });
 
     function capturarEEnviar() {
-      // Grava no nó do virty-access-door apenas quando houver chamada ativa
+      // SÓ ENVIA ao Firebase se a flag de chamada ativa for VERDADEIRA
       if (podeGravarNoFirebase && video.readyState === video.HAVE_ENOUGH_DATA) {
         ctx.drawImage(video, 0, 0, 320, 240);
         const frameBase64 = canvas.toDataURL('image/jpeg', 0.30);
@@ -134,7 +133,6 @@
       }
     }
 
-    // Ativa o modo Janela Flutuante sem interromper o setInterval
     async function alternarModoFlutuante() {
       try {
         if (document.pictureInPictureElement) {
@@ -157,7 +155,7 @@
     });
 
     video.addEventListener('leavepictureinpicture', () => {
-      statusText.innerText = "Transmissão Ativa (4 FPS) -> Enviando ao Firebase!";
+      statusText.innerText = "Transmissão Ativa (4 FPS) -> Monitorando Chamadas!";
       btnPip.innerText = "🔲 MODO FLUTUANTE (PIP)";
     });
   </script>
