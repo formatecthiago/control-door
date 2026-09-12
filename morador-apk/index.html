@@ -276,18 +276,6 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    const firebaseConfigPortaria = {
-        apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
-        authDomain: "portaria-cam.firebaseapp.com",
-        databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
-        projectId: "portaria-cam",
-        storageBucket: "portaria-cam.firebasestorage.app",
-        messagingSenderId: "271848073619",
-        appId: "1:271848073619:web:4bab1cfb13a479ca596066"
-    };
-    const appPortaria = firebase.initializeApp(firebaseConfigPortaria, "appPortaria");
-    const dbPortaria = appPortaria.database();
-    
     let my_un = localStorage.getItem('my_un');
     let my_foto = "";
     let timerPerdida, timerVozInterval, mediaRecorder, chunks = [];
@@ -335,17 +323,20 @@
         }
     }
 
+    // AJUSTE 1: Leitura da câmera conectada diretamente ao nó do banco principal (db)
     function escutarStreamPortaria(ativa) {
         const miniStreamImg = document.getElementById('mini-stream-portaria');
         if (ativa) {
-            dbPortaria.ref('camera/stream').on('value', (snapshot) => {
+            db.ref('camera/stream').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data && data.imagem && miniStreamImg) {
                     miniStreamImg.src = data.imagem;
+                } else if (miniStreamImg) {
+                    miniStreamImg.src = "";
                 }
             });
         } else {
-            dbPortaria.ref('camera/stream').off();
+            db.ref('camera/stream').off();
             if (miniStreamImg) miniStreamImg.src = "";
         }
     }
@@ -667,6 +658,7 @@
         });
     }
 
+    // AJUSTE 2: Atualização imediata do histórico ao encerrar chamada
     function escutarChamadas() {
         if(refChamadasAtiva) refChamadasAtiva.off();
         
@@ -706,6 +698,9 @@
                 clearInterval(timerPerdida);
                 timerPerdida = null;
                 somSilenciadoPorInteracao = false;
+
+                // Atualiza a lista do histórico instantaneamente no encerramento da chamada
+                renderizarDadosAbas();
             }
         });
     }
