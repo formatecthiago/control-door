@@ -63,15 +63,15 @@
   </div>
 
   <script>
+    // Credenciais atualizadas para o projeto principal: virty-access-door
     const firebaseConfig = {
-      apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
-      authDomain: "portaria-cam.firebaseapp.com",
-      databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
-      projectId: "portaria-cam",
-      storageBucket: "portaria-cam.firebasestorage.app",
-      messagingSenderId: "271848073619",
-      appId: "1:271848073619:web:4bab1cfb13a479ca596066",
-      measurementId: "G-1XJ4Q6491E"
+      apiKey: "AIzaSyDis1Zr3IOV-iWco8m9tUWIeL1UKVRxcEc",
+      authDomain: "virty-access-door.firebaseapp.com",
+      databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com",
+      projectId: "virty-access-door",
+      storageBucket: "virty-access-door.firebasestorage.app",
+      messagingSenderId: "694822891117",
+      appId: "1:694822891117:android:15032d5b0d9cc0b6fa9964"
     };
 
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -92,9 +92,9 @@
     })
     .then((stream) => {
       video.srcObject = stream;
-      statusText.innerText = "Transmissão Ativa (4 FPS) -> Enviando ao Firebase!";
+      statusText.innerText = "Transmissão Ativa (4 FPS) -> VIRTY ACCESS DOOR!";
       
-      // Ajuste: 4 fotos por segundo (intervalo de 250ms)
+      // 4 fotos por segundo (intervalo de 250ms)
       if (intervalTransmissao) clearInterval(intervalTransmissao);
       intervalTransmissao = setInterval(capturarEEnviar, 250);
     })
@@ -106,7 +106,7 @@
     function capturarEEnviar() {
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         ctx.drawImage(video, 0, 0, 320, 240);
-        // Otimização: compressão em 0.30 para otimizar pacotes a 250ms
+        // Compressão JPEG otimizada em 0.30 para manter o fluxo leve
         const frameBase64 = canvas.toDataURL('image/jpeg', 0.30);
 
         database.ref('camera/stream').set({
@@ -139,7 +139,7 @@
     });
 
     video.addEventListener('leavepictureinpicture', () => {
-      statusText.innerText = "Transmissão Ativa (4 FPS) -> Enviando ao Firebase!";
+      statusText.innerText = "Transmissão Ativa (4 FPS) -> VIRTY ACCESS DOOR!";
       btnPip.innerText = "🔲 MODO FLUTUANTE (PIP)";
     });
   </script>
