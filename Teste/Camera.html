@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador de Câmera - Portaria (Virty Access Door)</title>
+  <title>Simulador de Câmera - Portaria (Inteligente)</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -29,7 +29,7 @@
     video {
       width: 320px;
       height: 240px;
-      border: 2px solid #00ff00;
+      border: 2px solid #555;
       border-radius: 8px;
       background: #000;
       object-fit: cover;
@@ -47,23 +47,23 @@
       cursor: pointer;
       text-transform: uppercase;
     }
-    #status { font-weight: bold; color: #ffcc00; margin-top: 15px; font-size: 0.9rem; }
+    #status { font-weight: bold; color: #ffbb00; margin-top: 15px; font-size: 0.9rem; }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h2>Simulador Câmera (Virty Door)</h2>
+    <h2>Simulador ESP32-CAM / IP</h2>
     
     <video id="webcam" autoplay playsinline muted></video>
     <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
     
     <button id="btn-pip" class="btn" onclick="alternarModoFlutuante()">🔲 MODO FLUTUANTE (PIP)</button>
-    <p id="status">Aguardando estado da chamada...</p>
+    <p id="status">Aguardando início de chamada...</p>
   </div>
 
   <script>
-    // Configuração migrada para o projeto central VIRTY-ACCESS-DOOR
+    // Credenciais unificadas no projeto Principal
     const firebaseConfig = {
       apiKey: "AIzaSyDis1Zr3IOV-iWco8m9tUWIeL1UKVRxcEc",
       authDomain: "virty-access-door.firebaseapp.com",
@@ -71,7 +71,7 @@
       projectId: "virty-access-door",
       storageBucket: "virty-access-door.firebasestorage.app",
       messagingSenderId: "694822891117",
-      appId: "1:694822891117:web:virty_access_door"
+      appId: "1:694822891117:web:sua_app_id_aqui"
     };
 
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -83,30 +83,33 @@
     const statusText = document.getElementById('status');
 
     let intervalTransmissao = null;
-    let cameraAtiva = false;
+    let cameraStream = null;
 
-    // Inicializa a câmera local (Webcam / Celular A)
+    // Inicialização da Câmera do Dispositivo
     navigator.mediaDevices.getUserMedia({ 
       video: { width: 320, height: 240, facingMode: "environment" }, 
       audio: false 
     })
     .then((stream) => {
+      cameraStream = stream;
       video.srcObject = stream;
-      cameraAtiva = true;
-      monitorarChamada();
+      statusText.innerText = "Standby: Aguardando evento de chamada no Firebase...";
+      
+      // Monitora o estado da chamada no Firebase
+      monitorarChamadas();
     })
     .catch((err) => {
       statusText.innerText = "Erro ao acessar a câmera: " + err;
       statusText.style.color = "#ff4444";
     });
 
-    // Monitora o nó da chamada para ativar/desativar a transmissão de quadros
-    function monitorarChamada() {
-      database.ref('chamada/status').on('value', (snapshot) => {
-        const status = snapshot.val();
+    // Escuta em tempo real o status no Firebase
+    function monitorarChamadas() {
+      database.ref('chamada').on('value', (snapshot) => {
+        const chamada = snapshot.val();
 
-        // Transmite somente se houver chamada ativa (ex: 'tocando' ou 'atendido')
-        if (status === 'tocando' || status === 'atendido' || status === true) {
+        // Se houver chamada ativa (chamando ou em atendimento)
+        if (chamada && (chamada.status === 'chamando' || chamada.status === 'atendida')) {
           iniciarTransmissao();
         } else {
           pararTransmissao();
@@ -115,30 +118,32 @@
     }
 
     function iniciarTransmissao() {
-      if (intervalTransmissao) return; // Já está rodando
-      
-      statusText.innerText = "Chamada Ativa! Transmitindo a 4 FPS...";
-      statusText.style.color = "#00ff00";
+      if (!intervalTransmissao) {
+        statusText.innerText = "🔴 EM CHAMADA -> Transmitindo vídeo (4 FPS)!";
+        statusText.style.color = "#00ff00";
+        video.style.borderColor = "#00ff00";
 
-      // 4 FPS (250ms)
-      intervalTransmissao = setInterval(capturarEEnviar, 250);
+        // 4 frames por segundo (250ms)
+        intervalTransmissao = setInterval(capturarEEnviar, 250);
+      }
     }
 
     function pararTransmissao() {
       if (intervalTransmissao) {
         clearInterval(intervalTransmissao);
         intervalTransmissao = null;
+
+        statusText.innerText = "Standby: Chamada encerrada. Imagem em espera.";
+        statusText.style.color = "#ffbb00";
+        video.style.borderColor = "#555";
+
+        // Envia frame preto de encerramento para o banco
+        enviarImagemPreta();
       }
-
-      // Envia frame preto e limpa a stream no Firebase
-      limparStreamFirebase();
-
-      statusText.innerText = "Aguardando Chamada... (Standby)";
-      statusText.style.color = "#ffcc00";
     }
 
     function capturarEEnviar() {
-      if (cameraAtiva && video.readyState === video.HAVE_ENOUGH_DATA) {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
         ctx.drawImage(video, 0, 0, 320, 240);
         const frameBase64 = canvas.toDataURL('image/jpeg', 0.30);
 
@@ -149,8 +154,8 @@
       }
     }
 
-    // Envia imagem preta ao encerrar chamada (facilita compatibilidade com ESP32 / Câmera IP)
-    function limparStreamFirebase() {
+    function enviarImagemPreta() {
+      // Cria um canvas preto transparente de espera
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, 320, 240);
       const framePreto = canvas.toDataURL('image/jpeg', 0.1);
@@ -161,7 +166,7 @@
       });
     }
 
-    // Alternar modo Picture-in-Picture
+    // Modo Janela Flutuante (PiP)
     async function alternarModoFlutuante() {
       try {
         if (document.pictureInPictureElement) {
@@ -170,7 +175,7 @@
           await video.requestPictureInPicture();
         }
       } catch (err) {
-        console.error("Erro ao ativar PiP:", err);
+        console.error("Erro no PiP:", err);
       }
     }
   </script>
