@@ -1,188 +1,180 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Câmera da Portaria - Virty</title>
-    <style>
-        body {
-            background: #0d0d0d;
-            color: #fff;
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .container {
-            background: #161616;
-            border: 2px solid #39FF14;
-            border-radius: 15px;
-            padding: 20px;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        h2 { color: #39FF14; margin-top: 0; }
-        video, canvas {
-            width: 100%;
-            max-width: 320px;
-            height: 240px;
-            border-radius: 10px;
-            border: 2px solid #333;
-            background: #000;
-            object-fit: cover;
-        }
-        canvas { display: none; }
-        .status {
-            margin: 15px 0;
-            font-weight: bold;
-            font-size: 0.9rem;
-            padding: 10px;
-            border-radius: 8px;
-            background: #222;
-        }
-        .status.online { color: #39FF14; border: 1px solid #39FF14; }
-        .status.offline { color: #666; border: 1px solid #444; }
-        input {
-            width: 80%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #333;
-            background: #000;
-            color: #fff;
-            text-align: center;
-            font-size: 1rem;
-            margin-bottom: 10px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Câmera - Portaria (4 FPS)</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background: #121212;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+    }
+    .card {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+    video {
+      width: 320px;
+      height: 240px;
+      border: 2px solid #00ff00;
+      border-radius: 8px;
+      background: #000;
+      object-fit: cover;
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      margin-top: 15px;
+      border-radius: 8px;
+      border: none;
+      background: #00ff00;
+      color: #000;
+      font-weight: bold;
+      font-size: 0.95rem;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+    #status { font-weight: bold; color: #00ff00; margin-top: 15px; font-size: 0.9rem; }
+  </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>PORTARIA - SIMULADOR</h2>
-        <input type="number" id="input-unidade" placeholder="Número da Casa/Apt" value="101">
-        
-        <div>
-            <video id="video" playsinline autoplay muted></video>
-            <canvas id="canvas"></canvas>
-        </div>
+  <div class="card">
+    <h2>Simulador ESP32-CAM (Celular A)</h2>
+    
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+    
+    <button id="btn-pip" class="btn" onclick="alternarModoFlutuante()">🔲 MODO FLUTUANTE (PIP)</button>
+    <p id="status">Aguardando permissão da câmera...</p>
+  </div>
 
-        <div id="status-transmissao" class="status offline">STANDBY (Aguardando Chamada)</div>
-    </div>
+  <script>
+    // Firebase do Video/Stream
+    const firebaseConfig = {
+      apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
+      authDomain: "portaria-cam.firebaseapp.com",
+      databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
+      projectId: "portaria-cam",
+      storageBucket: "portaria-cam.firebasestorage.app",
+      messagingSenderId: "271848073619",
+      appId: "1:271848073619:web:4bab1cfb13a479ca596066",
+      measurementId: "G-1XJ4Q6491E"
+    };
 
-    <!-- SDK Firebase 8 -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-    <script>
-        // Configuração do Firebase principal (Monitoramento de chamadas)
-        const configMain = { 
-            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
-            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
-        };
-        firebase.initializeApp(configMain);
-        const dbMain = firebase.database();
+    // Firebase Principal (Monitor de Chamadas)
+    const configMain = { 
+      apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
+      databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
+    };
+    const appMain = firebase.initializeApp(configMain, "appMainCamera");
+    const dbMain = appMain.database();
 
-        // Configuração do Firebase de Streaming da Portaria
-        const configPortaria = {
-            apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
-            authDomain: "portaria-cam.firebaseapp.com",
-            databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
-            projectId: "portaria-cam",
-            storageBucket: "portaria-cam.firebasestorage.app",
-            messagingSenderId: "271848073619",
-            appId: "1:271848073619:web:4bab1cfb13a479ca596066"
-        };
-        const appPortaria = firebase.initializeApp(configPortaria, "appPortariaSimulador");
-        const dbPortaria = appPortaria.database();
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusText = document.getElementById('status');
+    const btnPip = document.getElementById('btn-pip');
 
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const statusEl = document.getElementById('status-transmissao');
-        const inputUnidade = document.getElementById('input-unidade');
+    let intervalTransmissao = null;
+    let podeGravarNoFirebase = false;
 
-        let intervalStream = null;
-        let emChamadaAtiva = false;
+    // Escuta no Firebase Principal se há chamada ativa em qualquer casa
+    dbMain.ref('chamadas_ativas').on('value', (snapshot) => {
+      let existeChamadaAtiva = false;
+      const chamadas = snapshot.val();
 
-        // Inicia a câmera local
-        async function iniciarCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: "user" }, 
-                    audio: false 
-                });
-                video.srcObject = stream;
-            } catch (err) {
-                alert("Erro ao acessar a câmera: " + err.message);
-            }
-        }
-
-        function enviarFrameFirebase() {
-            if (!video.videoWidth) return;
-            
-            canvas.width = 160; // Resolução reduzida para garantir leveza na transmissão em tempo real
-            canvas.height = 120;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            const frameBase64 = canvas.toDataURL('image/jpeg', 0.4);
-            
-            // Grava no nó camera/stream do Firebase da Portaria
-            dbPortaria.ref('camera/stream').set({
-                imagem: frameBase64,
-                updatedAt: Date.now()
-            });
-        }
-
-        function iniciarTransmissao() {
-            if (intervalStream) return;
-            statusEl.className = "status online";
-            statusEl.innerText = "🔴 TRANSMITINDO AO VIVO";
-            intervalStream = setInterval(enviarFrameFirebase, 200); // Envia ~5 frames por segundo
-        }
-
-        function pararTransmissao() {
-            if (intervalStream) {
-                clearInterval(intervalStream);
-                intervalStream = null;
-            }
-            statusEl.className = "status offline";
-            statusEl.innerText = "STANDBY (Aguardando Chamada)";
-            dbPortaria.ref('camera/stream').remove(); // Limpa o nó após encerrar
-        }
-
-        // Monitora o estado da chamada no Firebase Principal
-        function monitorarChamadas() {
-            const un = inputUnidade.value;
-            if(!un) return;
-
-            dbMain.ref('chamadas_ativas/' + un).on('value', snap => {
-                const dados = snap.val();
-                if (dados && (dados.status === 'chamando' || dados.status === 'escrevendo' || dados.status === 'gravando')) {
-                    emChamadaAtiva = true;
-                    iniciarTransmissao();
-                } else {
-                    emChamadaAtiva = false;
-                    pararTransmissao();
-                }
-            });
-        }
-
-        inputUnidade.addEventListener('change', () => {
-            dbMain.ref('chamadas_ativas').off();
-            pararTransmissao();
-            monitorarChamadas();
+      if (chamadas) {
+        Object.keys(chamadas).forEach((unidade) => {
+          const status = chamadas[unidade].status;
+          if (status === 'chamando' || status === 'escrevendo' || status === 'gravando') {
+            existeChamadaAtiva = true;
+          }
         });
+      }
 
-        window.addEventListener('load', () => {
-            iniciarCamera();
-            monitorarChamadas();
+      podeGravarNoFirebase = existeChamadaAtiva;
+
+      // Se a chamada acabou, limpa o nó do Firebase imediatamente
+      if (!podeGravarNoFirebase) {
+        database.ref('camera/stream').remove();
+      }
+    });
+
+    // Liga a câmera do dispositivo
+    navigator.mediaDevices.getUserMedia({ 
+      video: { width: 320, height: 240, facingMode: "environment" }, 
+      audio: false 
+    })
+    .then((stream) => {
+      video.srcObject = stream;
+      statusText.innerText = "Transmissão Ativa (4 FPS) -> Enviando ao Firebase!";
+      
+      // Ajuste: 4 fotos por segundo (intervalo de 250ms)
+      if (intervalTransmissao) clearInterval(intervalTransmissao);
+      intervalTransmissao = setInterval(capturarEEnviar, 250);
+    })
+    .catch((err) => {
+      statusText.innerText = "Erro ao acessar a câmera: " + err;
+      statusText.style.color = "#ff4444";
+    });
+
+    function capturarEEnviar() {
+      // O envio só é gravado no Firebase se houver chamada ativa no banco
+      if (podeGravarNoFirebase && video.readyState === video.HAVE_ENOUGH_DATA) {
+        ctx.drawImage(video, 0, 0, 320, 240);
+        // Otimização: compressão em 0.30 para otimizar pacotes a 250ms
+        const frameBase64 = canvas.toDataURL('image/jpeg', 0.30);
+
+        database.ref('camera/stream').set({
+          imagem: frameBase64,
+          timestamp: Date.now()
         });
-    </script>
+      }
+    }
+
+    // Ativa o modo Janela Flutuante sem interromper o setInterval
+    async function alternarModoFlutuante() {
+      try {
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+        } else {
+          if (document.pictureInPictureEnabled) {
+            await video.requestPictureInPicture();
+          } else {
+            alert("Seu navegador não suporta o modo janela flutuante.");
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao ativar PiP:", err);
+      }
+    }
+
+    video.addEventListener('enterpictureinpicture', () => {
+      statusText.innerText = "Modo Flutuante Ativo (4 FPS) -> Transmitindo em segundo plano!";
+      btnPip.innerText = "🔙 SAIR DO MODO FLUTUANTE";
+    });
+
+    video.addEventListener('leavepictureinpicture', () => {
+      statusText.innerText = "Transmissão Ativa (4 FPS) -> Enviando ao Firebase!";
+      btnPip.innerText = "🔲 MODO FLUTUANTE (PIP)";
+    });
+  </script>
 </body>
 </html>
