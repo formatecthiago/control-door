@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador de Câmera - Portaria (4 FPS)</title>
+  <title>Simulador de Câmera - Portaria (Virty Access Door)</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -47,23 +47,23 @@
       cursor: pointer;
       text-transform: uppercase;
     }
-    #status { font-weight: bold; color: #00ff00; margin-top: 15px; font-size: 0.9rem; }
+    #status { font-weight: bold; color: #ffcc00; margin-top: 15px; font-size: 0.9rem; }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h2>Simulador ESP32-CAM (Celular A)</h2>
+    <h2>Simulador Câmera (Virty Door)</h2>
     
     <video id="webcam" autoplay playsinline muted></video>
     <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
     
     <button id="btn-pip" class="btn" onclick="alternarModoFlutuante()">🔲 MODO FLUTUANTE (PIP)</button>
-    <p id="status">Aguardando permissão da câmera...</p>
+    <p id="status">Aguardando estado da chamada...</p>
   </div>
 
   <script>
-    // Credenciais atualizadas para o projeto principal: virty-access-door
+    // Configuração migrada para o projeto central VIRTY-ACCESS-DOOR
     const firebaseConfig = {
       apiKey: "AIzaSyDis1Zr3IOV-iWco8m9tUWIeL1UKVRxcEc",
       authDomain: "virty-access-door.firebaseapp.com",
@@ -71,7 +71,7 @@
       projectId: "virty-access-door",
       storageBucket: "virty-access-door.firebasestorage.app",
       messagingSenderId: "694822891117",
-      appId: "1:694822891117:android:15032d5b0d9cc0b6fa9964"
+      appId: "1:694822891117:web:virty_access_door"
     };
 
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -81,32 +81,65 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const statusText = document.getElementById('status');
-    const btnPip = document.getElementById('btn-pip');
 
     let intervalTransmissao = null;
+    let cameraAtiva = false;
 
-    // Liga a câmera do dispositivo
+    // Inicializa a câmera local (Webcam / Celular A)
     navigator.mediaDevices.getUserMedia({ 
       video: { width: 320, height: 240, facingMode: "environment" }, 
       audio: false 
     })
     .then((stream) => {
       video.srcObject = stream;
-      statusText.innerText = "Transmissão Ativa (4 FPS) -> VIRTY ACCESS DOOR!";
-      
-      // 4 fotos por segundo (intervalo de 250ms)
-      if (intervalTransmissao) clearInterval(intervalTransmissao);
-      intervalTransmissao = setInterval(capturarEEnviar, 250);
+      cameraAtiva = true;
+      monitorarChamada();
     })
     .catch((err) => {
       statusText.innerText = "Erro ao acessar a câmera: " + err;
       statusText.style.color = "#ff4444";
     });
 
+    // Monitora o nó da chamada para ativar/desativar a transmissão de quadros
+    function monitorarChamada() {
+      database.ref('chamada/status').on('value', (snapshot) => {
+        const status = snapshot.val();
+
+        // Transmite somente se houver chamada ativa (ex: 'tocando' ou 'atendido')
+        if (status === 'tocando' || status === 'atendido' || status === true) {
+          iniciarTransmissao();
+        } else {
+          pararTransmissao();
+        }
+      });
+    }
+
+    function iniciarTransmissao() {
+      if (intervalTransmissao) return; // Já está rodando
+      
+      statusText.innerText = "Chamada Ativa! Transmitindo a 4 FPS...";
+      statusText.style.color = "#00ff00";
+
+      // 4 FPS (250ms)
+      intervalTransmissao = setInterval(capturarEEnviar, 250);
+    }
+
+    function pararTransmissao() {
+      if (intervalTransmissao) {
+        clearInterval(intervalTransmissao);
+        intervalTransmissao = null;
+      }
+
+      // Envia frame preto e limpa a stream no Firebase
+      limparStreamFirebase();
+
+      statusText.innerText = "Aguardando Chamada... (Standby)";
+      statusText.style.color = "#ffcc00";
+    }
+
     function capturarEEnviar() {
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      if (cameraAtiva && video.readyState === video.HAVE_ENOUGH_DATA) {
         ctx.drawImage(video, 0, 0, 320, 240);
-        // Compressão JPEG otimizada em 0.30 para manter o fluxo leve
         const frameBase64 = canvas.toDataURL('image/jpeg', 0.30);
 
         database.ref('camera/stream').set({
@@ -116,32 +149,30 @@
       }
     }
 
-    // Ativa o modo Janela Flutuante sem interromper o setInterval
+    // Envia imagem preta ao encerrar chamada (facilita compatibilidade com ESP32 / Câmera IP)
+    function limparStreamFirebase() {
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, 320, 240);
+      const framePreto = canvas.toDataURL('image/jpeg', 0.1);
+
+      database.ref('camera/stream').set({
+        imagem: framePreto,
+        timestamp: Date.now()
+      });
+    }
+
+    // Alternar modo Picture-in-Picture
     async function alternarModoFlutuante() {
       try {
         if (document.pictureInPictureElement) {
           await document.exitPictureInPicture();
-        } else {
-          if (document.pictureInPictureEnabled) {
-            await video.requestPictureInPicture();
-          } else {
-            alert("Seu navegador não suporta o modo janela flutuante.");
-          }
+        } else if (document.pictureInPictureEnabled) {
+          await video.requestPictureInPicture();
         }
       } catch (err) {
         console.error("Erro ao ativar PiP:", err);
       }
     }
-
-    video.addEventListener('enterpictureinpicture', () => {
-      statusText.innerText = "Modo Flutuante Ativo (4 FPS) -> Transmitindo em segundo plano!";
-      btnPip.innerText = "🔙 SAIR DO MODO FLUTUANTE";
-    });
-
-    video.addEventListener('leavepictureinpicture', () => {
-      statusText.innerText = "Transmissão Ativa (4 FPS) -> VIRTY ACCESS DOOR!";
-      btnPip.innerText = "🔲 MODO FLUTUANTE (PIP)";
-    });
   </script>
 </body>
 </html>
