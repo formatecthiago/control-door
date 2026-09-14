@@ -156,6 +156,12 @@
 </head>
 <body>
 
+    <!-- PAINEL DE DIAGNÓSTICO VISUAL -->
+    <div id="debug-panel" style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.9); color: #00ff00; font-family: monospace; font-size: 11px; padding: 8px; z-index: 999999; border-radius: 6px; max-width: 85%; pointer-events: none; border: 1px solid #00ff00;">
+      <div><b>HISTÓRICO:</b> <span id="dbg-hist">Aguardando...</span></div>
+      <div><b>MINIATURA:</b> <span id="dbg-img">Aguardando...</span></div>
+    </div>
+
     <div id="banner-permissoes" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; box-sizing: border-box; text-align: center;">
         <div style="border: 2px solid var(--neon); padding: 40px 20px; border-radius: 15px; background: #0a0a0a; max-width: 400px; width: 100%;">
             <span style="font-size: 50px;">⚠️</span>
@@ -276,6 +282,18 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
+    const firebaseConfigPortaria = {
+        apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
+        authDomain: "portaria-cam.firebaseapp.com",
+        databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
+        projectId: "portaria-cam",
+        storageBucket: "portaria-cam.firebasestorage.app",
+        messagingSenderId: "271848073619",
+        appId: "1:271848073619:web:4bab1cfb13a479ca596066"
+    };
+    const appPortaria = firebase.initializeApp(firebaseConfigPortaria, "appPortaria");
+    const dbPortaria = appPortaria.database();
+    
     let my_un = localStorage.getItem('my_un');
     let my_foto = "";
     let timerPerdida, timerVozInterval, mediaRecorder, chunks = [];
@@ -323,20 +341,38 @@
         }
     }
 
+    // CORREÇÃO DA ESCUTA DE STREAM: Testa o banco ativo primeiro, com fallback para dbPortaria
     function escutarStreamPortaria(ativa) {
         const miniStreamImg = document.getElementById('mini-stream-portaria');
+        const dbgImg = document.getElementById('dbg-img');
+
         if (ativa) {
+            // Tenta escutar o stream no banco principal onde os dados realmente chegam
             db.ref('camera/stream').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data && data.imagem && miniStreamImg) {
                     miniStreamImg.src = data.imagem;
-                } else if (miniStreamImg) {
-                    miniStreamImg.src = "";
+                    if (dbgImg) dbgImg.innerText = 'Frame OK (' + data.imagem.length + ' chars)';
+                    forcarReflowWebView();
+                } else if (data && typeof data === 'string' && miniStreamImg) {
+                    miniStreamImg.src = data;
+                    if (dbgImg) dbgImg.innerText = 'Frame String OK';
+                    forcarReflowWebView();
+                }
+            });
+
+            // Mantém backup no dbPortaria
+            dbPortaria.ref('camera/stream').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.imagem && miniStreamImg) {
+                    miniStreamImg.src = data.imagem;
                 }
             });
         } else {
             db.ref('camera/stream').off();
+            dbPortaria.ref('camera/stream').off();
             if (miniStreamImg) miniStreamImg.src = "";
+            if (dbgImg) dbgImg.innerText = 'Standby';
         }
     }
 
@@ -696,8 +732,6 @@
                 clearInterval(timerPerdida);
                 timerPerdida = null;
                 somSilenciadoPorInteracao = false;
-
-                renderizarDadosAbas();
             }
         });
     }
@@ -863,6 +897,7 @@
         });
     }
 
+    // CORREÇÃO DA SINCRONIZAÇÃO EM TEMPO REAL DO HISTÓRICO
     function renderizarDadosAbas() {
         if(refBloqueadosAtiva) refBloqueadosAtiva.off();
         if(refHistoricoAtiva) refHistoricoAtiva.off();
@@ -873,15 +908,21 @@
         refBloqueadosAtiva.on('value', bSnap => {
             cacheBloqueadosGlobais = bSnap.val() || {};
             construirListaBloqueadosDireta(cacheBloqueadosGlobais);
+        });
+
+        // Escuta o histórico com listener contínuo em tempo real (.on) para evitar o pull-to-refresh
+        refHistoricoAtiva.on('value', snap => {
+            const historicoItens = []; 
+            const dbgHist = document.getElementById('dbg-hist');
             
-            refHistoricoAtiva.once('value', snap => {
-                const historicoItens = []; 
-                snap.forEach(item => { historicoItens.push(item.val()); });
-                historicoItens.sort((a, b) => b.ts - a.ts);
-                
-                requestAnimationFrame(() => {
-                    construirListaNormal(historicoItens, cacheBloqueadosGlobais);
-                });
+            snap.forEach(item => { historicoItens.push(item.val()); });
+            historicoItens.sort((a, b) => b.ts - a.ts);
+            
+            if (dbgHist) dbgHist.innerText = 'Recebido (' + historicoItens.length + ' itens)';
+
+            requestAnimationFrame(() => {
+                construirListaNormal(historicoItens, cacheBloqueadosGlobais);
+                forcarReflowWebView();
             });
         });
     }
