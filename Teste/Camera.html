@@ -97,7 +97,7 @@
 
       podeGravarNoFirebase = existeChamadaAtiva;
 
-      // Se NÃO houver chamada ativa, remove o nó do Firebase na hora
+      // Se NÃO houver chamada ativa, remove o nó do Firebase imediatamente
       if (!podeGravarNoFirebase) {
         dbMain.ref('camera/stream').remove();
       }
