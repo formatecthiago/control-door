@@ -323,7 +323,6 @@
         }
     }
 
-    // AJUSTE 1: Leitura da câmera conectada diretamente ao nó do banco principal (db)
     function escutarStreamPortaria(ativa) {
         const miniStreamImg = document.getElementById('mini-stream-portaria');
         if (ativa) {
@@ -658,7 +657,6 @@
         });
     }
 
-    // AJUSTE 2: Atualização imediata do histórico ao encerrar chamada
     function escutarChamadas() {
         if(refChamadasAtiva) refChamadasAtiva.off();
         
@@ -699,7 +697,6 @@
                 timerPerdida = null;
                 somSilenciadoPorInteracao = false;
 
-                // Atualiza a lista do histórico instantaneamente no encerramento da chamada
                 renderizarDadosAbas();
             }
         });
