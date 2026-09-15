@@ -36,7 +36,6 @@
             align-items: center;
         }
 
-        /* Botão Fechar em balão no topo superior direito */
         .btn-close-top {
             position: absolute;
             top: 15px;
@@ -138,7 +137,6 @@
 <body>
 
     <div class="container">
-        <!-- Botão Fechar em balão com X -->
         <button class="btn-close-top" onclick="fecharTudo()">
             ✖ Fechar
         </button>
@@ -153,7 +151,7 @@
 
         <div class="status-bar">
             <div id="statusDot" class="status-dot"></div>
-            <span id="statusTxt">Conectando...</span>
+            <span id="statusTxt">Aguardando chamada...</span>
         </div>
 
         <button id="btnPip" class="btn-action" onclick="togglePip()">
@@ -162,14 +160,10 @@
     </div>
 
     <script>
+        // Configuração atualizada para apontar para o Firebase principal
         const firebaseConfig = {
-            apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
-            authDomain: "portaria-cam.firebaseapp.com",
-            databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
-            projectId: "portaria-cam",
-            storageBucket: "portaria-cam.firebasestorage.app",
-            messagingSenderId: "271848073619",
-            appId: "1:271848073619:web:4bab1cfb13a479ca596066"
+            apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
+            databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -185,24 +179,32 @@
 
         let timerRepouso = null;
 
-        // Escuta a transmissão do Celular A no caminho 'camera/stream'
+        // Escuta a transmissão no nó 'camera/stream' do banco correto
         database.ref('camera/stream').on('value', (snapshot) => {
             const data = snapshot.val();
+
             if (data && data.imagem) {
-                // Atualiza a foto principal do PWA com a imagem vinda do Celular A
                 frameImg.src = data.imagem;
-                
                 statusTxt.textContent = "Portaria: Transmissão Ativa (Ao Vivo)";
                 statusDot.className = "status-dot online";
                 atualizarCanvas();
 
+                // Zera e reinicia o temporizador de ausência de sinal
                 clearTimeout(timerRepouso);
                 timerRepouso = setTimeout(() => {
-                    statusTxt.textContent = "Portaria: Sem movimento (Imagem em Repouso)";
-                    statusDot.className = "status-dot repouso";
-                }, 10000); // 10 segundos sem sinal ativa o status repouso
+                    marcarComoInativo();
+                }, 1500); // 1.5s de tolerância para o fluxo contínuo de 4 FPS
+            } else {
+                // Caso o transmissor remova o nó 'camera/stream' ao desligar
+                marcarComoInativo();
             }
         });
+
+        function marcarComoInativo() {
+            statusTxt.textContent = "Portaria: Sem sinal / Repouso";
+            statusDot.className = "status-dot repouso";
+            frameImg.src = "https://picsum.photos/400/225"; // Imagem padrão quando offline
+        }
 
         function atualizarCanvas() {
             const img = new Image();
