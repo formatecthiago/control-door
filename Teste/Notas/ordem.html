@@ -6,6 +6,10 @@
     <title>Ordem de Serviço - Formatec Info</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
+    <!-- Scripts do Firebase (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -29,6 +33,30 @@
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
+        .search-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            background: #eef2f5;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .search-bar button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
         .actions-bar {
             display: flex;
             justify-content: flex-end;
@@ -46,8 +74,24 @@
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
+        .btn:disabled {
+            background-color: #cccccc !important;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
         .btn-share {
             background-color: #1976d2;
+        }
+        .btn-generate {
+            background-color: #2e7d32;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
         }
         .header-container {
             display: flex;
@@ -104,6 +148,8 @@
         }
         .value {
             width: 70%;
+            display: flex;
+            gap: 8px;
         }
         input[type="text"] {
             width: 100%;
@@ -171,12 +217,11 @@
             color: #111;
         }
 
-        /* Configuração de Impressão e do PDF gerado */
         @page { size: A4; margin: 15mm; }
         @media print {
             html, body { background-color: #fff !important; padding: 0; }
             .container { box-shadow: none; padding: 0; max-width: 100%; background: transparent !important; }
-            .actions-bar { display: none !important; }
+            .actions-bar, .search-bar, .btn-generate { display: none !important; }
             input[type="text"] { border: none !important; background: transparent !important; padding: 0 !important; font-size: 14px !important; }
             .total-box { background-color: #fbe9e7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .total-box input { border: none !important; background: transparent !important; font-size: 16px !important; padding: 0 !important; }
@@ -188,14 +233,24 @@
             background: transparent !important;
             padding: 0 !important;
         }
+        .pdf-mode .btn-generate {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
     <div id="documento-escopo" class="container">
         
+        <!-- Barra de Busca por Lupa -->
+        <div class="search-bar" data-html2canvas-ignore="true">
+            <input type="text" id="input-busca" placeholder="Buscar nota por número (ex: 0321)">
+            <button onclick="buscarNota()">🔍 Buscar</button>
+        </div>
+
+        <!-- Botões de Ação Principais -->
         <div class="actions-bar" data-html2canvas-ignore="true">
-            <button class="btn btn-share" onclick="enviarDocumentoPDF()">Compartilhar Documento</button>
-            <button class="btn" onclick="window.print()">Imprimir / Gerar PDF</button>
+            <button class="btn btn-share" id="btn-share" disabled onclick="enviarDocumentoPDF()">Compartilhar Documento</button>
+            <button class="btn" id="btn-print" disabled onclick="window.print()">Imprimir / Gerar PDF</button>
         </div>
         
         <div class="header-container">
@@ -211,27 +266,30 @@
         <div class="section-title">Dados do Atendimento</div>
         <div class="form-row">
             <div class="label">Número da Ordem:</div>
-            <div class="value"><input type="text" id="input-os" placeholder="Ex: 0321"></div>
+            <div class="value">
+                <input type="text" id="input-os" readonly placeholder="Aguardando geração...">
+                <button class="btn-generate" onclick="gerarEGravarNota()">Gerar / Salvar Nota</button>
+            </div>
         </div>
         <div class="form-row">
             <div class="label">Cliente:</div>
-            <div class="value"><input type="text" placeholder="Nome completo do cliente"></div>
+            <div class="value"><input type="text" id="input-cliente" placeholder="Nome completo do cliente"></div>
         </div>
         <div class="form-row">
             <div class="label">WhatsApp Cliente:</div>
-            <div class="value"><input type="text" placeholder="(00) 00000-0000"></div>
+            <div class="value"><input type="text" id="input-whatsapp" placeholder="(00) 00000-0000"></div>
         </div>
         <div class="form-row">
             <div class="label">Aparelho / Modelo:</div>
-            <div class="value"><input type="text" placeholder="Ex: Micro-ondas Philco 30L"></div>
+            <div class="value"><input type="text" id="input-aparelho" placeholder="Ex: Micro-ondas Philco 30L"></div>
         </div>
         <div class="form-row">
             <div class="label">Serviço:</div>
-            <div class="value"><input type="text" placeholder="Descrição do serviço realizado"></div>
+            <div class="value"><input type="text" id="input-servico" placeholder="Descrição do serviço realizado"></div>
         </div>
         <div class="form-row">
             <div class="label">Peças Substituídas:</div>
-            <div class="value"><input type="text" placeholder="Peças que foram trocadas"></div>
+            <div class="value"><input type="text" id="input-pecas" placeholder="Peças que foram trocadas"></div>
         </div>
         
         <div class="section-title">Estado & Prazos</div>
@@ -247,25 +305,25 @@
         </div>
         <div class="form-row">
             <div class="label">Dia da Entrada:</div>
-            <div class="value"><input type="text" placeholder="DD/MM/AAAA"></div>
+            <div class="value"><input type="text" id="input-entrada" placeholder="DD/MM/AAAA"></div>
         </div>
         <div class="form-row">
             <div class="label">Dia da Saída:</div>
-            <div class="value"><input type="text" placeholder="DD/MM/AAAA"></div>
+            <div class="value"><input type="text" id="input-saida" placeholder="DD/MM/AAAA"></div>
         </div>
         <div class="form-row">
             <div class="label">Observações:</div>
-            <div class="value"><input type="text" placeholder="Alguma observação adicional"></div>
+            <div class="value"><input type="text" id="input-obs" placeholder="Alguma observação adicional"></div>
         </div>
         
         <div class="section-title">Valores do Serviço</div>
         <div class="form-row">
             <div class="label">Valor Serviço + Peças:</div>
-            <div class="value"><input type="text" placeholder="0,00"></div>
+            <div class="value"><input type="text" id="input-valor-servico" placeholder="0,00"></div>
         </div>
         <div class="total-box">
             <label>VALOR TOTAL R$:</label>
-            <input type="text" placeholder="0,00">
+            <input type="text" id="input-valor-total" placeholder="0,00">
         </div>
         
         <div class="footer-info">
@@ -276,6 +334,110 @@
     </div>
 
     <script>
+        // Inicialização das credenciais fornecidas do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB7ZpRwKPS8bZCzhoQ5MUzXlyVBOnYKj-8",
+            authDomain: "portaria-cam.firebaseapp.com",
+            databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
+            projectId: "portaria-cam",
+            storageBucket: "portaria-cam.firebasestorage.app",
+            messagingSenderId: "271848073619",
+            appId: "1:271848073619:web:4bab1cfb13a479ca596066",
+            measurementId: "G-1XJ4Q6491E"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function alternarBotoes(ativo) {
+            document.getElementById('btn-share').disabled = !ativo;
+            document.getElementById('btn-print').disabled = !ativo;
+        }
+
+        // Função para gerar o número sequencial e gravar no Firebase
+        function gerarEGravarNota() {
+            const refUltimo = db.ref('ordens_servico/ultimo_numero');
+            
+            refUltimo.transaction((numeroAtual) => {
+                return (numeroAtual || 0) + 1;
+            }, (error, committed, snapshot) => {
+                if (error) {
+                    alert('Erro ao conectar ao banco de dados.');
+                } else if (committed) {
+                    const novoNumero = String(snapshot.val()).padStart(4, '0');
+                    document.getElementById('input-os').value = novoNumero;
+
+                    const estadoSelecionado = document.querySelector('input[name="estado"]:checked')?.value || 'Bom';
+
+                    const dadosNota = {
+                        numero: novoNumero,
+                        cliente: document.getElementById('input-cliente').value,
+                        whatsapp: document.getElementById('input-whatsapp').value,
+                        aparelho: document.getElementById('input-aparelho').value,
+                        servico: document.getElementById('input-servico').value,
+                        pecas: document.getElementById('input-pecas').value,
+                        estado: estadoSelecionado,
+                        entrada: document.getElementById('input-entrada').value,
+                        saida: document.getElementById('input-saida').value,
+                        obs: document.getElementById('input-obs').value,
+                        valorServico: document.getElementById('input-valor-servico').value,
+                        valorTotal: document.getElementById('input-valor-total').value,
+                        dataCriacao: new Date().toISOString()
+                    };
+
+                    db.ref('ordens_servico/notas/' + novoNumero).set(dadosNota)
+                        .then(() => {
+                            alert(`Nota de número ${novoNumero} gerada e salva com sucesso!`);
+                            alternarBotoes(true);
+                        })
+                        .catch((err) => {
+                            alert('Erro ao gravar os dados da nota: ' + err.message);
+                        });
+                }
+            });
+        }
+
+        // Função para buscar notas antigas no nó do Firebase
+        function buscarNota() {
+            let numero = document.getElementById('input-busca').value.trim();
+            if (!numero) {
+                alert('Digite um número de nota para buscar.');
+                return;
+            }
+
+            numero = String(numero).padStart(4, '0');
+
+            db.ref('ordens_servico/notas/' + numero).once('value')
+                .then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        document.getElementById('input-os').value = data.numero || numero;
+                        document.getElementById('input-cliente').value = data.cliente || '';
+                        document.getElementById('input-whatsapp').value = data.whatsapp || '';
+                        document.getElementById('input-aparelho').value = data.aparelho || '';
+                        document.getElementById('input-servico').value = data.servico || '';
+                        document.getElementById('input-pecas').value = data.pecas || '';
+                        document.getElementById('input-entrada').value = data.entrada || '';
+                        document.getElementById('input-saida').value = data.saida || '';
+                        document.getElementById('input-obs').value = data.obs || '';
+                        document.getElementById('input-valor-servico').value = data.valorServico || '';
+                        document.getElementById('input-valor-total').value = data.valorTotal || '';
+
+                        if (data.estado) {
+                            const radio = document.querySelector(`input[name="estado"][value="${data.estado}"]`);
+                            if (radio) radio.checked = true;
+                        }
+
+                        alternarBotoes(true);
+                        alert(`Nota ${numero} encontrada e carregada com sucesso!`);
+                    } else {
+                        alert(`Nota de número ${numero} não foi encontrada.`);
+                    }
+                })
+                .catch((err) => alert('Erro na busca: ' + err.message));
+        }
+
+        // Função existente de envio do PDF
         function enviarDocumentoPDF() {
             const elemento = document.getElementById('documento-escopo');
             const numOS = document.getElementById('input-os').value || "OS";
@@ -304,7 +466,7 @@
                     .catch((error) => console.log('Envio cancelado ou com erro:', error));
                 } else {
                     html2pdf().set(opcoes).from(elemento).save();
-                    alert('Seu navegador não possui suporte para compartilhamento direto de arquivos. O PDF foi baixado para o seu dispositivo para que possa anexá-lo manualmente.');
+                    alert('Seu navegador não possui suporte para compartilhamento direto de arquivos. O PDF foi baixado para o seu dispositivo.');
                 }
             });
         }
