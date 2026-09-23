@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY ADMIN v2.1 - Faxina Automatizada</title>
+    <title>VIRTY ADMIN v2.1 - Gerenciador</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --yellow: #FFD700; --blue: #007BFF; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
@@ -12,7 +12,6 @@
         .btn-cad { background: var(--neon); color: #000; }
         .btn-pend { background: var(--yellow); color: #000; }
         
-        /* 🧹 ESTILOS DO NOVO MÓDULO LIMPADOR */
         .cleaner-group { margin-bottom: 25px; border: 2px dashed var(--red); padding: 15px; border-radius: 12px; background: #080101; }
         .cleaner-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
         .input-cleaner { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; font-size: 1rem; }
@@ -191,7 +190,6 @@
         }
     }
 
-    // 🔄 RECURSO ATUALIZADO: Remove morador e executa a faxina se a casa ficar vazia
     function remover(un, fId) {
         if(confirm(`Revogar acesso do morador da Unidade ${un}?`)) {
             const caminho = fId ? `moradores_validados/${un}/${fId}` : `moradores_validados/${un}`;
@@ -201,10 +199,8 @@
                 const el = document.getElementById(idProcurado);
                 if(el) el.remove();
                 
-                // 🔥 VERIFICAÇÃO AUTOMÁTICA EM CADEIA
                 db.ref(`moradores_validados/${un}`).once('value', snap => {
                     if(!snap.exists() || snap.val() === null) {
-                        // Se a casa ficou sem nenhum morador ativo, apaga as tabelas vinculadas
                         db.ref(`historico/${un}`).remove();
                         db.ref(`bloqueados/${un}`).remove();
                         db.ref(`solicitacoes_cadastro/${un}`).remove();
@@ -217,21 +213,18 @@
         }
     }
 
-    // ⚡ DINÂMICA DO BOTÃO: Ativa ou desativa baseado no input digitado
     function gerenciarBotaoLimpar() {
         const campo = document.getElementById('input-casa-limpar');
         const botao = document.getElementById('btn-executar-limpeza');
         botao.disabled = (campo.value.trim() === "");
     }
 
-    // 🧽 FUNÇÃO MANUAL: Limpa absolutamente tudo de uma casa específica por digitação
     function limparDadosCasaManual() {
         const campo = document.getElementById('input-casa-limpar');
         const un = campo.value.trim();
         if(!un) return;
 
         if(confirm(`🔴 ATENÇÃO CRÍTICA!\n\nVocê está prestes a deletar TODOS os dados da CASA ${un}.\nIsso inclui: Moradores Validados, Solicitações Pendentes, Histórico e Lista de Bloqueados.\n\nDeseja prosseguir com o reset total?`)) {
-            
             const p1 = db.ref(`moradores_validados/${un}`).remove();
             const p2 = db.ref(`solicitacoes_cadastro/${un}`).remove();
             const p3 = db.ref(`historico/${un}`).remove();
