@@ -31,6 +31,17 @@
         .badge-unidade { font-size: 0.75rem; font-weight: bold; color: var(--neon); text-transform: uppercase; }
         .card-actions-virty { display: flex; flex-direction: column; gap: 6px; min-width: 95px; }
         .btn-action { width: 100%; padding: 7px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 0.65rem; text-transform: uppercase; }
+
+        /* Estilos do Modal de Edição */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
+        .modal-card { background: #0d0d0d; border: 2px solid var(--blue); border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; box-shadow: 0 0 20px rgba(0, 123, 255, 0.3); }
+        .modal-card h2 { color: var(--blue); margin-top: 0; font-size: 1.2rem; text-transform: uppercase; text-align: center; }
+        .modal-field { margin-bottom: 12px; }
+        .modal-field label { font-size: 0.75rem; color: #888; display: block; margin-bottom: 4px; }
+        .modal-field input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; box-sizing: border-box; }
+        .modal-field input:focus { border-color: var(--blue); outline: none; }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btns button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -60,12 +71,42 @@
         <div id="list-c" class="list-container"></div>
     </div>
 
+    <!-- MODAL DE EDIÇÃO -->
+    <div id="modal-editar" class="modal-overlay">
+        <div class="modal-card">
+            <h2>✏️ Editar Morador</h2>
+            <input type="hidden" id="edit-unidade-antiga">
+            <input type="hidden" id="edit-fid">
+            <input type="hidden" id="edit-foto">
+
+            <div class="modal-field">
+                <label>NÚMERO DA CASA/UNIDADE</label>
+                <input type="number" id="edit-unidade">
+            </div>
+            <div class="modal-field">
+                <label>NOME COMPLETO</label>
+                <input type="text" id="edit-nome">
+            </div>
+            <div class="modal-field">
+                <label>CPF</label>
+                <input type="text" id="edit-cpf">
+            </div>
+
+            <div class="modal-btns">
+                <button style="background: var(--blue); color: #fff;" onclick="salvarEdicao()">Salvar Alterações</button>
+                <button style="background: #333; color: #fff;" onclick="fecharModalEdicao()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
     const config = { apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" };
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
+
+    const SENHA_ADMIN = "172812@#";
 
     let qtdPendentes = 0;
     let qtdCadastrados = 0;
@@ -102,6 +143,18 @@
             });
         }
         document.getElementById('count-cad').innerText = qtdCadastrados;
+    });
+    refValidados.on('child_changed', unidadeSnap => {
+        const un = unidadeSnap.key;
+        const dados = unidadeSnap.val();
+        
+        if (dados.nome) {
+            atualizarCardHTML(un, null, dados);
+        } else {
+            unidadeSnap.forEach(moradorSnap => {
+                atualizarCardHTML(un, moradorSnap.key, moradorSnap.val());
+            });
+        }
     });
     refValidados.on('child_removed', unidadeSnap => {
         const un = unidadeSnap.key;
@@ -152,11 +205,90 @@
                 <p><strong>CPF:</strong> ${d.cpf || '---'}</p>
             </div>
             <div class="card-actions-virty">
-                <button class="btn-action" style="background:var(--blue); color:#fff;" onclick="alert('Rotina de Edição Unidade ${un}')">EDITAR</button>
+                <button class="btn-action" style="background:var(--blue); color:#fff;" onclick="iniciarEdicao('${un}', '${fId || ''}')">EDITAR</button>
                 <button class="btn-action" style="background:var(--red); color:#fff;" onclick="remover('${un}', '${fId || ''}')">EXCLUIR</button>
             </div>
         `;
         container.appendChild(row);
+    }
+
+    function atualizarCardHTML(un, fId, d) {
+        const idRow = `cad-${un}-${fId || 'dir'}`;
+        const row = document.getElementById(idRow);
+        if (row) {
+            row.setAttribute('data-unidade', un);
+            row.setAttribute('data-search', `${d.nome} ${un} ${d.cpf || ''}`.toLowerCase());
+            row.querySelector('.badge-unidade').innerText = `CASA ${un}`;
+            row.querySelector('h3').innerText = d.nome;
+            row.querySelector('p').innerHTML = `<strong>CPF:</strong> ${d.cpf || '---'}`;
+            if (d.foto) {
+                const img = row.querySelector('.card-foto-virty');
+                img.src = d.foto;
+                img.style.display = 'block';
+            }
+        }
+    }
+
+    function iniciarEdicao(un, fId) {
+        const senhaDigitada = prompt("🔐 Digite a senha administrativa para liberar a edição:");
+        if (senhaDigitada !== SENHA_ADMIN) {
+            alert("❌ Senha incorreta! Acesso negado.");
+            return;
+        }
+
+        const caminho = fId ? `moradores_validados/${un}/${fId}` : `moradores_validados/${un}`;
+        db.ref(caminho).once('value', snap => {
+            if (!snap.exists()) { alert("Dados não encontrados."); return; }
+            const d = snap.val();
+
+            document.getElementById('edit-unidade-antiga').value = un;
+            document.getElementById('edit-unidade').value = un;
+            document.getElementById('edit-fid').value = fId;
+            document.getElementById('edit-nome').value = d.nome || '';
+            document.getElementById('edit-cpf').value = d.cpf || '';
+            document.getElementById('edit-foto').value = d.foto || '';
+
+            document.getElementById('modal-editar').style.display = 'flex';
+        });
+    }
+
+    function salvarEdicao() {
+        const unAntiga = document.getElementById('edit-unidade-antiga').value;
+        const unNova = document.getElementById('edit-unidade').value.trim();
+        const fId = document.getElementById('edit-fid').value;
+        const nome = document.getElementById('edit-nome').value.trim();
+        const cpf = document.getElementById('edit-cpf').value.trim();
+        const foto = document.getElementById('edit-foto').value;
+
+        if (!unNova || !nome || !cpf) {
+            alert("Preencha todos os campos para salvar.");
+            return;
+        }
+
+        const dadosAtualizados = { nome, cpf, foto, ts: Date.now() };
+
+        if (unAntiga !== unNova) {
+            const caminhoAntigo = fId ? `moradores_validados/${unAntiga}/${fId}` : `moradores_validados/${unAntiga}`;
+            const caminhoNovo = fId ? `moradores_validados/${unNova}/${fId}` : `moradores_validados/${unNova}`;
+
+            db.ref(caminhoNovo).set(dadosAtualizados).then(() => {
+                db.ref(caminhoAntigo).remove();
+                const elAntigo = document.getElementById(`cad-${unAntiga}-${fId || 'dir'}`);
+                if (elAntigo) elAntigo.remove();
+                fecharModalEdicao();
+                alert("✅ Cadastro atualizado e movido para a nova unidade!");
+            });
+        } else {
+            const caminho = fId ? `moradores_validados/${unNova}/${fId}` : `moradores_validados/${unNova}`;
+            db.ref(caminho).update(dadosAtualizados).then(() => {
+                fecharModalEdicao();
+                alert("✅ Alterações salvas com sucesso!");
+            });
+        }
+    }
+
+    function fecharModalEdicao() {
+        document.getElementById('modal-editar').style.display = 'none';
     }
 
     function filterList(containerId, term) {
