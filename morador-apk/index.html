@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.0.2 - Nativo APK</title>
+    <title>VIRTY MORADOR v2.1.0 - Nativo APK</title>
     <meta name="theme-color" content="#39FF14">
     <style>
         :root {
@@ -31,7 +31,7 @@
         input {
             width: 100%;
             padding: 16px;
-            margin: 8px 0;
+            margin: 6px 0;
             border-radius: 12px;
             border: 2px solid #222;
             background: #111;
@@ -86,12 +86,13 @@
         #texto-timer-voz { position: absolute; font-size: 2.2rem; font-weight: bold; color: #fff; }
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
         .btn-voz svg { width: 32px; height: 32px; fill: #000; pointer-events: none; }
-        .area-camera-virty { display: flex; align-items: center; justify-content: center; margin: 15px 0 25px; width: 100%; }
-        .video-box { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; position:relative; }
+        .area-camera-virty { display: flex; align-items: center; justify-content: center; margin: 10px 0 15px; width: 100%; }
+        .video-box { width: 150px; height: 150px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; position:relative; }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
         .leaving-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
+        .link-login { color: var(--blue); text-align: center; font-size: 0.85rem; margin-top: 10px; cursor: pointer; font-weight: bold; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -107,21 +108,41 @@
         </div>
     </div>
 
+    <!-- TELA DE CADASTRO -->
     <div id="s-cadastro" class="screen">
-        <h2 style="color:var(--neon); text-align:center; letter-spacing: 2px;">CADASTRO MORADOR</h2>
+        <h2 style="color:var(--neon); text-align:center; letter-spacing: 1px; margin: 0 0 10px 0;">CADASTRO MORADOR</h2>
         <div class="area-camera-virty">
             <div class="video-box">
                 <video id="v-cad" playsinline autoPlay muted></video>
                 <canvas id="c-cad"></canvas>
             </div>
         </div>
-        <button class="btn" style="background:#fff; color:#000;" onclick="capturarFotoComFallback()">📸 CAPTURAR SELFIE</button>
+        <button class="btn" style="background:#fff; color:#000; padding:12px; margin-bottom:5px;" onclick="capturarFotoComFallback()">📸 CAPTURAR SELFIE</button>
+        
         <input type="text" id="c-nome" placeholder="Nome Completo">
         <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
         <input type="number" id="c-un" placeholder="Número da Casa/Apt">
+        <input type="password" id="c-senha" maxlength="6" placeholder="Crie uma Senha (6 números)">
+        <input type="password" id="c-senha-conf" maxlength="6" placeholder="Confirme a Senha (6 números)">
+        
         <button id="btn-finalizar-cad" class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
+        
+        <div class="link-login" onclick="mudarTela('s-login')">Já possui cadastro ativado? Conectar neste celular</div>
     </div>
 
+    <!-- TELA DE LOGIN (TROCA OU FORMATACAO DE CELULAR) -->
+    <div id="s-login" class="screen" style="justify-content:center;">
+        <h2 style="color:var(--blue); text-align:center; letter-spacing: 1px;">ENTRAR EM APARARELHO NOVO</h2>
+        <p style="color:#aaa; font-size:0.85rem; text-align:center; margin-bottom:20px;">Digite seu CPF e a Senha cadastrada para vincular este celular à sua casa.</p>
+        
+        <input type="number" id="l-cpf" placeholder="Digite seu CPF">
+        <input type="password" id="l-senha" maxlength="6" placeholder="Sua Senha (6 números)">
+        
+        <button class="btn" style="background:var(--blue); color:#fff; margin-top:15px;" onclick="autenticarCelularNovo()">AUTENTICAR E CONECTAR</button>
+        <div class="link-login" style="color:var(--gray);" onclick="mudarTela('s-cadastro')">Voltar ao Formulário de Cadastro</div>
+    </div>
+
+    <!-- TELA DE ANÁLISE -->
     <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
         <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
         <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
@@ -130,11 +151,12 @@
         <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
     </div>
 
+    <!-- PAINEL PRINCIPAL -->
     <div id="s-home" class="screen">
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 2.0.2</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 2.1.0</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -159,6 +181,7 @@
         <button id="btn-toggle-bloqueados" class="btn-secundario" style="margin-top: 15px;" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
     </div>
 
+    <!-- PAINEL DE ATENDIMENTO DE CHAMADA -->
     <div id="painel-chamada">
         <div id="timer-regressivo">90</div>
         
@@ -213,18 +236,6 @@
     if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.database();
 
-    const firebaseConfigPortaria = {
-        apiKey: "AIzaSyB7ZpRwKPS8bZczhoQ5MUzXLyVB0nYKj-8",
-        authDomain: "portaria-cam.firebaseapp.com",
-        databaseURL: "https://portaria-cam-default-rtdb.firebaseio.com",
-        projectId: "portaria-cam",
-        storageBucket: "portaria-cam.firebasestorage.app",
-        messagingSenderId: "271848073619",
-        appId: "1:271848073619:web:4bab1cfb13a479ca596066"
-    };
-    const appPortaria = firebase.initializeApp(firebaseConfigPortaria, "appPortaria");
-    const dbPortaria = appPortaria.database();
-    
     let my_un = localStorage.getItem('my_un');
     let my_foto = "";
     let timerPerdida, timerVozInterval, mediaRecorder, chunks = [];
@@ -287,91 +298,6 @@
         }
     }
 
-    async function inicializarPushNotificacoesNativas() {
-        try {
-            if (typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable && Capacitor.isPluginAvailable('PushNotifications')) {
-                const PushNotifications = Capacitor.Plugins.PushNotifications;
-                let permStatus = await PushNotifications.checkPermissions();
-                if (permStatus.receive === 'prompt') {
-                    permStatus = await PushNotifications.requestPermissions();
-                }
-                if (permStatus.receive === 'granted') {
-                    await PushNotifications.register();
-                    
-                    PushNotifications.addListener('registration', (token) => {
-                        if (my_un && token && token.value) {
-                            db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).once('value', snap => {
-                                if (snap.exists()) {
-                                    db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).update({ fcm_token: token.value });
-                                }
-                            });
-                            db.ref('moradores_validados/' + my_un).once('value', snap => {
-                                if (snap.exists()) {
-                                    db.ref('moradores_validados/' + my_un).update({ fcm_token: token.value });
-                                }
-                            });
-                        }
-                    });
-
-                    if (Capacitor.getPlatform() === 'android') {
-                        try {
-                            const nomeSomNativo = `sound${String(somAtual + 1).padStart(2, '0')}`;
-                            await PushNotifications.createChannel({
-                                id: 'virty_interfone_channel',
-                                name: 'Chamadas do Interfone',
-                                description: 'Canal de alta prioridade para chamadas do totem Virty',
-                                importance: 5, 
-                                visibility: 1,  
-                                sound: nomeSomNativo, 
-                                vibration: true
-                            });
-                        } catch (e) {}
-                    }
-                }
-
-                PushNotifications.addListener('pushNotificationReceived', () => { 
-                    if (my_un) {
-                        verificarStatus();
-                        forcarReflowWebView();
-                    } 
-                });
-
-                PushNotifications.addListener('pushNotificationActionPerformed', () => { 
-                    if (my_un) {
-                        verificarStatus();
-                        forcarReflowWebView();
-                    } 
-                });
-            }
-        } catch (err) {}
-    }
-
-    async function verificarPermissoesObg() {
-        const banner = document.getElementById('banner-permissoes');
-        if (typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable && Capacitor.isPluginAvailable('Camera')) {
-            try {
-                let statusCamera = await Capacitor.Plugins.Camera.requestPermissions();
-                if (statusCamera.camera !== 'granted') {
-                    banner.style.setProperty('display', 'flex', 'important');
-                    return false;
-                } else {
-                    banner.style.setProperty('display', 'none', 'important');
-                    return true;
-                }
-            } catch (e) {}
-        }
-        return true;
-    }
-
-    const btnAutorizar = document.getElementById('btn-autorizar-sempre');
-    if (btnAutorizar) {
-        btnAutorizar.addEventListener('click', async () => {
-            if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.App) { 
-                await Capacitor.Plugins.App.openAppSettings(); 
-            }
-        });
-    }
-
     function gerarFingerprintMorador() {
         const idSalvo = localStorage.getItem('virty_device_fp');
         if (idSalvo) return idSalvo;
@@ -395,8 +321,6 @@
             
             configurarEventosMicrofone();
             verificarStatus();
-            verificarPermissoesObg();
-            inicializarPushNotificacoesNativas();
         });
     });
 
@@ -439,35 +363,45 @@
         refStatusAtiva = db.ref('moradores_validados/' + my_un);
         refStatusAtiva.on('value', s => {
             if(s.exists()) {
-                mudarTela('s-home');
-                document.getElementById('txt-un').innerText = "CASA " + my_un;
-                if (!escutaChamadasIniciada) {
-                    escutarChamadas();
-                    escutaChamadasIniciada = true;
-                }
-                renderizarDadosAbas();
-            } else {
-                db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).once('value', snap => {
-                    if(snap.exists()) {
-                        document.getElementById('txt-un-analise').innerText = "UNIDADE: " + my_un + " | ID HARDWARE: " + my_fingerprint;
-                        mudarTela('s-analise');
-                    } else { 
-                        mudarTela('s-cadastro'); 
+                const dadosUnidade = s.val();
+                let autorzadoNesteCelular = false;
+
+                if (dadosUnidade.nome) {
+                    autorzadoNesteCelular = true;
+                } else {
+                    if (dadosUnidade[my_fingerprint]) {
+                        autorzadoNesteCelular = true;
                     }
-                });
+                }
+
+                if (autorzadoNesteCelular) {
+                    mudarTela('s-home');
+                    document.getElementById('txt-un').innerText = "CASA " + my_un;
+                    if (!escutaChamadasIniciada) {
+                        escutarChamadas();
+                        escutaChamadasIniciada = true;
+                    }
+                    renderizarDadosAbas();
+                    return;
+                }
             }
+            
+            db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).once('value', snap => {
+                if(snap.exists()) {
+                    document.getElementById('txt-un-analise').innerText = "UNIDADE: " + my_un + " | ID HARDWARE: " + my_fingerprint;
+                    mudarTela('s-analise');
+                } else { 
+                    mudarTela('s-cadastro'); 
+                }
+            });
         });
     }
 
-    function obterNomeSomFormatado(indexSom) {
-        return `sound${String(indexSom + 1).padStart(2, '0')}.mp3`;
-    }
+    function obterNomeSomFormatado(indexSom) { return `sound${String(indexSom + 1).padStart(2, '0')}.mp3`; }
 
     function encerrarStreamCamera() {
         if (streamCameraAtiva) {
-            try {
-                streamCameraAtiva.getTracks().forEach(track => track.stop());
-            } catch(e){}
+            try { streamCameraAtiva.getTracks().forEach(track => track.stop()); } catch(e){}
             streamCameraAtiva = null;
         }
     }
@@ -478,62 +412,25 @@
         inicializandoCamera = true;
 
         encerrarStreamCamera();
-
         const video = document.getElementById('v-cad');
-        if (!video) {
-            inicializandoCamera = false;
-            return;
-        }
+        if (!video) { inicializandoCamera = false; return; }
 
         try {
-            const constraints = { 
-                video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
-                audio: false
-            };
-            
+            const constraints = { video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false };
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 streamCameraAtiva = stream;
                 video.srcObject = stream;
-                video.setAttribute('playsinline', 'true');
                 video.style.transform = "scaleX(-1)";
                 await video.play().catch(() => {});
             }
         } catch (err) {
-            console.warn("Retentativa da câmera:", err);
-        } finally {
-            inicializandoCamera = false;
-        }
+        } finally { inicializandoCamera = false; }
     }
 
     async function capturarFotoComFallback() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
         if(!v || !c) return;
-
-        if ((!streamCameraAtiva || v.videoWidth === 0) && typeof Capacitor !== 'undefined' && Capacitor.isPluginAvailable('Camera')) {
-            try {
-                const image = await Capacitor.Plugins.Camera.getPhoto({
-                    quality: 60,
-                    allowEditing: false,
-                    resultType: 'dataUrl',
-                    source: 'CAMERA'
-                });
-                if(image && image.dataUrl) {
-                    my_foto = image.dataUrl;
-                    const ctx = c.getContext('2d');
-                    const img = new Image();
-                    img.onload = () => {
-                        c.width = img.width;
-                        c.height = img.height;
-                        ctx.drawImage(img, 0, 0);
-                        c.style.display = "block";
-                        v.style.display = "none";
-                    };
-                    img.src = image.dataUrl;
-                    return;
-                }
-            } catch(e) {}
-        }
 
         if(!streamCameraAtiva || v.videoWidth === 0) {
             await inicializarCapturaVideo();
@@ -556,51 +453,110 @@
     function enviarCadastro() {
         if (document.activeElement) document.activeElement.blur();
         
-        const un = document.getElementById('c-un').value,
+        const un = document.getElementById('c-un').value.trim(),
               cpf = document.getElementById('c-cpf').value.trim(),
               nome = document.getElementById('c-nome').value.trim(),
+              senha = document.getElementById('c-senha').value.trim(),
+              senhaConf = document.getElementById('c-senha-conf').value.trim(),
               btnFinalizar = document.getElementById('btn-finalizar-cad');
-              
+
         if(!my_foto) { alert("Por favor, capture a sua selfie antes de enviar!"); return; }
-        if(!un || !cpf || !nome) { alert("Preencha todos os campos do formulário!"); return; }
-        
-        if(btnFinalizar) {
-            btnFinalizar.disabled = true;
-            btnFinalizar.innerText = "ENVIANDO SOLICITAÇÃO...";
-        }
-        
-        db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
-            const moradoresExistentes = snap.val() || {};
-            const chaves = Object.keys(moradoresExistentes);
-            const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
-            
-            if (!jaExisteEsseAparelho) {
-                if(chaves.length >= 5) { 
+        if(!un || !cpf || !nome || !senha || !senhaConf) { alert("Preencha todos os campos do formulário!"); return; }
+        if(senha.length !== 6 || isNaN(senha)) { alert("A senha deve conter exatamente 6 números."); return; }
+        if(senha !== senhaConf) { alert("As senhas digitadas não coincidem."); return; }
+
+        btnFinalizar.disabled = true;
+        btnFinalizar.innerText = "VERIFICANDO...";
+
+        db.ref(`moradores_validados/${un}`).once('value', validedSnap => {
+            let cpfExisteAtivo = false;
+            if (validedSnap.exists()) {
+                validedSnap.forEach(item => {
+                    if (item.val().cpf === cpf) cpfExisteAtivo = true;
+                });
+            }
+
+            if (cpfExisteAtivo) {
+                alert("Este CPF já está cadastrado e ativo nesta casa!\nSe você trocou de celular, use a opção 'Já possui cadastro ativado?' no final da tela.");
+                btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO";
+                return;
+            }
+
+            db.ref('solicitacoes_cadastro/' + un).once('value', snap => {
+                const moradoresExistentes = snap.val() || {};
+                const chaves = Object.keys(moradoresExistentes);
+                const jaExisteEsseAparelho = !!moradoresExistentes[my_fingerprint];
+                
+                if (!jaExisteEsseAparelho && chaves.length >= 5) {
                     alert("Limite de moradores para esta unidade foi excedido (Máximo 5).");
-                    if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
-                    return; 
+                    btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO";
+                    return;
                 }
+
                 for (let k in moradoresExistentes) {
                     let m = moradoresExistentes[k];
-                    if(m.cpf === cpf || m.nome.toLowerCase() === nome.toLowerCase()) { 
-                        alert("Este CPF ou Nome já possui uma solicitação enviada.");
-                        if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
-                        return; 
+                    if(m.cpf === cpf) {
+                        alert("Este CPF já possui uma solicitação pendente de aprovação.");
+                        btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO";
+                        return;
                     }
                 }
-            }
-            
-            db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({
-                nome: nome, cpf: cpf, unidade: un, foto: my_foto, ts: Date.now()
-            }).then(() => {
-                my_un = un;
-                localStorage.setItem('my_un', un);
-                if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
-                verificarStatus();
-            }).catch(err => {
-                alert("Erro ao conectar com o banco de dados. Tente novamente.");
-                if(btnFinalizar) { btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO"; }
+
+                db.ref(`solicitacoes_cadastro/${un}/${my_fingerprint}`).set({
+                    nome: nome, cpf: cpf, unidade: un, foto: my_foto, senha: senha, ts: Date.now()
+                }).then(() => {
+                    my_un = un;
+                    localStorage.setItem('my_un', un);
+                    btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO";
+                    verificarStatus();
+                }).catch(() => {
+                    alert("Erro ao conectar com o banco de dados. Tente novamente.");
+                    btnFinalizar.disabled = false; btnFinalizar.innerText = "SOLICITAR ACESSO";
+                });
             });
+        });
+    }
+
+    function autenticarCelularNovo() {
+        const cpf = document.getElementById('l-cpf').value.trim();
+        const senha = document.getElementById('l-senha').value.trim();
+
+        if(!cpf || !senha) { alert("Informe seu CPF e sua Senha de 6 dígitos."); return; }
+
+        db.ref('moradores_validados').once('value', snap => {
+            if(!snap.exists()) { alert("Nenhum cadastro encontrado."); return; }
+
+            let encontrado = false;
+            let casaEncontrada = null;
+            let dadosMorador = null;
+            let chaveAntiga = null;
+
+            snap.forEach(unidadeSnap => {
+                const unKey = unidadeSnap.key;
+                unidadeSnap.forEach(moradorSnap => {
+                    const m = moradorSnap.val();
+                    if(m.cpf === cpf && m.senha === senha) {
+                        encontrado = true;
+                        casaEncontrada = unKey;
+                        dadosMorador = m;
+                        chaveAntiga = moradorSnap.key;
+                    }
+                });
+            });
+
+            if(encontrado) {
+                db.ref(`moradores_validados/${casaEncontrada}/${chaveAntiga}`).remove();
+                
+                dadosMorador.ts = Date.now();
+                db.ref(`moradores_validados/${casaEncontrada}/${my_fingerprint}`).set(dadosMorador).then(() => {
+                    my_un = casaEncontrada;
+                    localStorage.setItem('my_un', casaEncontrada);
+                    alert(`✅ Aparelho vinculado com sucesso à CASA ${casaEncontrada}!`);
+                    verificarStatus();
+                });
+            } else {
+                alert("❌ CPF ou Senha incorretos, ou cadastro ainda não aprovado pelo administrador.");
+            }
         });
     }
 
@@ -670,12 +626,7 @@
         document.getElementById('campo-texto-interno').value = ""; responder('mensagem');
     }
     
-    function verificarToqueEnvioMaoLivre(e) { 
-        if(modoMaoLivre && estaGravando) { 
-            e.stopPropagation(); 
-            stopRec(); 
-        } 
-    }
+    function verificarToqueEnvioMaoLivre(e) { if(modoMaoLivre && estaGravando) { e.stopPropagation(); stopRec(); } }
 
     async function startRec() {
         try {
@@ -746,13 +697,7 @@
         } catch(e) { estaGravando = false; }
     }
     
-    function stopRec() { 
-        if(mediaRecorder && mediaRecorder.state !== 'inactive') { 
-            mediaRecorder.stop(); 
-            clearInterval(timerVozInterval); 
-            estaGravando = false; 
-        } 
-    }
+    function stopRec() { if(mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); clearInterval(timerVozInterval); estaGravando = false; } }
     
     function responder(st) {
         if (document.activeElement) document.activeElement.blur();
@@ -947,20 +892,6 @@
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1); 
         gerenciarAlerta('start', obterNomeSomFormatado(somAtual)); 
         setTimeout(() => { if(!somSilenciadoPorInteracao) gerenciarAlerta('stop'); }, 2000); 
-        
-        if (typeof Capacitor !== 'undefined' && Capacitor.getPlatform() === 'android') {
-            try {
-                Capacitor.Plugins.PushNotifications.createChannel({
-                    id: 'virty_interfone_channel',
-                    name: 'Chamadas do Interfone',
-                    description: 'Canal de alta prioridade para chamadas do totem Virty',
-                    importance: 5,
-                    visibility: 1,
-                    sound: `sound${String(somAtual + 1).padStart(2, '0')}`,
-                    vibration: true
-                });
-            } catch(e){}
-        }
     }
     
     function alternarAlerta() { modoAlerta = modoAlerta >= 3 ? 1 : modoAlerta + 1; localStorage.setItem('virty_alerta', modoAlerta); atualizarInterfaceAlerta(); }
@@ -977,7 +908,7 @@
             if(loopVibracaoInterval) { clearInterval(loopVibracaoInterval); loopVibracaoInterval = null; }
             if (navigator.vibrate) navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
-            document.title = "VIRTY MORADOR v2.0.2 - Nativo APK";
+            document.title = "VIRTY MORADOR v2.1.0 - Nativo APK";
             return; 
         }
 
@@ -1006,12 +937,6 @@
             }, 500);
         }
     }
-
-    document.addEventListener('resume', () => {
-        verificarStatus();
-        verificarPermissoesObg();
-        forcarReflowWebView();
-    });
 </script>
 </body>
 </html>
