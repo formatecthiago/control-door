@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIRTY ADMIN v2.1 - Gerenciador</title>
+    <title>VIRTY ADMIN v2.2 - Gerenciador</title>
     <style>
         :root { --neon: #39FF14; --bg: #000; --red: #FF3131; --yellow: #FFD700; --blue: #007BFF; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
@@ -32,7 +32,7 @@
         .card-actions-virty { display: flex; flex-direction: column; gap: 6px; min-width: 95px; }
         .btn-action { width: 100%; padding: 7px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 0.65rem; text-transform: uppercase; }
 
-        /* Estilos do Modal de Edição */
+        /* Modal de Edição */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
         .modal-card { background: #0d0d0d; border: 2px solid var(--blue); border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; box-shadow: 0 0 20px rgba(0, 123, 255, 0.3); }
         .modal-card h2 { color: var(--blue); margin-top: 0; font-size: 1.2rem; text-transform: uppercase; text-align: center; }
@@ -74,7 +74,7 @@
     <!-- MODAL DE EDIÇÃO -->
     <div id="modal-editar" class="modal-overlay">
         <div class="modal-card">
-            <h2>✏️ Editar Morador</h2>
+            <h2>✏️ Editar / Gerenciar Morador</h2>
             <input type="hidden" id="edit-unidade-antiga">
             <input type="hidden" id="edit-fid">
             <input type="hidden" id="edit-foto">
@@ -90,6 +90,10 @@
             <div class="modal-field">
                 <label>CPF</label>
                 <input type="text" id="edit-cpf">
+            </div>
+            <div class="modal-field">
+                <label>SENHA DE ACESSO (6 DÍGITOS)</label>
+                <input type="text" id="edit-senha" maxlength="6">
             </div>
 
             <div class="modal-btns">
@@ -180,6 +184,7 @@
                 <span class="badge-unidade" style="color:var(--yellow)">CASA ${un}</span>
                 <h3>${d.nome}</h3>
                 <p><strong>CPF:</strong> ${d.cpf || '---'}</p>
+                <p style="color:var(--yellow)">🔑 Senha cadastrada</p>
             </div>
             <div class="card-actions-virty">
                 <button class="btn-action" style="background:var(--neon); color:#000;" onclick="aprovar('${un}', '${fId}')">APROVAR</button>
@@ -221,12 +226,44 @@
             row.querySelector('.badge-unidade').innerText = `CASA ${un}`;
             row.querySelector('h3').innerText = d.nome;
             row.querySelector('p').innerHTML = `<strong>CPF:</strong> ${d.cpf || '---'}`;
-            if (d.foto) {
-                const img = row.querySelector('.card-foto-virty');
-                img.src = d.foto;
-                img.style.display = 'block';
-            }
         }
+    }
+
+    function aprovar(un, fId) {
+        db.ref(`solicitacoes_cadastro/${un}/${fId}`).once('value', s => {
+            if(!s.exists()) return;
+            const dados = s.val();
+
+            db.ref(`moradores_validados/${un}`).once('value', vSnap => {
+                let cpfExiste = false;
+                if (vSnap.exists()) {
+                    vSnap.forEach(item => {
+                        if (item.val().cpf === dados.cpf) cpfExiste = true;
+                    });
+                }
+
+                if (cpfExiste) {
+                    alert(`⚠️ O CPF ${dados.cpf} já está ativo na CASA ${un}! A solicitação duplicada foi descartada.`);
+                    db.ref(`solicitacoes_cadastro/${un}/${fId}`).remove();
+                    const el = document.getElementById(`pend-${un}-${fId}`);
+                    if (el) el.remove();
+                    return;
+                }
+
+                db.ref(`moradores_validados/${un}/${fId}`).set({
+                    nome: dados.nome, 
+                    cpf: dados.cpf, 
+                    foto: dados.foto,
+                    senha: dados.senha,
+                    ts: Date.now()
+                }).then(() => {
+                    db.ref(`solicitacoes_cadastro/${un}/${fId}`).remove();
+                    const el = document.getElementById(`pend-${un}-${fId}`);
+                    if (el) el.remove();
+                    alert("✅ Morador aprovado com sucesso!");
+                });
+            });
+        });
     }
 
     function iniciarEdicao(un, fId) {
@@ -246,6 +283,7 @@
             document.getElementById('edit-fid').value = fId;
             document.getElementById('edit-nome').value = d.nome || '';
             document.getElementById('edit-cpf').value = d.cpf || '';
+            document.getElementById('edit-senha').value = d.senha || '';
             document.getElementById('edit-foto').value = d.foto || '';
 
             document.getElementById('modal-editar').style.display = 'flex';
@@ -258,14 +296,15 @@
         const fId = document.getElementById('edit-fid').value;
         const nome = document.getElementById('edit-nome').value.trim();
         const cpf = document.getElementById('edit-cpf').value.trim();
+        const senha = document.getElementById('edit-senha').value.trim();
         const foto = document.getElementById('edit-foto').value;
 
-        if (!unNova || !nome || !cpf) {
-            alert("Preencha todos os campos para salvar.");
+        if (!unNova || !nome || !cpf || !senha) {
+            alert("Preencha todos os campos, incluindo a senha de 6 dígitos.");
             return;
         }
 
-        const dadosAtualizados = { nome, cpf, foto, ts: Date.now() };
+        const dadosAtualizados = { nome, cpf, senha, foto, ts: Date.now() };
 
         if (unAntiga !== unNova) {
             const caminhoAntigo = fId ? `moradores_validados/${unAntiga}/${fId}` : `moradores_validados/${unAntiga}`;
@@ -276,13 +315,13 @@
                 const elAntigo = document.getElementById(`cad-${unAntiga}-${fId || 'dir'}`);
                 if (elAntigo) elAntigo.remove();
                 fecharModalEdicao();
-                alert("✅ Cadastro atualizado e movido para a nova unidade!");
+                alert("✅ Cadastro atualizado e transferido!");
             });
         } else {
             const caminho = fId ? `moradores_validados/${unNova}/${fId}` : `moradores_validados/${unNova}`;
             db.ref(caminho).update(dadosAtualizados).then(() => {
                 fecharModalEdicao();
-                alert("✅ Alterações salvas com sucesso!");
+                alert("✅ Dados salvos com sucesso!");
             });
         }
     }
@@ -297,19 +336,6 @@
         rows.forEach(r => {
             const text = r.getAttribute('data-search');
             r.style.display = text.includes(t) ? 'flex' : 'none';
-        });
-    }
-
-    function aprovar(un, fId) {
-        db.ref(`solicitacoes_cadastro/${un}/${fId}`).once('value', s => {
-            if(!s.exists()) return;
-            const dados = s.val();
-            db.ref(`moradores_validados/${un}/${fId}`).set({
-                nome: dados.nome, cpf: dados.cpf, foto: dados.foto, ts: Date.now()
-            }).then(() => {
-                db.ref(`solicitacoes_cadastro/${un}/${fId}`).remove();
-                document.getElementById(`pend-${un}-${fId}`).remove();
-            });
         });
     }
 
@@ -336,7 +362,7 @@
                         db.ref(`historico/${un}`).remove();
                         db.ref(`bloqueados/${un}`).remove();
                         db.ref(`solicitacoes_cadastro/${un}`).remove();
-                        alert(`Acesso revogado. Como este era o último morador, as listas de Histórico e Bloqueados da Unidade ${un} foram redefinidas.`);
+                        alert(`Acesso revogado. Como este era o último morador, o histórico da Unidade ${un} foi redefinido.`);
                     } else {
                         alert("Acesso revogado do integrante.");
                     }
