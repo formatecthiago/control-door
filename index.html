@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v2.9.0 - Preload & AI</title>
+    <title>VIRTY VISITANTE v3.0.0 - IA & UX Ajustada</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -74,7 +74,7 @@
             margin: auto 0;
         }
 
-        /* BOTÃO PRE-LOAD TRANSLÚCIDO DINÂMICO */
+        /* BOTÃO PRE-LOADER TRANSLÚCIDO DINÂMICO */
         .btn-preload {
             width: 100%;
             max-width: 300px;
@@ -101,7 +101,7 @@
             width: 0%;
             background: rgba(57, 255, 20, 0.25);
             border-right: 3px solid var(--neon);
-            transition: width 0.2s linear;
+            transition: width 0.3s ease-out;
         }
 
         .btn-preload-text {
@@ -288,7 +288,7 @@
             box-shadow: 0 0 15px rgba(57,255,20,0.4);
         }
     </style>
-    <!-- CARREGAMENTO LEVE DO MEDIAPIPE FACE DETECTION (GOOGLE CDN CDNJS) -->
+    <!-- MEDIAPIPE FACE DETECTION -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
 </head>
@@ -300,7 +300,7 @@
         <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
-    <!-- TELA 1: BOAS-VINDAS COM PRELOADER NO BOTÃO -->
+    <!-- TELA 1: BOAS-VINDAS COM PRELOADER APENAS DE IA -->
     <div id="s-boasvindas" class="screen active" style="justify-content: center; gap: 50px; padding-bottom: 5vh;">
         <div class="virty-header">
             <h1>VIRTY ACCESS DOOR</h1>
@@ -320,7 +320,7 @@
     <div id="s-camera" class="screen">
         <div class="virty-header">
             <h2 class="texto-neon-verde" style="font-size: 1.5rem; margin: 0;">RECONHECIMENTO VISUAL</h2>
-            <div style="color: var(--gray); font-size: 0.8rem; letter-spacing: 1px; margin-top: 4px;">POSICIONE O ROSTO DENTRO DO OVAL</div>
+            <div style="color: var(--gray); font-size: 0.8rem; letter-spacing: 1px; margin-top: 4px;">CENTRALIZE SEU ROSTO DE FRENTE</div>
         </div>
         <div class="conteudo-central">
             <div class="area-camera-virty">
@@ -414,7 +414,6 @@
     let cacheAudioUrl = ""; 
     let faceDetectorMediaPipe = null;
 
-    // FALA SINTETIZADA REDUZIDA
     function falarInstrucaoInicio() {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
@@ -433,7 +432,6 @@
         }
     }
 
-    // ATUALIZADOR DO BOTÃO PRELOAD TRANSLÚCIDO
     function atualizarProgressoPreload(porcentagem, texto) {
         const fill = document.getElementById('btn-fill');
         const txt = document.getElementById('btn-preload-txt');
@@ -450,48 +448,26 @@
         }
     }
 
-    // EXECUÇÃO DO CARREGAMENTO REAL DE SEGUNDO PLANO
+    // CARREGAMENTO APENAS DOS ARQUIVOS DE IA NO PRELOAD (SEM PEDIR CÂMERA)
     window.addEventListener('DOMContentLoaded', async () => {
-        atualizarProgressoPreload(15, "CARREGANDO SISTEMA...");
+        atualizarProgressoPreload(25, "CARREGANDO SISTEMA...");
 
         try {
-            // Inicializa a IA do MediaPipe em segundo plano
             if (typeof FaceDetection !== 'undefined') {
                 faceDetectorMediaPipe = new FaceDetection({
                     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
                 });
-                faceDetectorMediaPipe.setOptions({ model: 'short', minDetectionConfidence: 0.65 });
+                faceDetectorMediaPipe.setOptions({ model: 'short', minDetectionConfidence: 0.75 });
                 faceDetectorMediaPipe.onResults(processarResultadosFaciais);
                 await faceDetectorMediaPipe.initialize();
-                atualizarProgressoPreload(60, "PREPARANDO CÂMERA...");
+                atualizarProgressoPreload(100, "PRONTO!");
+            } else {
+                atualizarProgressoPreload(100, "PRONTO!");
             }
         } catch (e) {
-            atualizarProgressoPreload(60, "PREPARANDO CÂMERA...");
+            atualizarProgressoPreload(100, "ACEITAR E INICIAR");
         }
-
-        // Pre-aquecimento da câmera
-        preaquecerCamera();
     });
-
-    async function preaquecerCamera() {
-        const video = document.getElementById('v-vis');
-        try {
-            const mode = usarLenteFrontal ? "user" : "environment";
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: mode, width: { ideal: 640 }, height: { ideal: 480 } },
-                audio: false
-            });
-            streamCameraAtiva = stream;
-            video.srcObject = stream;
-            video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "none";
-            
-            video.onloadeddata = () => {
-                atualizarProgressoPreload(100, "PRONTO!");
-            };
-        } catch(e) {
-            atualizarProgressoPreload(100, "INICIAR (PERMISSÃO)");
-        }
-    }
 
     function gerarFingerprintDispositivo() {
         const comp = [screen.width, screen.height, navigator.hardwareConcurrency || 4, navigator.language];
@@ -516,13 +492,11 @@
         if (id !== 's-camera' && id !== 's-boasvindas') encerrarStreamCamera();
     }
 
-    function avancarParaCamera() {
+    // DISPARO DA CÂMERA VINCULADO AO TOQUE ATIVO DO VISITANTE
+    async function avancarParaCamera() {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         mudarTela('s-camera');
-        
-        const video = document.getElementById('v-vis');
-        if (video && video.paused) video.play().catch(() => {});
-        iniciarLoopAIFacial();
+        await inicializarCapturaVideo();
     }
 
     function encerrarStreamCamera() {
@@ -530,14 +504,39 @@
             try { streamCameraAtiva.getTracks().forEach(track => track.stop()); } catch(e){}
             streamCameraAtiva = null;
         }
+        if (loopIAInterval) { clearInterval(loopIAInterval); loopIAInterval = null; }
+    }
+
+    async function inicializarCapturaVideo() {
+        encerrarStreamCamera();
+        const video = document.getElementById('v-vis');
+        if (!video) return;
+
+        try {
+            const mode = usarLenteFrontal ? "user" : "environment";
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: mode, width: { ideal: 640 }, height: { ideal: 480 } },
+                audio: false
+            });
+            streamCameraAtiva = stream;
+            video.srcObject = stream;
+            video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "none";
+            
+            video.onloadeddata = () => {
+                video.play().then(() => {
+                    iniciarLoopAIFacial();
+                }).catch(() => {});
+            };
+        } catch (err) {
+            virtyAlert("É necessário permitir a câmera para continuar.");
+        }
     }
 
     function alternarLenteCamera() {
         usarLenteFrontal = !usarLenteFrontal;
-        preaquecerCamera();
+        inicializarCapturaVideo();
     }
 
-    /* PROCESSAMENTO DA IA EM TEMPO REAL SOBRE O VÍDEO */
     let loopIAInterval = null;
     function iniciarLoopAIFacial() {
         const video = document.getElementById('v-vis');
@@ -552,6 +551,7 @@
         }, 200);
     }
 
+    /* PROCESSAMENTO COM TRAVA DE CENTRALIZAÇÃO E SIMETRIA ANATÔMICA */
     function processarResultadosFaciais(results) {
         const statusTxt = document.getElementById('status-foto');
         const btnSelfie = document.getElementById('btn-bater-selfie');
@@ -560,14 +560,30 @@
         if (results.detections && results.detections.length > 0) {
             const det = results.detections[0];
             const box = det.boundingBox;
+            const landmarks = det.landmarks; // Pontos do rosto: Olho D, Olho E, Nariz, Boca
 
-            // Posição centralizada das feições
-            if (box.xCenter > 0.25 && box.xCenter < 0.75 && box.yCenter > 0.20 && box.yCenter < 0.80) {
-                elipse.classList.add('encaixado');
-                statusTxt.innerText = "ROSTO DETECTADO!";
-                statusTxt.className = "texto-neon-verde";
-                btnSelfie.disabled = false;
-                return;
+            // 1. Trava de Centralização Restrita dentro da Elipse
+            const centralizado = (box.xCenter > 0.35 && box.xCenter < 0.65) && (box.yCenter > 0.25 && box.yCenter < 0.75);
+
+            if (centralizado && landmarks && landmarks.length >= 4) {
+                const olhoE = landmarks[0];
+                const olhoD = landmarks[1];
+                const nariz = landmarks[2];
+
+                // 2. Trava de Simetria para Rosto De Lado/Perfil
+                const distOlhoENariz = Math.abs(nariz.x - olhoE.x);
+                const distOlhoDNariz = Math.abs(nariz.x - olhoD.x);
+                const totalDist = distOlhoENariz + distOlhoDNariz;
+                const proporcaoNariz = distOlhoENariz / (totalDist || 1);
+
+                // Se o rosto estiver retinho de frente, o nariz fica entre 42% e 58% do centro dos dois olhos
+                if (proporcaoNariz >= 0.42 && proporcaoNariz <= 0.58) {
+                    elipse.classList.add('encaixado');
+                    statusTxt.innerText = "ROSTO DETECTADO!";
+                    statusTxt.className = "texto-neon-verde";
+                    btnSelfie.disabled = false;
+                    return;
+                }
             }
         }
 
@@ -613,7 +629,12 @@
             }
 
             chamadaIdGlobal = un;
-            db.ref('chamadas_ativas/' + un).set({
+            const refChamada = db.ref('chamadas_ativas/' + un);
+
+            // DESCONEXÃO AUTOMÁTICA NO FIREBASE SE O VISITANTE FECHAR A PÁGINA
+            refChamada.onDisconnect().remove();
+
+            refChamada.set({
                 v_id: meu_fingerprint,
                 foto: visitanteFotoBase64,
                 texto: txt || "Visitante na porta",
@@ -633,6 +654,7 @@
         tempoRestanteChamada = 90;
         const timerElem = document.getElementById('timer-chamada');
         const statusElem = document.getElementById('virty-status-tempo-real');
+        statusElem.innerText = ""; // Garante status limpo no início
 
         if (timerRegressivoInterval) clearInterval(timerRegressivoInterval);
         timerRegressivoInterval = setInterval(() => {
@@ -650,12 +672,15 @@
             const data = snap.val();
             if (!data) return;
 
+            // TRAVA RÍGIDA: MENSAGEM SÓ APARECE SE O STATUS FOR EXPLICITAMENTE GRAVANDO OU ESCREVENDO
             if (data.status === 'escrevendo') {
                 statusElem.innerText = "MORADOR DIGITANDO...";
                 statusElem.className = "texto-neon-azul pulsar";
             } else if (data.status === 'gravando') {
                 statusElem.innerText = "MORADOR GRAVANDO ÁUDIO...";
                 statusElem.className = "texto-neon-vermelho pulsar";
+            } else if (data.status === 'chamando') {
+                statusElem.innerText = "";
             } else if (data.status === 'liberado') {
                 exibirResultadoFinal("ENTRADA AUTORIZADA!", "Acesso liberado. Seja bem-vindo!", false);
             } else if (data.status === 'recusado') {
@@ -691,6 +716,7 @@
 
     function cancelarInterfone() {
         if (chamadaIdGlobal) {
+            db.ref('chamadas_ativas/' + chamadaIdGlobal).onDisconnect().cancel();
             db.ref('chamadas_ativas/' + chamadaIdGlobal).remove();
         }
         resetarFluxoVisitante();
@@ -720,8 +746,11 @@
         document.getElementById('v-texto').value = "";
 
         mudarTela('s-boasvindas');
-        preaquecerCamera();
     }
+
+    // LIMPEZA IMEDIATA DA CHAMADA SE O VISITANTE FECHAR O NAVEGADOR OU SAIR
+    window.addEventListener('pagehide', () => { if (chamadaIdGlobal) cancelarInterfone(); });
+    window.addEventListener('beforeunload', () => { if (chamadaIdGlobal) cancelarInterfone(); });
 </script>
 </body>
 </html>
