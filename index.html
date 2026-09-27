@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v2.6.3 - Solução Definitiva</title>
+    <title>VIRTY VISITANTE v2.7.0 - IA Anti-Fraud</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -33,11 +33,11 @@
             justify-content: space-between; 
             align-items: center; 
             box-sizing: border-box; 
-            padding: 5vh 5% 15vh 5%; 
+            padding: 5vh 5% 12vh 5%; 
         }
         .active { display: flex !important; }
 
-        .virty-header { text-align: center; width: 100%; }
+        .virty-header { text-align: center; width: 100%; z-index: 20; }
         .virty-header h1 {
             color: var(--neon);
             font-size: 2.2rem;
@@ -62,6 +62,7 @@
             text-align: center;
             gap: 15px;
             margin: auto 0;
+            position: relative;
         }
 
         .btn-ativar-container {
@@ -103,6 +104,7 @@
             align-items: center;
             justify-content: flex-end;
             margin-top: auto;
+            z-index: 20;
         }
         
         input { 
@@ -148,54 +150,64 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            gap: 15px; 
             width: 100%; 
+            position: relative;
         }
+
         .video-box { 
-            width: 240px; 
-            height: 280px; 
+            width: 270px; 
+            height: 330px; 
             border-radius: 24px; 
             overflow: hidden; 
-            border: 2px solid #222; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.9); 
+            box-shadow: 0 0 25px rgba(0,0,0,0.95); 
             background:#000; 
             position:relative; 
         }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
         
-        .moldura-oval {
+        /* MÁSCARA SVG QUE ESCURECE O ENTORNO E MANTÉM APENAS O OVAL TRANSPARENTE */
+        .svg-mascara-overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 170px;
-            height: 220px;
-            border-radius: 50%;
-            border: 3px dashed var(--red);
-            box-shadow: 0 0 15px rgba(255, 49, 49, 0.5), inset 0 0 15px rgba(255, 49, 49, 0.3);
-            transition: all 0.3s ease;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
             z-index: 10;
         }
 
-        .moldura-oval.encaixado {
-            border: 4px solid var(--neon);
-            box-shadow: 0 0 25px rgba(57, 255, 20, 0.8), inset 0 0 20px rgba(57, 255, 20, 0.4);
+        /* Moldura dinamicamente alterada por IA */
+        .elipse-guia {
+            fill: none;
+            stroke: var(--red);
+            stroke-width: 4;
+            stroke-dasharray: 8, 4;
+            transition: all 0.3s ease;
+        }
+
+        .elipse-guia.validado {
+            stroke: var(--neon);
+            stroke-dasharray: none;
+            filter: drop-shadow(0px 0px 8px var(--neon));
         }
 
         .btn-inverter { 
-            background: #111; 
+            position: absolute;
+            right: 5px;
+            top: 10px;
+            background: rgba(0,0,0,0.6); 
             border: 2px solid var(--neon); 
-            width: 50px; 
-            height: 50px; 
+            width: 46px; 
+            height: 46px; 
             border-radius: 50%; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             cursor: pointer; 
+            z-index: 15;
         }
-        .btn-inverter svg { width: 24px; height: 24px; fill: var(--neon); }
+        .btn-inverter svg { width: 22px; height: 22px; fill: var(--neon); }
 
         .virty-popup { 
             display: none; 
@@ -246,6 +258,8 @@
             box-shadow: 0 0 15px rgba(57,255,20,0.4);
         }
     </style>
+    <!-- BIBLIOTECA DE VISÃO COMPUTACIONAL / RECONHECIMENTO FACIAL LEVE -->
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
 
@@ -255,6 +269,7 @@
         <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
+    <!-- TELA BOAS-VINDAS -->
     <div id="s-boasvindas" class="screen active" style="justify-content: center; gap: 50px; padding-bottom: 5vh;">
         <div class="virty-header">
             <h1>VIRTY ACCESS DOOR</h1>
@@ -266,30 +281,45 @@
         </div>
     </div>
 
+    <!-- TELA CAMERA COM MÁSCARA OVAL E IA -->
     <div id="s-camera" class="screen">
         <div class="virty-header">
-            <h2 class="texto-neon-verde" style="font-size: 1.6rem; margin: 0;">RECONHECIMENTO VISUAL</h2>
-            <div style="color: var(--gray); font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">ENCAIXE SEU ROSTO DENTRO DA MOLDURA</div>
+            <h2 class="texto-neon-verde" style="font-size: 1.5rem; margin: 0;">RECONHECIMENTO VISUAL</h2>
+            <div style="color: var(--gray); font-size: 0.8rem; letter-spacing: 1px; margin-top: 4px;">POSICIONE OLHOS, NARIZ E BOCA NA MOLDURA</div>
         </div>
         <div class="conteudo-central">
             <div class="area-camera-virty">
-                <div style="width:50px;"></div> 
                 <div class="video-box">
                     <video id="v-vis" autoplay playsinline muted webkit-playsinline></video>
                     <canvas id="c-vis"></canvas>
-                    <div id="moldura-oval" class="moldura-oval"></div>
+                    
+                    <!-- SVG MÁSCARA: ESCURECE ENTORNO E DEIXA OVAL VAZADO -->
+                    <svg class="svg-mascara-overlay" viewBox="0 0 270 330">
+                        <defs>
+                            <mask id="mascara-corte">
+                                <rect width="270" height="330" fill="white" />
+                                <ellipse cx="135" cy="165" rx="85" ry="120" fill="black" />
+                            </mask>
+                        </defs>
+                        <!-- Fundo escuro cobrindo fora do oval -->
+                        <rect width="270" height="330" fill="rgba(0,0,0,0.85)" mask="url(#mascara-corte)" />
+                        <!-- Borda do Oval que altera a cor por IA -->
+                        <ellipse id="elipse-guia" class="elipse-guia" cx="135" cy="165" rx="85" ry="120" />
+                    </svg>
+
+                    <button class="btn-inverter" onclick="alternarLenteCamera()">
+                        <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
+                    </button>
                 </div>
-                <button class="btn-inverter" onclick="alternarLenteCamera()">
-                    <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
-                </button>
             </div>
-            <div id="status-foto" class="texto-neon-vermelho" style="font-size:1rem; font-weight:bold; height:24px;">POSICIONE O ROSTO NO OVAL</div>
+            <div id="status-foto" class="texto-neon-vermelho" style="font-size:0.95rem; font-weight:bold; height:24px;">POSICIONE O ROSTO NO OVAL</div>
         </div>
         <div class="rodape-tela">
-            <button id="btn-bater-selfie" class="btn" style="background:#fff; color:#000; margin-bottom: 12px;" onclick="capturarSelfieAutomatica()" disabled>📸 BATER A SELFIE</button>
+            <button id="btn-bater-selfie" class="btn" style="background:#fff; color:#000; margin-bottom: 12px;" onclick="capturarSelfieManual()" disabled>📸 BATER A SELFIE</button>
         </div>
     </div>
 
+    <!-- TELA DIGITAÇÃO DA UNIDADE -->
     <div id="s-inicio" class="screen">
         <div class="virty-header">
             <h2 class="texto-neon-verde" style="font-size: 1.6rem; margin: 0;">INFORMAÇÕES DE ACESSO</h2>
@@ -305,6 +335,7 @@
         <div style="height: 1px;"></div> 
     </div>
 
+    <!-- TELA CHAMANDO -->
     <div id="s-chamando" class="screen">
         <div></div> 
         <div class="conteudo-central">
@@ -317,6 +348,7 @@
         </div>
     </div>
 
+    <!-- TELA FEEDBACK / RECADO -->
     <div id="s-feedback" class="screen">
         <div></div>
         <div class="conteudo-central">
@@ -349,6 +381,18 @@
     let tempoRestanteChamada = 90;
     let cacheAudioUrl = ""; 
     let loopValidacaoFacial = null;
+    let modelosCarregados = false;
+
+    function carregarModelosIA() {
+        if (modelosCarregados) return;
+        const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+        Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+            faceapi.nets.faceLandmark64Net.loadFromUri(MODEL_URL)
+        ]).then(() => {
+            modelosCarregados = true;
+        }).catch(() => {});
+    }
 
     function executarBoasVindasVoz() {
         if ('speechSynthesis' in window) {
@@ -375,6 +419,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+        carregarModelosIA();
         executarBoasVindasVoz();
         const desbloquearAudioTouch = () => {
             executarBoasVindasVoz();
@@ -383,6 +428,12 @@
         };
         document.addEventListener('touchstart', desbloquearAudioTouch, { once: true });
         document.addEventListener('click', desbloquearAudioTouch, { once: true });
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && document.getElementById('s-camera').classList.contains('active')) {
+            inicializarCapturaVideo();
+        }
     });
 
     function gerarFingerprintDispositivo() {
@@ -441,9 +492,9 @@
             streamCameraAtiva = stream;
             video.srcObject = stream;
             video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "none";
-            await video.play().catch(() => {});
             
-            iniciarSimulacaoValidacaoFacial();
+            await video.play().catch(() => {});
+            iniciarValidacaoFacialAnatomica();
         } catch (err) {
             virtyAlert("Permissão da câmera é necessária para prosseguir.");
         }
@@ -454,31 +505,46 @@
         inicializarCapturaVideo();
     }
 
-    function iniciarSimulacaoValidacaoFacial() {
+    function iniciarValidacaoFacialAnatomica() {
         const statusTxt = document.getElementById('status-foto');
         const btnSelfie = document.getElementById('btn-bater-selfie');
-        const moldura = document.getElementById('moldura-oval');
-        
-        let tempoPresenca = 0;
+        const elipse = document.getElementById('elipse-guia');
+        const video = document.getElementById('v-vis');
+
         if(loopValidacaoFacial) clearInterval(loopValidacaoFacial);
 
-        loopValidacaoFacial = setInterval(() => {
-            tempoPresenca += 500;
-            if (tempoPresenca >= 1000) {
-                moldura.classList.add('encaixado');
-                statusTxt.innerText = "ROSTO ENCAIXADO!";
-                statusTxt.className = "texto-neon-verde";
-                btnSelfie.disabled = false;
-            } else {
-                moldura.classList.remove('encaixado');
-                statusTxt.innerText = "POSICIONE O ROSTO NO OVAL";
-                statusTxt.className = "texto-neon-vermelho";
-                btnSelfie.disabled = true;
-            }
-        }, 500);
+        loopValidacaoFacial = setInterval(async () => {
+            if (!video || video.paused || video.ended || video.readyState !== 4) return;
+
+            try {
+                if (modelosCarregados && typeof faceapi !== 'undefined') {
+                    const detectado = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })).withFaceLandmarks();
+
+                    if (detectado) {
+                        const landmarks = detectado.landmarks;
+                        const olhos = landmarks.getLeftEye().length > 0 && landmarks.getRightEye().length > 0;
+                        const nariz = landmarks.getNose().length > 0;
+                        const boca = landmarks.getMouth().length > 0;
+
+                        if (olhos && nariz && boca) {
+                            elipse.classList.add('validado');
+                            statusTxt.innerText = "ROSTO DETECTADO!";
+                            statusTxt.className = "texto-neon-verde";
+                            btnSelfie.disabled = false;
+                            return;
+                        }
+                    }
+                }
+            } catch(e) {}
+
+            elipse.classList.remove('validado');
+            statusTxt.innerText = "ENCAIXE O ROSTO NO OVAL";
+            statusTxt.className = "texto-neon-vermelho";
+            btnSelfie.disabled = true;
+        }, 300);
     }
 
-    function capturarSelfieAutomatica() {
+    function capturarSelfieManual() {
         const v = document.getElementById('v-vis');
         const c = document.getElementById('c-vis');
         if (!v || !c || v.videoWidth === 0) return;
