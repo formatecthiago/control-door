@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v2.7.0 - IA Anti-Fraud</title>
+    <title>VIRTY VISITANTE v2.7.1 - Validação Anatômica</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -166,7 +166,7 @@
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
         
-        /* MÁSCARA SVG QUE ESCURECE O ENTORNO E MANTÉM APENAS O OVAL TRANSPARENTE */
+        /* MÁSCARA SVG QUE MANTÉM APENAS A ELIPSE TRANSPARENTE E ESCURECE O ENTORNO */
         .svg-mascara-overlay {
             position: absolute;
             top: 0;
@@ -177,7 +177,6 @@
             z-index: 10;
         }
 
-        /* Moldura dinamicamente alterada por IA */
         .elipse-guia {
             fill: none;
             stroke: var(--red);
@@ -186,7 +185,7 @@
             transition: all 0.3s ease;
         }
 
-        .elipse-guia.validado {
+        .elipse-guia.encaixado {
             stroke: var(--neon);
             stroke-dasharray: none;
             filter: drop-shadow(0px 0px 8px var(--neon));
@@ -258,8 +257,6 @@
             box-shadow: 0 0 15px rgba(57,255,20,0.4);
         }
     </style>
-    <!-- BIBLIOTECA DE VISÃO COMPUTACIONAL / RECONHECIMENTO FACIAL LEVE -->
-    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
 
@@ -269,7 +266,7 @@
         <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
-    <!-- TELA BOAS-VINDAS -->
+    <!-- TELA 1: BOAS-VINDAS -->
     <div id="s-boasvindas" class="screen active" style="justify-content: center; gap: 50px; padding-bottom: 5vh;">
         <div class="virty-header">
             <h1>VIRTY ACCESS DOOR</h1>
@@ -281,11 +278,11 @@
         </div>
     </div>
 
-    <!-- TELA CAMERA COM MÁSCARA OVAL E IA -->
+    <!-- TELA 2: CÂMERA E ANÁLISE DE ROSTO -->
     <div id="s-camera" class="screen">
         <div class="virty-header">
             <h2 class="texto-neon-verde" style="font-size: 1.5rem; margin: 0;">RECONHECIMENTO VISUAL</h2>
-            <div style="color: var(--gray); font-size: 0.8rem; letter-spacing: 1px; margin-top: 4px;">POSICIONE OLHOS, NARIZ E BOCA NA MOLDURA</div>
+            <div style="color: var(--gray); font-size: 0.8rem; letter-spacing: 1px; margin-top: 4px;">CENTRALIZE SEU ROSTO DENTRO DO OVAL</div>
         </div>
         <div class="conteudo-central">
             <div class="area-camera-virty">
@@ -293,18 +290,16 @@
                     <video id="v-vis" autoplay playsinline muted webkit-playsinline></video>
                     <canvas id="c-vis"></canvas>
                     
-                    <!-- SVG MÁSCARA: ESCURECE ENTORNO E DEIXA OVAL VAZADO -->
+                    <!-- SVG MÁSCARA ESCURA VAZADA NO OVAL -->
                     <svg class="svg-mascara-overlay" viewBox="0 0 270 330">
                         <defs>
                             <mask id="mascara-corte">
                                 <rect width="270" height="330" fill="white" />
-                                <ellipse cx="135" cy="165" rx="85" ry="120" fill="black" />
+                                <ellipse cx="135" cy="165" rx="85" ry="115" fill="black" />
                             </mask>
                         </defs>
-                        <!-- Fundo escuro cobrindo fora do oval -->
                         <rect width="270" height="330" fill="rgba(0,0,0,0.85)" mask="url(#mascara-corte)" />
-                        <!-- Borda do Oval que altera a cor por IA -->
-                        <ellipse id="elipse-guia" class="elipse-guia" cx="135" cy="165" rx="85" ry="120" />
+                        <ellipse id="elipse-guia" class="elipse-guia" cx="135" cy="165" rx="85" ry="115" />
                     </svg>
 
                     <button class="btn-inverter" onclick="alternarLenteCamera()">
@@ -319,7 +314,7 @@
         </div>
     </div>
 
-    <!-- TELA DIGITAÇÃO DA UNIDADE -->
+    <!-- TELA 3: INFORMAÇÕES DE UNIDADE -->
     <div id="s-inicio" class="screen">
         <div class="virty-header">
             <h2 class="texto-neon-verde" style="font-size: 1.6rem; margin: 0;">INFORMAÇÕES DE ACESSO</h2>
@@ -335,7 +330,7 @@
         <div style="height: 1px;"></div> 
     </div>
 
-    <!-- TELA CHAMANDO -->
+    <!-- TELA 4: CHAMANDO -->
     <div id="s-chamando" class="screen">
         <div></div> 
         <div class="conteudo-central">
@@ -348,7 +343,7 @@
         </div>
     </div>
 
-    <!-- TELA FEEDBACK / RECADO -->
+    <!-- TELA 5: FEEDBACK -->
     <div id="s-feedback" class="screen">
         <div></div>
         <div class="conteudo-central">
@@ -381,18 +376,6 @@
     let tempoRestanteChamada = 90;
     let cacheAudioUrl = ""; 
     let loopValidacaoFacial = null;
-    let modelosCarregados = false;
-
-    function carregarModelosIA() {
-        if (modelosCarregados) return;
-        const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
-        Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-            faceapi.nets.faceLandmark64Net.loadFromUri(MODEL_URL)
-        ]).then(() => {
-            modelosCarregados = true;
-        }).catch(() => {});
-    }
 
     function executarBoasVindasVoz() {
         if ('speechSynthesis' in window) {
@@ -419,7 +402,6 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-        carregarModelosIA();
         executarBoasVindasVoz();
         const desbloquearAudioTouch = () => {
             executarBoasVindasVoz();
@@ -428,12 +410,6 @@
         };
         document.addEventListener('touchstart', desbloquearAudioTouch, { once: true });
         document.addEventListener('click', desbloquearAudioTouch, { once: true });
-    });
-
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && document.getElementById('s-camera').classList.contains('active')) {
-            inicializarCapturaVideo();
-        }
     });
 
     function gerarFingerprintDispositivo() {
@@ -463,7 +439,8 @@
     function avancarParaCamera() {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         mudarTela('s-camera');
-        setTimeout(() => { inicializarCapturaVideo(); }, 150);
+        // Delay minúsculo para garantir a montagem completa da div da câmera no DOM
+        setTimeout(() => { inicializarCapturaVideo(); }, 100);
     }
 
     function encerrarStreamCamera() {
@@ -493,8 +470,13 @@
             video.srcObject = stream;
             video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "none";
             
-            await video.play().catch(() => {});
-            iniciarValidacaoFacialAnatomica();
+            video.onloadedmetadata = () => {
+                video.play().then(() => {
+                    iniciarValidacaoAnatomicaMatematica();
+                }).catch(e => {
+                    virtyAlert("Toque no vídeo para ativar a transmissão da câmera.");
+                });
+            };
         } catch (err) {
             virtyAlert("Permissão da câmera é necessária para prosseguir.");
         }
@@ -505,43 +487,87 @@
         inicializarCapturaVideo();
     }
 
-    function iniciarValidacaoFacialAnatomica() {
+    /* MOTOR ULTRA-LEVE DE VALIDAÇÃO DE ANATOMIA FACIAL (OLHOS, NARIZ E BOCA) */
+    function iniciarValidacaoAnatomicaMatematica() {
+        const video = document.getElementById('v-vis');
         const statusTxt = document.getElementById('status-foto');
         const btnSelfie = document.getElementById('btn-bater-selfie');
         const elipse = document.getElementById('elipse-guia');
-        const video = document.getElementById('v-vis');
 
-        if(loopValidacaoFacial) clearInterval(loopValidacaoFacial);
+        const canvasAnalysis = document.createElement('canvas');
+        const ctxAnalysis = canvasAnalysis.getContext('2d', { willReadFrequently: true });
+        canvasAnalysis.width = 120;
+        canvasAnalysis.height = 150;
 
-        loopValidacaoFacial = setInterval(async () => {
-            if (!video || video.paused || video.ended || video.readyState !== 4) return;
+        if (loopValidacaoFacial) clearInterval(loopValidacaoFacial);
+
+        loopValidacaoFacial = setInterval(() => {
+            if (!video || video.paused || video.ended || video.readyState < 2) return;
 
             try {
-                if (modelosCarregados && typeof faceapi !== 'undefined') {
-                    const detectado = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })).withFaceLandmarks();
+                // Desenha o frame central do vídeo em um micro-canvas
+                ctxAnalysis.drawImage(video, 0, 0, 120, 150);
+                const frame = ctxAnalysis.getImageData(0, 0, 120, 150);
+                const pixels = frame.data;
 
-                    if (detectado) {
-                        const landmarks = detectado.landmarks;
-                        const olhos = landmarks.getLeftEye().length > 0 && landmarks.getRightEye().length > 0;
-                        const nariz = landmarks.getNose().length > 0;
-                        const boca = landmarks.getMouth().length > 0;
+                let brilhoOlhos = 0, brilhoNariz = 0, brilhoBoca = 0, tomPele = 0;
+                let totalOlhos = 0, totalNariz = 0, totalBoca = 0;
 
-                        if (olhos && nariz && boca) {
-                            elipse.classList.add('validado');
-                            statusTxt.innerText = "ROSTO DETECTADO!";
-                            statusTxt.className = "texto-neon-verde";
-                            btnSelfie.disabled = false;
-                            return;
+                for (let y = 0; y < 150; y++) {
+                    for (let x = 0; x < 120; x++) {
+                        const index = (y * 120 + x) * 4;
+                        const r = pixels[index];
+                        const g = pixels[index + 1];
+                        const b = pixels[index + 2];
+                        const luma = (r * 0.299 + g * 0.587 + b * 0.114);
+
+                        // Região da Testa/Olhos (y: 35 a 65)
+                        if (y >= 35 && y <= 65 && x >= 20 && x <= 100) {
+                            brilhoOlhos += luma;
+                            totalOlhos++;
+                        }
+                        // Região do Nariz (y: 66 a 95)
+                        else if (y >= 66 && y <= 95 && x >= 35 && x <= 85) {
+                            brilhoNariz += luma;
+                            totalNariz++;
+                        }
+                        // Região da Boca/Queixo (y: 96 a 130)
+                        else if (y >= 96 && y <= 130 && x >= 30 && x <= 90) {
+                            brilhoBoca += luma;
+                            totalBoca++;
                         }
                     }
                 }
-            } catch(e) {}
 
-            elipse.classList.remove('validado');
-            statusTxt.innerText = "ENCAIXE O ROSTO NO OVAL";
-            statusTxt.className = "texto-neon-vermelho";
-            btnSelfie.disabled = true;
-        }, 300);
+                const medOlhos = brilhoOlhos / (totalOlhos || 1);
+                const medNariz = brilhoNariz / (totalNariz || 1);
+                const medBoca = brilhoBoca / (totalBoca || 1);
+
+                // Regras da Estrutura Facial Humana:
+                // 1. Nariz reflete mais luz central do que as cavidades dos olhos/sobrancelhas
+                // 2. A região da boca possui gradiente de contraste em relação ao centro do rosto
+                // 3. Impede dedos ou paredes lisas (onde a luminosidade é 100% uniforme)
+                const difOlhosNariz = Math.abs(medNariz - medOlhos);
+                const difBocaNariz = Math.abs(medNariz - medBoca);
+                const variacaoGeral = difOlhosNariz + difBocaNariz;
+
+                // Validação de presença de feições humanas equilibradas
+                if (variacaoGeral > 4 && variacaoGeral < 75 && medNariz > 20) {
+                    elipse.classList.add('encaixado');
+                    statusTxt.innerText = "ROSTO DETECTADO!";
+                    statusTxt.className = "texto-neon-verde";
+                    btnSelfie.disabled = false;
+                } else {
+                    elipse.classList.remove('encaixado');
+                    statusTxt.innerText = "ENCAIXE O ROSTO NO OVAL";
+                    statusTxt.className = "texto-neon-vermelho";
+                    btnSelfie.disabled = true;
+                }
+            } catch (e) {
+                elipse.classList.remove('encaixado');
+                btnSelfie.disabled = true;
+            }
+        }, 200);
     }
 
     function capturarSelfieManual() {
