@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY MORADOR v2.1.0 - Nativo APK</title>
+    <title>VIRTY MORADOR v3.0.0 - Nativo APK</title>
     <meta name="theme-color" content="#39FF14">
     <style>
         :root {
@@ -53,8 +53,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.3s ease;
         }
-        .btn:disabled { background: #333 !important; color: #666 !important; cursor: not-allowed; }
+        .btn:disabled { background: #333 !important; color: #666 !important; cursor: not-allowed; opacity: 0.4; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; margin-bottom: 20px; }
         .controles-alerta { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
         .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 12px 20px; border-radius: 12px; cursor: pointer; font-size: 1.3rem; min-width: 65px; }
@@ -62,13 +63,17 @@
         .hist-card { background: var(--dark-card); border-radius: 16px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #161616; position: relative; }
         .foto-box { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
         .foto-hist { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; border: 1px solid var(--neon); }
-        .dots-row { position: absolute; top: -10px; left: 0; width: 100%; display: flex; justify-content: center; gap: 4px; z-index: 10; }
-        .dot { width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; box-shadow: 0 2px 4px #000; }
+        
+        /* LINHA COM AS 5 BOLINHAS (DOTS) INCLUINDO A AMARELA PARA ÁUDIO */
+        .dots-row { position: absolute; top: -10px; left: -5px; width: calc(100% + 10px); display: flex; justify-content: center; gap: 3px; z-index: 10; }
+        .dot { width: 16px; height: 16px; border-radius: 50%; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; box-shadow: 0 2px 4px #000; }
+        
         .switch-bloqueio { padding: 8px 14px; border-radius: 20px; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; text-transform: uppercase; }
         .status-bloqueado { background: var(--red); color: #fff; }
         .status-desbloqueado { background: var(--neon); color: #000; }
         .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; margin-bottom: 10px; font-weight: bold; font-size: 0.85rem; }
         .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
+        
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
         .wrapper-foto-chamada { position: relative; width: 220px; height: 220px; margin-bottom: 25px; }
         .foto-v { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
@@ -76,6 +81,7 @@
         .container-stream-box.mini-zoom-ativo { width: 155px; height: 155px; bottom: -20px; right: -25px; }
         .mini-stream { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--yellow); object-fit: cover; background: #000; box-shadow: 0 0 15px rgba(0,0,0,0.9); }
         .btn-toggle-zoom { position: absolute; top: -5px; right: -5px; background: var(--yellow); color: #000; border: 2px solid #000; border-radius: 50%; width: 32px; height: 32px; font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 101; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        
         #timer-regressivo { font-size: 3rem; color: var(--red); font-weight: bold; margin-bottom: 10px; }
         #container-digitar-texto { display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         #timer-flutuante-texto { font-size: 3.5rem; color: #fff; font-weight: bold; margin-bottom: 20px; }
@@ -86,38 +92,135 @@
         #texto-timer-voz { position: absolute; font-size: 2.2rem; font-weight: bold; color: #fff; }
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
         .btn-voz svg { width: 32px; height: 32px; fill: #000; pointer-events: none; }
-        .area-camera-virty { display: flex; align-items: center; justify-content: center; margin: 10px 0 15px; width: 100%; }
-        .video-box { width: 150px; height: 150px; border-radius: 50%; overflow: hidden; border: 3px solid var(--neon); background:#111; position:relative; }
+        
+        /* ÁREA DA CÂMERA E MÁSCARA FACIAL NO CADASTRO */
+        .area-camera-virty { display: flex; align-items: center; justify-content: center; margin: 10px 0 15px; width: 100%; position: relative; }
+        .video-box { width: 220px; height: 260px; border-radius: 20px; overflow: hidden; background:#111; position:relative; box-shadow: 0 0 20px rgba(0,0,0,0.9); }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
+        
+        .svg-mascara-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .elipse-guia {
+            fill: none;
+            stroke: var(--red);
+            stroke-width: 4;
+            stroke-dasharray: 6, 4;
+            transition: all 0.3s ease;
+        }
+
+        .elipse-guia.encaixado {
+            stroke: var(--neon);
+            stroke-dasharray: none;
+            filter: drop-shadow(0px 0px 8px var(--neon));
+        }
+
+        /* BOTÃO PRE-LOADER TRANSLÚCIDO DO MORADOR */
+        .btn-preload {
+            width: 100%;
+            max-width: 280px;
+            height: 60px;
+            background: #111;
+            border: 2px solid #333;
+            color: #666;
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            cursor: not-allowed;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+            margin: 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-preload-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: rgba(57, 255, 20, 0.25);
+            border-right: 3px solid var(--neon);
+            transition: width 0.3s ease-out;
+        }
+
+        .btn-preload-text { position: relative; z-index: 5; }
+
+        .btn-preload.pronto {
+            border-color: var(--neon);
+            color: var(--neon);
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+            animation: pulsarMorador 2s infinite;
+        }
+
+        .btn-preload.pronto .btn-preload-fill {
+            width: 100% !important;
+            background: rgba(57, 255, 20, 0.15);
+            border-right: none;
+        }
+
+        @keyframes pulsarMorador {
+            0% { transform: scale(1); box-shadow: 0 0 5px rgba(57,255,20,0.2); }
+            50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(57,255,20,0.6); }
+            100% { transform: scale(1); box-shadow: 0 0 5px rgba(57,255,20,0.2); }
+        }
+
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
         .leaving-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
         .link-login { color: var(--blue); text-align: center; font-size: 0.85rem; margin-top: 10px; cursor: pointer; font-weight: bold; text-decoration: underline; }
+        .texto-neon-vermelho { color: var(--red); font-weight: bold; font-size: 0.85rem; text-align: center; height: 20px; }
+        .texto-neon-verde { color: var(--neon); font-weight: bold; font-size: 0.85rem; text-align: center; height: 20px; }
     </style>
+    <!-- MEDIAPIPE FACE DETECTION -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
-    <div id="banner-permissoes" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; box-sizing: border-box; text-align: center;">
-        <div style="border: 2px solid var(--neon); padding: 40px 20px; border-radius: 15px; background: #0a0a0a; max-width: 400px; width: 100%;">
-            <span style="font-size: 50px;">⚠️</span>
-            <h1 style="color: var(--neon); font-family: sans-serif; font-size: 26px; margin-top: 20px; font-weight: bold; text-transform: uppercase;">Acesso Bloqueado</h1>
-            <p style="color: #ffffff; font-family: sans-serif; font-size: 18px; line-height: 1.6; margin: 25px 0;">Ative a permissão permanente de câmera para habilitar o aplicativo.</p>
-            <button id="btn-autorizar-sempre" style="background: var(--neon); color: #000000; border: none; padding: 16px 30px; font-size: 16px; font-weight: bold; border-radius: 30px; width: 100%; cursor: pointer; text-transform: uppercase;">
-                Configurar Agora
-            </button>
-        </div>
-    </div>
-
-    <!-- TELA DE CADASTRO -->
+    <!-- TELA DE CADASTRO COM PRELOADER E RECONHECIMENTO FACIAL -->
     <div id="s-cadastro" class="screen">
-        <h2 style="color:var(--neon); text-align:center; letter-spacing: 1px; margin: 0 0 10px 0;">CADASTRO MORADOR</h2>
+        <h2 style="color:var(--neon); text-align:center; letter-spacing: 1px; margin: 0 0 5px 0;">CADASTRO MORADOR</h2>
+        
         <div class="area-camera-virty">
             <div class="video-box">
-                <video id="v-cad" playsinline autoPlay muted></video>
+                <video id="v-cad" playsinline autoPlay muted webkit-playsinline></video>
                 <canvas id="c-cad"></canvas>
+                
+                <svg class="svg-mascara-overlay" viewBox="0 0 220 260">
+                    <defs>
+                        <mask id="mascara-corte-m">
+                            <rect width="220" height="260" fill="white" />
+                            <ellipse cx="110" cy="130" rx="70" ry="95" fill="black" />
+                        </mask>
+                    </defs>
+                    <rect width="220" height="260" fill="rgba(0,0,0,0.85)" mask="url(#mascara-corte-m)" />
+                    <ellipse id="elipse-guia-m" class="elipse-guia" cx="110" cy="130" rx="70" ry="95" />
+                </svg>
             </div>
         </div>
-        <button class="btn" style="background:#fff; color:#000; padding:12px; margin-bottom:5px;" onclick="capturarFotoComFallback()">📸 CAPTURAR SELFIE</button>
+
+        <div id="status-foto-m" class="texto-neon-vermelho">INICIALIZANDO SISTEMA...</div>
+
+        <!-- BOTÃO PRE-LOADER TRANSLÚCIDO -->
+        <button id="btn-iniciar-cad" class="btn-preload" onclick="iniciarCameraCadastro()" disabled>
+            <div id="btn-fill-m" class="btn-preload-fill"></div>
+            <span id="btn-txt-m" class="btn-preload-text">CARREGANDO IA...</span>
+        </button>
+
+        <button id="btn-selfie-m" class="btn" style="background:#fff; color:#000; padding:12px; display:none;" onclick="capturarFotoComFallback()" disabled>📸 CAPTURAR SELFIE</button>
         
         <input type="text" id="c-nome" placeholder="Nome Completo">
         <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
@@ -131,8 +234,8 @@
     </div>
 
     <!-- TELA DE LOGIN (TROCA OU FORMATACAO DE CELULAR) -->
-    <div id="s-login" class="screen" style="justify-content:center;">
-        <h2 style="color:var(--blue); text-align:center; letter-spacing: 1px;">ENTRAR EM APARARELHO NOVO</h2>
+    <div id="s-login" class="screen" style="justify-center;">
+        <h2 style="color:var(--blue); text-align:center; letter-spacing: 1px;">ENTRAR EM APARELHO NOVO</h2>
         <p style="color:#aaa; font-size:0.85rem; text-align:center; margin-bottom:20px;">Digite seu CPF e a Senha cadastrada para vincular este celular à sua casa.</p>
         
         <input type="number" id="l-cpf" placeholder="Digite seu CPF">
@@ -156,7 +259,7 @@
         <div class="header">
             <div>
                 <b style="color:var(--neon); font-size:1.3rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold;">VERSION 2.1.0</small>
+                <small style="color:var(--gray); font-weight:bold;">VERSION 3.0.0</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;"></span>
         </div>
@@ -253,12 +356,13 @@
     let modoAlerta = parseInt(localStorage.getItem('virty_alerta')) || 1;
     
     let streamCameraAtiva = null;
-    let inicializandoCamera = false;
     let micStreamGlobal = null;
     let limiteExibicaoHist = 5;
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
     let my_fingerprint = "";
+    let faceDetectorMediaPipeMorador = null;
+    let loopIAIntervalMorador = null;
 
     let refStatusAtiva = null;
     let refChamadasAtiva = null;
@@ -273,6 +377,75 @@
             document.body.style.display = '';
         });
     }
+
+    function falarInstrucaoInicioMorador() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const ut = new SpeechSynthesisUtterance("Clique em iniciar");
+            ut.lang = 'pt-BR';
+            ut.rate = 1.0;
+            ut.pitch = 0.9;
+            const falar = () => {
+                const voces = window.speechSynthesis.getVoices();
+                const vozPt = voces.find(v => v.lang.includes('pt-BR') || v.lang.includes('pt'));
+                if (vozPt) ut.voice = vozPt;
+                window.speechSynthesis.speak(ut);
+            };
+            if (window.speechSynthesis.getVoices().length > 0) falar();
+            else window.speechSynthesis.onvoiceschanged = falar;
+        }
+    }
+
+    function atualizarProgressoPreloadMorador(porcentagem, texto) {
+        const fill = document.getElementById('btn-fill-m');
+        const txt = document.getElementById('btn-txt-m');
+        const btn = document.getElementById('btn-iniciar-cad');
+        const stTxt = document.getElementById('status-foto-m');
+
+        if (fill) fill.style.width = porcentagem + '%';
+        if (txt) txt.innerText = texto;
+
+        if (porcentagem >= 100) {
+            btn.classList.add('pronto');
+            btn.disabled = false;
+            txt.innerText = "ACEITAR E INICIAR";
+            if (stTxt) stTxt.innerText = "SISTEMA PRONTO!";
+            if (stTxt) stTxt.className = "texto-neon-verde";
+            falarInstrucaoInicioMorador();
+        }
+    }
+
+    // INICIALIZAÇÃO DA IA NO PRELOAD (SEM PEDIR CÂMERA DE IMEDIATO)
+    window.addEventListener('DOMContentLoaded', async () => {
+        my_fingerprint = gerarFingerprintMorador();
+        document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
+        atualizarInterfaceAlerta();
+        configurarEventosMicrofone();
+
+        // Registro do Service Worker existente no PWA/APK para notificações
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+
+        atualizarProgressoPreloadMorador(30, "CARREGANDO IA...");
+        try {
+            if (typeof FaceDetection !== 'undefined') {
+                faceDetectorMediaPipeMorador = new FaceDetection({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
+                });
+                faceDetectorMediaPipeMorador.setOptions({ model: 'short', minDetectionConfidence: 0.75 });
+                faceDetectorMediaPipeMorador.onResults(processarResultadosFaciaisMorador);
+                await faceDetectorMediaPipeMorador.initialize();
+                atualizarProgressoPreloadMorador(100, "PRONTO!");
+            } else {
+                atualizarProgressoPreloadMorador(100, "PRONTO!");
+            }
+        } catch (e) {
+            atualizarProgressoPreloadMorador(100, "ACEITAR E INICIAR");
+        }
+
+        verificarStatus();
+    });
 
     function alternarMiniZoom(e) {
         if(e) e.stopPropagation();
@@ -312,17 +485,6 @@
         localStorage.setItem('virty_device_fp', novoFp);
         return novoFp;
     }
-    
-    window.addEventListener('DOMContentLoaded', () => {
-        requestAnimationFrame(async () => {
-            my_fingerprint = gerarFingerprintMorador();
-            document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
-            atualizarInterfaceAlerta();
-            
-            configurarEventosMicrofone();
-            verificarStatus();
-        });
-    });
 
     function configurarEventosMicrofone() {
         const btnMic = document.getElementById('btn-mic');
@@ -404,50 +566,113 @@
             try { streamCameraAtiva.getTracks().forEach(track => track.stop()); } catch(e){}
             streamCameraAtiva = null;
         }
+        if (loopIAIntervalMorador) { clearInterval(loopIAIntervalMorador); loopIAIntervalMorador = null; }
     }
 
-    async function inicializarCapturaVideo() {
-        if (streamCameraAtiva && streamCameraAtiva.active) return;
-        if (inicializandoCamera) return;
-        inicializandoCamera = true;
+    // CÂMERA LIGA APENAS APÓS O CLIQUE DO MORADOR
+    async function iniciarCameraCadastro() {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        document.getElementById('btn-iniciar-cad').style.display = 'none';
+        document.getElementById('btn-selfie-m').style.display = 'flex';
+        await inicializarCapturaVideoMorador();
+    }
 
+    async function inicializarCapturaVideoMorador() {
         encerrarStreamCamera();
         const video = document.getElementById('v-cad');
-        if (!video) { inicializandoCamera = false; return; }
+        if (!video) return;
 
         try {
-            const constraints = { video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false };
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                streamCameraAtiva = stream;
-                video.srcObject = stream;
-                video.style.transform = "scaleX(-1)";
-                await video.play().catch(() => {});
-            }
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+                audio: false
+            });
+            streamCameraAtiva = stream;
+            video.srcObject = stream;
+            video.style.transform = "scaleX(-1)";
+            
+            video.onloadeddata = () => {
+                video.play().then(() => {
+                    iniciarLoopAIMorador();
+                }).catch(() => {});
+            };
         } catch (err) {
-        } finally { inicializandoCamera = false; }
+            alert("Permissão de câmera é necessária para o cadastro.");
+        }
+    }
+
+    function iniciarLoopAIMorador() {
+        const video = document.getElementById('v-cad');
+        if (loopIAIntervalMorador) clearInterval(loopIAIntervalMorador);
+
+        loopIAIntervalMorador = setInterval(async () => {
+            if (document.getElementById('s-cadastro').classList.contains('active') && video && video.readyState >= 2) {
+                if (faceDetectorMediaPipeMorador) {
+                    await faceDetectorMediaPipeMorador.send({ image: video });
+                }
+            }
+        }, 200);
+    }
+
+    /* DETECÇÃO FACIAL COM TRAVA DE SIMETRIA E CENTRALIZAÇÃO */
+    function processarResultadosFaciaisMorador(results) {
+        const statusTxt = document.getElementById('status-foto-m');
+        const btnSelfie = document.getElementById('btn-selfie-m');
+        const elipse = document.getElementById('elipse-guia-m');
+
+        if (results.detections && results.detections.length > 0) {
+            const det = results.detections[0];
+            const box = det.boundingBox;
+            const landmarks = det.landmarks;
+
+            const centralizado = (box.xCenter > 0.35 && box.xCenter < 0.65) && (box.yCenter > 0.25 && box.yCenter < 0.75);
+
+            if (centralizado && landmarks && landmarks.length >= 4) {
+                const olhoE = landmarks[0];
+                const olhoD = landmarks[1];
+                const nariz = landmarks[2];
+
+                const distOlhoENariz = Math.abs(nariz.x - olhoE.x);
+                const distOlhoDNariz = Math.abs(nariz.x - olhoD.x);
+                const totalDist = distOlhoENariz + distOlhoDNariz;
+                const proporcaoNariz = distOlhoENariz / (totalDist || 1);
+
+                if (proporcaoNariz >= 0.42 && proporcaoNariz <= 0.58) {
+                    elipse.classList.add('encaixado');
+                    statusTxt.innerText = "ROSTO DETECTADO!";
+                    statusTxt.className = "texto-neon-verde";
+                    btnSelfie.disabled = false;
+                    return;
+                }
+            }
+        }
+
+        elipse.classList.remove('encaixado');
+        statusTxt.innerText = "ENCAIXE O ROSTO NO OVAL";
+        statusTxt.className = "texto-neon-vermelho";
+        btnSelfie.disabled = true;
     }
 
     async function capturarFotoComFallback() {
         const v = document.getElementById('v-cad'), c = document.getElementById('c-cad');
-        if(!v || !c) return;
-
-        if(!streamCameraAtiva || v.videoWidth === 0) {
-            await inicializarCapturaVideo();
-            alert("Iniciando permissão da câmera. Clique novamente para capturar.");
-            return;
-        }
+        if(!v || !c || v.videoWidth === 0) return;
         
-        c.width = v.videoWidth || 480; 
-        c.height = v.videoHeight || 360;
+        c.width = v.videoWidth; 
+        c.height = v.videoHeight;
         
         const ctx = c.getContext('2d');
+        ctx.translate(c.width, 0);
+        ctx.scale(-1, 1);
         ctx.drawImage(v, 0, 0, c.width, c.height);
+        
         my_foto = c.toDataURL('image/jpeg', 0.6); 
         
         c.style.display = "block"; 
         v.style.display = "none";
         encerrarStreamCamera();
+
+        document.getElementById('status-foto-m').innerText = "FOTO CAPTURADA COM SUCESSO!";
+        document.getElementById('status-foto-m').className = "texto-neon-verde";
     }
 
     function enviarCadastro() {
@@ -610,6 +835,7 @@
         document.getElementById('campo-texto-interno').focus();
         forcarReflowWebView();
     }
+
     function fecharPainelTexto() {
         if (document.activeElement) document.activeElement.blur();
         estaDigitando = false; document.getElementById('container-digitar-texto').style.display = 'none';
@@ -618,12 +844,13 @@
         }
         forcarReflowWebView();
     }
+
     function enviarTextoInternal() {
         if (document.activeElement) document.activeElement.blur();
         const txt = document.getElementById('campo-texto-interno').value;
         if(!txt) return;
         db.ref('chamadas_ativas/' + my_un).update({ status: 'mensagem', msg_morador: txt, data_hora: obterDataHora() });
-        document.getElementById('campo-texto-interno').value = ""; responder('mensagem');
+        document.getElementById('campo-texto-interno').value = ""; responder('mensagem_texto');
     }
     
     function verificarToqueEnvioMaoLivre(e) { if(modoMaoLivre && estaGravando) { e.stopPropagation(); stopRec(); } }
@@ -685,7 +912,7 @@
                         data_hora: obterDataHora() 
                     });
                     popup.style.display = 'none'; 
-                    responder('mensagem');
+                    responder('mensagem_audio'); // TIPO ESPECÍFICO PARA CONTADOR AMARELO
                 };
 
                 if(micStreamGlobal) {
@@ -715,7 +942,7 @@
         ref.once('value', snap => {
             const d = snap.val();
             if(d) {
-                if(st !== 'cinza') ref.update({ status: st });
+                if(st !== 'cinza') ref.update({ status: 'mensagem' });
                 const dnaChave = d.dna_dispositivo || d.v_id.substring(0, 11);
                 gravarHist(d.v_id, d.foto, st, dnaChave);
                 setTimeout(() => ref.remove(), 1200);
@@ -727,6 +954,7 @@
 
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
     
+    /* GRAVAÇÃO DO HISTÓRICO CONTABILIZANDO A 5ª BOLINHA AMARELA (ÁUDIO) */
     function gravarHist(vid, foto, st, dna) {
         const baseRef = db.ref(`historico/${my_un}`);
         baseRef.once('value', snapshot => {
@@ -740,14 +968,26 @@
                 if (maisAntigoChave) baseRef.child(maisAntigoChave).remove();
             }
             
-            let d = snapshot.child(dna).val() || { foto: foto, v_id: vid, dna_dispositivo: dna, verde:0, verm:0, azul:0, cinza:0 };
-            if(st==='liberado') d.verde++; else if(st==='recusado') d.verm++; else if(st==='mensagem') d.azul++; else if(st==='cinza') d.cinza++;
-            d.ultima = st; d.ts = Date.now(); d.data_hora = obterDataHora();
+            let d = snapshot.child(dna).val() || { foto: foto, v_id: vid, dna_dispositivo: dna, verde:0, verm:0, azul:0, amarelo:0, cinza:0 };
+            
+            if(st === 'liberado') d.verde++; 
+            else if(st === 'recusado') d.verm++; 
+            else if(st === 'mensagem_texto' || st === 'mensagem') d.azul++; 
+            else if(st === 'mensagem_audio') d.amarelo = (d.amarelo || 0) + 1; // CONTADOR DE ÁUDIO (AMARELO)
+            else if(st === 'cinza') d.cinza++;
+
+            d.ultima = st.replace('_audio', '').replace('_texto', ''); 
+            d.ts = Date.now(); 
+            d.data_hora = obterDataHora();
+            
             baseRef.child(dna).set(d);
             
             db.ref(`bloqueados/${my_un}/${dna}`).once('value', bSnap => {
                 if(bSnap.exists()){
-                    db.ref(`bloqueados/${my_un}/${dna}`).update({ foto: foto, ultima: d.ultima, data_hora: d.data_hora, verde: d.verde, vermelho: d.verm, azul: d.azul, cinza: d.cinza });
+                    db.ref(`bloqueados/${my_un}/${dna}`).update({ 
+                        foto: foto, ultima: d.ultima, data_hora: d.data_hora, 
+                        verde: d.verde, vermelho: d.verm, azul: d.azul, amarelo: d.amarelo || 0, cinza: d.cinza 
+                    });
                 }
             });
         });
@@ -810,6 +1050,7 @@
         list.innerHTML = htmlAcumulado;
     }
 
+    /* CARD DO HISTÓRICO EXIBINDO AS 5 BOLINHAS (INCLUINDO A AMARELA PARA ÁUDIO) */
     function criarCardHTML(d, estaBloqueado) {
         return `<div class="hist-card">
             <div class="foto-box">
@@ -817,6 +1058,7 @@
                     <div class="dot" style="background:var(--neon); color:#000">${d.verde || 0}</div>
                     <div class="dot" style="background:var(--red)">${d.vermelho || d.verm || 0}</div>
                     <div class="dot" style="background:var(--blue)">${d.azul || 0}</div>
+                    <div class="dot" style="background:var(--yellow); color:#000">${d.amarelo || 0}</div>
                     <div class="dot" style="background:var(--gray)">${d.cinza || 0}</div>
                 </div>
                 <img src="${d.foto || ''}" class="foto-hist" onerror="this.src='https://placehold.co/70x70/0a0a0a/39FF14?text=VIRTY'">
@@ -853,7 +1095,12 @@
             else {
                 db.ref(`historico/${my_un}/${dna}`).once('value', hSnap => {
                     const dadosHist = hSnap.val() || {};
-                    ref.set({ dna_dispositivo: dna, ts: Date.now(), data_hora: obterDataHora(), foto: dadosHist.foto || "", ultima: dadosHist.ultima || "recusado", verde: dadosHist.verde || 0, vermelho: dadosHist.vermelho || dadosHist.verm || 0, azul: dadosHist.azul || 0, cinza: dadosHist.cinza || 0 });
+                    ref.set({ 
+                        dna_dispositivo: dna, ts: Date.now(), data_hora: obterDataHora(), 
+                        foto: dadosHist.foto || "", ultima: dadosHist.ultima || "recusado", 
+                        verde: dadosHist.verde || 0, vermelho: dadosHist.vermelho || dadosHist.verm || 0, 
+                        azul: dadosHist.azul || 0, amarelo: dadosHist.amarelo || 0, cinza: dadosHist.cinza || 0 
+                    });
                 });
             }
         });
@@ -868,13 +1115,7 @@
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         targetScreen.classList.add('active');
         
-        if(id === 's-cadastro') { 
-            const video = document.getElementById('v-cad');
-            const canvas = document.getElementById('c-cad');
-            if(video) video.style.display = "block"; 
-            if(canvas) canvas.style.display = "none"; 
-            setTimeout(() => { inicializarCapturaVideo(); }, 300);
-        } else {
+        if(id !== 's-cadastro') { 
             encerrarStreamCamera();
         }
         forcarReflowWebView();
@@ -908,7 +1149,7 @@
             if(loopVibracaoInterval) { clearInterval(loopVibracaoInterval); loopVibracaoInterval = null; }
             if (navigator.vibrate) navigator.vibrate(0); 
             if(piscaTituloInterval) { clearInterval(piscaTituloInterval); piscaTituloInterval = null; }
-            document.title = "VIRTY MORADOR v2.1.0 - Nativo APK";
+            document.title = "VIRTY MORADOR v3.0.0 - Nativo APK";
             return; 
         }
 
