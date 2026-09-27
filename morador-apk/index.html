@@ -22,49 +22,154 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
+            overflow: hidden;
             -webkit-user-select: none;
             user-select: none;
         }
-        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; box-sizing: border-box; }
+        
+        .screen { 
+            display: none; 
+            width: 100vw;
+            height: 100vh; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-sizing: border-box; 
+            padding: 4vh 5% 6vh 5%; 
+            overflow-y: auto;
+        }
         .active { display: flex !important; }
+
+        .virty-header { text-align: center; width: 100%; z-index: 20; }
+        .virty-header h1 {
+            color: var(--neon);
+            font-size: 2.2rem;
+            letter-spacing: 2px;
+            margin: 0 0 5px 0;
+            text-shadow: 0 0 10px rgba(57,255,20,0.3);
+        }
+        .virty-header div {
+            color: #fff;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            font-weight: normal;
+        }
+
+        .conteudo-central {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; 
+            text-align: center;
+            gap: 15px;
+            margin: auto 0;
+            position: relative;
+        }
+
+        .btn-ativar-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            width: 100%;
+            margin: auto 0;
+        }
+
+        /* BOTÃO PRE-LOADER TRANSLÚCIDO PADRÃO VIRTY */
+        .btn-preload {
+            width: 100%;
+            max-width: 300px;
+            height: 90px;
+            background: #111;
+            border: 2px solid #333;
+            color: #666;
+            font-size: 1.1rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            cursor: not-allowed;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .btn-preload-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: rgba(57, 255, 20, 0.25);
+            border-right: 3px solid var(--neon);
+            transition: width 0.3s ease-out;
+        }
+
+        .btn-preload-text { position: relative; z-index: 5; }
+
+        .btn-preload.pronto {
+            border-color: var(--neon);
+            color: var(--neon);
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(57, 255, 20, 0.4);
+            animation: pulsarMorador 2s infinite;
+        }
+        .btn-preload.pronto .btn-preload-fill {
+            width: 100% !important;
+            background: rgba(57, 255, 20, 0.15);
+            border-right: none;
+        }
+
+        @keyframes pulsarMorador {
+            0% { box-shadow: 0 0 5px rgba(57,255,20,0.2); transform: scale(1); }
+            50% { box-shadow: 0 0 25px rgba(57,255,20,0.6); transform: scale(1.02); border-color: #fff; color: #fff; }
+            100% { box-shadow: 0 0 5px rgba(57,255,20,0.2); transform: scale(1); border-color: var(--neon); color: var(--neon); }
+        }
+
         input {
             width: 100%;
-            padding: 16px;
-            margin: 6px 0;
+            padding: 14px;
+            margin: 4px 0;
             border-radius: 12px;
             border: 2px solid #222;
             background: #111;
             color: #fff;
-            font-size: 1.1rem;
+            font-size: 1rem;
+            text-align: center;
             -webkit-appearance: none;
         }
         input:focus { border-color: var(--neon); outline: none; }
+
         .btn {
             width: 100%;
-            padding: 18px;
+            padding: 16px;
             border-radius: 30px;
             border: none;
             font-weight: bold;
             cursor: pointer;
             text-transform: uppercase;
-            margin: 8px 0;
+            margin: 6px 0;
             font-size: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        .btn:disabled { background: #333 !important; color: #666 !important; cursor: not-allowed; opacity: 0.4; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; margin-bottom: 20px; }
+        .btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none !important; filter: grayscale(1); }
+
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; margin-bottom: 20px; width: 100%; }
         .controles-alerta { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
         .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 12px 20px; border-radius: 12px; cursor: pointer; font-size: 1.3rem; min-width: 65px; }
-        #lista-hist, #lista-bloqueados { flex: 1; }
-        .hist-card { background: var(--dark-card); border-radius: 16px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #161616; position: relative; }
+        
+        #lista-hist, #lista-bloqueados { flex: 1; width: 100%; }
+        .hist-card { background: var(--dark-card); border-radius: 16px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #161616; position: relative; width: 100%; }
         .foto-box { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
         .foto-hist { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; border: 1px solid var(--neon); }
         
-        /* LINHA COM AS 5 BOLINHAS (DOTS) INCLUINDO A AMARELA PARA ÁUDIO */
+        /* 5 BOLINHAS (DOTS) NO CARD DO HISTÓRICO */
         .dots-row { position: absolute; top: -10px; left: -5px; width: calc(100% + 10px); display: flex; justify-content: center; gap: 3px; z-index: 10; }
         .dot { width: 16px; height: 16px; border-radius: 50%; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; box-shadow: 0 2px 4px #000; }
         
@@ -93,9 +198,9 @@
         .btn-voz { background: var(--yellow); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
         .btn-voz svg { width: 32px; height: 32px; fill: #000; pointer-events: none; }
         
-        /* ÁREA DA CÂMERA E MÁSCARA FACIAL NO CADASTRO */
-        .area-camera-virty { display: flex; align-items: center; justify-content: center; margin: 10px 0 15px; width: 100%; position: relative; }
-        .video-box { width: 220px; height: 260px; border-radius: 20px; overflow: hidden; background:#111; position:relative; box-shadow: 0 0 20px rgba(0,0,0,0.9); }
+        /* CÂMERA E MÁSCARA FACIAL NO CADASTRO DO MORADOR */
+        .area-camera-virty { display: flex; align-items: center; justify-content: center; width: 100%; position: relative; }
+        .video-box { width: 200px; height: 240px; border-radius: 20px; overflow: hidden; background:#111; position:relative; box-shadow: 0 0 20px rgba(0,0,0,0.9); }
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
         
@@ -123,61 +228,6 @@
             filter: drop-shadow(0px 0px 8px var(--neon));
         }
 
-        /* BOTÃO PRE-LOADER TRANSLÚCIDO DO MORADOR */
-        .btn-preload {
-            width: 100%;
-            max-width: 280px;
-            height: 60px;
-            background: #111;
-            border: 2px solid #333;
-            color: #666;
-            font-size: 1rem;
-            font-weight: bold;
-            letter-spacing: 1px;
-            border-radius: 20px;
-            cursor: not-allowed;
-            text-transform: uppercase;
-            position: relative;
-            overflow: hidden;
-            margin: 10px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-preload-fill {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 0%;
-            background: rgba(57, 255, 20, 0.25);
-            border-right: 3px solid var(--neon);
-            transition: width 0.3s ease-out;
-        }
-
-        .btn-preload-text { position: relative; z-index: 5; }
-
-        .btn-preload.pronto {
-            border-color: var(--neon);
-            color: var(--neon);
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
-            animation: pulsarMorador 2s infinite;
-        }
-
-        .btn-preload.pronto .btn-preload-fill {
-            width: 100% !important;
-            background: rgba(57, 255, 20, 0.15);
-            border-right: none;
-        }
-
-        @keyframes pulsarMorador {
-            0% { transform: scale(1); box-shadow: 0 0 5px rgba(57,255,20,0.2); }
-            50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(57,255,20,0.6); }
-            100% { transform: scale(1); box-shadow: 0 0 5px rgba(57,255,20,0.2); }
-        }
-
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
         .leaving-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; }
         .link-login { color: var(--blue); text-align: center; font-size: 0.85rem; margin-top: 10px; cursor: pointer; font-weight: bold; text-decoration: underline; }
@@ -190,51 +240,65 @@
 </head>
 <body>
 
-    <!-- TELA DE CADASTRO COM PRELOADER E RECONHECIMENTO FACIAL -->
-    <div id="s-cadastro" class="screen">
-        <h2 style="color:var(--neon); text-align:center; letter-spacing: 1px; margin: 0 0 5px 0;">CADASTRO MORADOR</h2>
+    <!-- TELA 1: BOAS-VINDAS E PRELOADER TRANSLÚCIDO (DEDICADA) -->
+    <div id="s-boasvindas" class="screen active" style="justify-content: center; gap: 50px; padding-bottom: 5vh;">
+        <div class="virty-header">
+            <h1>VIRTY ACCESS DOOR</h1>
+            <div style="color: var(--gray); font-size: 1.2rem; letter-spacing: 2px;">Módulo Morador</div>
+        </div>
+        <div class="btn-ativar-container" style="margin: 0;">
+            <div style="color: #fff; font-size: 1.2rem; margin-bottom: 25px;">Seja bem-vindo</div>
+            
+            <button id="btn-iniciar-preload-m" class="btn-preload" onclick="avancarParaCadastroMorador()" disabled>
+                <div id="btn-fill-m" class="btn-preload-fill"></div>
+                <span id="btn-txt-m" class="btn-preload-text">INICIALIZANDO...</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- TELA 2: CADASTRO COM RECONHECIMENTO FACIAL (SÓ ABRE APÓS O CLIQUE) -->
+    <div id="s-cadastro" class="screen" style="justify-content: flex-start; gap: 12px;">
+        <div class="virty-header" style="margin-top: 10px;">
+            <h2 style="color:var(--neon); font-size: 1.5rem; margin: 0;">CADASTRO MORADOR</h2>
+            <div style="color: var(--gray); font-size: 0.8rem; letter-spacing: 1px; margin-top: 2px;">POSICIONE SEU ROSTO NO OVAL</div>
+        </div>
         
         <div class="area-camera-virty">
             <div class="video-box">
                 <video id="v-cad" playsinline autoPlay muted webkit-playsinline></video>
                 <canvas id="c-cad"></canvas>
                 
-                <svg class="svg-mascara-overlay" viewBox="0 0 220 260">
+                <svg class="svg-mascara-overlay" viewBox="0 0 200 240">
                     <defs>
                         <mask id="mascara-corte-m">
-                            <rect width="220" height="260" fill="white" />
-                            <ellipse cx="110" cy="130" rx="70" ry="95" fill="black" />
+                            <rect width="200" height="240" fill="white" />
+                            <ellipse cx="100" cy="120" rx="65" ry="88" fill="black" />
                         </mask>
                     </defs>
-                    <rect width="220" height="260" fill="rgba(0,0,0,0.85)" mask="url(#mascara-corte-m)" />
-                    <ellipse id="elipse-guia-m" class="elipse-guia" cx="110" cy="130" rx="70" ry="95" />
+                    <rect width="200" height="240" fill="rgba(0,0,0,0.85)" mask="url(#mascara-corte-m)" />
+                    <ellipse id="elipse-guia-m" class="elipse-guia" cx="100" cy="120" rx="65" ry="88" />
                 </svg>
             </div>
         </div>
 
-        <div id="status-foto-m" class="texto-neon-vermelho">INICIALIZANDO SISTEMA...</div>
+        <div id="status-foto-m" class="texto-neon-vermelho">ENCAIXE O ROSTO NO OVAL</div>
 
-        <!-- BOTÃO PRE-LOADER TRANSLÚCIDO -->
-        <button id="btn-iniciar-cad" class="btn-preload" onclick="iniciarCameraCadastro()" disabled>
-            <div id="btn-fill-m" class="btn-preload-fill"></div>
-            <span id="btn-txt-m" class="btn-preload-text">CARREGANDO IA...</span>
-        </button>
-
-        <button id="btn-selfie-m" class="btn" style="background:#fff; color:#000; padding:12px; display:none;" onclick="capturarFotoComFallback()" disabled>📸 CAPTURAR SELFIE</button>
+        <button id="btn-selfie-m" class="btn" style="background:#fff; color:#000; margin-bottom:0;" onclick="capturarFotoComFallback()" disabled>📸 CAPTURAR SELFIE</button>
         
-        <input type="text" id="c-nome" placeholder="Nome Completo">
-        <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
-        <input type="number" id="c-un" placeholder="Número da Casa/Apt">
-        <input type="password" id="c-senha" maxlength="6" placeholder="Crie uma Senha (6 números)">
-        <input type="password" id="c-senha-conf" maxlength="6" placeholder="Confirme a Senha (6 números)">
-        
-        <button id="btn-finalizar-cad" class="btn" style="background:var(--neon); color:#000;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
-        
-        <div class="link-login" onclick="mudarTela('s-login')">Já possui cadastro ativado? Conectar neste celular</div>
+        <div style="width: 100%; max-width: 360px;">
+            <input type="text" id="c-nome" placeholder="Nome Completo">
+            <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
+            <input type="number" id="c-un" placeholder="Número da Casa/Apt">
+            <input type="password" id="c-senha" maxlength="6" placeholder="Crie uma Senha (6 números)">
+            <input type="password" id="c-senha-conf" maxlength="6" placeholder="Confirme a Senha (6 números)">
+            
+            <button id="btn-finalizar-cad" class="btn" style="background:var(--neon); color:#000; margin-top: 10px;" onclick="enviarCadastro()">SOLICITAR ACESSO</button>
+            <div class="link-login" onclick="mudarTela('s-login')">Já possui cadastro ativado? Conectar neste celular</div>
+        </div>
     </div>
 
-    <!-- TELA DE LOGIN (TROCA OU FORMATACAO DE CELULAR) -->
-    <div id="s-login" class="screen" style="justify-center;">
+    <!-- TELA 3: LOGIN (TROCA OU FORMATACAO DE CELULAR) -->
+    <div id="s-login" class="screen" style="justify-content:center;">
         <h2 style="color:var(--blue); text-align:center; letter-spacing: 1px;">ENTRAR EM APARELHO NOVO</h2>
         <p style="color:#aaa; font-size:0.85rem; text-align:center; margin-bottom:20px;">Digite seu CPF e a Senha cadastrada para vincular este celular à sua casa.</p>
         
@@ -245,7 +309,7 @@
         <div class="link-login" style="color:var(--gray);" onclick="mudarTela('s-cadastro')">Voltar ao Formulário de Cadastro</div>
     </div>
 
-    <!-- TELA DE ANÁLISE -->
+    <!-- TELA 4: ANÁLISE -->
     <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
         <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
         <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
@@ -254,7 +318,7 @@
         <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
     </div>
 
-    <!-- PAINEL PRINCIPAL -->
+    <!-- PAINEL PRINCIPAL MORADOR -->
     <div id="s-home" class="screen">
         <div class="header">
             <div>
@@ -269,16 +333,16 @@
             <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()">🔊</button>
         </div>
         
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; width: 100%;">
             <span id="titulo-secao-atual" style="font-size:0.85rem; color:var(--gray); font-weight:bold; letter-spacing:0.5px; text-transform: uppercase;">HISTÓRICO DE CHAMADAS</span>
             <button id="btn-limpar-tudo" onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.75rem; font-weight:bold; cursor:pointer;">LIMPAR TUDO</button>
         </div>
-        <div id="container-historico-normal">
+        <div id="container-historico-normal" style="width:100%;">
             <div id="lista-hist"></div>
             <button id="btn-ver-mais" class="btn-expansor" style="display:none;" onclick="expandirHistorico()">VER MAIS</button>
         </div>
         
-        <div id="container-lista-bloqueados" style="display:none;">
+        <div id="container-lista-bloqueados" style="display:none; width:100%;">
             <div id="lista-bloqueados"></div>
         </div>
         <button id="btn-toggle-bloqueados" class="btn-secundario" style="margin-top: 15px;" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
@@ -399,8 +463,7 @@
     function atualizarProgressoPreloadMorador(porcentagem, texto) {
         const fill = document.getElementById('btn-fill-m');
         const txt = document.getElementById('btn-txt-m');
-        const btn = document.getElementById('btn-iniciar-cad');
-        const stTxt = document.getElementById('status-foto-m');
+        const btn = document.getElementById('btn-iniciar-preload-m');
 
         if (fill) fill.style.width = porcentagem + '%';
         if (txt) txt.innerText = texto;
@@ -409,20 +472,17 @@
             btn.classList.add('pronto');
             btn.disabled = false;
             txt.innerText = "ACEITAR E INICIAR";
-            if (stTxt) stTxt.innerText = "SISTEMA PRONTO!";
-            if (stTxt) stTxt.className = "texto-neon-verde";
             falarInstrucaoInicioMorador();
         }
     }
 
-    // INICIALIZAÇÃO DA IA NO PRELOAD (SEM PEDIR CÂMERA DE IMEDIATO)
+    // PRELOAD DA IA NA TELA DE BOAS-VINDAS
     window.addEventListener('DOMContentLoaded', async () => {
         my_fingerprint = gerarFingerprintMorador();
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
         atualizarInterfaceAlerta();
         configurarEventosMicrofone();
 
-        // Registro do Service Worker existente no PWA/APK para notificações
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(() => {});
         }
@@ -519,7 +579,7 @@
     }
 
     function verificarStatus() {
-        if(!my_un) { mudarTela('s-cadastro'); return; }
+        if(!my_un) { mudarTela('s-boasvindas'); return; }
         if(refStatusAtiva) refStatusAtiva.off();
         
         refStatusAtiva = db.ref('moradores_validados/' + my_un);
@@ -553,7 +613,7 @@
                     document.getElementById('txt-un-analise').innerText = "UNIDADE: " + my_un + " | ID HARDWARE: " + my_fingerprint;
                     mudarTela('s-analise');
                 } else { 
-                    mudarTela('s-cadastro'); 
+                    mudarTela('s-boasvindas'); 
                 }
             });
         });
@@ -569,11 +629,10 @@
         if (loopIAIntervalMorador) { clearInterval(loopIAIntervalMorador); loopIAIntervalMorador = null; }
     }
 
-    // CÂMERA LIGA APENAS APÓS O CLIQUE DO MORADOR
-    async function iniciarCameraCadastro() {
+    // TRANSIÇÃO DO CLIQUE DE INICIAR PARA A TELA DE CADASTRO
+    async function avancarParaCadastroMorador() {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-        document.getElementById('btn-iniciar-cad').style.display = 'none';
-        document.getElementById('btn-selfie-m').style.display = 'flex';
+        mudarTela('s-cadastro');
         await inicializarCapturaVideoMorador();
     }
 
@@ -614,7 +673,7 @@
         }, 200);
     }
 
-    /* DETECÇÃO FACIAL COM TRAVA DE SIMETRIA E CENTRALIZAÇÃO */
+    /* RECONHECIMENTO FACIAL COM TRAVA DE SIMETRIA */
     function processarResultadosFaciaisMorador(results) {
         const statusTxt = document.getElementById('status-foto-m');
         const btnSelfie = document.getElementById('btn-selfie-m');
@@ -912,7 +971,7 @@
                         data_hora: obterDataHora() 
                     });
                     popup.style.display = 'none'; 
-                    responder('mensagem_audio'); // TIPO ESPECÍFICO PARA CONTADOR AMARELO
+                    responder('mensagem_audio');
                 };
 
                 if(micStreamGlobal) {
@@ -954,7 +1013,6 @@
 
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
     
-    /* GRAVAÇÃO DO HISTÓRICO CONTABILIZANDO A 5ª BOLINHA AMARELA (ÁUDIO) */
     function gravarHist(vid, foto, st, dna) {
         const baseRef = db.ref(`historico/${my_un}`);
         baseRef.once('value', snapshot => {
@@ -973,7 +1031,7 @@
             if(st === 'liberado') d.verde++; 
             else if(st === 'recusado') d.verm++; 
             else if(st === 'mensagem_texto' || st === 'mensagem') d.azul++; 
-            else if(st === 'mensagem_audio') d.amarelo = (d.amarelo || 0) + 1; // CONTADOR DE ÁUDIO (AMARELO)
+            else if(st === 'mensagem_audio') d.amarelo = (d.amarelo || 0) + 1; 
             else if(st === 'cinza') d.cinza++;
 
             d.ultima = st.replace('_audio', '').replace('_texto', ''); 
@@ -1050,7 +1108,7 @@
         list.innerHTML = htmlAcumulado;
     }
 
-    /* CARD DO HISTÓRICO EXIBINDO AS 5 BOLINHAS (INCLUINDO A AMARELA PARA ÁUDIO) */
+    /* CARD DO HISTÓRICO COM 5 DOTS */
     function criarCardHTML(d, estaBloqueado) {
         return `<div class="hist-card">
             <div class="foto-box">
