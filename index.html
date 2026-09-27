@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIRTY VISITANTE v2.8.0 - FaceDetector Nativo</title>
+    <title>VIRTY VISITANTE v2.9.0 - Preload & AI</title>
     <style>
         :root { 
             --neon: #39FF14; 
@@ -74,22 +74,54 @@
             margin: auto 0;
         }
 
-        .btn-pulsante {
+        /* BOTÃO PRE-LOAD TRANSLÚCIDO DINÂMICO */
+        .btn-preload {
             width: 100%;
             max-width: 300px;
-            height: 100px;
-            background: none;
-            border: 2px solid var(--neon);
-            color: var(--neon);
-            font-size: 1.3rem;
+            height: 90px;
+            background: #111;
+            border: 2px solid #333;
+            color: #666;
+            font-size: 1.1rem;
             font-weight: bold;
             letter-spacing: 1px;
             border-radius: 20px;
-            cursor: pointer;
+            cursor: not-allowed;
             text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(57,255,20,0.1);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .btn-preload-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: rgba(57, 255, 20, 0.25);
+            border-right: 3px solid var(--neon);
+            transition: width 0.2s linear;
+        }
+
+        .btn-preload-text {
+            position: relative;
+            z-index: 5;
+        }
+
+        .btn-preload.pronto {
+            border-color: var(--neon);
+            color: var(--neon);
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(57, 255, 20, 0.4);
             animation: pulsarVirty 2s infinite;
         }
+        .btn-preload.pronto .btn-preload-fill {
+            width: 100% !important;
+            background: rgba(57, 255, 20, 0.15);
+            border-right: none;
+        }
+
         @keyframes pulsarVirty {
             0% { box-shadow: 0 0 5px rgba(57,255,20,0.2); transform: scale(1); }
             50% { box-shadow: 0 0 25px rgba(57,255,20,0.6); transform: scale(1.02); border-color: #fff; color: #fff; }
@@ -166,7 +198,6 @@
         .video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .video-box canvas { width: 100%; height: 100%; object-fit: cover; display:none; }
         
-        /* MÁSCARA ESCURA VAZADA NO CENTRO */
         .svg-mascara-overlay {
             position: absolute;
             top: 0;
@@ -257,6 +288,9 @@
             box-shadow: 0 0 15px rgba(57,255,20,0.4);
         }
     </style>
+    <!-- CARREGAMENTO LEVE DO MEDIAPIPE FACE DETECTION (GOOGLE CDN CDNJS) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -266,7 +300,7 @@
         <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
     </div>
 
-    <!-- TELA BOAS-VINDAS -->
+    <!-- TELA 1: BOAS-VINDAS COM PRELOADER NO BOTÃO -->
     <div id="s-boasvindas" class="screen active" style="justify-content: center; gap: 50px; padding-bottom: 5vh;">
         <div class="virty-header">
             <h1>VIRTY ACCESS DOOR</h1>
@@ -274,11 +308,15 @@
         </div>
         <div class="btn-ativar-container" style="margin: 0;">
             <div style="color: #fff; font-size: 1.2rem; margin-bottom: 25px;">Seja bem-vindo</div>
-            <button class="btn-pulsante" onclick="avancarParaCamera()">Aceitar e iniciar</button>
+            
+            <button id="btn-iniciar-preload" class="btn-preload" onclick="avancarParaCamera()" disabled>
+                <div id="btn-fill" class="btn-preload-fill"></div>
+                <span id="btn-preload-txt" class="btn-preload-text">INICIALIZANDO...</span>
+            </button>
         </div>
     </div>
 
-    <!-- TELA CAMERA COM RECONHECIMENTO NATIVO -->
+    <!-- TELA 2: CÂMERA -->
     <div id="s-camera" class="screen">
         <div class="virty-header">
             <h2 class="texto-neon-verde" style="font-size: 1.5rem; margin: 0;">RECONHECIMENTO VISUAL</h2>
@@ -290,7 +328,6 @@
                     <video id="v-vis" autoplay playsinline muted webkit-playsinline></video>
                     <canvas id="c-vis"></canvas>
                     
-                    <!-- SVG MÁSCARA ESCURA -->
                     <svg class="svg-mascara-overlay" viewBox="0 0 270 330">
                         <defs>
                             <mask id="mascara-corte">
@@ -314,7 +351,7 @@
         </div>
     </div>
 
-    <!-- TELA INFORMAÇÕES DE UNIDADE -->
+    <!-- TELA 3: INFORMAÇÕES DE UNIDADE -->
     <div id="s-inicio" class="screen">
         <div class="virty-header">
             <h2 class="texto-neon-verde" style="font-size: 1.6rem; margin: 0;">INFORMAÇÕES DE ACESSO</h2>
@@ -330,7 +367,7 @@
         <div style="height: 1px;"></div> 
     </div>
 
-    <!-- TELA CHAMANDO -->
+    <!-- TELA 4: CHAMANDO -->
     <div id="s-chamando" class="screen">
         <div></div> 
         <div class="conteudo-central">
@@ -343,7 +380,7 @@
         </div>
     </div>
 
-    <!-- TELA FEEDBACK -->
+    <!-- TELA 5: FEEDBACK -->
     <div id="s-feedback" class="screen">
         <div></div>
         <div class="conteudo-central">
@@ -375,50 +412,86 @@
     let timerRegressivoInterval = null;
     let tempoRestanteChamada = 90;
     let cacheAudioUrl = ""; 
-    let loopValidacaoFacial = null;
-    let detectorNativo = null;
+    let faceDetectorMediaPipe = null;
 
-    // Inicializa a API de FaceDetector Nativa do sistema se disponível
-    if ('FaceDetector' in window) {
-        try {
-            detectorNativo = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
-        } catch(e) { detectorNativo = null; }
-    }
-
-    function executarBoasVindasVoz() {
+    // FALA SINTETIZADA REDUZIDA
+    function falarInstrucaoInicio() {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
-            const texto = "Seja bem vindo. Clique em aceitar e iniciar para continuar.";
-            const ut = new SpeechSynthesisUtterance(texto);
+            const ut = new SpeechSynthesisUtterance("Clique em iniciar");
             ut.lang = 'pt-BR';
-            ut.rate = 0.95;
-            ut.pitch = 0.85;
-
+            ut.rate = 1.0;
+            ut.pitch = 0.9;
             const falar = () => {
                 const voces = window.speechSynthesis.getVoices();
                 const vozPt = voces.find(v => v.lang.includes('pt-BR') || v.lang.includes('pt'));
                 if (vozPt) ut.voice = vozPt;
                 window.speechSynthesis.speak(ut);
             };
-
-            if (window.speechSynthesis.getVoices().length > 0) {
-                falar();
-            } else {
-                window.speechSynthesis.onvoiceschanged = falar;
-            }
+            if (window.speechSynthesis.getVoices().length > 0) falar();
+            else window.speechSynthesis.onvoiceschanged = falar;
         }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        executarBoasVindasVoz();
-        const desbloquearAudioTouch = () => {
-            executarBoasVindasVoz();
-            document.removeEventListener('touchstart', desbloquearAudioTouch);
-            document.removeEventListener('click', desbloquearAudioTouch);
-        };
-        document.addEventListener('touchstart', desbloquearAudioTouch, { once: true });
-        document.addEventListener('click', desbloquearAudioTouch, { once: true });
+    // ATUALIZADOR DO BOTÃO PRELOAD TRANSLÚCIDO
+    function atualizarProgressoPreload(porcentagem, texto) {
+        const fill = document.getElementById('btn-fill');
+        const txt = document.getElementById('btn-preload-txt');
+        const btn = document.getElementById('btn-iniciar-preload');
+
+        if (fill) fill.style.width = porcentagem + '%';
+        if (txt) txt.innerText = texto;
+
+        if (porcentagem >= 100) {
+            btn.classList.add('pronto');
+            btn.disabled = false;
+            txt.innerText = "ACEITAR E INICIAR";
+            falarInstrucaoInicio();
+        }
+    }
+
+    // EXECUÇÃO DO CARREGAMENTO REAL DE SEGUNDO PLANO
+    window.addEventListener('DOMContentLoaded', async () => {
+        atualizarProgressoPreload(15, "CARREGANDO SISTEMA...");
+
+        try {
+            // Inicializa a IA do MediaPipe em segundo plano
+            if (typeof FaceDetection !== 'undefined') {
+                faceDetectorMediaPipe = new FaceDetection({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
+                });
+                faceDetectorMediaPipe.setOptions({ model: 'short', minDetectionConfidence: 0.65 });
+                faceDetectorMediaPipe.onResults(processarResultadosFaciais);
+                await faceDetectorMediaPipe.initialize();
+                atualizarProgressoPreload(60, "PREPARANDO CÂMERA...");
+            }
+        } catch (e) {
+            atualizarProgressoPreload(60, "PREPARANDO CÂMERA...");
+        }
+
+        // Pre-aquecimento da câmera
+        preaquecerCamera();
     });
+
+    async function preaquecerCamera() {
+        const video = document.getElementById('v-vis');
+        try {
+            const mode = usarLenteFrontal ? "user" : "environment";
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: mode, width: { ideal: 640 }, height: { ideal: 480 } },
+                audio: false
+            });
+            streamCameraAtiva = stream;
+            video.srcObject = stream;
+            video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "none";
+            
+            video.onloadeddata = () => {
+                atualizarProgressoPreload(100, "PRONTO!");
+            };
+        } catch(e) {
+            atualizarProgressoPreload(100, "INICIAR (PERMISSÃO)");
+        }
+    }
 
     function gerarFingerprintDispositivo() {
         const comp = [screen.width, screen.height, navigator.hardwareConcurrency || 4, navigator.language];
@@ -440,126 +513,68 @@
         const alvo = document.getElementById(id);
         if (alvo) alvo.classList.add('active');
 
-        if (id !== 's-camera') encerrarStreamCamera();
-        if (id === 's-boasvindas') executarBoasVindasVoz();
+        if (id !== 's-camera' && id !== 's-boasvindas') encerrarStreamCamera();
     }
 
     function avancarParaCamera() {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         mudarTela('s-camera');
-        setTimeout(() => { inicializarCapturaVideo(); }, 150);
+        
+        const video = document.getElementById('v-vis');
+        if (video && video.paused) video.play().catch(() => {});
+        iniciarLoopAIFacial();
     }
 
     function encerrarStreamCamera() {
-        if (loopValidacaoFacial) { clearInterval(loopValidacaoFacial); loopValidacaoFacial = null; }
         if (streamCameraAtiva) {
             try { streamCameraAtiva.getTracks().forEach(track => track.stop()); } catch(e){}
             streamCameraAtiva = null;
         }
     }
 
-    async function inicializarCapturaVideo() {
-        encerrarStreamCamera();
-        const video = document.getElementById('v-vis');
-        const canvas = document.getElementById('c-vis');
-        if (!video) return;
-
-        video.style.display = "block";
-        if(canvas) canvas.style.display = "none";
-
-        try {
-            const mode = usarLenteFrontal ? "user" : "environment";
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: mode, width: { ideal: 640 }, height: { ideal: 480 } },
-                audio: false
-            });
-            streamCameraAtiva = stream;
-            video.srcObject = stream;
-            video.style.transform = usarLenteFrontal ? "scaleX(-1)" : "none";
-            
-            await video.play().catch(() => {});
-            iniciarValidacaoNativa();
-        } catch (err) {
-            virtyAlert("Permissão da câmera é necessária para prosseguir.");
-        }
-    }
-
     function alternarLenteCamera() {
         usarLenteFrontal = !usarLenteFrontal;
-        inicializarCapturaVideo();
+        preaquecerCamera();
     }
 
-    /* SISTEMA DE RECONHECIMENTO FACIAL NATIVO */
-    function iniciarValidacaoNativa() {
+    /* PROCESSAMENTO DA IA EM TEMPO REAL SOBRE O VÍDEO */
+    let loopIAInterval = null;
+    function iniciarLoopAIFacial() {
         const video = document.getElementById('v-vis');
+        if (loopIAInterval) clearInterval(loopIAInterval);
+
+        loopIAInterval = setInterval(async () => {
+            if (document.getElementById('s-camera').classList.contains('active') && video && video.readyState >= 2) {
+                if (faceDetectorMediaPipe) {
+                    await faceDetectorMediaPipe.send({ image: video });
+                }
+            }
+        }, 200);
+    }
+
+    function processarResultadosFaciais(results) {
         const statusTxt = document.getElementById('status-foto');
         const btnSelfie = document.getElementById('btn-bater-selfie');
         const elipse = document.getElementById('elipse-guia');
 
-        if (loopValidacaoFacial) clearInterval(loopValidacaoFacial);
+        if (results.detections && results.detections.length > 0) {
+            const det = results.detections[0];
+            const box = det.boundingBox;
 
-        loopValidacaoFacial = setInterval(async () => {
-            if (!video || video.paused || video.ended || video.readyState < 2) return;
-
-            let rostoValidoEncontrado = false;
-
-            try {
-                // Opção 1: Uso da API Nativa FaceDetector do Navegador/Celular
-                if (detectorNativo) {
-                    const faces = await detectorNativo.detect(video);
-                    if (faces && faces.length > 0) {
-                        const box = faces[0].boundingBox;
-                        // Confirma se o rosto detectado está centralizado no enquadramento
-                        const centroX = box.x + (box.width / 2);
-                        const centroY = box.y + (box.height / 2);
-                        
-                        // Verifica se as coordenadas batem dentro da região central
-                        if (centroX > video.videoWidth * 0.2 && centroX < video.videoWidth * 0.8 &&
-                            centroY > video.videoHeight * 0.15 && centroY < video.videoHeight * 0.85) {
-                            rostoValidoEncontrado = true;
-                        }
-                    }
-                } 
-                // Fallback Nativo por Contorno Geométrico Dinâmico se FaceDetector não estiver habilitado no WebView
-                else {
-                    const cTemp = document.createElement('canvas');
-                    const ctxTemp = cTemp.getContext('2d');
-                    cTemp.width = 160;
-                    cTemp.height = 120;
-                    ctxTemp.drawImage(video, 0, 0, 160, 120);
-                    
-                    const imgData = ctxTemp.getImageData(30, 20, 100, 80);
-                    const pixels = imgData.data;
-                    let somatorioVariacao = 0;
-                    
-                    for (let i = 0; i < pixels.length - 4; i += 8) {
-                        const luma1 = (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
-                        const luma2 = (pixels[i+4] + pixels[i+5] + pixels[i+6]) / 3;
-                        somatorioVariacao += Math.abs(luma1 - luma2);
-                    }
-                    
-                    const variacaoMedia = somatorioVariacao / (pixels.length / 8);
-                    // Rosto humano apresenta variação dinâmica média entre 12 e 45 no centro (Dedo/Parede dão < 5)
-                    if (variacaoMedia >= 12 && variacaoMedia <= 45) {
-                        rostoValidoEncontrado = true;
-                    }
-                }
-            } catch (e) {
-                rostoValidoEncontrado = false;
-            }
-
-            if (rostoValidoEncontrado) {
+            // Posição centralizada das feições
+            if (box.xCenter > 0.25 && box.xCenter < 0.75 && box.yCenter > 0.20 && box.yCenter < 0.80) {
                 elipse.classList.add('encaixado');
                 statusTxt.innerText = "ROSTO DETECTADO!";
                 statusTxt.className = "texto-neon-verde";
                 btnSelfie.disabled = false;
-            } else {
-                elipse.classList.remove('encaixado');
-                statusTxt.innerText = "ENCAIXE O ROSTO NO OVAL";
-                statusTxt.className = "texto-neon-vermelho";
-                btnSelfie.disabled = true;
+                return;
             }
-        }, 250);
+        }
+
+        elipse.classList.remove('encaixado');
+        statusTxt.innerText = "ENCAIXE O ROSTO NO OVAL";
+        statusTxt.className = "texto-neon-vermelho";
+        btnSelfie.disabled = true;
     }
 
     function capturarSelfieManual() {
@@ -691,6 +706,7 @@
     function limparTimersEListeners() {
         if (timerRegressivoInterval) { clearInterval(timerRegressivoInterval); timerRegressivoInterval = null; }
         if (escutadorFirebaseAtivo) { escutadorFirebaseAtivo.off(); escutadorFirebaseAtivo = null; }
+        if (loopIAInterval) { clearInterval(loopIAInterval); loopIAInterval = null; }
     }
 
     function resetarFluxoVisitante() {
@@ -704,6 +720,7 @@
         document.getElementById('v-texto').value = "";
 
         mudarTela('s-boasvindas');
+        preaquecerCamera();
     }
 </script>
 </body>
