@@ -34,21 +34,21 @@
             justify-content: space-between; 
             align-items: center; 
             box-sizing: border-box; 
-            padding: 3vh 5% 3vh 5%; 
+            padding: 3vh 4% 3vh 4%; 
         }
         .active { display: flex !important; }
 
         .virty-header { text-align: center; width: 100%; z-index: 20; }
         .virty-header h1 {
             color: var(--neon);
-            font-size: 2.2rem;
+            font-size: 2rem;
             letter-spacing: 2px;
-            margin: 0 0 5px 0;
+            margin: 0 0 4px 0;
             text-shadow: 0 0 10px rgba(57,255,20,0.3);
         }
         .virty-header div {
             color: #fff;
-            font-size: 1.1rem;
+            font-size: 1rem;
             letter-spacing: 1px;
             font-weight: normal;
         }
@@ -61,7 +61,7 @@
             align-items: center;
             justify-content: center; 
             text-align: center;
-            gap: 12px;
+            gap: 10px;
             margin: auto 0;
             position: relative;
         }
@@ -79,11 +79,11 @@
         .btn-preload {
             width: 100%;
             max-width: 300px;
-            height: 90px;
+            height: 80px;
             background: #111;
             border: 2px solid #333;
             color: #666;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             letter-spacing: 1px;
             border-radius: 20px;
@@ -134,25 +134,25 @@
             border: 2px solid #222;
             background: #111;
             color: #fff;
-            font-size: 1rem;
+            font-size: 0.95rem;
             text-align: center;
         }
         input:focus { border-color: var(--neon); outline: none; }
 
         .btn {
             width: 100%;
-            padding: 16px;
-            border-radius: 30px;
+            padding: 14px;
+            border-radius: 25px;
             border: none;
             font-weight: bold;
             cursor: pointer;
             text-transform: uppercase;
-            font-size: 1rem;
+            font-size: 0.95rem;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
         .btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none !important; filter: grayscale(1); }
 
@@ -171,8 +171,8 @@
         .area-camera-virty { display: flex; align-items: center; justify-content: center; width: 100%; position: relative; }
         .video-box { 
             width: 240px; 
-            height: 300px; 
-            border-radius: 24px; 
+            height: 290px; 
+            border-radius: 20px; 
             overflow: hidden; 
             box-shadow: 0 0 25px rgba(0,0,0,0.95); 
             background:#000; 
@@ -205,22 +205,35 @@
             filter: drop-shadow(0px 0px 8px var(--neon));
         }
 
-        /* TELA DE PAINEL HOME (DESIGN COMPACTO E FIXO) */
-        .header-home { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 8px; width: 100%; flex-shrink: 0; }
+        /* PAINEL HOME (LAYOUT COMPACTO E COMPATÍVEL COM QUALQUER TELA) */
+        .header-home { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid #1a1a1a; 
+            padding-bottom: 8px; 
+            width: 100%; 
+            flex-shrink: 0;
+        }
         .controles-alerta { display: flex; gap: 10px; justify-content: center; margin: 8px 0; width: 100%; flex-shrink: 0; }
-        .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 6px 14px; border-radius: 12px; cursor: pointer; font-size: 1rem; min-width: 50px; }
+        .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 6px 14px; border-radius: 10px; cursor: pointer; font-size: 1rem; min-width: 50px; }
         
-        /* CONTAINER COM SCROLL DAS LISTAS (NÃO EMPURRA OS BOTÕES) */
-        .area-scroll-listas {
+        .area-listas-painel {
             width: 100%;
             flex: 1;
-            overflow-y: auto;
-            margin: 6px 0;
-            padding-right: 2px;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            margin-bottom: 8px;
         }
 
+        #container-historico-normal, #container-lista-bloqueados { 
+            width: 100%; 
+            height: 100%; 
+            overflow-y: auto; 
+            padding-right: 2px; 
+        }
+        
         .hist-card { 
             background: var(--dark-card); 
             border-radius: 12px; 
@@ -231,46 +244,45 @@
             gap: 10px; 
             border: 1px solid #161616; 
             position: relative; 
-            flex-shrink: 0;
         }
         .foto-box { position: relative; width: 50px; height: 50px; flex-shrink: 0; }
-        .foto-hist { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; border: 1px solid var(--neon); }
+        .foto-hist { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; border: 1px solid var(--neon); }
         
         /* 5 BOLINHAS (DOTS) COMPACTAS COM A 5ª AMARELA */
-        .dots-row { position: absolute; top: -8px; left: -4px; width: calc(100% + 8px); display: flex; justify-content: center; gap: 2px; z-index: 10; }
+        .dots-row { position: absolute; top: -7px; left: -3px; width: calc(100% + 6px); display: flex; justify-content: center; gap: 2px; z-index: 10; }
         .dot { width: 13px; height: 13px; border-radius: 50%; font-size: 7.5px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; box-shadow: 0 2px 4px #000; }
         
-        .switch-bloqueio { padding: 6px 10px; border-radius: 14px; border: none; font-weight: bold; font-size: 0.68rem; cursor: pointer; text-transform: uppercase; }
+        .switch-bloqueio { padding: 5px 8px; border-radius: 14px; border: none; font-weight: bold; font-size: 0.65rem; cursor: pointer; text-transform: uppercase; }
         .status-bloqueado { background: var(--red); color: #fff; }
         .status-desbloqueado { background: var(--neon); color: #000; }
         
-        .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 8px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 4px; margin-bottom: 8px; font-weight: bold; font-size: 0.75rem; flex-shrink: 0; }
+        .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 6px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 4px; margin-bottom: 6px; font-weight: bold; font-size: 0.75rem; }
         .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 16px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; flex-shrink: 0; }
 
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
-        .wrapper-foto-chamada { position: relative; width: 190px; height: 190px; margin-bottom: 15px; }
+        .wrapper-foto-chamada { position: relative; width: 180px; height: 180px; margin-bottom: 15px; }
         .foto-v { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--neon); object-fit: cover; }
-        .container-stream-box { position: absolute; bottom: -10px; right: -10px; width: 85px; height: 85px; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; }
-        .container-stream-box.mini-zoom-ativo { width: 130px; height: 130px; bottom: -15px; right: -15px; }
+        .container-stream-box { position: absolute; bottom: -8px; right: -8px; width: 80px; height: 80px; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; }
+        .container-stream-box.mini-zoom-ativo { width: 130px; height: 130px; bottom: -12px; right: -15px; }
         .mini-stream { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--yellow); object-fit: cover; background: #000; box-shadow: 0 0 15px rgba(0,0,0,0.9); }
         .btn-toggle-zoom { position: absolute; top: -5px; right: -5px; background: var(--yellow); color: #000; border: 2px solid #000; border-radius: 50%; width: 26px; height: 26px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 101; font-weight: bold; }
 
         #timer-regressivo { font-size: 2.5rem; color: var(--red); font-weight: bold; margin-bottom: 8px; }
         #container-digitar-texto { display: none; width: 100%; height: 100%; position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.98); z-index: 2500; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        #timer-flutuante-texto { font-size: 3rem; color: #fff; font-weight: bold; margin-bottom: 20px; }
+        #timer-flutuante-texto { font-size: 2.8rem; color: #fff; font-weight: bold; margin-bottom: 15px; }
         #popup-voz { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
-        .canvas-circular { transform: rotate(-90deg); width: 180px; height: 180px; }
+        .canvas-circular { transform: rotate(-90deg); width: 160px; height: 160px; }
         .circle-bg { fill: none; stroke: #222; stroke-width: 12; }
         .circle-progress { fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 0; transition: stroke 0.3s, stroke-dashoffset 0.1s linear; }
-        #texto-timer-voz { position: absolute; font-size: 2rem; font-weight: bold; color: #fff; }
-        .btn-voz { background: var(--yellow); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
-        .btn-voz svg { width: 28px; height: 28px; fill: #000; pointer-events: none; }
+        #texto-timer-voz { position: absolute; font-size: 1.8rem; font-weight: bold; color: #fff; }
+        .btn-voz { background: var(--yellow); width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
+        .btn-voz svg { width: 26px; height: 26px; fill: #000; pointer-events: none; }
 
-        .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 10px; padding: 0 15px; }
+        .painel-controles-chamada { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 8px; padding: 0 10px; }
         .leaving-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 10px; }
-        .link-login { color: var(--blue); text-align: center; font-size: 0.85rem; margin-top: 8px; cursor: pointer; font-weight: bold; text-decoration: underline; }
-        .texto-neon-vermelho { color: var(--red); text-shadow: 0 0 15px rgba(255, 49, 49, 0.6); font-weight: bold; font-size:0.9rem; height:20px; }
-        .texto-neon-verde { color: var(--neon); text-shadow: 0 0 15px rgba(57, 255, 20, 0.6); font-weight: bold; font-size:0.9rem; height:20px; }
+        .link-login { color: var(--blue); text-align: center; font-size: 0.8rem; margin-top: 8px; cursor: pointer; font-weight: bold; text-decoration: underline; }
+        .texto-neon-vermelho { color: var(--red); text-shadow: 0 0 15px rgba(255, 49, 49, 0.6); font-weight: bold; font-size:0.85rem; height:20px; }
+        .texto-neon-verde { color: var(--neon); text-shadow: 0 0 15px rgba(57, 255, 20, 0.6); font-weight: bold; font-size:0.85rem; height:20px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
@@ -278,7 +290,7 @@
 <body>
 
     <!-- TELA 1: BOAS-VINDAS COM PRELOADER TRANSLÚCIDO -->
-    <div id="s-boasvindas" class="screen active" style="justify-content: center; gap: 40px; padding-bottom: 5vh;">
+    <div id="s-boasvindas" class="screen active" style="justify-content: center; gap: 40px;">
         <div class="virty-header">
             <h1>VIRTY ACCESS DOOR</h1>
             <div style="color: var(--gray); font-size: 1.1rem; letter-spacing: 2px;">Acesso digital</div>
@@ -297,7 +309,7 @@
     <div id="s-camera-cad" class="screen">
         <div class="virty-header">
             <h2 class="texto-neon-verde" style="font-size: 1.4rem; margin: 0;">FOTO DE CADASTRO</h2>
-            <div style="color: var(--gray); font-size: 0.75rem; letter-spacing: 1px; margin-top: 2px;">CENTRALIZE SEU ROSTO DE FRENTE</div>
+            <div style="color: var(--gray); font-size: 0.75rem; letter-spacing: 1px; margin-top: 3px;">CENTRALIZE SEU ROSTO DE FRENTE</div>
         </div>
         <div class="conteudo-central">
             <div class="area-camera-virty">
@@ -305,22 +317,22 @@
                     <video id="v-cad" autoPlay playsinline muted webkit-playsinline></video>
                     <canvas id="c-cad"></canvas>
                     
-                    <svg class="svg-mascara-overlay" viewBox="0 0 240 300">
+                    <svg class="svg-mascara-overlay" viewBox="0 0 240 290">
                         <defs>
                             <mask id="mascara-corte-m">
-                                <rect width="240" height="300" fill="white" />
-                                <ellipse cx="120" cy="150" rx="75" ry="100" fill="black" />
+                                <rect width="240" height="290" fill="white" />
+                                <ellipse cx="120" cy="145" rx="75" ry="100" fill="black" />
                             </mask>
                         </defs>
-                        <rect width="240" height="300" fill="rgba(0,0,0,0.85)" mask="url(#mascara-corte-m)" />
-                        <ellipse id="elipse-guia-m" class="elipse-guia" cx="120" cy="150" rx="75" ry="100" />
+                        <rect width="240" height="290" fill="rgba(0,0,0,0.85)" mask="url(#mascara-corte-m)" />
+                        <ellipse id="elipse-guia-m" class="elipse-guia" cx="120" cy="145" rx="75" ry="100" />
                     </svg>
                 </div>
             </div>
             <div id="status-foto-m" class="texto-neon-vermelho">POSICIONE O ROSTO NO OVAL</div>
         </div>
         <div class="rodape-tela">
-            <button id="btn-bater-selfie-m" class="btn" style="background:#fff; color:#000; margin-bottom: 10px;" onclick="capturarSelfieMorador()" disabled>📸 BATER A SELFIE</button>
+            <button id="btn-bater-selfie-m" class="btn" style="background:#fff; color:#000;" onclick="capturarSelfieMorador()" disabled>📸 BATER A SELFIE</button>
         </div>
     </div>
 
@@ -328,7 +340,7 @@
     <div id="s-dados-cad" class="screen" style="justify-content: space-between;">
         <div class="virty-header">
             <h2 class="texto-neon-verde" style="font-size: 1.4rem; margin: 0;">DADOS PESSOAIS</h2>
-            <div style="color: var(--gray); font-size: 0.75rem; letter-spacing: 1px; margin-top: 2px;">PREENCHA SEU CADASTRO</div>
+            <div style="color: var(--gray); font-size: 0.75rem; letter-spacing: 1px; margin-top: 3px;">PREENCHA SEU CADASTRO</div>
         </div>
         <div class="conteudo-central" style="gap: 4px; width: 100%;">
             <input type="text" id="c-nome" placeholder="Nome Completo">
@@ -345,33 +357,33 @@
 
     <!-- TELA DE LOGIN (NOVO APARELHO) -->
     <div id="s-login" class="screen" style="justify-content:center;">
-        <h2 style="color:var(--blue); text-align:center; letter-spacing: 1px; margin-bottom: 10px;">CONECTAR NOVO CELULAR</h2>
-        <p style="color:#aaa; font-size:0.85rem; text-align:center; margin-bottom:20px;">Digite seu CPF e a Senha cadastrada para vincular este celular à sua casa.</p>
+        <h2 style="color:var(--blue); text-align:center; letter-spacing: 1px; margin-bottom: 8px;">CONECTAR NOVO CELULAR</h2>
+        <p style="color:#aaa; font-size:0.8rem; text-align:center; margin-bottom:15px;">Digite seu CPF e a Senha cadastrada para vincular este celular à sua casa.</p>
         
         <input type="number" id="l-cpf" placeholder="Digite seu CPF">
         <input type="password" id="l-senha" maxlength="6" placeholder="Sua Senha (6 números)">
         
-        <button class="btn" style="background:var(--blue); color:#fff; margin-top:15px;" onclick="autenticarCelularNovo()">AUTENTICAR E CONECTAR</button>
+        <button class="btn" style="background:var(--blue); color:#fff; margin-top:12px;" onclick="autenticarCelularNovo()">AUTENTICAR E CONECTAR</button>
         <div class="link-login" style="color:var(--gray);" onclick="mudarTela('s-boasvindas')">Voltar ao Inicio</div>
     </div>
 
     <!-- TELA DE ANÁLISE -->
     <div id="s-analise" class="screen" style="justify-content:center; align-items:center; text-align:center;">
-        <h1 style="color:var(--yellow); font-size:1.8rem; letter-spacing:1px; margin-bottom:10px;">CADASTRO EM ANÁLISE</h1>
-        <div style="color:var(--neon); font-size:0.8rem; letter-spacing:2px; margin-bottom:30px;">VIRTY ACCESS DOOR</div>
-        <p style="color:#aaa; font-size:1.1rem; max-width:300px; line-height:1.5;">Olá! Os seus dados foram enviados para a administração. Aguarde a liberação do seu acesso.</p>
-        <div style="margin-top:40px; color:var(--gray); font-size:0.8rem; font-weight:bold;" id="txt-un-analise"></div>
-        <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
+        <h1 style="color:var(--yellow); font-size:1.6rem; letter-spacing:1px; margin-bottom:8px;">CADASTRO EM ANÁLISE</h1>
+        <div style="color:var(--neon); font-size:0.75rem; letter-spacing:2px; margin-bottom:25px;">VIRTY ACCESS DOOR</div>
+        <p style="color:#aaa; font-size:1rem; max-width:280px; line-height:1.4;">Olá! Os seus dados foram enviados para a administração. Aguarde a liberação do seu acesso.</p>
+        <div style="margin-top:30px; color:var(--gray); font-size:0.75rem; font-weight:bold;" id="txt-un-analise"></div>
+        <button class="btn" style="background:#222; color:#fff; width:auto; padding:8px 24px; font-size:0.75rem; margin-top:20px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
     </div>
 
-    <!-- PAINEL PRINCIPAL (CASA LIBERADA - ESTRUTURA FIXA E COMPACTA) -->
-    <div id="s-home" class="screen">
+    <!-- PAINEL PRINCIPAL (HOME DO MORADOR - HARMONIZADO) -->
+    <div id="s-home" class="screen" style="justify-content: space-between; padding: 2vh 3.5%;">
         <div class="header-home">
             <div>
                 <b style="color:var(--neon); font-size:1.1rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
                 <small style="color:var(--gray); font-weight:bold; font-size: 0.7rem;">VERSION 3.0.0</small>
             </div>
-            <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 8px; border-radius:6px; font-weight:bold; font-size:0.8rem;"></span>
+            <span id="txt-un" style="background:var(--neon); color:#000; padding:3px 8px; border-radius:5px; font-weight:bold; font-size:0.8rem;"></span>
         </div>
         
         <div class="controles-alerta">
@@ -379,27 +391,23 @@
             <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()">🔊</button>
         </div>
         
-        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:4px; flex-shrink: 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:5px;">
             <span id="titulo-secao-atual" style="font-size:0.75rem; color:var(--gray); font-weight:bold; letter-spacing:0.5px; text-transform: uppercase;">HISTÓRICO DE CHAMADAS</span>
             <button id="btn-limpar-tudo" onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.7rem; font-weight:bold; cursor:pointer;">LIMPAR TUDO</button>
         </div>
 
-        <!-- ÁREA SCROLLÁVEL COM AS LISTAS -->
-        <div class="area-scroll-listas">
-            <div id="container-historico-normal" style="width:100%;">
+        <div class="area-listas-painel">
+            <div id="container-historico-normal">
                 <div id="lista-hist"></div>
                 <button id="btn-ver-mais" class="btn-expansor" style="display:none;" onclick="expandirHistorico()">VER MAIS</button>
             </div>
             
-            <div id="container-lista-bloqueados" style="display:none; width:100%;">
+            <div id="container-lista-bloqueados" style="display:none;">
                 <div id="lista-bloqueados"></div>
             </div>
         </div>
 
-        <!-- RODA PÉ FIXO DA HOME (NUNCA É EMPURRADO PARA FORA DA TELA) -->
-        <div style="width:100%; flex-shrink: 0; padding-top: 4px;">
-            <button id="btn-toggle-bloqueados" class="btn-secundario" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
-        </div>
+        <button id="btn-toggle-bloqueados" class="btn-secundario" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
     </div>
 
     <!-- PAINEL DE CHAMADA RECEBIDA -->
@@ -414,8 +422,8 @@
             </div>
         </div>
 
-        <h3 style="color:var(--neon); margin:5px 0; letter-spacing:1px;">VISITANTE NA PORTA</h3>
-        <p id="msg-v" style="font-style:italic; color:#aaa; margin-bottom:15px; text-align:center; padding:0 20px; font-size:0.95rem; min-height:18px;"></p>
+        <h3 style="color:var(--neon); margin:4px 0; letter-spacing:1px; font-size: 1.1rem;">VISITANTE NA PORTA</h3>
+        <p id="msg-v" style="font-style:italic; color:#aaa; margin-bottom:15px; text-align:center; padding:0 15px; font-size:0.95rem; min-height:18px;"></p>
         
         <div class="painel-controles-chamada">
             <button class="btn" style="background:var(--red); color:#fff; margin:0;" onclick="responder('recusado')">RECUSAR CHAMADA</button>
@@ -431,9 +439,9 @@
 
     <div id="container-digitar-texto" onclick="verificarToqueEnvioMaoLivre(event)">
         <div id="timer-flutuante-texto">90s</div>
-        <h3 style="color:var(--blue); margin-bottom:15px; letter-spacing:1px;">DIGITAR MENSAGEM</h3>
-        <input type="text" id="campo-texto-interno" placeholder="Escreva a mensagem aqui..." style="width:100%; max-width:320px; text-align:center;">
-        <div style="display:flex; gap:10px; width:100%; max-width:320px; margin-top:15px;">
+        <h3 style="color:var(--blue); margin-bottom:12px; letter-spacing:1px; font-size: 1.1rem;">DIGITAR MENSAGEM</h3>
+        <input type="text" id="campo-texto-interno" placeholder="Escreva a mensagem aqui..." style="width:100%; max-width:300px; text-align:center;">
+        <div style="display:flex; gap:8px; width:100%; max-width:300px; margin-top:12px;">
             <button class="btn" style="background:var(--blue); color:#fff; margin:0; flex:1;" onclick="enviarTextoInternal()">ENVIAR</button>
             <button class="btn" style="background:var(--gray); color:#fff; margin:0; flex:1;" onclick="fecharPainelTexto()">VOLTAR</button>
         </div>
@@ -442,12 +450,12 @@
     <div id="popup-voz" onclick="verificarToqueEnvioMaoLivre(event)">
         <div style="position: relative; display: flex; align-items: center; justify-content: center;">
             <svg class="canvas-circular">
-                <circle class="circle-bg" cx="90" cy="90" r="80"></circle>
-                <circle id="arco-progresso" class="circle-progress" cx="90" cy="90" r="80"></circle>
+                <circle class="circle-bg" cx="80" cy="80" r="70"></circle>
+                <circle id="arco-progresso" class="circle-progress" cx="80" cy="80" r="70"></circle>
             </svg>
             <div id="texto-timer-voz">30s</div>
         </div>
-        <p id="label-modo-gravacao" style="color:var(--red); font-weight:bold; margin-top:20px; letter-spacing:1px; text-align:center; padding:0 20px; line-height:1.4;"></p>
+        <p id="label-modo-gravacao" style="color:var(--red); font-weight:bold; margin-top:15px; letter-spacing:1px; text-align:center; padding:0 15px; line-height:1.3; font-size: 0.9rem;"></p>
     </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -475,9 +483,10 @@
     
     let streamCameraAtiva = null;
     let micStreamGlobal = null;
-    let limiteExibicaoHist = 3; // LIMITE INICIAL REDUZIDO PARA ENCAIXE PERFEITO
+    let limiteExibicaoHist = 3; // EXIBE ATÉ 3 ITENS INICIALMENTE E OCULTA O RESTANTE
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
+    let cacheHistoricoGlobal = [];
     let my_fingerprint = "";
     let faceDetectorMediaPipeMorador = null;
     let loopIAIntervalMorador = null;
@@ -530,6 +539,7 @@
         }
     }
 
+    // CARREGAMENTO APENAS DE IA NO INÍCIO
     window.addEventListener('DOMContentLoaded', async () => {
         my_fingerprint = gerarFingerprintMorador();
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
@@ -622,6 +632,7 @@
         }, 200);
     }
 
+    /* PROCESSAMENTO DA IA COM TRAVA DE SIMETRIA E CENTRALIZAÇÃO */
     function processarResultadosFaciaisMorador(results) {
         const statusTxt = document.getElementById('status-foto-m');
         const btnSelfie = document.getElementById('btn-bater-selfie-m');
@@ -655,7 +666,7 @@
         }
 
         elipse.classList.remove('encaixado');
-        statusTxt.innerText = "ENCAIXE O ROSTO NO OVAL";
+        statusTxt.innerText = "POSICIONE O ROSTO NO OVAL";
         statusTxt.className = "texto-neon-vermelho";
         btnSelfie.disabled = true;
     }
@@ -929,7 +940,7 @@
             arco.style.stroke = "var(--neon)";
             db.ref('chamadas_ativas/' + my_un).update({ status: 'gravando' });
             
-            const circunferencia = 2 * Math.PI * 80;
+            const circunferencia = 2 * Math.PI * 70;
             clearInterval(timerVozInterval);
             timerVozInterval = setInterval(() => {
                 tempoVoz--; 
@@ -999,6 +1010,7 @@
 
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
 
+    /* GRAVAÇÃO NO HISTÓRICO COM AS 5 BOLINHAS (AMARELA PARA ÁUDIO) */
     function gravarHist(vid, foto, st, dna) {
         const baseRef = db.ref(`historico/${my_un}`);
         baseRef.once('value', snapshot => {
@@ -1050,22 +1062,23 @@
         });
 
         refHistoricoAtiva.on('value', snap => {
-            const historicoItens = []; 
-            snap.forEach(item => { historicoItens.push(item.val()); });
-            historicoItens.sort((a, b) => b.ts - a.ts);
+            cacheHistoricoGlobal = []; 
+            snap.forEach(item => { cacheHistoricoGlobal.push(item.val()); });
+            cacheHistoricoGlobal.sort((a, b) => b.ts - a.ts);
             
             requestAnimationFrame(() => {
-                construirListaNormal(historicoItens, cacheBloqueadosGlobais);
+                construirListaNormal(cacheHistoricoGlobal, cacheBloqueadosGlobais);
             });
         });
     }
 
+    /* RENDERIZAÇÃO DO HISTÓRICO COM O BOTÃO VER MAIS (OCULTANDO A PARTIR DO LIMITE INICIAL DE 3) */
     function construirListaNormal(itens, listaBloqueados) {
         const list = document.getElementById('lista-hist'); if(!list) return;
         const ativos = itens.filter(i => !listaBloqueados[i.dna_dispositivo]);
         
         if(ativos.length === 0) { 
-            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:15px;">Nenhum registro</p>`; 
+            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.8rem; padding:15px;">Nenhum registro</p>`; 
             document.getElementById('btn-ver-mais').style.display = "none"; 
             return; 
         }
@@ -1075,7 +1088,19 @@
         exibidos.forEach(d => { htmlAcumulado += criarCardHTML(d, false); });
         
         list.innerHTML = htmlAcumulado;
-        document.getElementById('btn-ver-mais').style.display = ativos.length > limiteExibicaoHist ? "block" : "none";
+        
+        const btnVerMais = document.getElementById('btn-ver-mais');
+        if (ativos.length > limiteExibicaoHist) {
+            btnVerMais.style.display = "block";
+            btnVerMais.innerText = "VER MAIS";
+        } else {
+            btnVerMais.style.display = "none";
+        }
+    }
+
+    function expandirHistorico() { 
+        limiteExibicaoHist += 5; 
+        construirListaNormal(cacheHistoricoGlobal, cacheBloqueadosGlobais); 
     }
 
     function construirListaBloqueadosDireta(mapaBloqueados) {
@@ -1083,7 +1108,7 @@
         const chaves = Object.keys(mapaBloqueados);
         
         if(chaves.length === 0) { 
-            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:15px;">Nenhum dispositivo bloqueado.</p>`; 
+            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.8rem; padding:15px;">Nenhum dispositivo bloqueado.</p>`; 
             return; 
         }
         
@@ -1094,7 +1119,7 @@
         list.innerHTML = htmlAcumulado;
     }
 
-    /* CARD DO HISTÓRICO COM AS 5 BOLINHAS */
+    /* CARD DO HISTÓRICO EXIBINDO AS 5 BOLINHAS (INCLUINDO A AMARELA) */
     function criarCardHTML(d, estaBloqueado) {
         return `<div class="hist-card">
             <div class="foto-box">
@@ -1109,26 +1134,27 @@
             </div>
             <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
                 <b style="font-size:0.75rem; color:#aaa;">DNA: ${d.dna_dispositivo}</b>
-                <small style="color:var(--neon); font-size:0.75rem; font-weight:bold;">${(d.ultima || 'Bloqueado').toUpperCase()}</small>
-                <span style="font-size:0.65rem; color:#444;">${d.data_hora || ''}</span>
+                <small style="color:var(--neon); font-size:0.7rem; font-weight:bold;">${(d.ultima || 'Bloqueado').toUpperCase()}</small>
+                <span style="font-size:0.6rem; color:#444;">${d.data_hora || ''}</span>
             </div>
             <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.dna_dispositivo}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
         </div>`;
     }
 
-    /* LÓGICA DO BOTÃO VER MAIS (EXPANSE +3 REGISTROS) */
-    function expandirHistorico() { limiteExibicaoHist = Math.min(limiteExibicaoHist + 3, 30); renderizarDadosAbas(); }
-    
-    /* LÓGICA DO BOTÃO ALTERNAR ENTRE HISTÓRICO E BLOQUEADOS */
+    /* ALTERNÂNCIA ENTRE VER HISTÓRICO E VER BLOQUEADOS */
     function alternarVisaoListas() {
         vendoBloqueados = !vendoBloqueados;
-        const txtTitulo = document.getElementById('titulo-secao-atual'), btnToggle = document.getElementById('btn-toggle-bloqueados'), btnLimpar = document.getElementById('btn-limpar-tudo');
+        const txtTitulo = document.getElementById('titulo-secao-atual'), 
+              btnToggle = document.getElementById('btn-toggle-bloqueados'), 
+              btnLimpar = document.getElementById('btn-limpar-tudo');
+        
         if(vendoBloqueados) {
             document.getElementById('container-historico-normal').style.display = "none"; 
             document.getElementById('container-lista-bloqueados').style.display = "block";
             txtTitulo.innerText = "Dispositivos Bloqueados"; 
             txtTitulo.style.color = "var(--red)"; 
             btnToggle.innerText = "VER HISTÓRICO"; 
+            btnToggle.style.borderColor = "var(--neon)"; 
             btnToggle.style.color = "var(--neon)"; 
             btnLimpar.style.display = "none";
         } else {
@@ -1137,6 +1163,7 @@
             txtTitulo.innerText = "Histórico de Chamadas"; 
             txtTitulo.style.color = "var(--gray)"; 
             btnToggle.innerText = "VER BLOQUEADOS"; 
+            btnToggle.style.borderColor = "var(--red)"; 
             btnToggle.style.color = "var(--red)"; 
             btnLimpar.style.display = "block"; 
             limiteExibicaoHist = 3;
