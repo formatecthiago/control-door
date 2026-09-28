@@ -34,23 +34,22 @@
             justify-content: space-between; 
             align-items: center; 
             box-sizing: border-box; 
-            padding: 4vh 5% 5vh 5%; 
+            padding: 3vh 4% 3vh 4%; 
         }
         .active { display: flex !important; }
 
         .virty-header { text-align: center; width: 100%; z-index: 20; }
         .virty-header h1 {
             color: var(--neon);
-            font-size: 2.2rem;
+            font-size: 2rem;
             letter-spacing: 2px;
             margin: 0 0 5px 0;
             text-shadow: 0 0 10px rgba(57,255,20,0.3);
         }
         .virty-header div {
             color: #fff;
-            font-size: 1.1rem;
+            font-size: 1rem;
             letter-spacing: 1px;
-            font-weight: normal;
         }
 
         .conteudo-central {
@@ -61,25 +60,16 @@
             align-items: center;
             justify-content: center; 
             text-align: center;
-            gap: 12px;
+            gap: 10px;
             margin: auto 0;
             position: relative;
         }
 
-        .btn-ativar-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            width: 100%;
-            margin: auto 0;
-        }
-
-        /* BOTÃO PRE-LOADER TRANSLÚCIDO PADRONIZADO */
+        /* BOTÃO PRE-LOADER TRANSLÚCIDO */
         .btn-preload {
             width: 100%;
             max-width: 300px;
-            height: 90px;
+            height: 80px;
             background: #111;
             border: 2px solid #333;
             color: #666;
@@ -170,8 +160,8 @@
         /* ÁREA DE CÂMERA E MÁSCARA FACIAL */
         .area-camera-virty { display: flex; align-items: center; justify-content: center; width: 100%; position: relative; }
         .video-box { 
-            width: 260px; 
-            height: 320px; 
+            width: 240px; 
+            height: 300px; 
             border-radius: 24px; 
             overflow: hidden; 
             box-shadow: 0 0 25px rgba(0,0,0,0.95); 
@@ -205,12 +195,12 @@
             filter: drop-shadow(0px 0px 8px var(--neon));
         }
 
-        /* TELA DE PAINEL HOME (LAYOUT OTIMIZADO E COMPACTO) */
-        .header-home { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 10px; width: 100%; }
-        .controles-alerta { display: flex; gap: 10px; justify-content: center; margin: 10px 0; width: 100%; }
+        /* TELA HOME & PAINEL DE HISTÓRICO COMPACTO */
+        .header-home { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a; padding-bottom: 8px; width: 100%; }
+        .controles-alerta { display: flex; gap: 10px; justify-content: center; margin: 8px 0; width: 100%; }
         .btn-mini { background: #111; border: 1px solid var(--neon); color: var(--neon); padding: 8px 16px; border-radius: 12px; cursor: pointer; font-size: 1.1rem; min-width: 55px; }
         
-        #container-historico-normal, #container-lista-bloqueados { width: 100%; flex: 1; overflow-y: auto; max-height: calc(100vh - 280px); padding-right: 2px; }
+        #container-historico-normal, #container-lista-bloqueados { width: 100%; flex: 1; overflow-y: auto; padding-right: 2px; }
         
         .hist-card { 
             background: var(--dark-card); 
@@ -226,7 +216,7 @@
         .foto-box { position: relative; width: 55px; height: 55px; flex-shrink: 0; }
         .foto-hist { width: 55px; height: 55px; border-radius: 10px; object-fit: cover; border: 1px solid var(--neon); }
         
-        /* 5 BOLINHAS (DOTS) COMPACTAS COM A 5ª AMARELA */
+        /* 5 BOLINHAS (DOTS) INCLUINDO A AMARELA */
         .dots-row { position: absolute; top: -8px; left: -4px; width: calc(100% + 8px); display: flex; justify-content: center; gap: 2px; z-index: 10; }
         .dot { width: 14px; height: 14px; border-radius: 50%; font-size: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; box-shadow: 0 2px 4px #000; }
         
@@ -234,8 +224,8 @@
         .status-bloqueado { background: var(--red); color: #fff; }
         .status-desbloqueado { background: var(--neon); color: #000; }
         
-        .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 8px; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 5px; font-weight: bold; font-size: 0.8rem; }
-        .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 12px; border-radius: 20px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; margin-top: 5px; }
+        .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; margin: 5px 0 10px 0; font-weight: bold; font-size: 0.8rem; }
+        .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 12px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
 
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
         .wrapper-foto-chamada { position: relative; width: 200px; height: 200px; margin-bottom: 20px; }
@@ -259,22 +249,22 @@
         .painel-controles-chamada { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 10px; padding: 0 15px; }
         .leaving-interacao-meio { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 10px; }
         .link-login { color: var(--blue); text-align: center; font-size: 0.85rem; margin-top: 10px; cursor: pointer; font-weight: bold; text-decoration: underline; }
-        .texto-neon-vermelho { color: var(--red); text-shadow: 0 0 15px rgba(255, 49, 49, 0.6); font-weight: bold; font-size:0.95rem; height:24px; }
-        .texto-neon-verde { color: var(--neon); text-shadow: 0 0 15px rgba(57, 255, 20, 0.6); font-weight: bold; font-size:0.95rem; height:24px; }
+        .texto-neon-vermelho { color: var(--red); font-weight: bold; font-size:0.9rem; height:20px; }
+        .texto-neon-verde { color: var(--neon); font-weight: bold; font-size:0.9rem; height:20px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
-    <!-- TELA 1: BOAS-VINDAS COM PRELOADER TRANSLÚCIDO -->
-    <div id="s-boasvindas" class="screen active" style="justify-content: center; gap: 50px; padding-bottom: 5vh;">
+    <!-- TELA 1: PRE-LOADER DE BOAS-VINDAS -->
+    <div id="s-boasvindas" class="screen active" style="justify-content: center; gap: 40px;">
         <div class="virty-header">
             <h1>VIRTY ACCESS DOOR</h1>
-            <div style="color: var(--gray); font-size: 1.2rem; letter-spacing: 2px;">Acesso digital</div>
+            <div style="color: var(--gray); font-size: 1.1rem; letter-spacing: 2px;">Acesso digital</div>
         </div>
-        <div class="btn-ativar-container" style="margin: 0;">
-            <div style="color: #fff; font-size: 1.2rem; margin-bottom: 25px;">Seja bem-vindo</div>
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+            <div style="color: #fff; font-size: 1.1rem; margin-bottom: 20px;">Seja bem-vindo</div>
             
             <button id="btn-iniciar-preload" class="btn-preload" onclick="avancarParaCameraCadastro()" disabled>
                 <div id="btn-fill" class="btn-preload-fill"></div>
@@ -283,11 +273,11 @@
         </div>
     </div>
 
-    <!-- TELA 2: CÂMERA E RECONHECIMENTO FACIAL MORADOR -->
+    <!-- TELA 2: CÂMERA DE SELFIE -->
     <div id="s-camera-cad" class="screen">
         <div class="virty-header">
-            <h2 class="texto-neon-verde" style="font-size: 1.5rem; margin: 0;">FOTO DE CADASTRO</h2>
-            <div style="color: var(--gray); font-size: 0.8rem; letter-spacing: 1px; margin-top: 4px;">CENTRALIZE SEU ROSTO DE FRENTE</div>
+            <h2 class="texto-neon-verde" style="font-size: 1.4rem; margin: 0;">FOTO DE CADASTRO</h2>
+            <div style="color: var(--gray); font-size: 0.75rem; letter-spacing: 1px; margin-top: 2px;">CENTRALIZE SEU ROSTO DE FRENTE</div>
         </div>
         <div class="conteudo-central">
             <div class="area-camera-virty">
@@ -295,32 +285,32 @@
                     <video id="v-cad" autoPlay playsinline muted webkit-playsinline></video>
                     <canvas id="c-cad"></canvas>
                     
-                    <svg class="svg-mascara-overlay" viewBox="0 0 260 320">
+                    <svg class="svg-mascara-overlay" viewBox="0 0 240 300">
                         <defs>
                             <mask id="mascara-corte-m">
-                                <rect width="260" height="320" fill="white" />
-                                <ellipse cx="130" cy="160" rx="80" ry="110" fill="black" />
+                                <rect width="240" height="300" fill="white" />
+                                <ellipse cx="120" cy="150" rx="75" ry="100" fill="black" />
                             </mask>
                         </defs>
-                        <rect width="260" height="320" fill="rgba(0,0,0,0.85)" mask="url(#mascara-corte-m)" />
-                        <ellipse id="elipse-guia-m" class="elipse-guia" cx="130" cy="160" rx="80" ry="110" />
+                        <rect width="240" height="300" fill="rgba(0,0,0,0.85)" mask="url(#mascara-corte-m)" />
+                        <ellipse id="elipse-guia-m" class="elipse-guia" cx="120" cy="150" rx="75" ry="100" />
                     </svg>
                 </div>
             </div>
             <div id="status-foto-m" class="texto-neon-vermelho">POSICIONE O ROSTO NO OVAL</div>
         </div>
         <div class="rodape-tela">
-            <button id="btn-bater-selfie-m" class="btn" style="background:#fff; color:#000; margin-bottom: 12px;" onclick="capturarSelfieMorador()" disabled>📸 BATER A SELFIE</button>
+            <button id="btn-bater-selfie-m" class="btn" style="background:#fff; color:#000; margin-bottom: 10px;" onclick="capturarSelfieMorador()" disabled>📸 BATER A SELFIE</button>
         </div>
     </div>
 
-    <!-- TELA 3: FORMULÁRIO DE DADOS DO MORADOR -->
+    <!-- TELA 3: FORMULÁRIO DE DADOS -->
     <div id="s-dados-cad" class="screen" style="justify-content: space-between;">
         <div class="virty-header">
-            <h2 class="texto-neon-verde" style="font-size: 1.5rem; margin: 0;">DADOS PESSOAIS</h2>
-            <div style="color: var(--gray); font-size: 0.8rem; letter-spacing: 1px; margin-top: 4px;">PREENCHA SEU CADASTRO</div>
+            <h2 class="texto-neon-verde" style="font-size: 1.4rem; margin: 0;">DADOS PESSOAIS</h2>
+            <div style="color: var(--gray); font-size: 0.75rem; letter-spacing: 1px; margin-top: 2px;">PREENCHA SEU CADASTRO</div>
         </div>
-        <div class="conteudo-central" style="gap: 6px; width: 100%;">
+        <div class="conteudo-central" style="gap: 4px; width: 100%;">
             <input type="text" id="c-nome" placeholder="Nome Completo">
             <input type="number" id="c-cpf" placeholder="CPF (Apenas números)">
             <input type="number" id="c-un" placeholder="Número da Casa/Apt">
@@ -333,7 +323,7 @@
         </div>
     </div>
 
-    <!-- TELA DE LOGIN (NOVO APARELHO) -->
+    <!-- TELA DE LOGIN -->
     <div id="s-login" class="screen" style="justify-content:center;">
         <h2 style="color:var(--blue); text-align:center; letter-spacing: 1px; margin-bottom: 10px;">CONECTAR NOVO CELULAR</h2>
         <p style="color:#aaa; font-size:0.85rem; text-align:center; margin-bottom:20px;">Digite seu CPF e a Senha cadastrada para vincular este celular à sua casa.</p>
@@ -354,12 +344,12 @@
         <button class="btn" style="background:#222; color:#fff; width:auto; padding:10px 30px; font-size:0.8rem; margin-top:30px;" onclick="cancelarSolicitacaoAtual()">REFAZER CADASTRO</button>
     </div>
 
-    <!-- PAINEL PRINCIPAL (CASA LIBERADA - ESTRUTURA COMPACTA HARMONIZADA) -->
-    <div id="s-home" class="screen" style="justify-content: space-between; padding: 2vh 4%;">
+    <!-- PAINEL PRINCIPAL (CASA LIBERADA - ESTRUTURA COM HISTÓRICO E BLOQUEADOS) -->
+    <div id="s-home" class="screen" style="justify-content: space-between;">
         <div class="header-home">
             <div>
-                <b style="color:var(--neon); font-size:1.2rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
-                <small style="color:var(--gray); font-weight:bold; font-size: 0.75rem;">VERSION 3.0.0</small>
+                <b style="color:var(--neon); font-size:1.1rem; letter-spacing:1px;">VIRTY ACCESS DOOR</b><br>
+                <small style="color:var(--gray); font-weight:bold; font-size: 0.7rem;">VERSION 3.0.0</small>
             </div>
             <span id="txt-un" style="background:var(--neon); color:#000; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:0.85rem;"></span>
         </div>
@@ -369,26 +359,29 @@
             <button class="btn-mini" id="btn-alerta" onclick="alternarAlerta()">🔊</button>
         </div>
         
-        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:6px;">
             <span id="titulo-secao-atual" style="font-size:0.8rem; color:var(--gray); font-weight:bold; letter-spacing:0.5px; text-transform: uppercase;">HISTÓRICO DE CHAMADAS</span>
             <button id="btn-limpar-tudo" onclick="limparHist()" style="background:none; border:none; color:var(--red); font-size:0.75rem; font-weight:bold; cursor:pointer;">LIMPAR TUDO</button>
         </div>
 
+        <!-- CONTAINER HISTÓRICO NORMAL -->
         <div id="container-historico-normal">
             <div id="lista-hist"></div>
             <button id="btn-ver-mais" class="btn-expansor" style="display:none;" onclick="expandirHistorico()">VER MAIS</button>
         </div>
         
+        <!-- CONTAINER LISTA BLOQUEADOS -->
         <div id="container-lista-bloqueados" style="display:none;">
             <div id="lista-bloqueados"></div>
         </div>
 
+        <!-- BOTÃO DE ALTERNÂNCIA HISTÓRICO / VER BLOQUEADOS -->
         <div style="width:100%; margin-top: auto;">
             <button id="btn-toggle-bloqueados" class="btn-secundario" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
         </div>
     </div>
 
-    <!-- PAINEL DE CHAMADA RECEBIDA -->
+    <!-- PAINEL DE ATENDIMENTO DA CHAMADA -->
     <div id="painel-chamada">
         <div id="timer-regressivo">90</div>
         
@@ -461,9 +454,10 @@
     
     let streamCameraAtiva = null;
     let micStreamGlobal = null;
-    let limiteExibicaoHist = 5;
+    let limiteExibicaoHist = 3; // EXIBE 3 REGISTROS POR PADRÃO
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
+    let cacheHistoricoCompleto = [];
     let my_fingerprint = "";
     let faceDetectorMediaPipeMorador = null;
     let loopIAIntervalMorador = null;
@@ -516,7 +510,6 @@
         }
     }
 
-    // CARREGAMENTO APENAS DE IA NO INÍCIO (SEM LIGAR A CÂMERA DE IMEDIATO)
     window.addEventListener('DOMContentLoaded', async () => {
         my_fingerprint = gerarFingerprintMorador();
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
@@ -558,7 +551,6 @@
         forcarReflowWebView();
     }
 
-    // DISPARO DA CÂMERA SOMENTE APÓS O CLIQUE DO MORADOR
     async function avancarParaCameraCadastro() {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         mudarTela('s-camera-cad');
@@ -610,7 +602,6 @@
         }, 200);
     }
 
-    /* PROCESSAMENTO DA IA COM TRAVA DE SIMETRIA E CENTRALIZAÇÃO */
     function processarResultadosFaciaisMorador(results) {
         const statusTxt = document.getElementById('status-foto-m');
         const btnSelfie = document.getElementById('btn-bater-selfie-m');
@@ -644,7 +635,7 @@
         }
 
         elipse.classList.remove('encaixado');
-        statusTxt.innerText = "ENCAIXE O ROSTO NO OVAL";
+        statusTxt.innerText = "POSICIONE O ROSTO NO OVAL";
         statusTxt.className = "texto-neon-vermelho";
         btnSelfie.disabled = true;
     }
@@ -862,6 +853,143 @@
         });
     }
 
+    /* RENDERIZAÇÃO DAS ABAS HISTÓRICO E BLOQUEADOS */
+    function renderizarDadosAbas() {
+        if(refBloqueadosAtiva) refBloqueadosAtiva.off();
+        if(refHistoricoAtiva) refHistoricoAtiva.off();
+
+        refBloqueadosAtiva = db.ref(`bloqueados/${my_un}`);
+        refHistoricoAtiva = db.ref(`historico/${my_un}`);
+
+        refBloqueadosAtiva.on('value', bSnap => {
+            cacheBloqueadosGlobais = bSnap.val() || {};
+            construirListaBloqueadosDireta(cacheBloqueadosGlobais);
+        });
+
+        refHistoricoAtiva.on('value', snap => {
+            cacheHistoricoCompleto = []; 
+            snap.forEach(item => { cacheHistoricoCompleto.push(item.val()); });
+            cacheHistoricoCompleto.sort((a, b) => b.ts - a.ts);
+            
+            requestAnimationFrame(() => {
+                construirListaNormal(cacheHistoricoCompleto, cacheBloqueadosGlobais);
+            });
+        });
+    }
+
+    /* CONSTRUÇÃO DA LISTA NORMAL COM BOTÃO "VER MAIS" (OCULTA A PARTIR DA 3ª CHAMADA) */
+    function construirListaNormal(itens, listaBloqueados) {
+        const list = document.getElementById('lista-hist'); if(!list) return;
+        const ativos = itens.filter(i => !listaBloqueados[i.dna_dispositivo]);
+        
+        if(ativos.length === 0) { 
+            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:15px;">Nenhum registro no histórico.</p>`; 
+            document.getElementById('btn-ver-mais').style.display = "none"; 
+            return; 
+        }
+        
+        const exibidos = ativos.slice(0, limiteExibicaoHist);
+        let htmlAcumulado = "";
+        exibidos.forEach(d => { htmlAcumulado += criarCardHTML(d, false); });
+        
+        list.innerHTML = htmlAcumulado;
+        document.getElementById('btn-ver-mais').style.display = ativos.length > limiteExibicaoHist ? "block" : "none";
+    }
+
+    function expandirHistorico() { 
+        limiteExibicaoHist = Math.min(limiteExibicaoHist + 5, 30); 
+        construirListaNormal(cacheHistoricoCompleto, cacheBloqueadosGlobais); 
+    }
+
+    function construirListaBloqueadosDireta(mapaBloqueados) {
+        const list = document.getElementById('lista-bloqueados'); if(!list) return;
+        const chaves = Object.keys(mapaBloqueados);
+        
+        if(chaves.length === 0) { 
+            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:15px;">Nenhum dispositivo bloqueado.</p>`; 
+            return; 
+        }
+        
+        const mapaOrdenado = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
+        let htmlAcumulado = "";
+        mapaOrdenado.forEach(d => { htmlAcumulado += criarCardHTML(d, true); });
+        
+        list.innerHTML = htmlAcumulado;
+    }
+
+    /* CRIAÇÃO DOS CARDS COM AS 5 BOLINHAS (VERDE, VERMELHA, AZUL, AMARELA, CINZA) */
+    function criarCardHTML(d, estaBloqueado) {
+        return `<div class="hist-card">
+            <div class="foto-box">
+                <div class="dots-row">
+                    <div class="dot" style="background:var(--neon); color:#000">${d.verde || 0}</div>
+                    <div class="dot" style="background:var(--red)">${d.vermelho || d.verm || 0}</div>
+                    <div class="dot" style="background:var(--blue)">${d.azul || 0}</div>
+                    <div class="dot" style="background:var(--yellow); color:#000">${d.amarelo || 0}</div>
+                    <div class="dot" style="background:var(--gray)">${d.cinza || 0}</div>
+                </div>
+                <img src="${d.foto || ''}" class="foto-hist" onerror="this.src='https://placehold.co/55x55/0a0a0a/39FF14?text=VIRTY'">
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                <b style="font-size:0.75rem; color:#aaa;">DNA: ${d.dna_dispositivo}</b>
+                <small style="color:var(--neon); font-size:0.75rem; font-weight:bold;">${(d.ultima || 'Bloqueado').toUpperCase()}</small>
+                <span style="font-size:0.65rem; color:#444;">${d.data_hora || ''}</span>
+            </div>
+            <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.dna_dispositivo}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
+        </div>`;
+    }
+
+    /* ALTERNÂNCIA ENTRE VER HISTÓRICO E VER BLOQUEADOS */
+    function alternarVisaoListas() {
+        vendoBloqueados = !vendoBloqueados;
+        const txtTitulo = document.getElementById('titulo-secao-atual'), 
+              btnToggle = document.getElementById('btn-toggle-bloqueados'), 
+              btnLimpar = document.getElementById('btn-limpar-tudo');
+
+        if(vendoBloqueados) {
+            document.getElementById('container-historico-normal').style.display = "none"; 
+            document.getElementById('container-lista-bloqueados').style.display = "block";
+            txtTitulo.innerText = "Dispositivos Bloqueados"; 
+            txtTitulo.style.color = "var(--red)"; 
+            btnToggle.innerText = "VER HISTÓRICO"; 
+            btnToggle.style.borderColor = "var(--neon)";
+            btnToggle.style.color = "var(--neon)"; 
+            btnLimpar.style.display = "none";
+        } else {
+            document.getElementById('container-historico-normal').style.display = "block"; 
+            document.getElementById('container-lista-bloqueados').style.display = "none";
+            txtTitulo.innerText = "Histórico de Chamadas"; 
+            txtTitulo.style.color = "var(--gray)"; 
+            btnToggle.innerText = "VER BLOQUEADOS"; 
+            btnToggle.style.borderColor = "var(--red)";
+            btnToggle.style.color = "var(--red)"; 
+            btnLimpar.style.display = "block"; 
+            limiteExibicaoHist = 3; 
+        }
+        renderizarDadosAbas();
+        forcarReflowWebView();
+    }
+
+    function alternarBloqueio(dna) {
+        const ref = db.ref(`bloqueados/${my_un}/${dna}`);
+        ref.once('value', s => {
+            if(s.exists()) ref.remove();
+            else {
+                db.ref(`historico/${my_un}/${dna}`).once('value', hSnap => {
+                    const dadosHist = hSnap.val() || {};
+                    ref.set({ 
+                        dna_dispositivo: dna, ts: Date.now(), data_hora: obterDataHora(), 
+                        foto: dadosHist.foto || "", ultima: dadosHist.ultima || "recusado", 
+                        verde: dadosHist.verde || 0, vermelho: dadosHist.vermelho || dadosHist.verm || 0, 
+                        azul: dadosHist.azul || 0, amarelo: dadosHist.amarelo || 0, cinza: dadosHist.cinza || 0 
+                    });
+                });
+            }
+        });
+    }
+
+    function limparHist() { if(confirm("Deseja limpar seu histórico?")) db.ref(`historico/${my_un}`).remove(); }
+
     function abrirPainelTexto() {
         estaDigitando = true; somSilenciadoPorInteracao = true; gerenciarAlerta('stop');
         db.ref('chamadas_ativas/' + my_un).update({ status: 'escrevendo' });
@@ -988,7 +1116,6 @@
 
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
 
-    /* HISTÓRICO COM 5 BOLINHAS (INCLUINDO A AMARELA PARA ÁUDIO) */
     function gravarHist(vid, foto, st, dna) {
         const baseRef = db.ref(`historico/${my_un}`);
         baseRef.once('value', snapshot => {
@@ -1027,121 +1154,6 @@
         });
     }
 
-    function renderizarDadosAbas() {
-        if(refBloqueadosAtiva) refBloqueadosAtiva.off();
-        if(refHistoricoAtiva) refHistoricoAtiva.off();
-
-        refBloqueadosAtiva = db.ref(`bloqueados/${my_un}`);
-        refHistoricoAtiva = db.ref(`historico/${my_un}`);
-
-        refBloqueadosAtiva.on('value', bSnap => {
-            cacheBloqueadosGlobais = bSnap.val() || {};
-            construirListaBloqueadosDireta(cacheBloqueadosGlobais);
-        });
-
-        refHistoricoAtiva.on('value', snap => {
-            const historicoItens = []; 
-            snap.forEach(item => { historicoItens.push(item.val()); });
-            historicoItens.sort((a, b) => b.ts - a.ts);
-            
-            requestAnimationFrame(() => {
-                construirListaNormal(historicoItens, cacheBloqueadosGlobais);
-            });
-        });
-    }
-
-    function construirListaNormal(itens, listaBloqueados) {
-        const list = document.getElementById('lista-hist'); if(!list) return;
-        const ativos = itens.filter(i => !listaBloqueados[i.dna_dispositivo]);
-        
-        if(ativos.length === 0) { 
-            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:15px;">Nenhum registro</p>`; 
-            document.getElementById('btn-ver-mais').style.display = "none"; 
-            return; 
-        }
-        
-        const exibidos = ativos.slice(0, limiteExibicaoHist);
-        let htmlAcumulado = "";
-        exibidos.forEach(d => { htmlAcumulado += criarCardHTML(d, false); });
-        
-        list.innerHTML = htmlAcumulado;
-        document.getElementById('btn-ver-mais').style.display = ativos.length > limiteExibicaoHist ? "block" : "none";
-    }
-
-    function construirListaBloqueadosDireta(mapaBloqueados) {
-        const list = document.getElementById('lista-bloqueados'); if(!list) return;
-        const chaves = Object.keys(mapaBloqueados);
-        
-        if(chaves.length === 0) { 
-            list.innerHTML = `<p style="text-align:center; color:var(--gray); font-size:0.85rem; padding:15px;">Nenhum dispositivo bloqueado.</p>`; 
-            return; 
-        }
-        
-        const mapaOrdenado = chaves.map(k => mapaBloqueados[k]).sort((a,b) => b.ts - a.ts);
-        let htmlAcumulado = "";
-        mapaOrdenado.forEach(d => { htmlAcumulado += criarCardHTML(d, true); });
-        
-        list.innerHTML = htmlAcumulado;
-    }
-
-    /* RENDERIZAÇÃO DAS 5 BOLINHAS NO CARD DO HISTÓRICO */
-    function criarCardHTML(d, estaBloqueado) {
-        return `<div class="hist-card">
-            <div class="foto-box">
-                <div class="dots-row">
-                    <div class="dot" style="background:var(--neon); color:#000">${d.verde || 0}</div>
-                    <div class="dot" style="background:var(--red)">${d.vermelho || d.verm || 0}</div>
-                    <div class="dot" style="background:var(--blue)">${d.azul || 0}</div>
-                    <div class="dot" style="background:var(--yellow); color:#000">${d.amarelo || 0}</div>
-                    <div class="dot" style="background:var(--gray)">${d.cinza || 0}</div>
-                </div>
-                <img src="${d.foto || ''}" class="foto-hist" onerror="this.src='https://placehold.co/55x55/0a0a0a/39FF14?text=VIRTY'">
-            </div>
-            <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
-                <b style="font-size:0.75rem; color:#aaa;">DNA: ${d.dna_dispositivo}</b>
-                <small style="color:var(--neon); font-size:0.75rem; font-weight:bold;">${(d.ultima || 'Bloqueado').toUpperCase()}</small>
-                <span style="font-size:0.65rem; color:#444;">${d.data_hora || ''}</span>
-            </div>
-            <div><button class="switch-bloqueio ${estaBloqueado ? 'status-bloqueado' : 'status-desbloqueado'}" onclick="alternarBloqueio('${d.dna_dispositivo}')">${estaBloqueado ? '🔒' : '🔓'}</button></div>
-        </div>`;
-    }
-
-    function expandirHistorico() { limiteExibicaoHist = Math.min(limiteExibicaoHist + 5, 30); renderizarDadosAbas(); }
-    
-    function alternarVisaoListas() {
-        vendoBloqueados = !vendoBloqueados;
-        const txtTitulo = document.getElementById('titulo-secao-atual'), btnToggle = document.getElementById('btn-toggle-bloqueados'), btnLimpar = document.getElementById('btn-limpar-tudo');
-        if(vendoBloqueados) {
-            document.getElementById('container-historico-normal').style.display = "none"; document.getElementById('container-lista-bloqueados').style.display = "block";
-            txtTitulo.innerText = "Dispositivos Bloqueados"; txtTitulo.style.color = "var(--red)"; btnToggle.innerText = "VER HISTÓRICO"; btnToggle.style.color = "var(--neon)"; btnLimpar.style.display = "none";
-        } else {
-            document.getElementById('container-historico-normal').style.display = "block"; document.getElementById('container-lista-bloqueados').style.display = "none";
-            txtTitulo.innerText = "Histórico de Chamadas"; txtTitulo.style.color = "var(--gray)"; btnToggle.innerText = "VER BLOQUEADOS"; btnToggle.style.color = "var(--red)"; btnLimpar.style.display = "block"; limiteExibicaoHist = 5;
-        }
-        renderizarDadosAbas();
-        forcarReflowWebView();
-    }
-
-    function alternarBloqueio(dna) {
-        const ref = db.ref(`bloqueados/${my_un}/${dna}`);
-        ref.once('value', s => {
-            if(s.exists()) ref.remove();
-            else {
-                db.ref(`historico/${my_un}/${dna}`).once('value', hSnap => {
-                    const dadosHist = hSnap.val() || {};
-                    ref.set({ 
-                        dna_dispositivo: dna, ts: Date.now(), data_hora: obterDataHora(), 
-                        foto: dadosHist.foto || "", ultima: dadosHist.ultima || "recusado", 
-                        verde: dadosHist.verde || 0, vermelho: dadosHist.vermelho || dadosHist.verm || 0, 
-                        azul: dadosHist.azul || 0, amarelo: dadosHist.amarelo || 0, cinza: dadosHist.cinza || 0 
-                    });
-                });
-            }
-        });
-    }
-
-    function limparHist() { if(confirm("Deseja limpar seu histórico?")) db.ref(`historico/${my_un}`).remove(); }
-    
     function cancelarSolicitacaoAtual() {
         if(confirm("Deseja refazer os dados?")) {
             db.ref(`solicitacoes_cadastro/${my_un}/${my_fingerprint}`).remove().then(() => { localStorage.removeItem('my_un'); my_un = null; verificarStatus(); });
