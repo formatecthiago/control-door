@@ -156,6 +156,7 @@
         }
         .btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none !important; filter: grayscale(1); }
 
+        /* MOLDURA E RODAPÉ DIVISÓRIO PADRONIZADO */
         .rodape-tela {
             width: 100%;
             max-width: 400px;
@@ -165,6 +166,8 @@
             justify-content: flex-end;
             margin-top: auto;
             z-index: 20;
+            padding-top: 5px;
+            border-top: 1px solid rgba(255,255,255,0.08);
         }
 
         /* ÁREA DE CÂMERA E MÁSCARA FACIAL */
@@ -257,7 +260,24 @@
         .status-desbloqueado { background: var(--neon); color: #000; }
         
         .btn-expansor { background: #111; border: 1px solid #333; color: #aaa; padding: 6px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 4px; margin-bottom: 6px; font-weight: bold; font-size: 0.75rem; }
-        .btn-secundario { background: #111; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 16px; cursor: pointer; width: 100%; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; flex-shrink: 0; }
+        
+        /* BOTÃO DIVISÓRIO INFERIOR PADRONIZADO */
+        .btn-secundario { 
+            background: #111; 
+            border: 1px solid var(--red); 
+            color: var(--red); 
+            padding: 12px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            width: 100%; 
+            max-width: 400px;
+            font-weight: bold; 
+            font-size: 0.85rem; 
+            text-transform: uppercase; 
+            flex-shrink: 0; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            transition: all 0.3s ease;
+        }
 
         #painel-chamada { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
         .wrapper-foto-chamada { position: relative; width: 180px; height: 180px; margin-bottom: 15px; }
@@ -407,7 +427,9 @@
             </div>
         </div>
 
-        <button id="btn-toggle-bloqueados" class="btn-secundario" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
+        <div class="rodape-tela">
+            <button id="btn-toggle-bloqueados" class="btn-secundario" onclick="alternarVisaoListas()">VER BLOQUEADOS</button>
+        </div>
     </div>
 
     <!-- PAINEL DE CHAMADA RECEBIDA -->
@@ -483,7 +505,7 @@
     
     let streamCameraAtiva = null;
     let micStreamGlobal = null;
-    let limiteExibicaoHist = 3; // EXIBE ATÉ 3 ITENS INICIALMENTE E OCULTA O RESTANTE
+    let limiteExibicaoHist = 3;
     let vendoBloqueados = false;
     let cacheBloqueadosGlobais = {};
     let cacheHistoricoGlobal = [];
@@ -539,7 +561,6 @@
         }
     }
 
-    // CARREGAMENTO APENAS DE IA NO INÍCIO
     window.addEventListener('DOMContentLoaded', async () => {
         my_fingerprint = gerarFingerprintMorador();
         document.getElementById('label-som').innerText = "🎼 " + (somAtual + 1);
@@ -632,7 +653,6 @@
         }, 200);
     }
 
-    /* PROCESSAMENTO DA IA COM TRAVA DE SIMETRIA E CENTRALIZAÇÃO */
     function processarResultadosFaciaisMorador(results) {
         const statusTxt = document.getElementById('status-foto-m');
         const btnSelfie = document.getElementById('btn-bater-selfie-m');
@@ -1010,7 +1030,6 @@
 
     function obterDataHora() { const n = new Date(); return n.toLocaleDateString('pt-BR') + " " + n.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); }
 
-    /* GRAVAÇÃO NO HISTÓRICO COM AS 5 BOLINHAS (AMARELA PARA ÁUDIO) */
     function gravarHist(vid, foto, st, dna) {
         const baseRef = db.ref(`historico/${my_un}`);
         baseRef.once('value', snapshot => {
@@ -1072,7 +1091,6 @@
         });
     }
 
-    /* RENDERIZAÇÃO DO HISTÓRICO COM O BOTÃO VER MAIS (OCULTANDO A PARTIR DO LIMITE INICIAL DE 3) */
     function construirListaNormal(itens, listaBloqueados) {
         const list = document.getElementById('lista-hist'); if(!list) return;
         const ativos = itens.filter(i => !listaBloqueados[i.dna_dispositivo]);
@@ -1119,7 +1137,6 @@
         list.innerHTML = htmlAcumulado;
     }
 
-    /* CARD DO HISTÓRICO EXIBINDO AS 5 BOLINHAS (INCLUINDO A AMARELA) */
     function criarCardHTML(d, estaBloqueado) {
         return `<div class="hist-card">
             <div class="foto-box">
@@ -1141,7 +1158,6 @@
         </div>`;
     }
 
-    /* ALTERNÂNCIA ENTRE VER HISTÓRICO E VER BLOQUEADOS */
     function alternarVisaoListas() {
         vendoBloqueados = !vendoBloqueados;
         const txtTitulo = document.getElementById('titulo-secao-atual'), 
