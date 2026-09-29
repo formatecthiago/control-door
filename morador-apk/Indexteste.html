@@ -422,7 +422,10 @@
     function enviarSmsComtele() {
         const conteudoMensagem = `VIRTY ACCESS: Visitante na Casa ${chamadaIdGlobal}! Veja a camera ao vivo: ${LINK_CAMERA_PROVISORIO}`;
 
-        fetch("https://sms.comtele.com.br/api/v2/send", {
+        // URL COM PROXY CORS PARA EVITAR QUE O NAVEGADOR BLOQUEIE A REQUISIÇÃO
+        const urlComteleProxy = "https://corsproxy.io/?" + encodeURIComponent("https://sms.comtele.com.br/api/v2/send");
+
+        fetch(urlComteleProxy, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -436,10 +439,10 @@
         })
         .then(response => response.json())
         .then(data => {
-            console.log("SMS Comtele enviado com sucesso:", data);
+            console.log("Resposta da API Comtele:", data);
         })
         .catch(error => {
-            console.error("Erro ao enviar SMS via Comtele:", error);
+            console.error("Erro no envio do SMS Comtele:", error);
         });
     }
 
@@ -589,7 +592,7 @@
         if (results.detections && results.detections.length > 0) {
             const det = results.detections[0];
             const box = det.boundingBox;
-            const landmarks = det.landmarks; // Pontos do rosto: Olho D, Olho E, Nariz, Boca
+            const landmarks = det.landmarks;
 
             // 1. Trava de Centralização Restrita dentro da Elipse
             const centralizado = (box.xCenter > 0.35 && box.xCenter < 0.65) && (box.yCenter > 0.25 && box.yCenter < 0.75);
@@ -605,7 +608,6 @@
                 const totalDist = distOlhoENariz + distOlhoDNariz;
                 const proporcaoNariz = distOlhoENariz / (totalDist || 1);
 
-                // Se o rosto estiver retinho de frente, o nariz fica entre 42% e 58% do centro dos dois olhos
                 if (proporcaoNariz >= 0.42 && proporcaoNariz <= 0.58) {
                     elipse.classList.add('encaixado');
                     statusTxt.innerText = "ROSTO DETECTADO!";
@@ -660,7 +662,6 @@
             chamadaIdGlobal = un;
             const refChamada = db.ref('chamadas_ativas/' + un);
 
-            // DESCONEXÃO AUTOMÁTICA NO FIREBASE SE O VISITANTE FECHAR A PÁGINA
             refChamada.onDisconnect().remove();
 
             refChamada.set({
@@ -683,7 +684,7 @@
         tempoRestanteChamada = 30; // 30 SEGUNDOS PARA OS TESTES
         const timerElem = document.getElementById('timer-chamada');
         const statusElem = document.getElementById('virty-status-tempo-real');
-        statusElem.innerText = ""; // Garante status limpo no início
+        statusElem.innerText = "";
 
         if (timerRegressivoInterval) clearInterval(timerRegressivoInterval);
         timerRegressivoInterval = setInterval(() => {
@@ -701,7 +702,6 @@
             const data = snap.val();
             if (!data) return;
 
-            // TRAVA RÍGIDA: MENSAGEM SÓ APARECE SE O STATUS FOR EXPLICITAMENTE GRAVANDO OU ESCREVENDO
             if (data.status === 'escrevendo') {
                 statusElem.innerText = "MORADOR DIGITANDO...";
                 statusElem.className = "texto-neon-azul pulsar";
