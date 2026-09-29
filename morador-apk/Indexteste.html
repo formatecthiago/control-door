@@ -74,7 +74,6 @@
             margin: auto 0;
         }
 
-        /* BOTÃO PRE-LOADER TRANSLÚCIDO DINÂMICO */
         .btn-preload {
             width: 100%;
             max-width: 300px;
@@ -257,6 +256,26 @@
             max-width: 340px; 
         }
 
+        /* PAINEL VISUAL DE DIAGNÓSTICO / DEBURGER DE TELA */
+        #painel-debugger-virty {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            height: 130px;
+            background: rgba(0, 0, 0, 0.95);
+            border-top: 2px solid var(--neon);
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 0.75rem;
+            padding: 8px;
+            overflow-y: auto;
+            z-index: 9999;
+            box-sizing: border-box;
+            text-align: left;
+            word-break: break-all;
+        }
+
         .texto-neon-verde { color: var(--neon); text-shadow: 0 0 15px rgba(57, 255, 20, 0.6); font-weight: bold; letter-spacing: 1px; margin: 5px 0; transition: color 0.3s ease; }
         .texto-neon-azul { color: var(--blue); text-shadow: 0 0 15px rgba(0, 123, 255, 0.6); font-weight: bold; letter-spacing: 1px; margin: 5px 0; }
         .texto-neon-vermelho { color: var(--red); text-shadow: 0 0 15px rgba(255, 49, 49, 0.6); font-weight: bold; letter-spacing: 1px; margin: 5px 0; transition: color 0.3s ease; }
@@ -298,6 +317,12 @@
         <div style="color:var(--neon); font-size:0.9rem; letter-spacing:2px; margin-bottom:15px; font-weight:bold;">VIRTY ACCESS DOOR</div>
         <div id="custom-alert-msg" style="color:#fff; font-size:1.1rem; font-weight:normal; line-height:1.4; margin-bottom:20px;"></div>
         <button class="btn" style="background:#fff; color:#000; padding:12px; font-size:1rem; border-radius:10px;" onclick="fecharAlertCustomizado()">OK</button>
+    </div>
+
+    <!-- PAINEL VISUAL DE LOGS NA TELA DO VISITANTE -->
+    <div id="painel-debugger-virty">
+        <div style="color:#fff; font-weight:bold; border-bottom: 1px solid #333; margin-bottom:4px;">🔍 ANALISADOR DE DIAGNÓSTICO VIRTY:</div>
+        <div id="conteudo-logs-tela">> Aguardando disparo do timer...</div>
     </div>
 
     <!-- TELA 1: BOAS-VINDAS COM PRELOADER APENAS DE IA -->
@@ -410,7 +435,7 @@
     let chamadaIdGlobal = "";
     let escutadorFirebaseAtivo = null;
     let timerRegressivoInterval = null;
-    let tempoRestanteChamada = 30; // 30s PARA TESTE RÁPIDO
+    let tempoRestanteChamada = 30; // 30s PARA TESTES
     let cacheAudioUrl = ""; 
     let faceDetectorMediaPipe = null;
 
@@ -419,12 +444,26 @@
     const TELEFONE_DESTINO_SMS = "84996870500";
     const LINK_CAMERA_PROVISORIO = "https://formatecthiago.github.io/control-door/morador-apk/Camera.html";
 
-    function enviarSmsComtele() {
-        const conteudoMensagem = `VIRTY ACCESS: Visitante na Casa ${chamadaIdGlobal}! Veja a camera ao vivo: ${LINK_CAMERA_PROVISORIO}`;
+    // FUNÇÃO QUE ESCREVE OS ERROS DIRETAMENTE NA TELA DO VISITANTE
+    function registrarLogNaTela(texto, cor = "#00ff00") {
+        const divLogs = document.getElementById('conteudo-logs-tela');
+        if (divLogs) {
+            const linha = document.createElement('div');
+            linha.style.color = cor;
+            linha.innerText = `> [${new Date().toLocaleTimeString()}] ${texto}`;
+            divLogs.appendChild(linha);
+            divLogs.scrollTop = divLogs.scrollHeight;
+        }
+    }
 
-        // UTILIZANDO PROXY PARA BYPASS DE TRAVA CORS DO NAVEGADOR
+    function enviarSmsComtele() {
+        registrarLogNaTela("Iniciando envio de SMS via Comtele...", "#ffff00");
+
+        const conteudoMensagem = `VIRTY ACCESS: Visitante na Casa ${chamadaIdGlobal}! Veja a camera ao vivo: ${LINK_CAMERA_PROVISORIO}`;
         const endpointComtele = "https://sms.comtele.com.br/api/v2/send";
         const urlProxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(endpointComtele)}`;
+
+        registrarLogNaTela(`Tentando requisição em: ${urlProxy}`, "#aaa");
 
         fetch(urlProxy, {
             method: "POST",
@@ -434,16 +473,22 @@
             },
             body: JSON.stringify({
                 Sender: "VIRTY",
-                Receivers: [TELEFONE_DESTINO_SMS], // ENVIADO COMO ARRAY/LISTA EXIGIDO PELA API
+                Receivers: [TELEFONE_DESTINO_SMS],
                 Content: conteudoMensagem
             })
         })
-        .then(response => response.json())
-        .then(data => {
-            console.log("SUCESSO COMTELE:", data);
+        .then(async response => {
+            const statusHttp = response.status;
+            const textoResposta = await response.text();
+            
+            if (response.ok) {
+                registrarLogNaTela(`SUCESSO HTTP ${statusHttp}: ${textoResposta}`, "#00ff00");
+            } else {
+                registrarLogNaTela(`ERRO HTTP ${statusHttp}: ${textoResposta}`, "#ff3333");
+            }
         })
         .catch(error => {
-            console.error("ERRO COMTELE:", error);
+            registrarLogNaTela(`ERRO DE REDE/CORS: ${error.message}`, "#ff3333");
         });
     }
 
@@ -481,7 +526,6 @@
         }
     }
 
-    // CARREGAMENTO APENAS DOS ARQUIVOS DE IA NO PRELOAD (SEM PEDIR CÂMERA)
     window.addEventListener('DOMContentLoaded', async () => {
         atualizarProgressoPreload(25, "CARREGANDO SISTEMA...");
 
@@ -525,7 +569,6 @@
         if (id !== 's-camera' && id !== 's-boasvindas') encerrarStreamCamera();
     }
 
-    // DISPARO DA CÂMERA VINCULADO AO TOQUE ATIVO DO VISITANTE
     async function avancarParaCamera() {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         mudarTela('s-camera');
@@ -584,7 +627,6 @@
         }, 200);
     }
 
-    /* PROCESSAMENTO COM TRAVA DE CENTRALIZAÇÃO E SIMETRIA ANATÔMICA */
     function processarResultadosFaciais(results) {
         const statusTxt = document.getElementById('status-foto');
         const btnSelfie = document.getElementById('btn-bater-selfie');
@@ -595,7 +637,6 @@
             const box = det.boundingBox;
             const landmarks = det.landmarks;
 
-            // 1. Trava de Centralização Restrita dentro da Elipse
             const centralizado = (box.xCenter > 0.35 && box.xCenter < 0.65) && (box.yCenter > 0.25 && box.yCenter < 0.75);
 
             if (centralizado && landmarks && landmarks.length >= 4) {
@@ -603,7 +644,6 @@
                 const olhoD = landmarks[1];
                 const nariz = landmarks[2];
 
-                // 2. Trava de Simetria para Rosto De Lado/Perfil
                 const distOlhoENariz = Math.abs(nariz.x - olhoE.x);
                 const distOlhoDNariz = Math.abs(nariz.x - olhoD.x);
                 const totalDist = distOlhoENariz + distOlhoDNariz;
@@ -682,7 +722,7 @@
     }
 
     function iniciarAcompanhamentoResposta(un) {
-        tempoRestanteChamada = 30; // 30 SEGUNDOS PARA OS TESTES
+        tempoRestanteChamada = 30;
         const timerElem = document.getElementById('timer-chamada');
         const statusElem = document.getElementById('virty-status-tempo-real');
         statusElem.innerText = "";
@@ -755,8 +795,7 @@
     function finalizarChamadaExpirada() {
         if (chamadaIdGlobal) {
             db.ref('chamadas_ativas/' + chamadaIdGlobal).update({ status: 'cinza' });
-            
-            // 🚀 DISPARO AUTOMÁTICO DO SMS VIA COMTELE AO EXPIRAR O TIMER
+            registrarLogNaTela("Timer zerado. Disparando chamada de SMS...", "#ffff00");
             enviarSmsComtele();
         }
         exibirResultadoFinal("SEM RESPOSTA", "O morador não atendeu. Um alerta via SMS foi enviado!", false);
@@ -781,7 +820,6 @@
         mudarTela('s-boasvindas');
     }
 
-    // LIMPEZA IMEDIATA DA CHAMADA SE O VISITANTE FECHAR O NAVEGADOR OU SAIR
     window.addEventListener('pagehide', () => { if (chamadaIdGlobal) cancelarInterfone(); });
     window.addEventListener('beforeunload', () => { if (chamadaIdGlobal) cancelarInterfone(); });
 </script>
