@@ -435,7 +435,7 @@
     let chamadaIdGlobal = "";
     let escutadorFirebaseAtivo = null;
     let timerRegressivoInterval = null;
-    let tempoRestanteChamada = 30; // 30s PARA TESTES
+    let tempoRestanteChamada = 30;
     let cacheAudioUrl = ""; 
     let faceDetectorMediaPipe = null;
 
@@ -457,11 +457,11 @@
     }
 
     function enviarSmsComtele() {
-        registrarLogNaTela("Iniciando envio direto via API Comtele...", "#ffff00");
+        registrarLogNaTela("Iniciando envio via API Comtele...", "#ffff00");
 
         const conteudoMensagem = `VIRTY ACCESS: Visitante na Casa ${chamadaIdGlobal}! Veja a camera ao vivo: ${LINK_CAMERA_PROVISORIO}`;
 
-        // PARÂMETROS PARA REQUISIÇÃO DIRETA HTTP GET
+        // ENDPOINT CORRETO DA COMTELE PARA ENVIO DIRETO VIA URL GET (/send)
         const params = new URLSearchParams({
             'apiKey': COMTELE_API_KEY,
             'receivers': TELEFONE_DESTINO_SMS,
@@ -469,9 +469,9 @@
             'sender': 'VIRTY'
         });
 
-        const urlComtele = `https://sms.comtele.com.br/api/v2/sendsms?${params.toString()}`;
+        const urlComtele = `https://sms.comtele.com.br/api/v2/send?${params.toString()}`;
 
-        registrarLogNaTela("Conectando diretamente com a Comtele...", "#aaa");
+        registrarLogNaTela("Conectando com a Comtele...", "#aaa");
 
         fetch(urlComtele, {
             method: "GET",
@@ -484,7 +484,7 @@
             if (response.ok) {
                 registrarLogNaTela(`SUCESSO COMTELE [HTTP ${statusHttp}]: ${textoResposta}`, "#00ff00");
             } else {
-                registrarLogNaTela(`ERRO RESPOSTA COMTELE [HTTP ${statusHttp}]: ${textoResposta}`, "#ff3333");
+                registrarLogNaTela(`RESPOSTA COMTELE [HTTP ${statusHttp}]: ${textoResposta}`, "#ffff00");
             }
         })
         .catch(error => {
