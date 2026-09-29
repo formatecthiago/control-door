@@ -444,7 +444,6 @@
     const TELEFONE_DESTINO_SMS = "84996870500";
     const LINK_CAMERA_PROVISORIO = "https://formatecthiago.github.io/control-door/morador-apk/Camera.html";
 
-    // ESCREVE OS LOGS DIRETAMENTE NA TELA DO VISITANTE
     function registrarLogNaTela(texto, cor = "#00ff00") {
         const divLogs = document.getElementById('conteudo-logs-tela');
         if (divLogs) {
@@ -457,25 +456,26 @@
     }
 
     function enviarSmsComtele() {
-        registrarLogNaTela("Iniciando envio via API Comtele...", "#ffff00");
+        registrarLogNaTela("Iniciando envio via API POST Comtele...", "#ffff00");
 
         const conteudoMensagem = `VIRTY ACCESS: Visitante na Casa ${chamadaIdGlobal}! Veja a camera ao vivo: ${LINK_CAMERA_PROVISORIO}`;
+        
+        // PROXY DIRETO PARA PERMITIR AUTENTICAÇÃO VIA X-API-KEY COM MÉTODO POST
+        const urlProxy = "https://corsproxy.io/?" + encodeURIComponent("https://sms.comtele.com.br/api/v2/send");
 
-        // ENDPOINT CORRETO DA COMTELE PARA ENVIO DIRETO VIA URL GET (/send)
-        const params = new URLSearchParams({
-            'apiKey': COMTELE_API_KEY,
-            'receivers': TELEFONE_DESTINO_SMS,
-            'content': conteudoMensagem,
-            'sender': 'VIRTY'
-        });
+        registrarLogNaTela("Conectando com autenticação de chave...", "#aaa");
 
-        const urlComtele = `https://sms.comtele.com.br/api/v2/send?${params.toString()}`;
-
-        registrarLogNaTela("Conectando com a Comtele...", "#aaa");
-
-        fetch(urlComtele, {
-            method: "GET",
-            mode: "cors"
+        fetch(urlProxy, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": COMTELE_API_KEY
+            },
+            body: JSON.stringify({
+                Sender: "VIRTY",
+                Receivers: TELEFONE_DESTINO_SMS,
+                Content: conteudoMensagem
+            })
         })
         .then(async response => {
             const statusHttp = response.status;
@@ -484,7 +484,7 @@
             if (response.ok) {
                 registrarLogNaTela(`SUCESSO COMTELE [HTTP ${statusHttp}]: ${textoResposta}`, "#00ff00");
             } else {
-                registrarLogNaTela(`RESPOSTA COMTELE [HTTP ${statusHttp}]: ${textoResposta}`, "#ffff00");
+                registrarLogNaTela(`RESPOSTA COMTELE [HTTP ${statusHttp}]: ${textoResposta}`, "#ff3333");
             }
         })
         .catch(error => {
