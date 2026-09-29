@@ -256,7 +256,7 @@
             max-width: 340px; 
         }
 
-        /* PAINEL VISUAL DE DIAGNÓSTICO / DEBURGER DE TELA */
+        /* PAINEL VISUAL DE DIAGNÓSTICO */
         #painel-debugger-virty {
             position: fixed;
             bottom: 0;
@@ -444,7 +444,7 @@
     const TELEFONE_DESTINO_SMS = "84996870500";
     const LINK_CAMERA_PROVISORIO = "https://formatecthiago.github.io/control-door/morador-apk/Camera.html";
 
-    // FUNÇÃO QUE ESCREVE OS ERROS DIRETAMENTE NA TELA DO VISITANTE
+    // ESCREVE OS LOGS DIRETAMENTE NA TELA DO VISITANTE
     function registrarLogNaTela(texto, cor = "#00ff00") {
         const divLogs = document.getElementById('conteudo-logs-tela');
         if (divLogs) {
@@ -457,38 +457,38 @@
     }
 
     function enviarSmsComtele() {
-        registrarLogNaTela("Iniciando envio de SMS via Comtele...", "#ffff00");
+        registrarLogNaTela("Iniciando envio direto via API Comtele...", "#ffff00");
 
         const conteudoMensagem = `VIRTY ACCESS: Visitante na Casa ${chamadaIdGlobal}! Veja a camera ao vivo: ${LINK_CAMERA_PROVISORIO}`;
-        const endpointComtele = "https://sms.comtele.com.br/api/v2/send";
-        const urlProxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(endpointComtele)}`;
 
-        registrarLogNaTela(`Tentando requisição em: ${urlProxy}`, "#aaa");
+        // PARÂMETROS PARA REQUISIÇÃO DIRETA HTTP GET
+        const params = new URLSearchParams({
+            'apiKey': COMTELE_API_KEY,
+            'receivers': TELEFONE_DESTINO_SMS,
+            'content': conteudoMensagem,
+            'sender': 'VIRTY'
+        });
 
-        fetch(urlProxy, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": COMTELE_API_KEY
-            },
-            body: JSON.stringify({
-                Sender: "VIRTY",
-                Receivers: [TELEFONE_DESTINO_SMS],
-                Content: conteudoMensagem
-            })
+        const urlComtele = `https://sms.comtele.com.br/api/v2/sendsms?${params.toString()}`;
+
+        registrarLogNaTela("Conectando diretamente com a Comtele...", "#aaa");
+
+        fetch(urlComtele, {
+            method: "GET",
+            mode: "cors"
         })
         .then(async response => {
             const statusHttp = response.status;
             const textoResposta = await response.text();
             
             if (response.ok) {
-                registrarLogNaTela(`SUCESSO HTTP ${statusHttp}: ${textoResposta}`, "#00ff00");
+                registrarLogNaTela(`SUCESSO COMTELE [HTTP ${statusHttp}]: ${textoResposta}`, "#00ff00");
             } else {
-                registrarLogNaTela(`ERRO HTTP ${statusHttp}: ${textoResposta}`, "#ff3333");
+                registrarLogNaTela(`ERRO RESPOSTA COMTELE [HTTP ${statusHttp}]: ${textoResposta}`, "#ff3333");
             }
         })
         .catch(error => {
-            registrarLogNaTela(`ERRO DE REDE/CORS: ${error.message}`, "#ff3333");
+            registrarLogNaTela(`ERRO DE REDE: ${error.message}`, "#ff3333");
         });
     }
 
