@@ -422,10 +422,11 @@
     function enviarSmsComtele() {
         const conteudoMensagem = `VIRTY ACCESS: Visitante na Casa ${chamadaIdGlobal}! Veja a camera ao vivo: ${LINK_CAMERA_PROVISORIO}`;
 
-        // URL COM PROXY CORS PARA EVITAR QUE O NAVEGADOR BLOQUEIE A REQUISIÇÃO
-        const urlComteleProxy = "https://corsproxy.io/?" + encodeURIComponent("https://sms.comtele.com.br/api/v2/send");
+        // UTILIZANDO PROXY PARA BYPASS DE TRAVA CORS DO NAVEGADOR
+        const endpointComtele = "https://sms.comtele.com.br/api/v2/send";
+        const urlProxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(endpointComtele)}`;
 
-        fetch(urlComteleProxy, {
+        fetch(urlProxy, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -433,16 +434,16 @@
             },
             body: JSON.stringify({
                 Sender: "VIRTY",
-                Receivers: TELEFONE_DESTINO_SMS,
+                Receivers: [TELEFONE_DESTINO_SMS], // ENVIADO COMO ARRAY/LISTA EXIGIDO PELA API
                 Content: conteudoMensagem
             })
         })
         .then(response => response.json())
         .then(data => {
-            console.log("Resposta da API Comtele:", data);
+            console.log("SUCESSO COMTELE:", data);
         })
         .catch(error => {
-            console.error("Erro no envio do SMS Comtele:", error);
+            console.error("ERRO COMTELE:", error);
         });
     }
 
