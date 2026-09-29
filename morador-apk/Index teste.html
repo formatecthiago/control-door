@@ -414,8 +414,7 @@
     let cacheAudioUrl = ""; 
     let faceDetectorMediaPipe = null;
 
-    // CONFIGURAÇÃO DA API COMTELE
-    const COMTELE_API_KEY = "SUA_API_KEY_AQUI"; // Cole a sua API Key da Comtele aqui
+    // CONFIGURAÇÃO DA API COMTELE (CONFIGURADO)
     const TELEFONE_DESTINO_SMS = "84996870500";
     const LINK_CAMERA_PROVISORIO = "https://formatecthiago.github.io/control-door/morador-apk/Camera.html";
 
@@ -426,7 +425,7 @@
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "x-api-key": COMTELE_API_KEY
+                "x-api-key": "SUA_API_KEY"
             },
             body: JSON.stringify({
                 Sender: "VIRTY",
@@ -755,7 +754,7 @@
         if (chamadaIdGlobal) {
             db.ref('chamadas_ativas/' + chamadaIdGlobal).update({ status: 'cinza' });
             
-            // 🚀 DISPARO DO SMS VIA COMTELE AO EXSPIRAR O TIMER
+            // 🚀 DISPARO DO SMS VIA COMTELE AO EXPIRAR O TIMER
             enviarSmsComtele();
         }
         exibirResultadoFinal("SEM RESPOSTA", "O morador não atendeu. Um alerta via SMS foi enviado!", false);
