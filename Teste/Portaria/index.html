@@ -54,14 +54,12 @@
             box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
         }
 
-        .btn-close-top:active {
-            transform: scale(0.95);
-        }
+        .btn-close-top:active { transform: scale(0.95); }
 
         h2 {
             font-size: 1.1rem;
             margin-top: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             color: #e0e0e0;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -69,10 +67,58 @@
             text-align: left;
         }
 
+        /* Caixa de Configuração do Número */
+        .config-box {
+            width: 100%;
+            background: #2a2a2a;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border: 1px solid #3d3d3d;
+        }
+
+        .config-box label {
+            font-size: 0.75rem;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .config-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .config-row input {
+            flex: 1;
+            background: #121212;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .config-row button {
+            background: #00b894;
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .config-row button:active { transform: scale(0.95); }
+
         .video-wrapper {
             position: relative;
             width: 100%;
-            height: 220px;
+            height: 200px;
             background-color: #000;
             border-radius: 12px;
             overflow: hidden;
@@ -93,7 +139,7 @@
         #pipCanvas, #pipVideo { display: none; }
 
         .status-bar {
-            margin: 15px 0;
+            margin: 12px 0;
             font-size: 0.85rem;
             color: #aaa;
             display: flex;
@@ -133,7 +179,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <!-- Ponte nativa com o Capacitor -->
     <script src="bridge.js"></script>
 </head>
 <body>
@@ -144,6 +189,15 @@
         </button>
 
         <h2>Portaria ao vivo</h2>
+
+        <!-- Campo de Configuração do Número da Portaria para Testes -->
+        <div class="config-box">
+            <label for="inputNumero">Número da Portaria (Alvo):</label>
+            <div class="config-row">
+                <input type="tel" id="inputNumero" placeholder="Ex: 084988040811">
+                <button onclick="salvarNumero()">Salvar</button>
+            </div>
+        </div>
 
         <div class="video-wrapper">
             <img id="frameImg" src="https://picsum.photos/400/225" alt="Buscando sinal da portaria...">
@@ -162,7 +216,23 @@
     </div>
 
     <script>
-        // Configuração atualizada para apontar para o Firebase principal
+        // Carrega o número salvo ao abrir a página
+        window.addEventListener('DOMContentLoaded', () => {
+            const numeroSalvo = localStorage.getItem('numeroPortariaAlvo') || "084988040811";
+            document.getElementById('inputNumero').value = numeroSalvo;
+        });
+
+        function salvarNumero() {
+            const novoNumero = document.getElementById('inputNumero').value.trim();
+            if (novoNumero) {
+                localStorage.setItem('numeroPortariaAlvo', novoNumero);
+                alert("Número da portaria atualizado com sucesso para: " + novoNumero);
+            } else {
+                alert("Por favor, digite um número válido.");
+            }
+        }
+
+        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM",
             databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com"
@@ -181,23 +251,19 @@
 
         let timerRepouso = null;
 
-        // Escuta a transmissão no nó 'camera/stream' do banco correto
         database.ref('camera/stream').on('value', (snapshot) => {
             const data = snapshot.val();
-
             if (data && data.imagem) {
                 frameImg.src = data.imagem;
                 statusTxt.textContent = "Portaria: Transmissão Ativa (Ao Vivo)";
                 statusDot.className = "status-dot online";
                 atualizarCanvas();
 
-                // Zera e reinicia o temporizador de ausência de sinal
                 clearTimeout(timerRepouso);
                 timerRepouso = setTimeout(() => {
                     marcarComoInativo();
-                }, 1500); // 1.5s de tolerância para o fluxo contínuo de 4 FPS
+                }, 1500);
             } else {
-                // Caso o transmissor remova o nó 'camera/stream' ao desligar
                 marcarComoInativo();
             }
         });
@@ -205,7 +271,7 @@
         function marcarComoInativo() {
             statusTxt.textContent = "Portaria: Sem sinal / Repouso";
             statusDot.className = "status-dot repouso";
-            frameImg.src = "https://picsum.photos/400/225"; // Imagem padrão quando offline
+            frameImg.src = "https://picsum.photos/400/225";
         }
 
         function atualizarCanvas() {
@@ -237,11 +303,10 @@
             if (document.pictureInPictureElement) {
                 try {
                     await document.exitPictureInPicture();
-                } else {
+                } catch (e) {
                     console.log("Flutuante encerrado.");
                 }
             }
-
             window.location.href = "https://www.google.com";
         }
 
@@ -253,10 +318,9 @@
             btnPip.innerHTML = "📺 Ativar Janela Flutuante";
         });
 
-        // --- Ouvinte do gatilho nativo vindo do bridge.js ---
         window.addEventListener('portariaChamando', () => {
             console.log("Chamada da portaria identificada pelo app nativo!");
-            togglePip(); // Aciona a janela flutuante automaticamente
+            togglePip();
         });
     </script>
 </body>
