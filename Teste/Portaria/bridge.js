@@ -5,25 +5,20 @@ document.addEventListener('deviceready', () => {
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PhoneState) {
         const PhoneState = window.Capacitor.Plugins.PhoneState;
 
-        // Número oficial da portaria cadastrado
-        const NUMERO_PORTARIA = "084988040811";
-
         PhoneState.addListener('onPhoneStateChanged', (state) => {
             console.log("Estado da chamada alterado:", state);
 
             if (state && (state.state === 'RINGING' || state.value === 'RINGING')) {
                 const numeroChegando = state.incomingNumber || state.number || "";
-
-                // Remove caracteres especiais caso venham formatados (ex: traços ou espaços)
                 const numeroLimpo = numeroChegando.replace(/\D/g, '');
 
-                console.log("Chamada recebida de:", numeroLimpo);
+                // Busca o número atual salvo pelo usuário na tela (ou usa o seu padrão se estiver vazio)
+                const numeroCadastrado = localStorage.getItem('numeroPortariaAlvo') || "084988040811";
 
-                // Compara com o número da portaria cadastrado
-                if (numeroLimpo.includes(NUMERO_PORTARIA)) {
+                console.log("Chamada recebida de:", numeroLimpo, "| Alvo esperado:", numeroCadastrado);
+
+                if (numeroLimpo.includes(numeroCadastrado)) {
                     console.log("Portaria identificada! Acionando alarme e vídeo...");
-                    
-                    // Dispara o evento capturado pelo index.html
                     window.dispatchEvent(new CustomEvent('portariaChamando'));
                 }
             }
