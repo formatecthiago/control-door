@@ -1,0 +1,11 @@
+{
+  "appId": "com.portaria.controle",
+  "appName": "Portaria ao Vivo",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}
