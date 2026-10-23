@@ -2,25 +2,30 @@
 document.addEventListener('deviceready', () => {
     console.log("Ambiente nativo Capacitor carregado.");
 
-    // Verifica se o plugin de telefonia está disponível no app compilado
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PhoneState) {
         const PhoneState = window.Capacitor.Plugins.PhoneState;
 
-        // Escuta mudanças no estado do telefone
+        // Número oficial da portaria cadastrado
+        const NUMERO_PORTARIA = "084988040811";
+
         PhoneState.addListener('onPhoneStateChanged', (state) => {
             console.log("Estado da chamada alterado:", state);
 
-            // Se o estado indicar uma chamada recebida (RINGING)
             if (state && (state.state === 'RINGING' || state.value === 'RINGING')) {
-                // Aqui você pode opcionalmente filtrar o número da portaria se necessário:
-                // if (state.incomingNumber === 'SEU_NUMERO_AQUI') {
-                
-                console.log("Chamada detectada! Acionando a portaria...");
-                
-                // Dispara o evento que o seu index.html já está escutando
-                window.dispatchEvent(new CustomEvent('portariaChamando'));
-                
-                // }
+                const numeroChegando = state.incomingNumber || state.number || "";
+
+                // Remove caracteres especiais caso venham formatados (ex: traços ou espaços)
+                const numeroLimpo = numeroChegando.replace(/\D/g, '');
+
+                console.log("Chamada recebida de:", numeroLimpo);
+
+                // Compara com o número da portaria cadastrado
+                if (numeroLimpo.includes(NUMERO_PORTARIA)) {
+                    console.log("Portaria identificada! Acionando alarme e vídeo...");
+                    
+                    // Dispara o evento capturado pelo index.html
+                    window.dispatchEvent(new CustomEvent('portariaChamando'));
+                }
             }
         });
     } else {
