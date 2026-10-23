@@ -133,6 +133,8 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <!-- Ponte nativa com o Capacitor -->
+    <script src="bridge.js"></script>
 </head>
 <body>
 
@@ -235,7 +237,7 @@
             if (document.pictureInPictureElement) {
                 try {
                     await document.exitPictureInPicture();
-                } catch (e) {
+                } else {
                     console.log("Flutuante encerrado.");
                 }
             }
@@ -251,10 +253,10 @@
             btnPip.innerHTML = "📺 Ativar Janela Flutuante";
         });
 
-        // --- NOVO: Ouvinte para receber o gatilho nativo do Android/Capacitor ---
+        // --- Ouvinte do gatilho nativo vindo do bridge.js ---
         window.addEventListener('portariaChamando', () => {
             console.log("Chamada da portaria identificada pelo app nativo!");
-            togglePip(); // Tenta abrir a câmera em modo flutuante automaticamente
+            togglePip(); // Aciona a janela flutuante automaticamente
         });
     </script>
 </body>
