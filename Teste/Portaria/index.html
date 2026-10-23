@@ -250,6 +250,12 @@
         pipVideo.addEventListener('leavepictureinpicture', () => {
             btnPip.innerHTML = "📺 Ativar Janela Flutuante";
         });
+
+        // --- NOVO: Ouvinte para receber o gatilho nativo do Android/Capacitor ---
+        window.addEventListener('portariaChamando', () => {
+            console.log("Chamada da portaria identificada pelo app nativo!");
+            togglePip(); // Tenta abrir a câmera em modo flutuante automaticamente
+        });
     </script>
 </body>
 </html>
