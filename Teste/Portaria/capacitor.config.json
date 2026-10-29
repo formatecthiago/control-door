@@ -1,7 +1,7 @@
 {
   "appId": "com.portaria.controle",
   "appName": "Portaria ao Vivo",
-  "webDir": ".",
+  "webDir": "www",
   "bundledWebRuntime": false,
   "android": {
     "permissions": [
