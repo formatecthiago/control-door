@@ -2,28 +2,28 @@
 document.addEventListener('deviceready', () => {
     console.log("Ambiente nativo Capacitor carregado.");
 
-    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PhoneState) {
-        const PhoneState = window.Capacitor.Plugins.PhoneState;
+    // Verifica se a API de telefonia do Cordova/Capacitor está disponível
+    if (window.plugins && window.plugins.telephony) {
+        window.plugins.telephony.onCall((callState) => {
+            console.log("Estado da chamada alterado:", callState);
 
-        PhoneState.addListener('onPhoneStateChanged', (state) => {
-            console.log("Estado da chamada alterado:", state);
-
-            if (state && (state.state === 'RINGING' || state.value === 'RINGING')) {
-                const numeroChegando = state.incomingNumber || state.number || "";
+            // Estados comuns: RINGING (tocando), OFFHOOK (atendida/discando), IDLE (desligada)
+            if (callState && (callState.state === 'RINGING' || callState.status === 'RINGING')) {
+                const numeroChegando = callState.incomingNumber || callState.number || "";
                 const numeroLimpo = numeroChegando.replace(/\D/g, '');
 
-                // Busca o número atual salvo pelo usuário na tela (ou usa o seu padrão se estiver vazio)
+                // Busca o número atual salvo pelo usuário na tela
                 const numeroCadastrado = localStorage.getItem('numeroPortariaAlvo') || "084988040811";
 
                 console.log("Chamada recebida de:", numeroLimpo, "| Alvo esperado:", numeroCadastrado);
 
-                if (numeroLimpo.includes(numeroCadastrado)) {
-                    console.log("Portaria identificada! Acionando alarme e vídeo...");
+                if (numeroLimpo.includes(numeroCadastrado) || numeroCadastrado.includes(numeroLimpo)) {
+                    console.log("Portaria identificada! Acionando PiP...");
                     window.dispatchEvent(new CustomEvent('portariaChamando'));
                 }
             }
         });
     } else {
-        console.log("Plugin PhoneState aguardando ambiente nativo.");
+        console.log("Plugin de telefonia aguardando inicialização nativa.");
     }
 }, false);
