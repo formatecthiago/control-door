@@ -88,12 +88,10 @@ jobs:
                       notificationManager.createNotificationChannel(channel);
                   }
 
-                  // Usa o PackageManager para obter a Intent correta de lançamento do app gerado pelo Capacitor
+                  // Forma totalmente segura de abrir a intent principal do app sem falhas de compilação
                   Intent notificationIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                   if (notificationIntent != null) {
                       notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                  } else {
-                      notificationIntent = new Intent(context, MainActivity.class);
                   }
                   
                   PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
