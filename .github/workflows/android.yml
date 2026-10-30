@@ -24,7 +24,7 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: 4. Instalar Dependências e Plugins do Capacitor
+      - name: 4. Instalar Dependências
         working-directory: ./Teste/Portaria
         run: |
           npm install
@@ -41,19 +41,55 @@ jobs:
           npx cap add android || echo "Plataforma android ja existe"
           npx cap sync android
 
-      - name: 7. Injetar Permissões do Android (Telefonia + Câmera + Áudio)
+      - name: 7. Injetar o Robô Nativo (CallReceiver.java)
+        run: |
+          JAVA_DIR="Teste/Portaria/android/app/src/main/java/com/control/door/portaria"
+          mkdir -p "$JAVA_DIR"
+          
+          cat << 'EOF' > "$JAVA_DIR/CallReceiver.java"
+          package com.control.door.portaria;
+
+          import android.content.BroadcastReceiver;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.telephony.TelephonyManager;
+          import android.util.Log;
+
+          public class CallReceiver extends BroadcastReceiver {
+              private static final String TAG = "CallReceiverDebug";
+
+              @Override
+              public void onReceive(Context context, Intent intent) {
+                  try {
+                      String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
+                      if (TelephonyManager.EXTRA_STATE_RINGING.equals(state)) {
+                          String incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER);
+                          Log.d(TAG, "Chamada detectada nativamente! Número: " + incomingNumber);
+                      }
+                  } catch (Exception e) {
+                      Log.e(TAG, "Erro ao processar estado da chamada", e);
+                  }
+              }
+          }
+          EOF
+
+      - name: 8. Configurar Permissões e o Receiver no AndroidManifest.xml
         run: |
           MANIFEST_PATH=$(find Teste/Portaria/android -name AndroidManifest.xml | head -n 1)
           if [ -f "$MANIFEST_PATH" ]; then
-            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.READ_PHONE_STATE" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />' "$MANIFEST_PATH"
+            # Adiciona permissões se não existirem
+            sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.READ_PHONE_STATE" />\n    <uses-permission android:name="android.permission.READ_CALL_LOG" />' "$MANIFEST_PATH"
+            
+            # Adiciona o receiver dentro da tag application
+            sed -i '/<\/application>/i \    <receiver android:name=".CallReceiver" android:exported="true">\n        <intent-filter>\n            <action android:name="android.intent.action.PHONE_STATE" />\n        </intent-filter>\n    </receiver>' "$MANIFEST_PATH"
           fi
 
-      - name: 8. Copiar Google Services para o Android Nativo
+      - name: 9. Copiar Google Services para o Android Nativo
         run: |
           mkdir -p Teste/Portaria/android/app
           cp Teste/Portaria/google-services.json Teste/Portaria/android/app/ 2>/dev/null || true
 
-      - name: 9. Gerar APK Debug
+      - name: 10. Gerar APK Debug
         run: |
           GRADLEW_PATH=$(find Teste/Portaria/android -name gradlew)
           GRADLE_DIR=$(dirname "$GRADLEW_PATH")
@@ -61,7 +97,7 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: 10. Disponibilizar APK para Download
+      - name: 11. Disponibilizar APK para Download
         uses: actions/upload-artifact@v4
         with:
           name: Portaria-APK
