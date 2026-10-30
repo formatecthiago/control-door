@@ -72,7 +72,6 @@ jobs:
                           String incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER);
                           Log.d(TAG, "Chamada detectada! Número: " + incomingNumber);
 
-                          // Aqui você pode definir o número alvo da portaria ou aceitar qualquer chamada de teste
                           showNotification(context, "Chamada da Portaria detectada!", "Toque para abrir a câmera ao vivo.");
                       }
                   } catch (Exception e) {
@@ -89,8 +88,13 @@ jobs:
                       notificationManager.createNotificationChannel(channel);
                   }
 
-                  Intent notificationIntent = new Intent(context, MainActivity.class);
-                  notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                  // Usa o PackageManager para obter a Intent correta de lançamento do app gerado pelo Capacitor
+                  Intent notificationIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                  if (notificationIntent != null) {
+                      notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                  } else {
+                      notificationIntent = new Intent(context, MainActivity.class);
+                  }
                   
                   PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
 
