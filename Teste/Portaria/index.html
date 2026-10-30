@@ -251,7 +251,8 @@
 
         let timerRepouso = null;
 
-        database.ref('camera/stream').on('value', (snapshot) => {
+        // ISOLAMENTO DA BRAND: Escutando exclusivamente o nó 'portaria'
+        database.ref('camera/stream/portaria').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.imagem) {
                 frameImg.src = data.imagem;
