@@ -2,7 +2,7 @@ name: Build Android APK (Portaria)
 
 on:
   push:
-    branches: [ "portaria", "main", "master" ]
+    branches: [ "portaria" ] # <-- ISOLADO: Só roda na branch portaria!
   workflow_dispatch:
 
 jobs:
@@ -43,11 +43,12 @@ jobs:
 
       - name: 7. Injetar o Robô Nativo com Notificação (CallReceiver.java)
         run: |
-          JAVA_DIR="Teste/Portaria/android/app/src/main/java/com/control/door/portaria"
+          # CORRIGIDO para bater exatamente com o appId: com.portaria.controle
+          JAVA_DIR="Teste/Portaria/android/app/src/main/java/com/portaria/controle"
           mkdir -p "$JAVA_DIR"
           
           cat << 'EOF' > "$JAVA_DIR/CallReceiver.java"
-          package com.control.door.portaria;
+          package com.portaria.controle;
 
           import android.app.NotificationChannel;
           import android.app.NotificationManager;
@@ -88,7 +89,6 @@ jobs:
                       notificationManager.createNotificationChannel(channel);
                   }
 
-                  // Forma totalmente segura de abrir a intent principal do app sem falhas de compilação
                   Intent notificationIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                   if (notificationIntent != null) {
                       notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -114,10 +114,8 @@ jobs:
         run: |
           MANIFEST_PATH=$(find Teste/Portaria/android -name AndroidManifest.xml | head -n 1)
           if [ -f "$MANIFEST_PATH" ]; then
-            # Adiciona permissões essenciais
             sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.READ_PHONE_STATE" />\n    <uses-permission android:name="android.permission.READ_CALL_LOG" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' "$MANIFEST_PATH"
             
-            # Adiciona o receiver do robô dentro da tag application
             sed -i '/<\/application>/i \    <receiver android:name=".CallReceiver" android:exported="true">\n        <intent-filter>\n            <action android:name="android.intent.action.PHONE_STATE" />\n        </intent-filter>\n    </receiver>' "$MANIFEST_PATH"
           fi
 
