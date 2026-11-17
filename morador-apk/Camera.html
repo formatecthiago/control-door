@@ -1,3 +1,9 @@
+Como eu não tenho outro celular para fazer teste de ligações  poderíamos inserir nesse simulador da câmera um botão chamado scream now que apesar naquele momento a página da câmara simulador está simulando o streaming em tempo real 
+Mas esse botão seria importante para enviarmos  um putch  direto para um nó específico 
+
+Vou trazer o código aqui para você olhar
+
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -47,11 +53,6 @@
       cursor: pointer;
       text-transform: uppercase;
     }
-    .btn-teste {
-      background: #ff4757;
-      color: #fff;
-    }
-    .btn-teste:active { transform: scale(0.98); }
     #status { font-weight: bold; color: #00ff00; margin-top: 15px; font-size: 0.9rem; }
   </style>
 </head>
@@ -64,15 +65,11 @@
     <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
     
     <button id="btn-pip" class="btn" onclick="alternarModoFlutuante()">🔲 MODO FLUTUANTE (PIP)</button>
-    
-    <!-- NOVO BOTÃO DE TESTE DIRETO -->
-    <button class="btn btn-teste" onclick="forcarStreamENotificacao()">🚨 STREAM NOW (FORÇAR TESTE)</button>
-
     <p id="status">Aguardando permissão da câmera...</p>
   </div>
 
   <script>
-    // Firebase Principal (Mantendo a URL do seu projeto)
+    // Firebase Principal (Virty Access Door)
     const configMain = { 
       apiKey: "AIzaSyCyOvvGYTCe6EBb8BC20-oHW6ClWYJZFiM", 
       databaseURL: "https://virty-access-door-default-rtdb.firebaseio.com" 
@@ -106,6 +103,7 @@
 
       podeGravarNoFirebase = existeChamadaAtiva;
 
+      // Se NÃO houver chamada ativa, remove o nó do Firebase imediatamente
       if (!podeGravarNoFirebase) {
         dbMain.ref('camera/stream').remove();
       }
@@ -125,10 +123,11 @@
     })
     .catch((err) => {
       statusText.innerText = "Erro ao acessar a câmera: " + err;
-      statusText.style.color = "#ff4757";
+      statusText.style.color = "#ff4444";
     });
 
     function capturarEEnviar() {
+      // SÓ ENVIA ao Firebase se a flag de chamada ativa for VERDADEIRA
       if (podeGravarNoFirebase && video.readyState === video.HAVE_ENOUGH_DATA) {
         ctx.drawImage(video, 0, 0, 320, 240);
         const frameBase64 = canvas.toDataURL('image/jpeg', 0.30);
@@ -138,44 +137,6 @@
           timestamp: Date.now()
         });
       }
-    }
-
-    // FUNÇÃO DO NOVO BOTÃO: Força o stream e joga um registro direto no historico_chamadas
-    function forcarStreamENotificacao() {
-      if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-        alert("A câmera ainda não está pronta!");
-        return;
-      }
-
-      // 1. Desenha a foto atual do vídeo no canvas
-      ctx.drawImage(video, 0, 0, 320, 240);
-      const imagemAtual = canvas.toDataURL('image/jpeg', 0.30);
-
-      // 2. Grava imediatamente no stream para a tela principal ver ao vivo
-      dbMain.ref('camera/stream').set({
-        imagem: imagemAtual,
-        timestamp: Date.now()
-      });
-
-      // 3. Cria o objeto de histórico para o painel Admin (simulando a chamada da Casa 08)
-      const agora = new Date();
-      const dadosVisita = {
-        casa: "Casa Teste 08",
-        numeroTelefone: "084988040811",
-        data: agora.toLocaleDateString('pt-BR'),
-        hora: agora.toLocaleTimeString('pt-BR'),
-        miniatura: imagemAtual,
-        timestamp: Date.now()
-      };
-
-      // 4. Envia o push para o nó historico_chamadas que criamos agora pouco
-      dbMain.ref('historico_chamadas').push(dadosVisita)
-        .then(() => {
-          alert("Sucesso! 'Stream Now' acionado e histórico enviado para o Firebase.");
-        })
-        .catch((err) => {
-          alert("Erro ao enviar: " + err.message);
-        });
     }
 
     async function alternarModoFlutuante() {
